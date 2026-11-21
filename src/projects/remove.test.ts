@@ -5,6 +5,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Database } from '../db/client.ts';
 import {
   apiCall,
+  gitHostIssue,
+  gitHostProject,
+  gitHostRequest,
   session,
   skillLaunch,
   sourceFile,
@@ -116,6 +119,52 @@ describe('deleting a project', () => {
       ),
     ).toBe(true);
     expect((await factoryStatus(db, hasFactory)).missing).toEqual([]);
+  });
+
+  it('deletes the issues and requests collected for the project, and no other', async () => {
+    const gone = await factoryProject('gone-app');
+    const kept = await factoryProject('kept-app');
+    await writeSession('g1', gone);
+    await writeSession('k1', kept);
+    await ingest(db, logs);
+    const at = new Date('2026-03-01T10:00:00Z');
+    for (const project of [gone, kept]) {
+      await db.insert(gitHostIssue).values({
+        project,
+        number: 1,
+        title: 'Issue',
+        state: 'open',
+        labels: [],
+        url: 'https://example.invalid/issues/1',
+        createdAt: at,
+        updatedAt: at,
+      });
+      await db.insert(gitHostRequest).values({
+        project,
+        number: 2,
+        title: 'Request',
+        state: 'open',
+        draft: false,
+        headBranch: 'feat/1',
+        url: 'https://example.invalid/pull/2',
+        createdAt: at,
+        updatedAt: at,
+        closes: [1],
+        checks: 'none',
+      });
+      await db
+        .insert(gitHostProject)
+        .values({ project, gitHost: 'github', syncedFrom: at });
+    }
+    await rm(factoryFile(gone));
+    expect(await deleteProject(db, gone, hasFactory)).toBe('deleted');
+    for (const table of [gitHostIssue, gitHostRequest, gitHostProject]) {
+      expect(
+        (await db.select({ project: table.project }).from(table)).map(
+          (row) => row.project,
+        ),
+      ).toEqual([kept]);
+    }
   });
 
   it('skips the logs of a deleted project, then reads them from the first line once its factory is back', async () => {

@@ -24,7 +24,8 @@
     "db:down": "docker compose down",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "ingest": "node src/ingest/cli.ts"
+    "ingest": "node src/ingest/cli.ts",
+    "collect": "node src/git-host/cli.ts"
   },
   "engines": {
     "node": ">=24"
