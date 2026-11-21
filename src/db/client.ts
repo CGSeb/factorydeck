@@ -6,6 +6,11 @@ export function createDatabase(url: string): {
   db: NodePgDatabase;
   close: () => Promise<void>;
 } {
-  const pool = new pg.Pool({ connectionString: url });
+  const pool = new pg.Pool({
+    connectionString: url,
+    connectionTimeoutMillis: 3000,
+  });
+  // An idle client losing its connection must not crash the process: the next query reports it.
+  pool.on('error', () => undefined);
   return { db: drizzle({ client: pool }), close: () => pool.end() };
 }
