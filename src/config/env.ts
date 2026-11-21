@@ -17,6 +17,10 @@ const EnvSchema = z.object({
     (value) => (value === '' ? undefined : value),
     z.coerce.number().int().min(1).default(30),
   ),
+  FACTORYDECK_COLLECT_INTERVAL_MINUTES: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.coerce.number().int().min(1).default(5),
+  ),
   CLAUDE_PROJECTS_DIR: z.preprocess(
     (value) =>
       typeof value === 'string' && value.trim() === '' ? undefined : value,

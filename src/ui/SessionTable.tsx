@@ -1,15 +1,10 @@
 import type { ReactElement } from 'react';
 import { Link, useNavigate } from 'react-router';
 import type { SessionSummary } from '../sessions/types.ts';
-import {
-  formatAgo,
-  formatCost,
-  formatDuration,
-  formatWorkItem,
-  orMissing,
-} from './format.ts';
+import { formatAgo, formatCost, formatDuration, orMissing } from './format.ts';
 import { SessionStateLabel } from './SessionStateLabel.tsx';
 import { TokenCount } from './TokenCount.tsx';
+import { WorkItemLink } from './WorkItemLink.tsx';
 
 export function sessionTitle({
   title,
@@ -85,7 +80,9 @@ export function SessionTable({
             </th>
             <td className="left">{row.project}</td>
             <td className="left">{orMissing(row.gitBranch)}</td>
-            <td>{formatWorkItem(row.workItem)}</td>
+            <td>
+              <WorkItemLink workItem={row.workItem} issue={row.issue} />
+            </td>
             <td>{formatAgo(row.lastAt, now)}</td>
             <td>{formatDuration(row.firstAt, row.lastAt)}</td>
             <td>

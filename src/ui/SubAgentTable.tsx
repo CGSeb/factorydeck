@@ -4,10 +4,10 @@ import {
   formatCost,
   formatDateTime,
   formatDuration,
-  formatWorkItem,
   orMissing,
 } from './format.ts';
 import { TokenCount } from './TokenCount.tsx';
+import { WorkItemLink } from './WorkItemLink.tsx';
 
 export function SubAgentTable({
   subAgents,
@@ -46,7 +46,9 @@ export function SubAgentTable({
               <tr key={agent.id}>
                 <th scope="row">{orMissing(agent.agentType)}</th>
                 <td className="left">{agent.role}</td>
-                <td>{formatWorkItem(agent.workItem)}</td>
+                <td>
+                  <WorkItemLink workItem={agent.workItem} issue={agent.issue} />
+                </td>
                 <td className="left">{orMissing(agent.description)}</td>
                 <td className="left">{orMissing(agent.model)}</td>
                 <td>{formatDateTime(agent.firstAt)}</td>

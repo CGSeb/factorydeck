@@ -1,5 +1,6 @@
 import { type SQL, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
+import { issueDetail, withIssues } from '../git-host/query.ts';
 import { periodStart, select } from '../overview/query.ts';
 import type { TokenCounts } from '../overview/types.ts';
 import { costOf } from '../pricing.ts';
@@ -118,7 +119,7 @@ function summaryOf(
   row: Row,
   usage: Usage,
   config: WorkflowConfig,
-): Omit<SessionSummary, 'tokens'> & { usage: Usage } {
+): Omit<SessionSummary, 'tokens' | 'issue'> & { usage: Usage } {
   const project = text(row['project']);
   const title = text(row['title']);
   const gitBranch = text(row['git_branch']);
@@ -150,6 +151,31 @@ async function usageOfSessions(db: Database, ids: string[]): Promise<Row[]> {
       )})
       group by a.session_id, a.model`,
   );
+}
+
+async function pageSummaries(
+  db: Database,
+  rows: Row[],
+  config: WorkflowConfig,
+): Promise<SessionSummary[]> {
+  const usages = usageBy(
+    await usageOfSessions(
+      db,
+      rows.map((row) => text(row['id'])),
+    ),
+    'session_id',
+  );
+  const summaries = await withIssues(
+    db,
+    rows.map((row) =>
+      summaryOf(row, usages.get(text(row['id'])) ?? emptyUsage(0), config),
+    ),
+    (row) => row.project,
+  );
+  return summaries.map(({ usage, ...summary }) => ({
+    ...summary,
+    tokens: totalTokens(usage.tokens),
+  }));
 }
 
 export async function listSessions(
@@ -189,23 +215,11 @@ export async function listSessions(
       sql`select project from session group by project order by project collate "C"`,
     ),
   ]);
-  const usageRows = await usageOfSessions(
-    db,
-    pageRows.map((row) => text(row['id'])),
-  );
-  const usages = usageBy(usageRows, 'session_id');
   const counts: StateCounts = { working: 0, waiting: 0, inactive: 0 };
   for (const row of countRows)
     counts[stateOf(row['state'])] = Number(row['sessions']);
   return {
-    sessions: pageRows.map((row) => {
-      const { usage, ...summary } = summaryOf(
-        row,
-        usages.get(text(row['id'])) ?? emptyUsage(0),
-        config,
-      );
-      return { ...summary, tokens: totalTokens(usage.tokens) };
-    }),
+    sessions: await pageSummaries(db, pageRows, config),
     total: Number(totalRows[0]?.['sessions'] ?? 0),
     counts,
     projects: projectRows.map((row) => text(row['project'])),
@@ -217,7 +231,7 @@ function subAgentsOf(
   usageRows: Row[],
   config: WorkflowConfig,
   summary: Pick<SessionSummary, 'project' | 'title' | 'workItem'>,
-): SubAgentSummary[] {
+): Omit<SubAgentSummary, 'issue'>[] {
   const byAgent = usageBy(usageRows, 'sub_agent');
   const rules = rulesFor(config, summary.project);
   return agentRows.map((agent) => {
@@ -277,9 +291,17 @@ export async function sessionDetail(
       'sub_agent',
     ).get('') ?? emptyUsage(0);
   const { usage, ...summary } = summaryOf(row, total, config);
-  const subAgents = subAgentsOf(agentRows, usageRows, config, summary);
+  const agents = subAgentsOf(agentRows, usageRows, config, summary);
+  const { project, workItem } = summary;
+  const [[main], subAgents, detail] = await Promise.all([
+    withIssues(db, [summary], () => project),
+    withIssues(db, agents, () => project),
+    workItem === null ? null : issueDetail(db, project, workItem),
+  ]);
   return {
     ...summary,
+    issue: main?.issue ?? null,
+    issueDetail: detail,
     cwd: typeof row['cwd'] === 'string' ? row['cwd'] : null,
     tokens: usage.tokens,
     subAgents,

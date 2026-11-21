@@ -39,10 +39,13 @@ pnpm install
 pnpm db:up              # PostgreSQL 18 in Docker, on 127.0.0.1:5434
 pnpm db:migrate
 pnpm ingest             # read new Claude Code session logs into the database
+pnpm collect            # read issues and pull or merge requests from each project's git host
 pnpm check
 ```
 
 `pnpm ingest` reads `~/.claude/projects` by default; set `CLAUDE_PROJECTS_DIR` in `.env` to read another folder. A second run only reads what is new.
+
+`pnpm collect` reads, for each project with the factory installed, the issues and pull (GitHub) or merge (GitLab) requests of the repository named in its `docs/agents/factory.yml` and git host commands file, through the `gh` or `glab` CLI (authenticated beforehand). FactoryDeck only reads the git host. The server also collects at start, then every `FACTORYDECK_COLLECT_INTERVAL_MINUTES` (default 5).
 
 Run FactoryDeck on `http://127.0.0.1:4317` (set `FACTORYDECK_PORT` in `.env` to change the port):
 

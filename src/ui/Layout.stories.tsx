@@ -11,6 +11,14 @@ import {
   factoryResponse,
   oldApp,
 } from './factory-fixtures.ts';
+import type { LoadCollection, RefreshCollection } from './git-host-api.ts';
+import {
+  appFailure,
+  collectionLoaderOf,
+  collectionResponse,
+  pendingRefresher,
+  refresherOf,
+} from './git-host-fixtures.ts';
 import { Layout } from './Layout.tsx';
 
 function at(path: string): Decorator {
@@ -32,6 +40,8 @@ const meta = {
   args: {
     loadFactory: factoryLoaderOf(factoryResponse()),
     deleteProject: deleterOf('deleted'),
+    loadCollection: collectionLoaderOf(collectionResponse(null)),
+    refreshCollection: refresherOf(collectionResponse()),
   },
 } satisfies Meta<typeof Layout>;
 
@@ -111,9 +121,13 @@ export const TwoProjectsWithoutFactory: Story = {
 function projectStore(initial: MissingFactory[]): {
   loadFactory: LoadFactory;
   deleteProject: DeleteProject;
+  loadCollection: LoadCollection;
+  refreshCollection: RefreshCollection;
 } {
   let missing = initial;
   return {
+    loadCollection: collectionLoaderOf(collectionResponse(null)),
+    refreshCollection: refresherOf(collectionResponse()),
     loadFactory: () =>
       Promise.resolve(factoryResponse(missing, missing.length > 0)),
     deleteProject: (project) => {
@@ -169,6 +183,88 @@ function loads(canvasElement: HTMLElement): number {
   const text = within(canvasElement).getByText(/^Page loaded/).textContent;
   return Number(/\d+/.exec(text)?.[0]);
 }
+
+export const NeverCollected: Story = {
+  decorators: [at('/')],
+  play: async ({ canvasElement }) => {
+    await expect(
+      await within(canvasElement).findByText('Issues not collected yet'),
+    ).toBeVisible();
+  },
+};
+
+export const CollectionError: Story = {
+  args: {
+    loadCollection: collectionLoaderOf(
+      collectionResponse(new Date().toISOString(), [appFailure]),
+    ),
+  },
+  decorators: [at('/')],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const banner = await canvas.findByRole('region', {
+      name: 'Factory configuration',
+    });
+    await expect(banner).toHaveTextContent(
+      'Could not read GitHub for example-app: gh not found.',
+    );
+    await expect(canvas.getByText('Issues updated just now')).toBeVisible();
+  },
+};
+
+export const RefreshStillRunning: Story = {
+  args: { refreshCollection: pendingRefresher() },
+  decorators: [at('/')],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Issues not collected yet');
+    await userEvent.click(canvas.getByRole('button', { name: 'Refresh' }));
+    await expect(
+      canvas.getByRole('button', { name: 'Refreshing…' }),
+    ).toBeDisabled();
+  },
+};
+
+function RefreshHarness(): ReactElement {
+  const [counter] = useState(() => ({ value: 0 }));
+  return (
+    <MountCounter.Provider value={counter}>
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route
+            element={
+              <Layout
+                loadFactory={factoryLoaderOf(factoryResponse())}
+                deleteProject={deleterOf('deleted')}
+                loadCollection={collectionLoaderOf(collectionResponse(null))}
+                refreshCollection={refresherOf(
+                  collectionResponse(new Date().toISOString()),
+                )}
+              />
+            }
+          >
+            <Route index element={<PageContent />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    </MountCounter.Provider>
+  );
+}
+
+export const RefreshReloadsThePage: Story = {
+  render: () => <RefreshHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Issues not collected yet');
+    const before = loads(canvasElement);
+    await userEvent.click(canvas.getByRole('button', { name: 'Refresh' }));
+    await canvas.findByText('Issues updated just now');
+    await expect(
+      canvas.getByRole('button', { name: 'Refresh' }),
+    ).not.toBeDisabled();
+    await waitFor(() => expect(loads(canvasElement)).toBeGreaterThan(before));
+  },
+};
 
 export const DeletingOneOfTwoProjects: Story = {
   render: () => <DeletionHarness initial={[archivedLib, oldApp]} />,

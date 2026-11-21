@@ -20,7 +20,12 @@ export const WithSubAgents: Story = {
     await expect(rows[0]).toHaveTextContent('TypeRoleWork itemDescription');
     await expect(rows[1]).toHaveTextContent('ExploreExplore#52');
     await expect(rows[1]).toHaveTextContent('2 min');
-    await expect(rows[2]).toHaveTextContent('general-purposebuilder#53');
+    await expect(rows[2]).toHaveTextContent(
+      'general-purposebuilder#53 (not found)',
+    );
+    await expect(
+      within(rows[1] ?? canvasElement).getByRole('link', { name: '#52' }),
+    ).toHaveAttribute('title', 'Export button');
     await expect(rows[3]).toHaveTextContent('unassigned#52');
     await expect(rows[3]).toHaveTextContent('45 min');
     await expect(canvas.getAllByText('—')).toHaveLength(4);

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { DeleteResult, FactoryStatus } from '../projects/types.ts';
-import { unusedRoles, unusedSkills } from '../test/skill-source.ts';
+import {
+  unusedRoles,
+  unusedSkills,
+  unusedGitHost,
+} from '../test/skill-source.ts';
 import { type OverviewSource, createApp } from './app.ts';
 import type { ProjectSource } from './project-routes.ts';
 import type { SessionSource } from './session-routes.ts';
@@ -51,6 +55,7 @@ function app(result: DeleteResult, checkDatabase = up) {
       skills: unusedSkills,
       roles: unusedRoles,
       projects,
+      gitHost: unusedGitHost,
     }),
   };
 }

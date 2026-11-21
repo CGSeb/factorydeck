@@ -9,6 +9,7 @@ import {
   isPeriod,
 } from '../overview/types.ts';
 import { apiContext, isTimeZone } from './api-context.ts';
+import { type GitHostSource, gitHostRoutes } from './git-host-routes.ts';
 import type { DatabaseCheck } from './health.ts';
 import { type ProjectSource, projectRoutes } from './project-routes.ts';
 import { type RoleSource, roleRoutes } from './role-routes.ts';
@@ -31,6 +32,7 @@ export interface AppOptions {
   skills: SkillSource;
   roles: RoleSource;
   projects: ProjectSource;
+  gitHost: GitHostSource;
 }
 
 /** The FactoryDeck HTTP app: the JSON API under `/api/`, the UI everywhere else. */
@@ -42,6 +44,7 @@ export function createApp({
   skills,
   roles,
   projects,
+  gitHost,
 }: AppOptions): Hono {
   const app = new Hono();
   const context = apiContext(
@@ -78,6 +81,7 @@ export function createApp({
   app.route('/api/skills', skillRoutes(skills, context));
   app.route('/api/roles', roleRoutes(roles, context));
   app.route('/api/projects', projectRoutes(projects, context));
+  app.route('/api/git-host', gitHostRoutes(gitHost, context));
   app.all('/api/*', (c) => c.json({ error: 'Not found' }, 404));
 
   if (!existsSync(join(uiDir, 'index.html'))) {
