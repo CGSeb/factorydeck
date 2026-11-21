@@ -2,7 +2,9 @@
 
 A local-first, open-source dashboard for an AI agent software factory.
 
-Token dashboards for Claude Code stop at sessions. FactoryDeck links what your agents spend to the work they deliver: cost per issue and per role (spec check, build, review, ship), review rounds, merge outcomes and the frictions worth fixing in your next retro.
+Token dashboards for Claude Code stop at sessions. FactoryDeck links what your agents spend to the work they deliver: cost per issue and per role, review rounds, merge outcomes and the frictions worth fixing in your next retro.
+
+It works with any project and any agent workflow. Point it at your own Claude Code sessions and repositories: nothing assumes a particular codebase, set of roles or labelling scheme.
 
 > Status: early development. Nothing to install yet.
 
@@ -13,6 +15,16 @@ Token dashboards for Claude Code stop at sessions. FactoryDeck links what your a
 - **Show** three views: cost per feature, overview by day, project and model, and frictions (tool errors, refusals, failed checks, context peaks).
 
 Everything stays on your machine.
+
+## Your workflow, your vocabulary
+
+Every team splits agent work differently. FactoryDeck reads your workflow from configuration instead of guessing it:
+
+- **Roles**: how to recognise a role (planner, builder, reviewer, shipper, or your own) from a sub-agent's description or type.
+- **Work items**: how to find the issue or pull request a session works on (for example `#52` in a sub-agent description, or a branch name).
+- **Outcomes**: which GitHub labels, checks or comments mean "merged", "needs rework" or a quality score.
+
+Sessions that match no rule still count, under an "unassigned" role, so the totals are always complete.
 
 ## Development
 
