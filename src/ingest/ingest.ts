@@ -156,7 +156,12 @@ async function ingestFile(
     if (agentRow === undefined) {
       resetSession(sessionRow);
     } else {
-      Object.assign(agentRow, { firstAt: null, lastAt: null, cwd: null });
+      Object.assign(agentRow, {
+        firstAt: null,
+        lastAt: null,
+        cwd: null,
+        gitBranch: '',
+      });
     }
   }
   const { records, skipped, consumed } = parseLines(chunk);
@@ -171,7 +176,7 @@ async function ingestFile(
     agentRow ?? sessionRow,
     agentRow === undefined ? sessionRow : undefined,
   );
-  keepFirstCwd(agentRow, rows.cwd);
+  keepCwd(agentRow, rows);
   const inserted = await insertThreadRows(run, file.sessionId, rows);
   Object.assign(counts, {
     linesSkipped: counts.linesSkipped + skipped + rows.skipped,
@@ -184,13 +189,15 @@ async function ingestFile(
   });
 }
 
-function keepFirstCwd(
-  agent: { cwd: string | null } | undefined,
-  cwd: string | null,
+function keepCwd(
+  agent: { cwd: string | null; gitBranch: string } | undefined,
+  rows: { cwd: string | null; gitBranch: string | null },
 ): void {
-  if (agent !== undefined && agent.cwd === null) {
-    agent.cwd = cwd;
+  if (agent === undefined) {
+    return;
   }
+  agent.cwd ??= rows.cwd;
+  agent.gitBranch = rows.gitBranch ?? agent.gitBranch;
 }
 
 /** Reads the meta file of a sub-agent when it is new or changed. */
