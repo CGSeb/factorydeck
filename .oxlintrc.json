@@ -7,7 +7,7 @@
   "env": {
     "es2024": true
   },
-  "ignorePatterns": ["coverage/**", "dist/**"],
+  "ignorePatterns": ["coverage/**", "dist/**", "storybook-static/**"],
   "rules": {
     "no-var": "error",
     "prefer-const": "error",
