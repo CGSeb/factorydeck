@@ -15,7 +15,7 @@ A developer sees at a glance which of their agent sessions are working, which ar
 - [x] Rows are sorted by last activity, most recent first.
 - [x] The state is one of `Working`, `Waiting for you` or `Inactive` (see Rules), shown as a coloured label with its text; counts of each state are shown above the list, such as `2 working · 1 waiting for you · 41 inactive`.
 - [x] Filters: project (a list of the projects that have sessions, plus `All projects`, default) and state (`All`, `Working`, `Waiting for you`, `Inactive`; default `All`). The period selector of spec 003 applies, on last activity. Filters are kept in the URL.
-- [x] The list shows 50 rows, then a `Show more` button adds the next 50.
+- [x] The list shows 50 rows, then a `Show more` button adds the next 50, up to 500 rows: once 500 rows are shown, `Show more` is no longer offered, and the API rejects a request for more than 500 rows.
 - [x] Clicking a row opens `/sessions/<session id>` with: the session header (title, state, project, working directory, branch, first and last activity, tokens with their four kinds, cost), and a table of its sub-agents with type, description, model, first activity, duration, tokens and cost, in start order. A session without sub-agents shows `No sub-agents.`
 - [x] An unknown session id shows `Session not found.` with a link back to the list.
 - [x] States, times and figures refresh with each re-ingestion of spec 003, without a reload.
