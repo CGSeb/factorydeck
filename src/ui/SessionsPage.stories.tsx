@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { ReactElement } from 'react';
+import { type ReactElement, useState } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import {
@@ -8,6 +8,7 @@ import {
   manySessions,
   sessionList,
   someSessions,
+  syntheticSessions,
   workingSession,
 } from './session-fixtures.ts';
 import type { LoadSessions } from './sessions-api.ts';
@@ -110,10 +111,8 @@ export const DatabaseUnreachable: Story = {
 
 function refreshingLoader(): LoadSessions {
   let calls = 0;
-  let lastCall = 0;
   return (filters, limit) => {
-    calls = Date.now() - lastCall > 1000 ? 1 : calls + 1;
-    lastCall = Date.now();
+    calls += 1;
     const session =
       calls === 1
         ? workingSession
@@ -125,8 +124,14 @@ function refreshingLoader(): LoadSessions {
   };
 }
 
+function Refreshing(): ReactElement {
+  const [load] = useState(refreshingLoader);
+  return <SessionsPage loadSessions={load} />;
+}
+
 export const RefreshesWithoutReload: Story = {
   args: { loadSessions: refreshingLoader() },
+  render: () => <Refreshing />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByText('1 working · 0 waiting for you · 0 inactive');
@@ -161,5 +166,23 @@ export const NoStaleRowsFromAnotherFilter: Story = {
     await canvas.findByText('Loading…');
     await expect(canvas.queryByRole('table')).toBeNull();
     await waitFor(() => expect(canvas.getAllByRole('row')).toHaveLength(76));
+  },
+};
+
+export const CappedAtFiveHundredRows: Story = {
+  args: { loadSessions: listLoader(syntheticSessions(600)) },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('0 working · 0 waiting for you · 600 inactive');
+    for (let shown = 50; shown < 500; shown += 50) {
+      await waitFor(() =>
+        expect(canvas.getAllByRole('row')).toHaveLength(shown + 1),
+      );
+      await userEvent.click(canvas.getByRole('button', { name: 'Show more' }));
+    }
+    await waitFor(() => expect(canvas.getAllByRole('row')).toHaveLength(501));
+    await expect(
+      canvas.queryByRole('button', { name: 'Show more' }),
+    ).toBeNull();
   },
 };

@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { isPeriod } from '../overview/types.ts';
 import {
+  SESSION_MAX_ROWS,
   SESSION_PAGE_SIZE,
   type SessionDetail,
   type SessionList,
@@ -29,7 +30,8 @@ function listQuery(
     !isTimeZone(timeZone) ||
     (state !== undefined && !isSessionState(state)) ||
     !Number.isSafeInteger(limit) ||
-    limit < 1
+    limit < 1 ||
+    limit > SESSION_MAX_ROWS
   ) {
     return undefined;
   }

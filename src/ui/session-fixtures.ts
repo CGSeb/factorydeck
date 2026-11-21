@@ -112,6 +112,10 @@ export function listLoader(sessions: SessionSummary[]): LoadSessions {
 
 export const someSessions = [workingSession, waitingSession, inactiveSession];
 
+export function syntheticSessions(count: number): SessionSummary[] {
+  return Array.from({ length: count }, (_, index) => generated(index + 1));
+}
+
 export const manySessions = [
   ...someSessions,
   ...Array.from({ length: 72 }, (_, index) => generated(index + 1)),

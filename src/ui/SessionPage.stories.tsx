@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { type ReactElement, useState } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { expect, userEvent, within } from 'storybook/test';
 import {
@@ -13,10 +14,8 @@ import { SessionPage } from './SessionPage.tsx';
 
 function refreshingLoader(): LoadSession {
   let calls = 0;
-  let lastCall = 0;
   return () => {
-    calls = Date.now() - lastCall > 1000 ? 1 : calls + 1;
-    lastCall = Date.now();
+    calls += 1;
     const session =
       calls === 1
         ? sessionWithSubAgents
@@ -27,6 +26,11 @@ function refreshingLoader(): LoadSession {
           };
     return Promise.resolve({ ...detailResponse(session), refreshSeconds: 0.2 });
   };
+}
+
+function Refreshing(): ReactElement {
+  const [load] = useState(refreshingLoader);
+  return <SessionPage loadSession={load} />;
 }
 
 const meta = {
@@ -99,6 +103,7 @@ export const DatabaseUnreachable: Story = {
 
 export const RefreshesWithoutReload: Story = {
   args: { loadSession: refreshingLoader() },
+  render: () => <Refreshing />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByText('~$6.42');

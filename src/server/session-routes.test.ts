@@ -83,11 +83,20 @@ describe('GET /api/sessions', () => {
     });
   });
 
+  it('accepts a limit of up to 500 rows', async () => {
+    const response = await app.request(
+      '/api/sessions?period=7d&tz=UTC&limit=500',
+    );
+    expect(response.status).toBe(200);
+    expect(sessionQueries.at(-1)).toMatchObject({ limit: 500 });
+  });
+
   it('answers 400 for an invalid query', async () => {
     for (const query of [
       '',
       '?period=7d&tz=UTC&state=asleep',
       '?period=7d&tz=UTC&limit=0',
+      '?period=7d&tz=UTC&limit=501',
       '?period=7d&tz=UTC&limit=many',
     ]) {
       expect((await app.request(`/api/sessions${query}`)).status).toBe(400);

@@ -10,6 +10,8 @@ export function isSessionState(value: unknown): value is SessionState {
 
 export const SESSION_PAGE_SIZE = 50;
 
+export const SESSION_MAX_ROWS = 500;
+
 export interface SessionSummary {
   id: string;
   title: string;

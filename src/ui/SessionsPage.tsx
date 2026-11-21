@@ -2,6 +2,7 @@ import { type ReactElement, useEffect, useId, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { DEFAULT_PERIOD, type Period, isPeriod } from '../overview/types.ts';
 import {
+  SESSION_MAX_ROWS,
   SESSION_PAGE_SIZE,
   SESSION_STATES,
   type SessionListResponse,
@@ -69,11 +70,12 @@ function SessionsContent({
           <SessionTable sessions={list.sessions} now={new Date()} />
         </section>
       )}
-      {list.sessions.length < list.total && (
-        <button type="button" className="show-more" onClick={onMore}>
-          Show more
-        </button>
-      )}
+      {list.sessions.length < list.total &&
+        list.sessions.length < SESSION_MAX_ROWS && (
+          <button type="button" className="show-more" onClick={onMore}>
+            Show more
+          </button>
+        )}
     </>
   );
 }
@@ -215,7 +217,12 @@ export function SessionsPage({
       />
       <SessionsContent
         response={response}
-        onMore={() => setShown({ filterKey, limit: limit + SESSION_PAGE_SIZE })}
+        onMore={() =>
+          setShown({
+            filterKey,
+            limit: Math.min(limit + SESSION_PAGE_SIZE, SESSION_MAX_ROWS),
+          })
+        }
       />
     </div>
   );
