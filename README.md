@@ -11,7 +11,7 @@ It works with any project and any agent workflow. Point it at your own Claude Co
 ## How it works
 
 - **Ingest** Claude Code session logs (`~/.claude/projects/**/*.jsonl`, including sub-agents) into a local PostgreSQL database, incrementally.
-- **Only factory projects**: FactoryDeck only reads the sessions of projects where the factory is installed, that is with a `docs/agents/factory.yml` file at their root; your other Claude Code sessions are skipped. To install it in a project, follow the [factorydeck-skills install steps](https://github.com/CGSeb/factorydeck-skills#install), then run `/setup-factory` in the project. Its earlier sessions are read at the next ingestion.
+- **Only factory projects**: FactoryDeck only reads the sessions of projects where the factory is installed, that is with a `docs/agents/factory.yml` file at their root; your other sessions are skipped. To install it in a project, follow the [factorydeck-skills install steps](https://github.com/CGSeb/factorydeck-skills#install), then run `/setup-factory` in the project. Its earlier sessions are read at the next ingestion.
 - **Collect** issues, pull requests and labels from GitHub with `gh`.
 - **Show** three views: cost per feature, overview by day, project and model, and frictions (tool errors, refusals, failed checks, context peaks).
 

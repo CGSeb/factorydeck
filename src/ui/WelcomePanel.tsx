@@ -11,17 +11,19 @@ export function WelcomePanel(): ReactElement {
       </p>
       <ol>
         <li>
-          Install the plugin in Claude Code:{' '}
-          <code>/plugin marketplace add CGSeb/factorydeck-skills</code>, then{' '}
-          <code>/plugin install factorydeck-skills@factorydeck</code>.
+          Install factorydeck-skills in your coding agent: see the{' '}
+          <a href="https://github.com/CGSeb/factorydeck-skills#install">
+            install steps
+          </a>
+          .
         </li>
         <li>
           In your project, run <code>/setup-factory</code>. It writes{' '}
           <code>docs/agents/factory.yml</code>.
         </li>
         <li>
-          Work in that project with Claude Code. FactoryDeck finds it at its
-          next ingestion, earlier sessions included.
+          Work in that project with your coding agent. FactoryDeck finds it at
+          its next ingestion, earlier sessions included.
         </li>
       </ol>
     </section>

@@ -6,7 +6,7 @@ Checked: 2026-11-21
 
 ## User goal
 
-A developer sees in FactoryDeck only the projects where the factory is installed, without the noise of their other Claude Code sessions. When no project has it yet, every page explains how to install it in a project. A project that lost its factory configuration, such as one no longer used, can be deleted from FactoryDeck in one confirmed step.
+A developer sees in FactoryDeck only the projects where the factory is installed, without the noise of their other sessions. When no project has it yet, every page explains how to install it in a project. A project that lost its factory configuration, such as one no longer used, can be deleted from FactoryDeck in one confirmed step.
 
 ## Acceptance criteria
 
@@ -22,7 +22,7 @@ A developer sees in FactoryDeck only the projects where the factory is installed
 - [x] If the deletion fails, the dialog stays open, nothing is deleted, and it shows `Could not delete <project name>. Try again.`
 - [x] The API refuses (HTTP 409, nothing deleted) to delete a project whose `docs/agents/factory.yml` is found again at the time of the request, and the dialog shows `<project name> has its factory configuration again, so it was not deleted.`; an unknown project gets HTTP 404 and the dialog shows `<project name> is no longer in FactoryDeck.` and closes at the next refresh.
 - [x] When the database holds no session, every page (`Overview`, `Sessions`, `Skills`, `Roles`, and a session or skill page) shows the welcome panel instead of its content; it replaces the `No sessions yet.` message of spec 003.
-- [x] The welcome panel reads: heading `Install the factory in a project`, then `FactoryDeck shows the projects that use the factorydeck-skills workflow. None of yours does yet.`, then three numbered steps: `Install the plugin in Claude Code: /plugin marketplace add CGSeb/factorydeck-skills, then /plugin install factorydeck-skills@factorydeck.`, `In your project, run /setup-factory. It writes docs/agents/factory.yml.`, `Work in that project with Claude Code. FactoryDeck finds it at its next ingestion, earlier sessions included.` The commands are shown as code and can be selected and copied.
+- [x] The welcome panel reads: heading `Install the factory in a project`, then `FactoryDeck shows the projects that use the factorydeck-skills workflow. None of yours does yet.`, then three numbered steps: `Install factorydeck-skills in your coding agent: see the install steps.`, where `install steps` links to https://github.com/CGSeb/factorydeck-skills#install, `In your project, run /setup-factory. It writes docs/agents/factory.yml.`, `Work in that project with your coding agent. FactoryDeck finds it at its next ingestion, earlier sessions included.` The commands are shown as code and can be selected and copied.
 - [x] The welcome panel disappears without a reload at the first ingestion that stores a session.
 - [x] The project filters of specs 004 to 006 list only projects with stored sessions, so they never offer a project without the factory that was never ingested.
 

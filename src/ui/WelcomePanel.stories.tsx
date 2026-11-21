@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, within } from 'storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 import { WelcomePanel } from './WelcomePanel.tsx';
 
 const meta = {
@@ -18,19 +18,21 @@ export const Default: Story = {
     ).toBeVisible();
     const steps = canvas.getAllByRole('listitem');
     await expect(steps.map((step) => step.textContent)).toEqual([
-      'Install the plugin in Claude Code: /plugin marketplace add CGSeb/factorydeck-skills, then /plugin install factorydeck-skills@factorydeck.',
+      'Install factorydeck-skills in your coding agent: see the install steps.',
       'In your project, run /setup-factory. It writes docs/agents/factory.yml.',
-      'Work in that project with Claude Code. FactoryDeck finds it at its next ingestion, earlier sessions included.',
+      'Work in that project with your coding agent. FactoryDeck finds it at its next ingestion, earlier sessions included.',
     ]);
+    const link = canvas.getByRole('link', { name: 'install steps' });
+    await expect(link).toHaveAttribute(
+      'href',
+      'https://github.com/CGSeb/factorydeck-skills#install',
+    );
+    await userEvent.tab();
+    await expect(link).toHaveFocus();
     await expect(
       [...canvasElement.querySelectorAll('code')].map(
         (code) => code.textContent,
       ),
-    ).toEqual([
-      '/plugin marketplace add CGSeb/factorydeck-skills',
-      '/plugin install factorydeck-skills@factorydeck',
-      '/setup-factory',
-      'docs/agents/factory.yml',
-    ]);
+    ).toEqual(['/setup-factory', 'docs/agents/factory.yml']);
   },
 };
