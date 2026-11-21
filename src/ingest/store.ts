@@ -201,11 +201,6 @@ async function earlierSlashSkills(
   );
 }
 
-/**
- * Gives a session whose main log has no working directory the working directory and git branch
- * of its first sub-agent that has one, read from the stored sub-agents so that they survive a
- * re-read of either log.
- */
 async function useSubAgentCwds(run: Run, rows: SessionRow[]): Promise<void> {
   for (const row of rows.filter((candidate) => !candidate.cwdFromMain)) {
     const [first] = await run.tx

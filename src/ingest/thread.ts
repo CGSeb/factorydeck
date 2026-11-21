@@ -57,7 +57,6 @@ export interface ThreadRows {
   skipped: number;
   /** First working directory of the records, for a session whose main log has none. */
   cwd: string | null;
-  /** `gitBranch` of the last record carrying a working directory, or null when none does. */
   gitBranch: string | null;
 }
 

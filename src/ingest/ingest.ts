@@ -189,7 +189,6 @@ async function ingestFile(
   });
 }
 
-/** Keeps a sub-agent's first working directory and the branch of its last one. */
 function keepCwd(
   agent: { cwd: string | null; gitBranch: string } | undefined,
   rows: { cwd: string | null; gitBranch: string | null },
