@@ -4,11 +4,11 @@ Local-first dashboard for an AI agent software factory. See `README.md`.
 
 ## Universal by design
 
-FactoryDeck is a public tool for anyone's projects and sessions.
+FactoryDeck is a public tool for anyone's projects and sessions. It reads only the projects where the factorydeck-skills factory is installed (`docs/agents/factory.yml` at the project root, spec 007); every other session is skipped.
 
-- Never hard-code a project, repository, path, role name, label, issue pattern or workflow step. Anything workflow-specific comes from user configuration, with sensible defaults that work on a plain Claude Code setup.
+- Never hard-code a project, repository, path, role name, label, issue pattern or workflow step. Anything workflow-specific comes from user configuration, with sensible defaults that work on any project where the factory is installed.
 - Never ship real session data, costs or project names in code, tests, fixtures or docs: use small synthetic examples.
-- Data that does not match the configuration is still counted (as "unassigned"), never dropped.
+- Inside a factory project, data that does not match the configuration is still counted (as "unassigned"), never dropped.
 
 ## Conventions
 
