@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import type { SessionDetail, SessionList } from '../sessions/types.ts';
 import { type OverviewSource, createApp } from './app.ts';
 import type { SessionSource } from './session-routes.ts';
-import { unusedRoles, unusedSkills } from '../test/skill-source.ts';
+import {
+  unusedRoles,
+  unusedSkills,
+  unusedProjects,
+} from '../test/skill-source.ts';
 
 const builtUi = '/nonexistent/factorydeck-ui';
 const up = (): Promise<boolean> => Promise.resolve(true);
@@ -55,6 +59,7 @@ describe('GET /api/sessions', () => {
     sessions: sessionSource,
     skills: unusedSkills,
     roles: unusedRoles,
+    projects: unusedProjects,
   });
 
   it('answers the filtered list with the ingestion facts', async () => {
@@ -116,6 +121,7 @@ describe('GET /api/sessions', () => {
       sessions: sessionSource,
       skills: unusedSkills,
       roles: unusedRoles,
+      projects: unusedProjects,
     }).request('/api/sessions?period=7d&tz=UTC');
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({
@@ -133,6 +139,7 @@ describe('GET /api/sessions/:id', () => {
     sessions: sessionSource,
     skills: unusedSkills,
     roles: unusedRoles,
+    projects: unusedProjects,
   });
 
   it('answers the session', async () => {

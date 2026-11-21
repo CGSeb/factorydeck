@@ -14,7 +14,7 @@ interface Call {
 interface DemoSession {
   id: string;
   folder: string;
-  cwd: string | undefined;
+  project: string | undefined;
   gitBranch: string;
   startsAgo: number;
   prompt: string;
@@ -45,13 +45,16 @@ const unknownPrice: Call = {
   model: 'example-model-x',
   tokens: [300, 2_000, 10_000, 700],
 };
+export const EXAMPLE_APP = 'example-app';
+export const EXAMPLE_API = 'example-api';
+
 const noModel: Call = { model: undefined, tokens: [200, 1_000, 5_000, 300] };
 
 export const DEMO_SESSIONS: readonly DemoSession[] = [
   ...[9, 6, 4, 3, 2, 1].map((days, index) => ({
     id: `demo-app-${String(index + 1)}`,
     folder: '-demo-example-app',
-    cwd: '/demo/example-app',
+    project: EXAMPLE_APP,
     gitBranch: `feat/00${String(index + 1)}-demo`,
     startsAgo: days * DAY + 2 * HOUR,
     prompt: `Build issue #${String(index + 11)}`,
@@ -86,7 +89,7 @@ export const DEMO_SESSIONS: readonly DemoSession[] = [
   {
     id: 'demo-app-web',
     folder: '-demo-example-app',
-    cwd: '/demo/example-app',
+    project: EXAMPLE_APP,
     gitBranch: 'main',
     startsAgo: 8 * DAY,
     prompt: 'Fix the layout',
@@ -95,7 +98,7 @@ export const DEMO_SESSIONS: readonly DemoSession[] = [
   ...[7, 2].map((days, index) => ({
     id: `demo-api-${String(index + 1)}`,
     folder: '-demo-example-api',
-    cwd: '/demo/example-api',
+    project: EXAMPLE_API,
     gitBranch: `fix/${String(index + 21)}-endpoint`,
     startsAgo: days * DAY + 4 * HOUR,
     prompt: 'Add an endpoint',
@@ -112,7 +115,7 @@ export const DEMO_SESSIONS: readonly DemoSession[] = [
   {
     id: 'demo-unassigned',
     folder: '-demo-scratch',
-    cwd: undefined,
+    project: undefined,
     gitBranch: '',
     startsAgo: 3 * DAY + 6 * HOUR,
     prompt: 'Explain this error',
@@ -121,7 +124,7 @@ export const DEMO_SESSIONS: readonly DemoSession[] = [
   {
     id: 'demo-today',
     folder: '-demo-example-app',
-    cwd: '/demo/example-app',
+    project: EXAMPLE_APP,
     gitBranch: 'feat/007-demo',
     startsAgo: 20 * 60_000,
     prompt: 'Review the branch',
@@ -158,9 +161,14 @@ function callLines(
   });
 }
 
+interface Clock {
+  now: number;
+  projects: string;
+}
+
 function contextOf(
   session: DemoSession,
-  now: number,
+  { now, projects }: Clock,
   thread: string,
   sidechain: boolean,
 ): (step: number) => Line {
@@ -170,14 +178,17 @@ function contextOf(
     timestamp: new Date(start + step * 60_000).toISOString(),
     sessionId: session.id,
     isSidechain: sidechain,
-    ...(session.cwd === undefined
+    ...(session.project === undefined
       ? {}
-      : { cwd: session.cwd, gitBranch: session.gitBranch }),
+      : {
+          cwd: join(projects, session.project),
+          gitBranch: session.gitBranch,
+        }),
   });
 }
 
-function linesOf(session: DemoSession, now: number): Line[] {
-  const context = contextOf(session, now, session.id, false);
+function linesOf(session: DemoSession, clock: Clock): Line[] {
+  const context = contextOf(session, clock, session.id, false);
   return [
     {
       type: 'custom-title',
@@ -197,10 +208,10 @@ function linesOf(session: DemoSession, now: number): Line[] {
 function subAgentLines(
   session: DemoSession,
   agent: DemoSubAgent,
-  now: number,
+  clock: Clock,
 ): Line[] {
   const thread = `${session.id}-${agent.id}`;
-  const context = contextOf(session, now, thread, true);
+  const context = contextOf(session, clock, thread, true);
   return [
     {
       type: 'user',
@@ -215,23 +226,43 @@ function jsonLines(lines: readonly Line[]): string {
   return `${lines.map((line) => JSON.stringify(line)).join('\n')}\n`;
 }
 
+export function demoProjectRoot(projects: string, name: string): string {
+  return join(projects, name);
+}
+
+export async function installDemoFactory(
+  projects: string,
+  name: string,
+): Promise<void> {
+  const folder = join(demoProjectRoot(projects, name), 'docs', 'agents');
+  await mkdir(folder, { recursive: true });
+  await writeFile(join(folder, 'factory.yml'), 'version: 2\n');
+}
+
 export async function writeDemoSessions(
   folder: string,
   now: Date,
+  projects: string,
+  { factory = true }: { factory?: boolean } = {},
 ): Promise<void> {
+  const clock: Clock = { now: now.getTime(), projects };
+  for (const name of [EXAMPLE_APP, EXAMPLE_API]) {
+    await mkdir(demoProjectRoot(projects, name), { recursive: true });
+    if (factory) await installDemoFactory(projects, name);
+  }
   for (const session of DEMO_SESSIONS) {
     const dir = join(folder, session.folder);
     await mkdir(dir, { recursive: true });
     await writeFile(
       join(dir, `${session.id}.jsonl`),
-      jsonLines(linesOf(session, now.getTime())),
+      jsonLines(linesOf(session, clock)),
     );
     const agents = join(dir, session.id, 'subagents');
     for (const agent of session.subAgents ?? []) {
       await mkdir(agents, { recursive: true });
       await writeFile(
         join(agents, `agent-${agent.id}.jsonl`),
-        jsonLines(subAgentLines(session, agent, now.getTime())),
+        jsonLines(subAgentLines(session, agent, clock)),
       );
       await writeFile(
         join(agents, `agent-${agent.id}.meta.json`),
@@ -244,9 +275,10 @@ export async function writeDemoSessions(
   }
 }
 
-export const DEMO_PROJECT_OVERRIDE = `
+export function demoProjectOverride(projects: string): string {
+  return `
 projects:
-  /demo/example-api:
+  ${demoProjectRoot(projects, EXAMPLE_API)}:
     roles:
       - name: api-builder
         description: '^Add '
@@ -254,11 +286,13 @@ projects:
       - from: branch
         pattern: '^[a-z]+/(\\d+)-'
 `;
+}
 
 export async function writeDemoConfig(
   examplePath: string,
   path: string,
+  projects: string,
 ): Promise<void> {
   const example = await readFile(examplePath, 'utf8');
-  await writeFile(path, `${example}${DEMO_PROJECT_OVERRIDE}`);
+  await writeFile(path, `${example}${demoProjectOverride(projects)}`);
 }

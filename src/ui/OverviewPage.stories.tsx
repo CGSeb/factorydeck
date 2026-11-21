@@ -59,9 +59,9 @@ export const Empty: Story = {
   args: { loadOverview: fixedLoader(() => okResponse(emptyOverview)) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText(
-      'No sessions yet. FactoryDeck reads /home/dev/.claude/projects.',
-    );
+    await canvas.findByRole('heading', {
+      name: 'Install the factory in a project',
+    });
     await expect(canvas.queryByText('Cost')).toBeNull();
     await userEvent.click(canvas.getByRole('button', { name: 'All time' }));
     await pressed(canvasElement, 'All time');

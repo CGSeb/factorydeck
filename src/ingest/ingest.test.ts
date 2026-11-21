@@ -19,6 +19,7 @@ import {
   toolResult,
   userText,
   writeLog,
+  EVERY_PROJECT_HAS_FACTORY,
 } from '../test/session-logs.ts';
 import { SessionsFolderNotFoundError, ingest, summaryLine } from './ingest.ts';
 
@@ -131,7 +132,7 @@ async function writeSubAgent(id: string, withMeta: boolean): Promise<void> {
 describe('ingest', () => {
   it('stores a session with its fields', async () => {
     await writeMainSession();
-    await ingest(db, folder);
+    await ingest(db, folder, EVERY_PROJECT_HAS_FACTORY);
     const [row] = await db.select().from(session);
     expect(row).toMatchObject({
       id: SESSION,
@@ -147,7 +148,7 @@ describe('ingest', () => {
 
   it('stores one API call per request, without synthetic records', async () => {
     await writeMainSession();
-    await ingest(db, folder);
+    await ingest(db, folder, EVERY_PROJECT_HAS_FACTORY);
     const calls = await db.select().from(apiCall).orderBy(asc(apiCall.at));
     expect(
       calls.map((call) => [
@@ -169,7 +170,7 @@ describe('ingest', () => {
 
   it('stores Skill calls and slash skills, not built-in commands', async () => {
     await writeMainSession();
-    await ingest(db, folder);
+    await ingest(db, folder, EVERY_PROJECT_HAS_FACTORY);
     const launches = await db
       .select()
       .from(skillLaunch)
@@ -184,7 +185,7 @@ describe('ingest', () => {
 
   it('stores a marker for each typed prompt, without its text', async () => {
     await writeMainSession();
-    await ingest(db, folder);
+    await ingest(db, folder, EVERY_PROJECT_HAS_FACTORY);
     const prompts = await db
       .select()
       .from(userPrompt)
@@ -203,7 +204,7 @@ describe('ingest', () => {
     await writeMainSession();
     await writeSubAgent('a1', true);
     await writeSubAgent('a2', false);
-    const result = await ingest(db, folder);
+    const result = await ingest(db, folder, EVERY_PROJECT_HAS_FACTORY);
     const agents = await db.select().from(subAgent).orderBy(asc(subAgent.id));
     expect(agents).toEqual([
       {
@@ -251,11 +252,11 @@ describe('ingest', () => {
     ).toEqual(['kit:check']);
     expect(await db.select().from(userPrompt)).toHaveLength(3);
     expect(summaryLine(result)).toBe(
-      'Ingested 4 files: 1 sessions, 2 sub-agents, 4 API calls, 4 skill launches, 0 lines skipped.',
+      'Ingested 4 files: 1 sessions, 2 sub-agents, 4 API calls, 4 skill launches, 0 lines skipped, 0 sessions skipped (no factory).',
     );
   });
 
-  it('puts a session without a working directory in unassigned', async () => {
+  it('skips a session without a working directory', async () => {
     await writeLog(join(folder, 'p', 'lonely.jsonl'), [
       {
         type: 'user',
@@ -265,15 +266,12 @@ describe('ingest', () => {
       },
       assistant({ uuid: 'y', at: 1 }, { requestId: 'r' }),
     ]);
-    await ingest(db, folder);
-    const [row] = await db.select().from(session);
-    expect(row).toMatchObject({
-      id: 'lonely',
-      project: 'unassigned',
-      cwd: null,
-      gitBranch: '',
-    });
-    expect(await db.select().from(apiCall)).toHaveLength(1);
+    const result = await ingest(db, folder, EVERY_PROJECT_HAS_FACTORY);
+    expect(summaryLine(result)).toBe(
+      'Ingested 0 files: 0 sessions, 0 sub-agents, 0 API calls, 0 skill launches, 0 lines skipped, 1 sessions skipped (no factory).',
+    );
+    expect(await db.select().from(session)).toEqual([]);
+    expect(await db.select().from(apiCall)).toEqual([]);
   });
 
   it('fails on a sessions folder that does not exist', async () => {

@@ -1,0 +1,199 @@
+import { mkdir, realpath, rm } from 'node:fs/promises';
+import { join } from 'node:path';
+import { sql } from 'drizzle-orm';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { Database } from '../db/client.ts';
+import {
+  apiCall,
+  session,
+  skillLaunch,
+  sourceFile,
+  subAgent,
+  userPrompt,
+} from '../db/schema.ts';
+import { factoryFile, hasFactory } from '../ingest/factory.ts';
+import { LOCK_KEY, ingest, summaryLine } from '../ingest/ingest.ts';
+import { createTestDatabase } from '../test/postgres.ts';
+import {
+  assistant,
+  installFactory,
+  sessionsFolder,
+  skillCall,
+  userText,
+  writeLog,
+} from '../test/session-logs.ts';
+import { deleteProject, factoryStatus } from './remove.ts';
+
+let db: Database;
+let close: () => Promise<void>;
+let logs: string;
+let work: string;
+
+beforeEach(async () => {
+  ({ db, close } = await createTestDatabase());
+  logs = await sessionsFolder();
+  work = await realpath(await sessionsFolder());
+});
+
+afterEach(async () => {
+  await close();
+});
+
+async function factoryProject(name: string): Promise<string> {
+  const root = join(work, name);
+  await mkdir(root, { recursive: true });
+  await installFactory(root);
+  return root;
+}
+
+async function writeSession(id: string, cwd: string): Promise<void> {
+  const ctx = (n: number, sidechain = false) => ({
+    uuid: `${id}-${String(n)}`,
+    at: n,
+    cwd,
+    sidechain,
+  });
+  await writeLog(join(logs, 'p', `${id}.jsonl`), [
+    userText(ctx(0), 'Build it'),
+    assistant(ctx(1), { requestId: `${id}-1`, content: [skillCall('kit:a')] }),
+  ]);
+  const agents = join(logs, 'p', id, 'subagents');
+  await writeLog(join(agents, 'agent-x.jsonl'), [
+    assistant(ctx(2, true), {
+      requestId: `${id}-2`,
+      content: [skillCall('kit:b')],
+    }),
+  ]);
+  await writeLog(join(agents, 'agent-x.meta.json'), [{ agentType: 'helper' }]);
+}
+
+async function counts(): Promise<Record<string, number>> {
+  return {
+    sessions: (await db.select().from(session)).length,
+    subAgents: (await db.select().from(subAgent)).length,
+    apiCalls: (await db.select().from(apiCall)).length,
+    skillLaunches: (await db.select().from(skillLaunch)).length,
+    prompts: (await db.select().from(userPrompt)).length,
+    sourceFiles: (await db.select().from(sourceFile)).length,
+  };
+}
+
+describe('deleting a project', () => {
+  it('removes every row and read offset of a project without its factory, and nothing else', async () => {
+    const gone = await factoryProject('gone-app');
+    const kept = await factoryProject('kept-app');
+    await writeSession('g1', gone);
+    await writeSession('k1', kept);
+    await ingest(db, logs);
+    await rm(factoryFile(gone));
+    expect(await factoryStatus(db, hasFactory)).toEqual({
+      hasSessions: true,
+      missing: [
+        {
+          project: gone,
+          name: 'gone-app',
+          factoryFile: factoryFile(gone),
+          sessions: 1,
+        },
+      ],
+    });
+
+    expect(await deleteProject(db, gone, hasFactory)).toBe('deleted');
+    expect(await counts()).toEqual({
+      sessions: 1,
+      subAgents: 1,
+      apiCalls: 2,
+      skillLaunches: 2,
+      prompts: 1,
+      sourceFiles: 3,
+    });
+    expect((await db.select().from(session)).map((row) => row.project)).toEqual(
+      [kept],
+    );
+    expect(
+      (await db.select().from(sourceFile)).every((row) =>
+        row.path.includes('k1'),
+      ),
+    ).toBe(true);
+    expect((await factoryStatus(db, hasFactory)).missing).toEqual([]);
+  });
+
+  it('skips the logs of a deleted project, then reads them from the first line once its factory is back', async () => {
+    const root = await factoryProject('app');
+    await writeSession('s1', root);
+    await ingest(db, logs);
+    await rm(factoryFile(root));
+    await deleteProject(db, root, hasFactory);
+
+    expect(summaryLine(await ingest(db, logs))).toMatch(
+      /, 1 sessions skipped \(no factory\)\.$/,
+    );
+    expect((await counts()).sessions).toBe(0);
+    await installFactory(root);
+    expect(summaryLine(await ingest(db, logs))).toBe(
+      'Ingested 3 files: 1 sessions, 1 sub-agents, 2 API calls, 2 skill launches, 0 lines skipped, 0 sessions skipped (no factory).',
+    );
+    expect((await db.select().from(subAgent))[0]?.agentType).toBe('helper');
+  });
+
+  it('refuses a project whose factory is found again, and an unknown project', async () => {
+    const root = await factoryProject('app');
+    await writeSession('s1', root);
+    await ingest(db, logs);
+    const before = await counts();
+
+    expect(await deleteProject(db, root, hasFactory)).toBe('has-factory');
+    expect(await deleteProject(db, join(work, 'other'), hasFactory)).toBe(
+      'not-found',
+    );
+    expect(await counts()).toEqual(before);
+  });
+
+  it('waits for a running ingestion before deleting', async () => {
+    const root = await factoryProject('app');
+    await writeSession('s1', root);
+    await ingest(db, logs);
+    await rm(factoryFile(root));
+    let release = (): void => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let locked = (): void => undefined;
+    const lockTaken = new Promise<void>((resolve) => {
+      locked = resolve;
+    });
+    const ingestion = db.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(${LOCK_KEY})`);
+      locked();
+      await held;
+    });
+    await lockTaken;
+    let finished = false;
+    const deletion = deleteProject(db, root, hasFactory).then((result) => {
+      finished = true;
+      return result;
+    });
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(finished).toBe(false);
+    release();
+    await ingestion;
+    expect(await deletion).toBe('deleted');
+  });
+
+  it('lists projects without their factory by name, and says when no session is stored', async () => {
+    expect(await factoryStatus(db, hasFactory)).toEqual({
+      hasSessions: false,
+      missing: [],
+    });
+    await db.insert(session).values([
+      { id: 'a', project: '/gone/zeta' },
+      { id: 'b', project: '/gone/alpha' },
+      { id: 'c', project: '/gone/alpha' },
+    ]);
+    const status = await factoryStatus(db, hasFactory);
+    expect(status.missing.map((row) => [row.name, row.sessions])).toEqual([
+      ['alpha', 2],
+      ['zeta', 1],
+    ]);
+  });
+});

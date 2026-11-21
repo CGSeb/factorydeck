@@ -14,6 +14,7 @@ import {
   skillInstructions,
   userText,
   writeLog,
+  EVERY_PROJECT_HAS_FACTORY,
 } from '../test/session-logs.ts';
 import { listSkills, sessionSkills, skillDetail } from './query.ts';
 import type { SkillUsage } from './types.ts';
@@ -143,7 +144,7 @@ beforeAll(async () => {
     (at) => [userText(at(0), 'Hi'), call(at(1)), call(at(2))],
     'lib',
   );
-  await ingest(db, join(folder, 'logs'));
+  await ingest(db, join(folder, 'logs'), EVERY_PROJECT_HAS_FACTORY);
 });
 
 afterAll(async () => {

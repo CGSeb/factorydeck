@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RoleList, RoleQuery } from '../roles/types.ts';
-import { unusedSkills } from '../test/skill-source.ts';
+import { unusedSkills, unusedProjects } from '../test/skill-source.ts';
 import { type OverviewSource, createApp } from './app.ts';
 import type { RoleSource } from './role-routes.ts';
 import type { SessionSource } from './session-routes.ts';
@@ -43,6 +43,7 @@ function app(checkDatabase = up) {
     sessions,
     skills: unusedSkills,
     roles,
+    projects: unusedProjects,
   });
 }
 

@@ -5,9 +5,11 @@ import {
   workflowConfigPath,
 } from '../config/env.ts';
 import { createDatabase } from '../db/client.ts';
+import { hasFactory } from '../ingest/factory.ts';
 import { ingest } from '../ingest/ingest.ts';
 import { usageOverview } from '../overview/query.ts';
 import { loadWorkflowConfig } from '../roles/config.ts';
+import { deleteProject, factoryStatus } from '../projects/remove.ts';
 import { listRoles } from '../roles/query.ts';
 import { listSessions, sessionDetail } from '../sessions/query.ts';
 import { listSkills, skillDetail } from '../skills/query.ts';
@@ -60,6 +62,10 @@ async function main(): Promise<void> {
     roles: {
       list: (query) => listRoles(db, query, config),
       config: { path: config.path, exists: config.exists },
+    },
+    projects: {
+      factoryStatus: () => factoryStatus(db, hasFactory),
+      remove: (project) => deleteProject(db, project, hasFactory),
     },
   });
   await listen(app, env.FACTORYDECK_PORT);

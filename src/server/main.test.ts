@@ -7,6 +7,7 @@ import { createScratchDatabase } from '../test/postgres.ts';
 import {
   appendLog,
   assistant,
+  installFactory,
   sessionsFolder,
   writeLog,
 } from '../test/session-logs.ts';
@@ -124,8 +125,10 @@ describe('pnpm start', () => {
     const scratch = await createScratchDatabase();
     const folder = await sessionsFolder();
     const log = join(folder, 'p', 'session-live.jsonl');
+    const cwd = join(await sessionsFolder(), 'app');
+    await installFactory(cwd);
     await writeLog(log, [
-      assistant({ uuid: 'a1', at: 0 }, { requestId: 'r1' }),
+      assistant({ uuid: 'a1', at: 0, cwd }, { requestId: 'r1' }),
     ]);
     const free = await occupy();
     const port = portOf(free);
@@ -162,7 +165,7 @@ describe('pnpm start', () => {
       });
       expect(body).not.toMatchObject({ updatedAt: null });
       await appendLog(log, [
-        assistant({ uuid: 'a2', at: 1 }, { requestId: 'r2' }),
+        assistant({ uuid: 'a2', at: 1, cwd }, { requestId: 'r2' }),
       ]);
       for (let i = 0; i < 50; i++) {
         body = await apiCalls();

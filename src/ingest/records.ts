@@ -68,7 +68,7 @@ export function parseLines(chunk: Buffer): {
   return { records, skipped, consumed };
 }
 
-function parseRecord(line: string): LogRecord | undefined {
+export function parseRecord(line: string): LogRecord | undefined {
   let value: unknown;
   try {
     value = JSON.parse(line);

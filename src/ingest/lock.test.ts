@@ -4,7 +4,12 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createDatabase } from '../db/client.ts';
 import { apiCall } from '../db/schema.ts';
 import { createScratchDatabase } from '../test/postgres.ts';
-import { assistant, sessionsFolder, writeLog } from '../test/session-logs.ts';
+import {
+  EVERY_PROJECT_HAS_FACTORY,
+  assistant,
+  sessionsFolder,
+  writeLog,
+} from '../test/session-logs.ts';
 import { LOCK_KEY, ingest, summaryLine } from './ingest.ts';
 
 describe('concurrent ingestions', () => {
@@ -33,7 +38,7 @@ describe('concurrent ingestions', () => {
     const { db, close } = createDatabase(scratch.url);
     try {
       await holder.query('select pg_advisory_lock($1)', [LOCK_KEY]);
-      const result = await ingest(db, folder);
+      const result = await ingest(db, folder, EVERY_PROJECT_HAS_FACTORY);
       expect(summaryLine(result)).toBe('Ingestion already running.');
       expect(await db.select().from(apiCall)).toHaveLength(0);
     } finally {
@@ -47,8 +52,8 @@ describe('concurrent ingestions', () => {
     const second = createDatabase(scratch.url);
     try {
       const results = await Promise.all([
-        ingest(first.db, folder),
-        ingest(second.db, folder),
+        ingest(first.db, folder, EVERY_PROJECT_HAS_FACTORY),
+        ingest(second.db, folder, EVERY_PROJECT_HAS_FACTORY),
       ]);
       expect(results.some((result) => result.status === 'done')).toBe(true);
       expect(await first.db.select().from(apiCall)).toHaveLength(200);

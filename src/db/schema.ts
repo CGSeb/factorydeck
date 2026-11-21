@@ -142,3 +142,19 @@ export const userPrompt = pgTable(
     index().on(table.sessionId, table.promptId),
   ],
 );
+
+export const skippedFile = pgTable(
+  'skipped_file',
+  {
+    path: text().primaryKey(),
+    sessionId: text('session_id').notNull(),
+    sizeBytes: bigint('size_bytes', { mode: 'number' }).notNull(),
+    project: text(),
+  },
+  (table) => [index().on(table.sessionId)],
+);
+
+export const ingestState = pgTable('ingest_state', {
+  id: text().primaryKey(),
+  factoryCleanupDone: boolean('factory_cleanup_done').notNull().default(false),
+});
