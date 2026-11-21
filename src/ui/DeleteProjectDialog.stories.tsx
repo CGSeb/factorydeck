@@ -25,6 +25,16 @@ export const Open: Story = {
       'This removes its 12 sessions and everything FactoryDeck stored about them (sub-agents, API calls, skill launches, prompts). The session logs on disk are not touched. If the factory is installed again in this project, its sessions are read again.',
     );
     await expect(canvas.getByRole('button', { name: 'Cancel' })).toHaveFocus();
+    await userEvent.tab();
+    await expect(
+      canvas.getByRole('button', { name: 'Delete project' }),
+    ).toHaveFocus();
+    await userEvent.tab();
+    await expect(canvas.getByRole('button', { name: 'Cancel' })).toHaveFocus();
+    await userEvent.tab({ shift: true });
+    await expect(
+      canvas.getByRole('button', { name: 'Delete project' }),
+    ).toHaveFocus();
     await userEvent.keyboard('{Escape}');
     await expect(args.onCancel).toHaveBeenCalledTimes(1);
     await userEvent.click(canvas.getByRole('button', { name: 'Cancel' }));

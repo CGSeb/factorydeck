@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { type ReactElement, useState } from 'react';
+import type { DeleteOutcome } from './factory-api.ts';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import {
   archivedLib,
@@ -107,5 +109,94 @@ export const DeleteRefused: Story = {
     await expect(await dialog.findByRole('alert')).toHaveTextContent(
       'old-app has its factory configuration again, so it was not deleted.',
     );
+  },
+};
+
+function ProjectLeavesAndComesBack(): ReactElement {
+  const [listed, setListed] = useState(true);
+  return (
+    <>
+      <button type="button" onClick={() => setListed(!listed)}>
+        Toggle project
+      </button>
+      <FactoryBanner
+        missing={listed ? [oldApp] : []}
+        deleteProject={deleterOf('has-factory')}
+        onDeleted={() => undefined}
+      />
+    </>
+  );
+}
+
+export const DialogClearedWhenProjectLeaves: Story = {
+  render: () => <ProjectLeavesAndComesBack />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Delete project' }),
+    );
+    const dialog = within(canvas.getByRole('dialog'));
+    await userEvent.click(
+      dialog.getByRole('button', { name: 'Delete project' }),
+    );
+    await dialog.findByRole('alert');
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Toggle project' }),
+    );
+    await expect(canvas.queryByRole('dialog')).toBeNull();
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Toggle project' }),
+    );
+    await expect(
+      canvas.getByRole('button', { name: 'Delete project' }),
+    ).toBeVisible();
+    await expect(canvas.queryByRole('dialog')).toBeNull();
+  },
+};
+
+function DeletionFinishesLater(): ReactElement {
+  const [finish, setFinish] = useState<() => void>();
+  const deleteProject = (): Promise<DeleteOutcome> =>
+    new Promise((resolve) => {
+      setFinish(() => () => resolve('deleted'));
+    });
+  return (
+    <>
+      <button type="button" onClick={() => finish?.()}>
+        Finish deletion
+      </button>
+      <FactoryBanner
+        missing={[archivedLib, oldApp]}
+        deleteProject={deleteProject}
+        onDeleted={() => undefined}
+      />
+    </>
+  );
+}
+
+export const DeletionKeepsAnotherDialogOpen: Story = {
+  render: () => <DeletionFinishesLater />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const [first, second] = canvas.getAllByRole('button', {
+      name: 'Delete project',
+    });
+    if (first === undefined || second === undefined) throw new Error('lines');
+    await userEvent.click(first);
+    const dialog = within(canvas.getByRole('dialog'));
+    await userEvent.click(
+      dialog.getByRole('button', { name: 'Delete project' }),
+    );
+    await userEvent.keyboard('{Escape}');
+    await userEvent.click(second);
+    await expect(
+      canvas.getByRole('dialog', { name: 'Delete old-app?' }),
+    ).toBeVisible();
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Finish deletion' }),
+    );
+    await expect(
+      canvas.getByRole('dialog', { name: 'Delete old-app?' }),
+    ).toBeVisible();
   },
 };

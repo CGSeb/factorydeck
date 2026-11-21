@@ -1,4 +1,5 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
+import { type ReactElement, createContext, useContext, useState } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import type { MissingFactory } from '../projects/types.ts';
@@ -107,11 +108,11 @@ export const TwoProjectsWithoutFactory: Story = {
   },
 };
 
-function lastProjectStore(): {
+function projectStore(initial: MissingFactory[]): {
   loadFactory: LoadFactory;
   deleteProject: DeleteProject;
 } {
-  let missing: MissingFactory[] = [oldApp];
+  let missing = initial;
   return {
     loadFactory: () =>
       Promise.resolve(factoryResponse(missing, missing.length > 0)),
@@ -122,18 +123,77 @@ function lastProjectStore(): {
   };
 }
 
-export const DeletingTheLastProject: Story = {
-  args: lastProjectStore(),
-  decorators: [at('/')],
+const MountCounter = createContext({ value: 0 });
+
+function PageContent(): ReactElement {
+  const counter = useContext(MountCounter);
+  const [mount] = useState(() => {
+    counter.value += 1;
+    return counter.value;
+  });
+  return <p>Page loaded {mount} times</p>;
+}
+
+function DeletionHarness({
+  initial,
+}: {
+  initial: MissingFactory[];
+}): ReactElement {
+  const [store] = useState(() => projectStore(initial));
+  const [counter] = useState(() => ({ value: 0 }));
+  return (
+    <MountCounter.Provider value={counter}>
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route element={<Layout {...store} />}>
+            <Route index element={<PageContent />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    </MountCounter.Provider>
+  );
+}
+
+async function deleteFirstProject(canvasElement: HTMLElement): Promise<void> {
+  const canvas = within(canvasElement);
+  const [line] = await canvas.findAllByRole('button', {
+    name: 'Delete project',
+  });
+  if (line === undefined) throw new Error('No banner line');
+  await userEvent.click(line);
+  const dialog = within(canvas.getByRole('dialog'));
+  await userEvent.click(dialog.getByRole('button', { name: 'Delete project' }));
+}
+
+function loads(canvasElement: HTMLElement): number {
+  const text = within(canvasElement).getByText(/^Page loaded/).textContent;
+  return Number(/\d+/.exec(text)?.[0]);
+}
+
+export const DeletingOneOfTwoProjects: Story = {
+  render: () => <DeletionHarness initial={[archivedLib, oldApp]} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(
-      await canvas.findByRole('button', { name: 'Delete project' }),
+    await canvas.findByText(/^Page loaded/);
+    const before = loads(canvasElement);
+    await deleteFirstProject(canvasElement);
+    const banner = canvas.getByRole('region', {
+      name: 'Factory configuration',
+    });
+    await waitFor(() =>
+      expect(within(banner).getAllByRole('listitem')).toHaveLength(1),
     );
-    const dialog = within(canvas.getByRole('dialog'));
-    await userEvent.click(
-      dialog.getByRole('button', { name: 'Delete project' }),
-    );
+    await expect(banner).toHaveTextContent('old-app');
+    await waitFor(() => expect(loads(canvasElement)).toBeGreaterThan(before));
+    await expect(canvas.queryByRole('dialog')).toBeNull();
+  },
+};
+
+export const DeletingTheLastProject: Story = {
+  render: () => <DeletionHarness initial={[oldApp]} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await deleteFirstProject(canvasElement);
     await waitFor(() =>
       expect(
         canvas.getByRole('heading', {

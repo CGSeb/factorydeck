@@ -52,12 +52,15 @@ export function FactoryBanner({
     missing.some((project) => project.project === dialog.project)
       ? dialog
       : undefined;
+  if (dialog !== undefined && shown === undefined) setDialog(undefined);
 
   async function confirm(open: OpenDialog): Promise<void> {
     setDialog({ ...open, state: 'deleting' });
     const outcome = await deleteProject(open.project);
     if (outcome === 'deleted') {
-      setDialog(undefined);
+      setDialog((current) =>
+        current?.project === open.project ? undefined : current,
+      );
       onDeleted(open.project);
       return;
     }

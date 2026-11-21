@@ -26,8 +26,30 @@ const MESSAGES: Readonly<
   'not-found': (name) => `${name} is no longer in FactoryDeck.`,
 };
 
+function keepFocusInside(event: KeyboardEvent, dialog: HTMLElement): void {
+  const focusable = [
+    ...dialog.querySelectorAll<HTMLElement>('button:not(:disabled)'),
+  ];
+  const first = focusable.at(0);
+  const last = focusable.at(-1);
+  if (first === undefined || last === undefined) {
+    event.preventDefault();
+    return;
+  }
+  const active = document.activeElement;
+  const inside = active instanceof Node && dialog.contains(active);
+  if (event.shiftKey && (!inside || active === first)) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && (!inside || active === last)) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
 function useDialogFocus(
   onCancel: () => void,
+  dialog: RefObject<HTMLDivElement | null>,
 ): RefObject<HTMLButtonElement | null> {
   const cancel = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -43,10 +65,13 @@ function useDialogFocus(
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent): void {
       if (event.key === 'Escape') onCancel();
+      if (event.key === 'Tab' && dialog.current !== null) {
+        keepFocusInside(event, dialog.current);
+      }
     }
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [onCancel]);
+  }, [onCancel, dialog]);
   return cancel;
 }
 
@@ -59,7 +84,8 @@ export function DeleteProjectDialog({
 }: DeleteProjectDialogProps): ReactElement {
   const titleId = useId();
   const textId = useId();
-  const cancel = useDialogFocus(onCancel);
+  const dialog = useRef<HTMLDivElement>(null);
+  const cancel = useDialogFocus(onCancel, dialog);
   const message = MESSAGES[state]?.(name);
   const deleting = state === 'deleting';
 
@@ -72,6 +98,7 @@ export function DeleteProjectDialog({
       }}
     >
       <div
+        ref={dialog}
         className="dialog"
         role="dialog"
         aria-modal="true"
