@@ -59,8 +59,15 @@ describe('pnpm start', () => {
     running.push(run);
     await waitFor(() => run.output().includes('FactoryDeck on'));
     expect(run.output()).toContain(`FactoryDeck on http://127.0.0.1:${port}`);
-    const response = await fetch(`http://127.0.0.1:${port}/api/health`);
-    expect(response.status).toBe(503);
+    for (let request = 0; request < 2; request++) {
+      const response = await fetch(`http://127.0.0.1:${port}/api/health`);
+      expect(response.status).toBe(503);
+      expect(await response.json()).toEqual({
+        status: 'degraded',
+        database: 'unreachable',
+      });
+    }
+    expect(run.child.exitCode).toBeNull();
   });
 
   it('exits with code 1 when the port is already in use', async () => {

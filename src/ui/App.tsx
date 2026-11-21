@@ -1,30 +1,22 @@
-import { type ReactElement, useEffect, useState } from 'react';
-import { fetchHealthMessage } from './health-message.ts';
+import { type ReactElement, Suspense, use } from 'react';
 
 export interface AppProps {
-  loadHealthMessage?: () => Promise<string>;
+  /** The database health sentence, read once when the page loads. */
+  healthMessage: Promise<string>;
 }
 
-/** The FactoryDeck page: its heading and the database health read once on load. */
-export function App({
-  loadHealthMessage = fetchHealthMessage,
-}: AppProps): ReactElement {
-  const [message, setMessage] = useState('');
+function DatabaseStatus({ healthMessage }: AppProps): ReactElement {
+  return <p>{use(healthMessage)}</p>;
+}
 
-  useEffect(() => {
-    let current = true;
-    void loadHealthMessage().then((loaded) => {
-      if (current) setMessage(loaded);
-    });
-    return () => {
-      current = false;
-    };
-  }, [loadHealthMessage]);
-
+/** The FactoryDeck page: its heading and the database health. */
+export function App({ healthMessage }: AppProps): ReactElement {
   return (
     <main>
       <h1>FactoryDeck</h1>
-      <p>{message}</p>
+      <Suspense fallback={<p />}>
+        <DatabaseStatus healthMessage={healthMessage} />
+      </Suspense>
     </main>
   );
 }
