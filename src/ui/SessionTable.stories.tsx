@@ -40,6 +40,12 @@ export const Rows: Story = {
     await expect(rows).toHaveLength(4);
     await expect(rows[0]).toHaveTextContent('BranchWork item');
     await expect(rows[1]).toHaveTextContent('feat/export#52');
+    const issue = canvas.getByRole('link', { name: '#52' });
+    await expect(issue).toHaveAttribute('title', 'Export button');
+    await expect(issue).toHaveAttribute(
+      'href',
+      'https://github.com/example-org/example-app/issues/52',
+    );
     await expect(rows[2]).toHaveTextContent('——');
     await expect(canvas.getByText('3 min ago')).toBeVisible();
     await expect(canvas.getByText('2 h 02 min')).toBeVisible();

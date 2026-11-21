@@ -34,6 +34,8 @@ const detail: SessionDetail = {
   cwd: '/work/app',
   gitBranch: 'main',
   workItem: null,
+  issue: null,
+  issueDetail: null,
   state: 'waiting',
   firstAt: '2026-01-05T08:00:00.000Z',
   lastAt: '2026-01-05T08:30:00.000Z',

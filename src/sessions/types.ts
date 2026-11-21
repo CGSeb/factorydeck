@@ -1,3 +1,4 @@
+import type { IssueDetail, WorkItemIssue } from '../git-host/types.ts';
 import type { Period, TokenCounts } from '../overview/types.ts';
 import type { SkillUsage } from '../skills/types.ts';
 
@@ -19,6 +20,7 @@ export interface SessionSummary {
   project: string;
   gitBranch: string;
   workItem: number | null;
+  issue: WorkItemIssue | null;
   state: SessionState;
   firstAt: string | null;
   lastAt: string | null;
@@ -48,6 +50,7 @@ export interface SubAgentSummary {
   agentType: string;
   role: string;
   workItem: number | null;
+  issue: WorkItemIssue | null;
   description: string;
   model: string;
   firstAt: string | null;
@@ -59,6 +62,7 @@ export interface SubAgentSummary {
 export interface SessionDetail extends Omit<SessionSummary, 'tokens'> {
   cwd: string | null;
   tokens: TokenCounts;
+  issueDetail: IssueDetail | null;
   subAgents: SubAgentSummary[];
   skills: SkillUsage[];
 }

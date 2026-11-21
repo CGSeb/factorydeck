@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { type ReactElement, useState } from 'react';
 import type { DeleteOutcome } from './factory-api.ts';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { apiFailure, appFailure } from './git-host-fixtures.ts';
 import {
   archivedLib,
   deleterOf,
@@ -57,6 +58,20 @@ export const TwoProjects: Story = {
       'Factory configuration not found for archived-lib: /home/dev/archived-lib/docs/agents/factory.yml. Its data is kept, but new sessions are no longer read.Delete project',
       'Factory configuration not found for old-app: /home/dev/old-app/docs/agents/factory.yml. Its data is kept, but new sessions are no longer read.Delete project',
     ]);
+  },
+};
+
+export const CollectionErrors: Story = {
+  args: { missing: [oldApp], failures: [apiFailure, appFailure] },
+  play: async ({ canvasElement }) => {
+    const lines = within(canvasElement).getAllByRole('listitem');
+    await expect(lines.map((line) => line.textContent).slice(1)).toEqual([
+      'Could not read GitLab for example-api: glab: 401 Unauthorized.',
+      'Could not read GitHub for example-app: gh not found.',
+    ]);
+    await expect(
+      within(canvasElement).getAllByRole('button', { name: 'Delete project' }),
+    ).toHaveLength(1);
   },
 };
 

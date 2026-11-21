@@ -13,7 +13,8 @@ import {
   writeDemoConfig,
   writeDemoSessions,
 } from '../src/demo/sessions.ts';
-import { factoryFile } from '../src/ingest/factory.ts';
+import { collect, collectSummary } from '../src/git-host/collect.ts';
+import { factoryFile, hasFactory } from '../src/ingest/factory.ts';
 import { ingest, summaryLine } from '../src/ingest/ingest.ts';
 
 const ROOT = join(import.meta.dirname, '..');
@@ -59,6 +60,7 @@ const { db, close } = createDatabase(demoUrl);
 try {
   await migrate(db, { migrationsFolder: join(ROOT, 'drizzle') });
   console.log(summaryLine(await ingest(db, folder)));
+  console.log(collectSummary(await collect(db, { hasFactory })).join('\n'));
   if (values['lost-factory']) {
     await rm(factoryFile(demoProjectRoot(projects, EXAMPLE_API)));
   }

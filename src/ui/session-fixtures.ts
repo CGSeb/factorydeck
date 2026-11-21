@@ -6,6 +6,7 @@ import type {
   SessionState,
   SessionSummary,
 } from '../sessions/types.ts';
+import { githubIssue } from './git-host-fixtures.ts';
 import type {
   LoadSession,
   LoadSessions,
@@ -24,6 +25,11 @@ export const workingSession: SessionSummary = {
   project: '/home/dev/example-app',
   gitBranch: 'feat/export',
   workItem: 52,
+  issue: {
+    status: 'found',
+    title: 'Export button',
+    url: 'https://github.com/example-org/example-app/issues/52',
+  },
   state: 'working',
   firstAt: minutesAgo(125),
   lastAt: minutesAgo(3),
@@ -37,6 +43,7 @@ export const waitingSession: SessionSummary = {
   project: '/home/dev/example-lib',
   gitBranch: '',
   workItem: null,
+  issue: null,
   state: 'waiting',
   firstAt: minutesAgo(40),
   lastAt: minutesAgo(12),
@@ -50,6 +57,7 @@ export const inactiveSession: SessionSummary = {
   project: 'unassigned',
   gitBranch: 'main',
   workItem: null,
+  issue: null,
   state: 'inactive',
   firstAt: minutesAgo(60 * 26),
   lastAt: minutesAgo(60 * 25),
@@ -122,6 +130,7 @@ export const manySessions = [
 
 export const sessionWithSubAgents: SessionDetail = {
   ...workingSession,
+  issueDetail: githubIssue,
   cwd: '/home/dev/example-app/packages/web',
   tokens: {
     input: 120_400,
@@ -155,6 +164,11 @@ export const sessionWithSubAgents: SessionDetail = {
       agentType: 'Explore',
       role: 'Explore',
       workItem: 52,
+      issue: {
+        status: 'found',
+        title: 'Export button',
+        url: 'https://github.com/example-org/example-app/issues/52',
+      },
       description: 'Find the export code',
       model: 'claude-haiku-example',
       firstAt: minutesAgo(120),
@@ -167,6 +181,7 @@ export const sessionWithSubAgents: SessionDetail = {
       agentType: 'general-purpose',
       role: 'builder',
       workItem: 53,
+      issue: { status: 'not-found' },
       description: 'Build #53 the export menu',
       model: 'claude-sonnet-example',
       firstAt: minutesAgo(100),
@@ -179,6 +194,11 @@ export const sessionWithSubAgents: SessionDetail = {
       agentType: '',
       role: 'unassigned',
       workItem: 52,
+      issue: {
+        status: 'found',
+        title: 'Export button',
+        url: 'https://github.com/example-org/example-app/issues/52',
+      },
       description: '',
       model: '',
       firstAt: minutesAgo(60),
@@ -191,6 +211,7 @@ export const sessionWithSubAgents: SessionDetail = {
 
 export const sessionWithoutSubAgents: SessionDetail = {
   ...waitingSession,
+  issueDetail: null,
   cwd: null,
   tokens: { input: 2_400, cacheWrite: 30_000, cacheRead: 150_000, output: 0 },
   skills: [
