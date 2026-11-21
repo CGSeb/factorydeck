@@ -81,11 +81,12 @@ The spec format. Each line below names the text this repository uses for that pa
 - Parallel workers: 3
 - Branch name: `feat/<NNN>-<short-name>`
 - Pull request title: `feat: :sparkles: <Subject>`
+- Commit convention: `type: :gitmoji: Subject`, checked by the `commit-msg` hook (`scripts/check-commit-message.ts`)
 - Auto-merge: on
 - Serenity threshold: 80
 - Main branch protection: off while the repository is private (GitHub needs a paid plan); turn it on, requiring the `check` job of `.github/workflows/ci.yml`, when the repository goes public. Until then the merge gate is this file's prose.
 
-Commit messages follow `type: :gitmoji: Subject` (for example `fix: :bug: …`, `test: :white_check_mark: …`, `docs: :memo: …`), checked by the `commit-msg` hook.
+Examples: `feat: :sparkles: …` for a feature, `fix: :bug: …`, `refactor: :recycle: …`, `test: :white_check_mark: …`, `docs: :memo: …`, `chore: :wrench: …`. With a squash merge, the pull request title becomes the commit on `main`, so it follows the same convention.
 
 ## Protected paths
 
