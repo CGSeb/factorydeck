@@ -9,6 +9,7 @@ import {
   sessionsFolder,
   userText,
   writeLog,
+  EVERY_PROJECT_HAS_FACTORY,
 } from '../test/session-logs.ts';
 import { ingest, summaryLine } from './ingest.ts';
 
@@ -36,10 +37,12 @@ describe('ingest edge cases', () => {
     await writeLog(join(folder, 'p', 'session-f.jsonl'), [
       timeless,
       untimed,
-      assistant({ uuid: 'a2', at: 1 }, { requestId: 'r2' }),
+      assistant({ uuid: 'a2', at: 1, cwd: '/gone/p' }, { requestId: 'r2' }),
     ]);
-    expect(summaryLine(await ingest(db, folder))).toBe(
-      'Ingested 1 files: 1 sessions, 0 sub-agents, 1 API calls, 0 skill launches, 2 lines skipped.',
+    expect(
+      summaryLine(await ingest(db, folder, EVERY_PROJECT_HAS_FACTORY)),
+    ).toBe(
+      'Ingested 1 files: 1 sessions, 0 sub-agents, 1 API calls, 0 skill launches, 2 lines skipped, 0 sessions skipped (no factory).',
     );
     expect(
       (await db.select().from(apiCall)).map((call) => call.requestKey),
@@ -54,7 +57,7 @@ describe('ingest edge cases', () => {
         { requestId: 'rz' },
       ),
     ]);
-    await ingest(db, folder);
+    await ingest(db, folder, EVERY_PROJECT_HAS_FACTORY);
     const [row] = await db.select().from(session);
     expect(row).toMatchObject({
       id: 'session-g',
@@ -102,7 +105,7 @@ describe('ingest edge cases', () => {
       ),
       assistant({ uuid: 'b3', at: 4, sidechain: true }, { requestId: 'rb3' }),
     ]);
-    await ingest(db, folder);
+    await ingest(db, folder, EVERY_PROJECT_HAS_FACTORY);
     expect((await db.select().from(session))[0]).toMatchObject({
       cwd: '/gone/first',
       cwdFromMain: false,
@@ -121,7 +124,7 @@ describe('ingest edge cases', () => {
         { requestId: 'rb4' },
       ),
     ]);
-    await ingest(db, folder);
+    await ingest(db, folder, EVERY_PROJECT_HAS_FACTORY);
     expect((await db.select().from(session))[0]).toMatchObject({
       cwd: '/gone/first',
       gitBranch: 'feat/three',
@@ -135,7 +138,7 @@ describe('ingest edge cases', () => {
         message: { role: 'user', content: [image] },
       }),
     ]);
-    await ingest(db, folder);
+    await ingest(db, folder, EVERY_PROJECT_HAS_FACTORY);
     const prompts = await db.select().from(userPrompt);
     expect(prompts.map((prompt) => prompt.recordUuid)).toEqual(['u1']);
   });
@@ -150,7 +153,7 @@ describe('ingest edge cases', () => {
         { requestId: 'ry' },
       ),
     ]);
-    await ingest(db, folder);
+    await ingest(db, folder, EVERY_PROJECT_HAS_FACTORY);
     expect((await db.select().from(session))[0]).toMatchObject({
       cwd: '/gone/agent',
       project: '/gone/agent',
@@ -158,7 +161,7 @@ describe('ingest edge cases', () => {
     await appendLog(main, [
       assistant({ uuid: 'a2', at: 2, cwd: '/gone/main' }, { requestId: 'r2' }),
     ]);
-    await ingest(db, folder);
+    await ingest(db, folder, EVERY_PROJECT_HAS_FACTORY);
     expect((await db.select().from(session))[0]).toMatchObject({
       cwd: '/gone/main',
       cwdFromMain: true,
@@ -179,9 +182,11 @@ describe('ingest edge cases', () => {
         { requestId: 'rw' },
       ),
     ]);
-    await ingest(db, folder);
+    await ingest(db, folder, EVERY_PROJECT_HAS_FACTORY);
     await writeLog(main, [userText({ uuid: 'u3', at: 2 }, 'Hi')]);
-    expect(summaryLine(await ingest(db, folder))).toMatch(/^Ingested 1 files/);
+    expect(
+      summaryLine(await ingest(db, folder, EVERY_PROJECT_HAS_FACTORY)),
+    ).toMatch(/^Ingested 1 files/);
     expect((await db.select().from(session))[0]).toMatchObject({
       cwd: '/gone/helper',
       project: '/gone/helper',

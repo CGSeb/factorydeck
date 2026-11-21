@@ -7,13 +7,23 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import pg from 'pg';
 import { loadRootEnvFile, validateEnv } from '../src/config/env.ts';
 import { createDatabase } from '../src/db/client.ts';
-import { writeDemoConfig, writeDemoSessions } from '../src/demo/sessions.ts';
+import {
+  EXAMPLE_API,
+  demoProjectRoot,
+  writeDemoConfig,
+  writeDemoSessions,
+} from '../src/demo/sessions.ts';
+import { factoryFile } from '../src/ingest/factory.ts';
 import { ingest, summaryLine } from '../src/ingest/ingest.ts';
 
 const ROOT = join(import.meta.dirname, '..');
 
 const { values } = parseArgs({
-  options: { port: { type: 'string', default: '4318' } },
+  options: {
+    port: { type: 'string', default: '4318' },
+    'no-factory': { type: 'boolean', default: false },
+    'lost-factory': { type: 'boolean', default: false },
+  },
 });
 
 const port = Number(values.port);
@@ -36,15 +46,22 @@ url.pathname = `/${DATABASE}`;
 const demoUrl = url.toString();
 
 const folder = join(tmpdir(), `factorydeck-demo-sessions-${String(port)}`);
+const projects = join(tmpdir(), `factorydeck-demo-projects-${String(port)}`);
 await rm(folder, { recursive: true, force: true });
-await writeDemoSessions(folder, new Date());
+await rm(projects, { recursive: true, force: true });
+await writeDemoSessions(folder, new Date(), projects, {
+  factory: !values['no-factory'],
+});
 const config = join(folder, 'factorydeck.yml');
-await writeDemoConfig(join(ROOT, 'factorydeck.example.yml'), config);
+await writeDemoConfig(join(ROOT, 'factorydeck.example.yml'), config, projects);
 
 const { db, close } = createDatabase(demoUrl);
 try {
   await migrate(db, { migrationsFolder: join(ROOT, 'drizzle') });
   console.log(summaryLine(await ingest(db, folder)));
+  if (values['lost-factory']) {
+    await rm(factoryFile(demoProjectRoot(projects, EXAMPLE_API)));
+  }
 } finally {
   await close();
 }

@@ -65,6 +65,11 @@ function describe(path: string): LogFile {
   return { path, sessionId: name.slice(0, -'.jsonl'.length) };
 }
 
+export function sessionIdOfPath(path: string): string {
+  if (path.endsWith('.jsonl')) return describe(path).sessionId;
+  return basename(dirname(dirname(path)));
+}
+
 /** The bytes of a file from `start` to `end`. */
 export async function readRange(
   path: string,

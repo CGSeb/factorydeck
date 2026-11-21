@@ -6,7 +6,12 @@ import { asc } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 import { session } from '../db/schema.ts';
 import { createTestDatabase } from '../test/postgres.ts';
-import { assistant, sessionsFolder, writeLog } from '../test/session-logs.ts';
+import {
+  assistant,
+  installFactory,
+  sessionsFolder,
+  writeLog,
+} from '../test/session-logs.ts';
 import { ingest } from './ingest.ts';
 import { gitProjectRoot, resolveProjects } from './project.ts';
 
@@ -91,10 +96,11 @@ describe('project resolution', () => {
 });
 
 describe('project of ingested sessions', () => {
-  it('stores worktree and gone-folder sessions under their repository', async () => {
+  it('stores worktree and gone-folder sessions under their factory repository', async () => {
     const { db, close } = await createTestDatabase();
     try {
       const { repo, worktree } = await gitRepoWithWorktree();
+      await installFactory(repo);
       const folder = await sessionsFolder();
       const log = (id: string, cwd: string) =>
         writeLog(join(folder, 'p', `${id}.jsonl`), [
@@ -107,7 +113,6 @@ describe('project of ingested sessions', () => {
       const rows = await db.select().from(session).orderBy(asc(session.id));
       expect(rows.map((row) => [row.id, row.project])).toEqual([
         ['gone-inside', repo],
-        ['gone-outside', '/nowhere/old-app'],
         ['in-worktree', repo],
       ]);
     } finally {

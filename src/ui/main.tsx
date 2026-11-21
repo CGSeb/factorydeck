@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
 import { App } from './App.tsx';
+import { factoryLoader, projectDeleter } from './factory-api.ts';
 import { overviewLoader } from './overview-api.ts';
 import { rolesLoader } from './roles-api.ts';
 import { sessionLoader, sessionsLoader } from './sessions-api.ts';
@@ -12,6 +13,8 @@ const loadSession = sessionLoader();
 const loadSkills = skillsLoader();
 const loadSkill = skillLoader();
 const loadRoles = rolesLoader();
+const loadFactory = factoryLoader();
+const deleteProject = projectDeleter();
 const root = document.querySelector('#root');
 if (root) {
   createRoot(root).render(
@@ -23,6 +26,8 @@ if (root) {
         loadSkills={loadSkills}
         loadSkill={loadSkill}
         loadRoles={loadRoles}
+        loadFactory={loadFactory}
+        deleteProject={deleteProject}
       />
     </BrowserRouter>,
   );

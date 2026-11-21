@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import { Route, Routes } from 'react-router';
+import type { DeleteProject, LoadFactory } from './factory-api.ts';
 import { Layout } from './Layout.tsx';
 import type { LoadOverview } from './overview-api.ts';
 import { OverviewPage } from './OverviewPage.tsx';
@@ -19,6 +20,8 @@ export interface AppProps {
   loadSkills: LoadSkills;
   loadSkill: LoadSkill;
   loadRoles: LoadRoles;
+  loadFactory: LoadFactory;
+  deleteProject: DeleteProject;
 }
 
 export function App({
@@ -28,10 +31,16 @@ export function App({
   loadSkills,
   loadSkill,
   loadRoles,
+  loadFactory,
+  deleteProject,
 }: AppProps): ReactElement {
   return (
     <Routes>
-      <Route element={<Layout />}>
+      <Route
+        element={
+          <Layout loadFactory={loadFactory} deleteProject={deleteProject} />
+        }
+      >
         <Route index element={<OverviewPage loadOverview={loadOverview} />} />
         <Route
           path="sessions"

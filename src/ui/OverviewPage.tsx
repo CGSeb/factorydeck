@@ -13,6 +13,7 @@ import { type LoadOverview, UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { PeriodSelector } from './PeriodSelector.tsx';
 import { ProjectTable } from './ProjectTable.tsx';
 import { UsageTiles } from './UsageTiles.tsx';
+import { WelcomePanel } from './WelcomePanel.tsx';
 
 const RETRY_SECONDS = 10;
 
@@ -31,11 +32,7 @@ function OverviewContent({
   }
   const { overview } = response;
   if (!overview.hasData) {
-    return (
-      <p className="status">
-        No sessions yet. FactoryDeck reads {response.sessionsFolder}.
-      </p>
-    );
+    return <WelcomePanel />;
   }
   return (
     <>

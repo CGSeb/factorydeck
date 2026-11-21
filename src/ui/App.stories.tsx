@@ -2,6 +2,12 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { MemoryRouter } from 'react-router';
 import { expect, userEvent, within } from 'storybook/test';
 import { App } from './App.tsx';
+import {
+  deleterOf,
+  factoryLoaderOf,
+  factoryResponse,
+  oldApp,
+} from './factory-fixtures.ts';
 import { fixedLoader, okResponse, weekOverview } from './fixtures.ts';
 import { rolesLoader, someRoles } from './role-fixtures.ts';
 import {
@@ -40,6 +46,8 @@ const loaders = {
   loadSkills: skillsLoader(someSkills),
   loadSkill: skillLoader(writeSpecDetail),
   loadRoles: rolesLoader(someRoles),
+  loadFactory: factoryLoaderOf(factoryResponse()),
+  deleteProject: deleterOf('deleted'),
 };
 
 export const Home: Story = {
@@ -103,5 +111,42 @@ export const Roles: Story = {
     await expect(
       await canvas.findByRole('rowheader', { name: 'builder' }),
     ).toBeVisible();
+  },
+};
+
+export const NoSessionYet: Story = {
+  args: {
+    ...loaders,
+    loadFactory: factoryLoaderOf(factoryResponse([], false)),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    for (const section of ['Overview', 'Sessions', 'Skills', 'Roles']) {
+      await userEvent.click(canvas.getByRole('link', { name: section }));
+      await expect(
+        await canvas.findByRole('heading', {
+          name: 'Install the factory in a project',
+        }),
+      ).toBeVisible();
+      await expect(canvas.queryByRole('table')).toBeNull();
+    }
+  },
+};
+
+export const FactoryNotFound: Story = {
+  args: {
+    ...loaders,
+    loadFactory: factoryLoaderOf(factoryResponse([oldApp])),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText(/Factory configuration not found for old-app/),
+    ).toBeVisible();
+    await userEvent.click(canvas.getByRole('link', { name: 'Sessions' }));
+    await expect(
+      canvas.getByText(/Factory configuration not found for old-app/),
+    ).toBeVisible();
+    await canvas.findByText('1 working · 1 waiting for you · 1 inactive');
   },
 };

@@ -18,6 +18,7 @@ import {
   sessionsFolder,
   userText,
   writeLog,
+  EVERY_PROJECT_HAS_FACTORY,
 } from '../test/session-logs.ts';
 import { ingest, summaryLine } from './ingest.ts';
 
@@ -43,7 +44,9 @@ function turn(n: number): Line[] {
 }
 
 async function run(): Promise<string> {
-  return summaryLine(await ingest(db, join(log, '..', '..')));
+  return summaryLine(
+    await ingest(db, join(log, '..', '..'), EVERY_PROJECT_HAS_FACTORY),
+  );
 }
 
 async function requestKeys(): Promise<string[]> {
@@ -55,7 +58,7 @@ describe('incremental ingestion', () => {
   it('reads nothing on a second run with no file changed', async () => {
     await writeLog(log, turn(1));
     expect(await run()).toBe(
-      'Ingested 1 files: 1 sessions, 0 sub-agents, 1 API calls, 0 skill launches, 0 lines skipped.',
+      'Ingested 1 files: 1 sessions, 0 sub-agents, 1 API calls, 0 skill launches, 0 lines skipped, 0 sessions skipped (no factory).',
     );
     await chmod(log, 0o000);
     try {
@@ -72,7 +75,7 @@ describe('incremental ingestion', () => {
     expect(first?.readOffset).toBe((await stat(log)).size);
     await appendLog(log, turn(2));
     expect(await run()).toBe(
-      'Ingested 1 files: 1 sessions, 0 sub-agents, 1 API calls, 0 skill launches, 0 lines skipped.',
+      'Ingested 1 files: 1 sessions, 0 sub-agents, 1 API calls, 0 skill launches, 0 lines skipped, 0 sessions skipped (no factory).',
     );
     expect(await requestKeys()).toEqual(['req_1', 'req_2']);
     expect(await db.select().from(userPrompt)).toHaveLength(2);
@@ -104,7 +107,7 @@ describe('incremental ingestion', () => {
 
     await writeLog(log, [prompt ?? '', callLine]);
     expect(await run()).toBe(
-      'Ingested 1 files: 1 sessions, 0 sub-agents, 1 API calls, 0 skill launches, 0 lines skipped.',
+      'Ingested 1 files: 1 sessions, 0 sub-agents, 1 API calls, 0 skill launches, 0 lines skipped, 0 sessions skipped (no factory).',
     );
     expect(await requestKeys()).toEqual(['req_1']);
     expect(await db.select().from(userPrompt)).toHaveLength(1);
@@ -118,7 +121,7 @@ describe('incremental ingestion', () => {
       ...turn(2),
     ]);
     expect(await run()).toMatch(
-      /2 API calls, 0 skill launches, 2 lines skipped\.$/,
+      /2 API calls, 0 skill launches, 2 lines skipped, 0 sessions skipped \(no factory\)\.$/,
     );
   });
 
@@ -177,14 +180,14 @@ describe('incremental ingestion', () => {
     await chmod(lockedFolder, 0o000);
     try {
       expect(await run()).toBe(
-        'Ingested 2 files: 1 sessions, 1 sub-agents, 2 API calls, 0 skill launches, 0 lines skipped.',
+        'Ingested 2 files: 1 sessions, 1 sub-agents, 2 API calls, 0 skill launches, 0 lines skipped, 0 sessions skipped (no factory).',
       );
     } finally {
       await Promise.all(unreadable.map((path) => chmod(path, 0o600)));
       await chmod(lockedFolder, 0o700);
     }
     expect(await run()).toBe(
-      'Ingested 3 files: 3 sessions, 1 sub-agents, 2 API calls, 0 skill launches, 0 lines skipped.',
+      'Ingested 3 files: 3 sessions, 1 sub-agents, 2 API calls, 0 skill launches, 0 lines skipped, 0 sessions skipped (no factory).',
     );
     expect(await requestKeys()).toEqual(['req_1', 'req_2', 'req_3', 'req_4']);
     expect((await db.select().from(subAgent))[0]?.agentType).toBe('helper');

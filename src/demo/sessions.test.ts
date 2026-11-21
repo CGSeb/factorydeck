@@ -8,17 +8,25 @@ import { listRoles } from '../roles/query.ts';
 import { sessionDetail } from '../sessions/query.ts';
 import { createTestDatabase } from '../test/postgres.ts';
 import { sessionsFolder } from '../test/session-logs.ts';
-import { writeDemoConfig, writeDemoSessions } from './sessions.ts';
+import {
+  EXAMPLE_API,
+  EXAMPLE_APP,
+  demoProjectRoot,
+  writeDemoConfig,
+  writeDemoSessions,
+} from './sessions.ts';
 
 const NOW = new Date('2026-03-12T15:30:00Z');
 
 let db: Database;
 let close: () => Promise<void>;
+let projects: string;
 
 beforeEach(async () => {
   ({ db, close } = await createTestDatabase());
   const folder = await sessionsFolder();
-  await writeDemoSessions(folder, NOW);
+  projects = await sessionsFolder();
+  await writeDemoSessions(folder, NOW, projects);
   await ingest(db, folder);
 });
 
@@ -34,9 +42,8 @@ describe('demo sessions', () => {
       now: NOW,
     });
     expect(all.projects.map((row) => row.project).sort()).toEqual([
-      '/demo/example-api',
-      '/demo/example-app',
-      'unassigned',
+      demoProjectRoot(projects, EXAMPLE_API),
+      demoProjectRoot(projects, EXAMPLE_APP),
     ]);
     expect(all.totals.unknownPriceCalls).toBe(4);
     expect(all.models.map((row) => row.model)).toEqual(
@@ -65,6 +72,7 @@ describe('demo sessions', () => {
     await writeDemoConfig(
       join(import.meta.dirname, '..', '..', 'factorydeck.example.yml'),
       path,
+      projects,
     );
     const config = loadWorkflowConfig(path);
     const list = await listRoles(

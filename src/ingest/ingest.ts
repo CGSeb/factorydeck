@@ -1,7 +1,14 @@
 import { readFile, stat } from 'node:fs/promises';
 import { sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
+import { forgetProjectsWithoutFactoryOnce } from '../projects/remove.ts';
+import {
+  type FactoryCheck,
+  cachedFactoryCheck,
+  hasFactory,
+} from './factory.ts';
 import { type LogFile, findLogFiles, readRange } from './files.ts';
+import { LOCK_KEY } from './lock.ts';
 import { isObject, parseLines } from './records.ts';
 import {
   type Run,
@@ -15,6 +22,7 @@ import {
   saveSubAgents,
   startRun,
 } from './store.ts';
+import { selectFactorySessions } from './select.ts';
 import { readThread } from './thread.ts';
 
 /** What one ingestion stored, as its summary line shows it. */
@@ -25,6 +33,11 @@ export interface IngestCounts {
   apiCalls: number;
   skillLaunches: number;
   linesSkipped: number;
+  sessionsSkipped: number;
+}
+
+export interface IngestOptions {
+  hasFactory?: FactoryCheck;
 }
 
 export type IngestResult =
@@ -40,8 +53,7 @@ export class SessionsFolderNotFoundError extends Error {
   }
 }
 
-/** Key of the PostgreSQL advisory lock that keeps two ingestions from running together. */
-export const LOCK_KEY = 0x46_44_49_4e_47;
+export { LOCK_KEY } from './lock.ts';
 
 type FileCounts = Pick<
   IngestCounts,
@@ -55,7 +67,9 @@ type FileCounts = Pick<
 export async function ingest(
   db: Database,
   sessionsFolder: string,
+  options: IngestOptions = {},
 ): Promise<IngestResult> {
+  const check = cachedFactoryCheck(options.hasFactory ?? hasFactory);
   const folder = await stat(sessionsFolder).catch(() => undefined);
   if (folder?.isDirectory() !== true) {
     throw new SessionsFolderNotFoundError(sessionsFolder);
@@ -68,14 +82,17 @@ export async function ingest(
     if (!lockTaken(lock)) {
       return { status: 'already-running' };
     }
+    await forgetProjectsWithoutFactoryOnce(tx, check);
     const run = await startRun(tx);
+    const selection = await selectFactorySessions(run, files, check);
+    run.projects = selection.projects;
     const counts: FileCounts = {
       files: 0,
       apiCalls: 0,
       skillLaunches: 0,
       linesSkipped: 0,
     };
-    for (const file of files) {
+    for (const file of selection.files) {
       await ingestFile(run, file, counts);
       await ingestMeta(run, file, counts);
     }
@@ -86,6 +103,7 @@ export async function ingest(
       ...counts,
       sessions: run.sessions.size,
       subAgents: run.subAgents.size,
+      sessionsSkipped: selection.skippedSessions,
     };
   });
 }
@@ -95,10 +113,10 @@ export function summaryLine(result: IngestResult): string {
   if (result.status === 'already-running') {
     return 'Ingestion already running.';
   }
-  if (result.files === 0) {
+  if (result.files === 0 && result.sessionsSkipped === 0) {
     return 'Nothing new.';
   }
-  return `Ingested ${result.files} files: ${result.sessions} sessions, ${result.subAgents} sub-agents, ${result.apiCalls} API calls, ${result.skillLaunches} skill launches, ${result.linesSkipped} lines skipped.`;
+  return `Ingested ${result.files} files: ${result.sessions} sessions, ${result.subAgents} sub-agents, ${result.apiCalls} API calls, ${result.skillLaunches} skill launches, ${result.linesSkipped} lines skipped, ${result.sessionsSkipped} sessions skipped (no factory).`;
 }
 
 function lockTaken(result: unknown): boolean {

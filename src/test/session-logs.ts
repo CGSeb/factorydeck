@@ -143,3 +143,12 @@ export function skillInstructions(ctx: Context): Record<string, unknown> {
 export function title(text: string): Record<string, unknown> {
   return { type: 'custom-title', customTitle: text, sessionId: 'synthetic' };
 }
+
+export const EVERY_PROJECT_HAS_FACTORY = {
+  hasFactory: (): Promise<boolean> => Promise.resolve(true),
+};
+
+export async function installFactory(root: string): Promise<void> {
+  await mkdir(join(root, 'docs', 'agents'), { recursive: true });
+  await writeFile(join(root, 'docs', 'agents', 'factory.yml'), 'version: 2\n');
+}

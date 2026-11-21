@@ -26,6 +26,7 @@ export interface Run {
   storedFiles: Map<string, StoredFile>;
   sessions: Map<string, SessionRow>;
   subAgents: Map<string, SubAgentRow>;
+  projects: Map<string, string>;
 }
 
 export async function startRun(tx: Transaction): Promise<Run> {
@@ -35,6 +36,7 @@ export async function startRun(tx: Transaction): Promise<Run> {
     storedFiles: new Map(stored.map((row) => [row.path, row])),
     sessions: new Map(),
     subAgents: new Map(),
+    projects: new Map(),
   };
 }
 
@@ -222,6 +224,12 @@ async function useSubAgentCwds(run: Run, rows: SessionRow[]): Promise<void> {
 export async function saveSessions(run: Run): Promise<void> {
   const rows = [...run.sessions.values()];
   await useSubAgentCwds(run, rows);
+  for (const row of rows) {
+    const project = run.projects.get(row.id);
+    if (project !== undefined && row.project === UNASSIGNED_PROJECT) {
+      row.project = project;
+    }
+  }
   const unresolved = rows.filter(
     (row) => row.cwd !== null && row.project === UNASSIGNED_PROJECT,
   );
