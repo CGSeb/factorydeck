@@ -1,9 +1,11 @@
 import { existsSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { z } from 'zod';
 
 const EnvSchema = z.object({
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
+  CLAUDE_PROJECTS_DIR: z.string().trim().min(1).optional(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
@@ -25,4 +27,16 @@ export function loadRootEnvFile(): void {
   if (existsSync(ROOT_ENV_FILE)) {
     process.loadEnvFile(ROOT_ENV_FILE);
   }
+}
+
+/** The folder of Claude Code session logs: `CLAUDE_PROJECTS_DIR`, else `~/.claude/projects`. */
+export function sessionsFolder(env: Pick<Env, 'CLAUDE_PROJECTS_DIR'>): string {
+  const configured = env.CLAUDE_PROJECTS_DIR;
+  if (configured === undefined) {
+    return join(homedir(), '.claude', 'projects');
+  }
+  if (configured === '~' || configured.startsWith('~/')) {
+    return join(homedir(), configured.slice(1));
+  }
+  return configured;
 }

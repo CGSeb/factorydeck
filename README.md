@@ -35,8 +35,11 @@ cp .env.example .env    # then set POSTGRES_PASSWORD and DATABASE_URL
 pnpm install
 pnpm db:up              # PostgreSQL 18 in Docker, on 127.0.0.1:5434
 pnpm db:migrate
+pnpm ingest             # read new Claude Code session logs into the database
 pnpm check
 ```
+
+`pnpm ingest` reads `~/.claude/projects` by default; set `CLAUDE_PROJECTS_DIR` in `.env` to read another folder. A second run only reads what is new.
 
 To use your own PostgreSQL server instead of Docker, set `DATABASE_URL` and skip `pnpm db:up`.
 
