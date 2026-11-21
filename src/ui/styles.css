@@ -224,8 +224,8 @@ thead th:first-child {
 }
 
 @media (max-width: 900px) {
-  th,
-  td {
+  .session-table th,
+  .session-table td {
     padding-inline: 0.35rem;
   }
 }

@@ -56,6 +56,9 @@ A developer describes their agent workflow in one configuration file, and Factor
 - An API call belongs to the role of its thread: main-thread calls to `main`, sub-agent calls to the sub-agent's role. Each call has exactly one role, so totals add up; nothing is dropped.
 - The work item belongs to the project of the session; linking it to a GitHub issue is a later spec.
 - **Example file**: `factorydeck.example.yml` holds, as working rules for `build-feature`: `builder` (`^(Build|Worker for) `), `reviewer` (`^Review `), `shipper` (`^(Ship|Merge|Push) `), `reworker` (`^(Rework|Rebase|Update) `), `spec-checker` (`check-spec`), each on `description`; and a commented-out branch rule `from: branch, pattern: '^[a-z]+/(\d+)-'` explaining that it fits branches named after issue numbers.
+- A relative `FACTORYDECK_CONFIG` path is resolved from the repository root, like `.env`, not from the shell's working directory.
+- The configuration is parsed with the `yaml` library.
+- Two `projects` keys that are equal after `~` expansion and without a trailing `/` (such as `/a` and `/a/`) make the file invalid; the error names both keys. A project key starting with `~` must be `~` or start with `~/` (`~bob/x` is invalid).
 - Periods, cost, `—` and token formats follow spec 003; environment variables follow spec 001 (documented in `.env.example`).
 - The configuration file never holds secrets and is only read, never written, by FactoryDeck.
 

@@ -1,6 +1,8 @@
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { summarizeRoles } from './query.ts';
 import {
+  DEFAULT_CONFIG,
   DEFAULT_RULES,
   type WorkflowRules,
   loadWorkflowConfig,
@@ -59,6 +61,37 @@ describe('roleOf', () => {
     expect(roleOf(rules, { agentType: '', description: '' })).toBe(
       'unassigned',
     );
+  });
+
+  it('gives a sub-agent typed main or unassigned that role, joining that row', () => {
+    expect(roleOf(rules, { agentType: 'main', description: 'Find' })).toBe(
+      'main',
+    );
+    expect(
+      roleOf(rules, { agentType: 'unassigned', description: 'Find' }),
+    ).toBe('unassigned');
+    const usage = {
+      model: 'mystery-model',
+      calls: 1,
+      input: 1,
+      cache_write: 0,
+      cache_read: 0,
+      output: 0,
+    };
+    const roles = summarizeRoles(DEFAULT_CONFIG, [
+      { ...usage, session_id: 's1', project: '/p', sub_agent: '' },
+      {
+        ...usage,
+        session_id: 's1',
+        project: '/p',
+        sub_agent: 'a1',
+        agent_type: 'main',
+        description: '',
+      },
+    ]);
+    expect(roles).toEqual([
+      { role: 'main', threads: 1, apiCalls: 2, tokens: 2, costUsd: null },
+    ]);
   });
 });
 

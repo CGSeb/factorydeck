@@ -2,7 +2,13 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { ReactElement } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
-import { NO_CONFIG_FILE, rolesLoader, someRoles } from './role-fixtures.ts';
+import {
+  NO_CONFIG_FILE,
+  rolesLoader,
+  rolesResponse,
+  someRoles,
+} from './role-fixtures.ts';
+import type { LoadRoles } from './roles-api.ts';
 import { RolesPage } from './RolesPage.tsx';
 
 function Location(): ReactElement {
@@ -83,5 +89,32 @@ export const DatabaseUnreachable: Story = {
     await within(canvasElement).findByText(
       'Database unreachable. Start it with pnpm db:up.',
     );
+  },
+};
+
+function refreshingLoader(): LoadRoles {
+  let calls = 0;
+  return () => {
+    calls += 1;
+    const main = {
+      role: 'main',
+      threads: 4,
+      apiCalls: 210,
+      tokens: 8_400_000,
+      costUsd: calls === 1 ? 12.4 : 15.25,
+    };
+    return Promise.resolve({
+      ...rolesResponse([main]),
+      refreshSeconds: 0.2,
+    });
+  };
+}
+
+export const RefreshesWithoutReload: Story = {
+  args: { loadRoles: refreshingLoader() },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('~$12.40');
+    await canvas.findByText('~$15.25');
   },
 };

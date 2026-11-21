@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const HOUR = 3_600_000;
@@ -96,10 +96,18 @@ export const DEMO_SESSIONS: readonly DemoSession[] = [
     id: `demo-api-${String(index + 1)}`,
     folder: '-demo-example-api',
     cwd: '/demo/example-api',
-    gitBranch: 'main',
+    gitBranch: `fix/${String(index + 21)}-endpoint`,
     startsAgo: days * DAY + 4 * HOUR,
     prompt: 'Add an endpoint',
     calls: [sonnet, unknownPrice, haiku, noModel, sonnet],
+    subAgents: [
+      {
+        id: 'endpoint',
+        agentType: 'general-purpose',
+        description: 'Add the endpoint handler',
+        calls: [sonnet],
+      },
+    ],
   })),
   {
     id: 'demo-unassigned',
@@ -234,4 +242,23 @@ export async function writeDemoSessions(
       );
     }
   }
+}
+
+export const DEMO_PROJECT_OVERRIDE = `
+projects:
+  /demo/example-api:
+    roles:
+      - name: api-builder
+        description: '^Add '
+    work_items:
+      - from: branch
+        pattern: '^[a-z]+/(\\d+)-'
+`;
+
+export async function writeDemoConfig(
+  examplePath: string,
+  path: string,
+): Promise<void> {
+  const example = await readFile(examplePath, 'utf8');
+  await writeFile(path, `${example}${DEMO_PROJECT_OVERRIDE}`);
 }

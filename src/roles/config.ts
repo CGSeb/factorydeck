@@ -118,17 +118,44 @@ const RulesSchema = {
   work_items: z.array(WorkItemRuleSchema).optional(),
 };
 
+function projectKeyProblem(key: string): string | undefined {
+  if (key.startsWith('~')) {
+    return key === '~' || key.startsWith('~/')
+      ? undefined
+      : 'a path starting with ~ must be ~ or start with ~/';
+  }
+  return isAbsolute(key)
+    ? undefined
+    : 'must be an absolute path or start with ~';
+}
+
+const ProjectsSchema = z
+  .record(z.string(), z.strictObject(RulesSchema))
+  .superRefine((projects, ctx) => {
+    const seen = new Map<string, string>();
+    for (const key of Object.keys(projects)) {
+      const problem = projectKeyProblem(key);
+      if (problem !== undefined) {
+        ctx.addIssue({ code: 'custom', path: [key], message: problem });
+        continue;
+      }
+      const normalised = projectKey(key);
+      const first = seen.get(normalised);
+      if (first === undefined) seen.set(normalised, key);
+      else {
+        ctx.addIssue({
+          code: 'custom',
+          path: [key],
+          message: `same project as ${JSON.stringify(first)}`,
+        });
+      }
+    }
+  });
+
 const FileSchema = z.strictObject({
   version: z.literal(1),
   ...RulesSchema,
-  projects: z
-    .record(
-      z.string().refine((key) => key.startsWith('~') || isAbsolute(key), {
-        message: 'must be an absolute path or start with ~',
-      }),
-      z.strictObject(RulesSchema),
-    )
-    .optional(),
+  projects: ProjectsSchema.optional(),
 });
 
 export function projectKey(path: string): string {

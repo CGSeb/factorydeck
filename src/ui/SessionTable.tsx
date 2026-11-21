@@ -60,7 +60,7 @@ export function SessionTable({
 }: SessionTableProps): ReactElement {
   const navigate = useNavigate();
   return (
-    <table aria-label="Sessions">
+    <table className="session-table" aria-label="Sessions">
       <SessionTableHead />
       <tbody>
         {sessions.map((row) => (

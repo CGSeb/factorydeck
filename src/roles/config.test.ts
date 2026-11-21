@@ -226,4 +226,48 @@ describe('parseWorkflowConfig', () => {
       ),
     ]);
   });
+
+  it('reports a ~ key that is neither ~ nor under ~/', () => {
+    expect(
+      errorLines(
+        [
+          'version: 1',
+          'projects:',
+          '  ~bob/x:',
+          '    roles: []',
+          '  ~factorydeck:',
+          '    roles: []',
+          '  ~/ok:',
+          '    roles: []',
+          "  '~':",
+          '    roles: []',
+        ].join('\n'),
+      ),
+    ).toEqual([
+      '  projects["~bob/x"]: a path starting with ~ must be ~ or start with ~/',
+      '  projects["~factorydeck"]: a path starting with ~ must be ~ or start with ~/',
+    ]);
+  });
+
+  it('reports two keys naming the same project, with both keys', () => {
+    expect(
+      errorLines(
+        [
+          'version: 1',
+          'projects:',
+          '  /a:',
+          '    roles: []',
+          '  /a/:',
+          '    roles: []',
+          `  ${homedir()}/code:`,
+          '    roles: []',
+          '  ~/code//:',
+          '    roles: []',
+        ].join('\n'),
+      ),
+    ).toEqual([
+      '  projects["/a/"]: same project as "/a"',
+      `  projects["~/code//"]: same project as ${JSON.stringify(`${homedir()}/code`)}`,
+    ]);
+  });
 });
