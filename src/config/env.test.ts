@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { validateEnv } from './env.ts';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import { sessionsFolder, validateEnv } from './env.ts';
 
 describe('validateEnv', () => {
   it('accepts a PostgreSQL URL', () => {
@@ -12,6 +14,29 @@ describe('validateEnv', () => {
     expect(() =>
       validateEnv({ DATABASE_URL: 'mysql://localhost/factorydeck' }),
     ).toThrow(/DATABASE_URL/);
+  });
+});
+
+describe('sessionsFolder', () => {
+  it('defaults to ~/.claude/projects', () => {
+    expect(sessionsFolder({})).toBe(join(homedir(), '.claude', 'projects'));
+  });
+
+  it('uses CLAUDE_PROJECTS_DIR, expanding a leading ~', () => {
+    expect(sessionsFolder({ CLAUDE_PROJECTS_DIR: '/logs/claude' })).toBe(
+      '/logs/claude',
+    );
+    expect(sessionsFolder({ CLAUDE_PROJECTS_DIR: '~/logs' })).toBe(
+      join(homedir(), 'logs'),
+    );
+  });
+
+  it('falls back to the default when CLAUDE_PROJECTS_DIR is empty', () => {
+    const env = validateEnv({
+      DATABASE_URL: 'postgres://user:secret@localhost:5434/factorydeck',
+      CLAUDE_PROJECTS_DIR: ' ',
+    });
+    expect(sessionsFolder(env)).toBe(join(homedir(), '.claude', 'projects'));
   });
 });
 
