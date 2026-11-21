@@ -3,6 +3,8 @@ import { Route, Routes } from 'react-router';
 import { Layout } from './Layout.tsx';
 import type { LoadOverview } from './overview-api.ts';
 import { OverviewPage } from './OverviewPage.tsx';
+import type { LoadRoles } from './roles-api.ts';
+import { RolesPage } from './RolesPage.tsx';
 import type { LoadSession, LoadSessions } from './sessions-api.ts';
 import { SessionPage } from './SessionPage.tsx';
 import { SessionsPage } from './SessionsPage.tsx';
@@ -16,6 +18,7 @@ export interface AppProps {
   loadSession: LoadSession;
   loadSkills: LoadSkills;
   loadSkill: LoadSkill;
+  loadRoles: LoadRoles;
 }
 
 export function App({
@@ -24,6 +27,7 @@ export function App({
   loadSession,
   loadSkills,
   loadSkill,
+  loadRoles,
 }: AppProps): ReactElement {
   return (
     <Routes>
@@ -42,6 +46,7 @@ export function App({
           path="skills/:name"
           element={<SkillPage loadSkill={loadSkill} />}
         />
+        <Route path="roles" element={<RolesPage loadRoles={loadRoles} />} />
       </Route>
     </Routes>
   );

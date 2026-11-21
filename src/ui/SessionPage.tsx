@@ -6,6 +6,7 @@ import {
   formatClock,
   formatCost,
   formatDateTime,
+  formatWorkItem,
   orMissing,
 } from './format.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
@@ -58,6 +59,7 @@ function SessionHeader({
     { label: 'Project', value: session.project },
     { label: 'Working directory', value: orMissing(session.cwd ?? '') },
     { label: 'Branch', value: orMissing(session.gitBranch) },
+    { label: 'Work item', value: formatWorkItem(session.workItem) },
     { label: 'First activity', value: formatDateTime(session.firstAt) },
     { label: 'Last activity', value: formatDateTime(session.lastAt) },
     { label: 'Cost', value: formatCost(session.costUsd) },

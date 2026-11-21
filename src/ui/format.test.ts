@@ -9,6 +9,7 @@ import {
   formatDateTime,
   formatDuration,
   formatTokens,
+  formatWorkItem,
   orMissing,
 } from './format.ts';
 
@@ -112,5 +113,12 @@ describe('orMissing', () => {
   it('shows — for an empty value', () => {
     expect(orMissing('')).toBe('—');
     expect(orMissing('main')).toBe('main');
+  });
+});
+
+describe('formatWorkItem', () => {
+  it('shows an issue number with #, and — without one', () => {
+    expect(formatWorkItem(52)).toBe('#52');
+    expect(formatWorkItem(null)).toBe('—');
   });
 });

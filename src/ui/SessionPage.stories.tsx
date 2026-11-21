@@ -61,6 +61,14 @@ export const WithSubAgents: Story = {
       canvas.getByText('/home/dev/example-app/packages/web'),
     ).toBeVisible();
     await expect(canvas.getByText('feat/export')).toBeVisible();
+    await expect(
+      canvas.getByRole('region', { name: 'Session' }),
+    ).toHaveTextContent('Work item#52');
+    const subAgentRows = within(
+      canvas.getByRole('table', { name: 'Sub-agents' }),
+    ).getAllByRole('row');
+    await expect(subAgentRows[0]).toHaveTextContent('TypeRoleWork item');
+    await expect(subAgentRows[2]).toHaveTextContent('builder#53');
     await expect(canvas.getByText('4.2M')).toBeVisible();
     await expect(canvas.getByText('Cache read')).toBeVisible();
     await expect(canvas.getByText('~$6.42')).toBeVisible();
@@ -79,6 +87,9 @@ export const WithoutSubAgents: Story = {
     await canvas.findByRole('heading', { name: 'b81e44d0' });
     await expect(canvas.getByText('Waiting for you')).toBeVisible();
     await expect(canvas.getByText('No sub-agents.')).toBeVisible();
+    await expect(
+      canvas.getByRole('region', { name: 'Session' }),
+    ).toHaveTextContent('Work item—');
   },
 };
 

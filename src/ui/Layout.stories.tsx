@@ -10,6 +10,7 @@ function at(path: string): Decorator {
         <Route element={<Story />}>
           <Route index element={<p>Section content</p>} />
           <Route path="sessions" element={<p>Session list</p>} />
+          <Route path="roles" element={<p>Role list</p>} />
         </Route>
       </Routes>
     </MemoryRouter>
@@ -34,5 +35,23 @@ export const SessionsActive: Story = {
     await expect(
       within(canvasElement).getByRole('link', { name: 'Sessions' }),
     ).toHaveAttribute('aria-current', 'page');
+  },
+};
+
+export const RolesActive: Story = {
+  decorators: [at('/roles')],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const links = canvas.getAllByRole('link');
+    await expect(links.map((link) => link.textContent)).toEqual([
+      'Overview',
+      'Sessions',
+      'Skills',
+      'Roles',
+    ]);
+    await expect(canvas.getByRole('link', { name: 'Roles' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
   },
 };

@@ -36,7 +36,11 @@ export const Rows: Story = {
   args: { sessions: someSessions, now: new Date() },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getAllByRole('row')).toHaveLength(4);
+    const rows = canvas.getAllByRole('row');
+    await expect(rows).toHaveLength(4);
+    await expect(rows[0]).toHaveTextContent('BranchWork item');
+    await expect(rows[1]).toHaveTextContent('feat/export#52');
+    await expect(rows[2]).toHaveTextContent('——');
     await expect(canvas.getByText('3 min ago')).toBeVisible();
     await expect(canvas.getByText('2 h 02 min')).toBeVisible();
     await expect(canvas.getByRole('link', { name: 'b81e44d0' })).toBeVisible();

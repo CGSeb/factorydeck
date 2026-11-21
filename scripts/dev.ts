@@ -2,7 +2,12 @@ import { type ChildProcess, spawn } from 'node:child_process';
 import { type FSWatcher, watch } from 'node:fs';
 import { join, sep } from 'node:path';
 import { type ViteDevServer, createServer } from 'vite';
-import { loadRootEnvFile, validateEnv } from '../src/config/env.ts';
+import {
+  loadRootEnvFile,
+  validateEnv,
+  workflowConfigPath,
+} from '../src/config/env.ts';
+import { loadWorkflowConfig } from '../src/roles/config.ts';
 import { uiDevConfig } from './vite-config.ts';
 
 const SRC = join(import.meta.dirname, '..', 'src');
@@ -78,6 +83,12 @@ async function shutdown(
 
 loadRootEnvFile();
 const env = validateEnv(process.env);
+try {
+  loadWorkflowConfig(workflowConfigPath(env));
+} catch (error) {
+  console.error(error instanceof Error ? error.message : error);
+  process.exit(1);
+}
 
 // Vite starts first: if it cannot listen, no API child is left running behind it.
 const ui = await createServer(uiDevConfig(env.FACTORYDECK_PORT));

@@ -4,6 +4,7 @@ import {
   formatCost,
   formatDateTime,
   formatDuration,
+  formatWorkItem,
   orMissing,
 } from './format.ts';
 import { TokenCount } from './TokenCount.tsx';
@@ -25,6 +26,10 @@ export function SubAgentTable({
             <tr>
               <th scope="col">Type</th>
               <th scope="col" className="left">
+                Role
+              </th>
+              <th scope="col">Work item</th>
+              <th scope="col" className="left">
                 Description
               </th>
               <th scope="col" className="left">
@@ -40,6 +45,8 @@ export function SubAgentTable({
             {subAgents.map((agent) => (
               <tr key={agent.id}>
                 <th scope="row">{orMissing(agent.agentType)}</th>
+                <td className="left">{agent.role}</td>
+                <td>{formatWorkItem(agent.workItem)}</td>
                 <td className="left">{orMissing(agent.description)}</td>
                 <td className="left">{orMissing(agent.model)}</td>
                 <td>{formatDateTime(agent.firstAt)}</td>

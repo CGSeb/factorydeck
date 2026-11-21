@@ -14,7 +14,7 @@ export interface SkillSource {
   detail: (skill: string, query: SkillQuery) => Promise<SkillDetail>;
 }
 
-function skillQuery(
+export function skillQuery(
   read: (name: string) => string | undefined,
 ): SkillQuery | undefined {
   const period = read('period');
@@ -24,7 +24,9 @@ function skillQuery(
   return { period, timeZone, project };
 }
 
-const INVALID_QUERY = { error: 'Expected period, tz, and optional project' };
+export const INVALID_QUERY = {
+  error: 'Expected period, tz, and optional project',
+};
 
 export function skillRoutes(
   skills: SkillSource,

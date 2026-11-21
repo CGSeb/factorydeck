@@ -19,11 +19,11 @@ export type LoadSkill = (
 
 const RETRY_SECONDS = 10;
 
-function browserTimeZone(): string {
+export function browserTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
 }
 
-function isResponse<T>(body: unknown): body is T {
+export function isResponse<T>(body: unknown): body is T {
   return (
     typeof body === 'object' &&
     body !== null &&
@@ -32,7 +32,7 @@ function isResponse<T>(body: unknown): body is T {
   );
 }
 
-async function fetchJson(
+export async function fetchJson(
   fetchImpl: typeof fetch,
   url: string,
 ): Promise<unknown> {
@@ -45,7 +45,7 @@ async function fetchJson(
   }
 }
 
-function queryOf(
+export function queryOf(
   { period, project }: SkillFilters,
   timeZone: string,
 ): URLSearchParams {

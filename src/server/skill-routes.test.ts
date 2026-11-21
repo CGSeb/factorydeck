@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { SkillDetail, SkillList, SkillQuery } from '../skills/types.ts';
 import { type OverviewSource, createApp } from './app.ts';
 import type { SessionSource } from './session-routes.ts';
+import { unusedRoles } from '../test/skill-source.ts';
 import type { SkillSource } from './skill-routes.ts';
 
 const up = (): Promise<boolean> => Promise.resolve(true);
@@ -64,6 +65,7 @@ function app(checkDatabase = up) {
     overview,
     sessions,
     skills,
+    roles: unusedRoles,
   });
 }
 

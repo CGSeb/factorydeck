@@ -1,10 +1,14 @@
+import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Database } from '../db/client.ts';
 import { ingest } from '../ingest/ingest.ts';
 import { usageOverview } from '../overview/query.ts';
+import { loadWorkflowConfig } from '../roles/config.ts';
+import { listRoles } from '../roles/query.ts';
+import { sessionDetail } from '../sessions/query.ts';
 import { createTestDatabase } from '../test/postgres.ts';
 import { sessionsFolder } from '../test/session-logs.ts';
-import { writeDemoSessions } from './sessions.ts';
+import { writeDemoConfig, writeDemoSessions } from './sessions.ts';
 
 const NOW = new Date('2026-03-12T15:30:00Z');
 
@@ -54,5 +58,58 @@ describe('demo sessions', () => {
       now: NOW,
     });
     expect(today.totals.apiCalls).toBe(3);
+  });
+
+  it('cover roles, work items, a project override and a branch rule with the demo configuration', async () => {
+    const path = join(await sessionsFolder(), 'factorydeck.yml');
+    await writeDemoConfig(
+      join(import.meta.dirname, '..', '..', 'factorydeck.example.yml'),
+      path,
+    );
+    const config = loadWorkflowConfig(path);
+    const list = await listRoles(
+      db,
+      { period: 'all', timeZone: 'UTC', now: NOW },
+      config,
+    );
+    expect(list.roles.map((row) => row.role).sort()).toEqual([
+      'Explore',
+      'api-builder',
+      'builder',
+      'main',
+      'reviewer',
+      'unassigned',
+    ]);
+    const overview = await usageOverview(db, {
+      period: 'all',
+      timeZone: 'UTC',
+      now: NOW,
+    });
+    expect(list.apiCalls).toBe(overview.totals.apiCalls);
+    const detail = await sessionDetail(
+      db,
+      'demo-app-1',
+      { inactiveAfterMinutes: 30, now: NOW },
+      config,
+    );
+    expect(detail?.workItem).toBe(11);
+    expect(
+      detail?.subAgents.map((agent) => [agent.role, agent.workItem]),
+    ).toEqual([
+      ['Explore', 11],
+      ['unassigned', 11],
+      ['reviewer', 11],
+      ['builder', 11],
+    ]);
+    const api = await sessionDetail(
+      db,
+      'demo-api-1',
+      { inactiveAfterMinutes: 30, now: NOW },
+      config,
+    );
+    expect(api?.workItem).toBe(21);
+    expect(api?.subAgents.map((agent) => [agent.role, agent.workItem])).toEqual(
+      [['api-builder', 21]],
+    );
   });
 });

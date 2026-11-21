@@ -7,7 +7,7 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import pg from 'pg';
 import { loadRootEnvFile, validateEnv } from '../src/config/env.ts';
 import { createDatabase } from '../src/db/client.ts';
-import { writeDemoSessions } from '../src/demo/sessions.ts';
+import { writeDemoConfig, writeDemoSessions } from '../src/demo/sessions.ts';
 import { ingest, summaryLine } from '../src/ingest/ingest.ts';
 
 const ROOT = join(import.meta.dirname, '..');
@@ -38,6 +38,8 @@ const demoUrl = url.toString();
 const folder = join(tmpdir(), `factorydeck-demo-sessions-${String(port)}`);
 await rm(folder, { recursive: true, force: true });
 await writeDemoSessions(folder, new Date());
+const config = join(folder, 'factorydeck.yml');
+await writeDemoConfig(join(ROOT, 'factorydeck.example.yml'), config);
 
 const { db, close } = createDatabase(demoUrl);
 try {
@@ -56,6 +58,7 @@ const server = spawn(
       ...process.env,
       DATABASE_URL: demoUrl,
       CLAUDE_PROJECTS_DIR: folder,
+      FACTORYDECK_CONFIG: config,
       FACTORYDECK_PORT: String(port),
     },
   },
