@@ -14,6 +14,9 @@ export function Layout(): ReactElement {
                 Overview
               </NavLink>
             </li>
+            <li>
+              <NavLink to="/sessions">Sessions</NavLink>
+            </li>
           </ul>
         </nav>
       </header>

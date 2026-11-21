@@ -2,6 +2,7 @@ import { loadRootEnvFile, sessionsFolder, validateEnv } from '../config/env.ts';
 import { createDatabase } from '../db/client.ts';
 import { ingest } from '../ingest/ingest.ts';
 import { usageOverview } from '../overview/query.ts';
+import { listSessions, sessionDetail } from '../sessions/query.ts';
 import { createApp } from './app.ts';
 import { databaseCheck } from './health.ts';
 import { startIngestLoop } from './ingest-loop.ts';
@@ -13,6 +14,9 @@ async function main(): Promise<void> {
   const env = validateEnv(process.env);
   const { db } = createDatabase(env.DATABASE_URL);
   const folder = sessionsFolder(env);
+  const stateOptions = {
+    inactiveAfterMinutes: env.FACTORYDECK_INACTIVE_AFTER_MINUTES,
+  };
   let lastError = '';
   const ingestion = startIngestLoop({
     run: async () => {
@@ -35,6 +39,10 @@ async function main(): Promise<void> {
       sessionsFolder: folder,
       refreshSeconds: env.FACTORYDECK_INGEST_INTERVAL_SECONDS,
       updatedAt: ingestion.lastFinishedAt,
+    },
+    sessions: {
+      list: (query) => listSessions(db, query, stateOptions),
+      detail: (id) => sessionDetail(db, id, stateOptions),
     },
   });
   await listen(app, env.FACTORYDECK_PORT);

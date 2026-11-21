@@ -1,6 +1,6 @@
 # 004 · Session list
 
-Status: ready
+Status: done
 Depends on: 002, 003
 Checked: 2026-11-21
 
@@ -10,16 +10,16 @@ A developer sees at a glance which of their agent sessions are working, which ar
 
 ## Acceptance criteria
 
-- [ ] The navigation bar has a `Sessions` entry, at `/sessions`; `/sessions` and `/sessions/<session id>` are React Router routes, and a reload on either works.
-- [ ] The list shows one row per session (main sessions only, sub-agents are not rows): state, title (or the first 8 characters of the session id when there is no title), project, branch, last activity (relative, such as `3 min ago`), duration (first to last record), tokens and cost.
-- [ ] Rows are sorted by last activity, most recent first.
-- [ ] The state is one of `Working`, `Waiting for you` or `Inactive` (see Rules), shown as a coloured label with its text; counts of each state are shown above the list, such as `2 working · 1 waiting for you · 41 inactive`.
-- [ ] Filters: project (a list of the projects that have sessions, plus `All projects`, default) and state (`All`, `Working`, `Waiting for you`, `Inactive`; default `All`). The period selector of spec 003 applies, on last activity. Filters are kept in the URL.
-- [ ] The list shows 50 rows, then a `Show more` button adds the next 50.
-- [ ] Clicking a row opens `/sessions/<session id>` with: the session header (title, state, project, working directory, branch, first and last activity, tokens with their four kinds, cost), and a table of its sub-agents with type, description, model, first activity, duration, tokens and cost, in start order. A session without sub-agents shows `No sub-agents.`
-- [ ] An unknown session id shows `Session not found.` with a link back to the list.
-- [ ] States, times and figures refresh with each re-ingestion of spec 003, without a reload.
-- [ ] With no session matching the filters, the list shows `No sessions match these filters.`
+- [x] The navigation bar has a `Sessions` entry, at `/sessions`; `/sessions` and `/sessions/<session id>` are React Router routes, and a reload on either works.
+- [x] The list shows one row per session (main sessions only, sub-agents are not rows): state, title (or the first 8 characters of the session id when there is no title), project, branch, last activity (relative, such as `3 min ago`), duration (first to last record), tokens and cost.
+- [x] Rows are sorted by last activity, most recent first.
+- [x] The state is one of `Working`, `Waiting for you` or `Inactive` (see Rules), shown as a coloured label with its text; counts of each state are shown above the list, such as `2 working · 1 waiting for you · 41 inactive`.
+- [x] Filters: project (a list of the projects that have sessions, plus `All projects`, default) and state (`All`, `Working`, `Waiting for you`, `Inactive`; default `All`). The period selector of spec 003 applies, on last activity. Filters are kept in the URL.
+- [x] The list shows 50 rows, then a `Show more` button adds the next 50.
+- [x] Clicking a row opens `/sessions/<session id>` with: the session header (title, state, project, working directory, branch, first and last activity, tokens with their four kinds, cost), and a table of its sub-agents with type, description, model, first activity, duration, tokens and cost, in start order. A session without sub-agents shows `No sub-agents.`
+- [x] An unknown session id shows `Session not found.` with a link back to the list.
+- [x] States, times and figures refresh with each re-ingestion of spec 003, without a reload.
+- [x] With no session matching the filters, the list shows `No sessions match these filters.`
 
 ## Rules
 

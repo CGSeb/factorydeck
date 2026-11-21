@@ -93,12 +93,14 @@ describe('pnpm start', () => {
       DATABASE_URL: 'mysql://localhost/x',
       FACTORYDECK_PORT: 'abc',
       FACTORYDECK_INGEST_INTERVAL_SECONDS: '0',
+      FACTORYDECK_INACTIVE_AFTER_MINUTES: '0',
     });
     expect(await run.exited).toBe(1);
     expect(run.output()).toContain('Invalid environment');
     expect(run.output()).toContain('DATABASE_URL');
     expect(run.output()).toContain('FACTORYDECK_PORT');
     expect(run.output()).toContain('FACTORYDECK_INGEST_INTERVAL_SECONDS');
+    expect(run.output()).toContain('FACTORYDECK_INACTIVE_AFTER_MINUTES');
   });
 
   it('ingests the session logs at start-up, then at every interval', async () => {
@@ -151,6 +153,13 @@ describe('pnpm start', () => {
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
       expect(body).toMatchObject({ overview: { totals: { apiCalls: 2 } } });
+      const sessions: unknown = await (
+        await fetch(`http://127.0.0.1:${port}/api/sessions?period=all&tz=UTC`)
+      ).json();
+      expect(sessions).toMatchObject({
+        status: 'ok',
+        list: { total: 1, sessions: [{ id: 'session-live' }] },
+      });
     } finally {
       run.child.kill();
       await run.exited;

@@ -51,7 +51,7 @@ function isRow(value: unknown): value is Row {
   return typeof value === 'object' && value !== null;
 }
 
-async function select(db: Database, query: SQL): Promise<Row[]> {
+export async function select(db: Database, query: SQL): Promise<Row[]> {
   const result: unknown = await db.execute(query);
   const rows: unknown =
     isRow(result) && 'rows' in result ? result.rows : result;
@@ -100,16 +100,24 @@ async function windowOf(
   const unit = period === 'today' ? 'hour' : 'day';
   const format = unit === 'hour' ? 'YYYY-MM-DD"T"HH24:00' : 'YYYY-MM-DD';
   const nowAt = now.toISOString();
-  if (period === 'all') return { unit, format, timeZone, nowAt, startAt: null };
+  const startAt = await periodStart(db, { period, timeZone, now });
+  return { unit, format, timeZone, nowAt, startAt };
+}
+
+export async function periodStart(
+  db: Database,
+  { period, timeZone, now = new Date() }: OverviewQuery,
+): Promise<string | null> {
+  if (period === 'all') return null;
   const [row] = await select(
     db,
     sql`select to_char(
-        (date_trunc('day', ${nowAt}::timestamptz at time zone ${timeZone})
+        (date_trunc('day', ${now.toISOString()}::timestamptz at time zone ${timeZone})
           - ${DAYS_BEFORE_TODAY[period]} * interval '1 day') at time zone ${timeZone}
           at time zone 'UTC',
         'YYYY-MM-DD"T"HH24:MI:SS"Z"') as start`,
   );
-  return { unit, format, timeZone, nowAt, startAt: text(row?.['start']) };
+  return text(row?.['start']);
 }
 
 function inWindow({ startAt }: Window): SQL {

@@ -8,7 +8,9 @@ import {
   type UsageOverview,
   isPeriod,
 } from '../overview/types.ts';
+import { apiContext, isTimeZone } from './api-context.ts';
 import type { DatabaseCheck } from './health.ts';
+import { type SessionSource, sessionRoutes } from './session-routes.ts';
 
 export interface OverviewSource {
   load: (query: OverviewQuery) => Promise<UsageOverview>;
@@ -22,17 +24,7 @@ export interface AppOptions {
   /** Folder of the built UI; when it holds no `index.html`, the UI is reported as not built. */
   uiDir: string;
   overview: OverviewSource;
-}
-
-function isTimeZone(value: string): boolean {
-  try {
-    return (
-      new Intl.DateTimeFormat('en', { timeZone: value }).resolvedOptions()
-        .timeZone !== ''
-    );
-  } catch {
-    return false;
-  }
+  sessions: SessionSource;
 }
 
 /** The FactoryDeck HTTP app: the JSON API under `/api/`, the UI everywhere else. */
@@ -40,8 +32,15 @@ export function createApp({
   checkDatabase,
   uiDir,
   overview,
+  sessions,
 }: AppOptions): Hono {
   const app = new Hono();
+  const context = apiContext(
+    checkDatabase,
+    overview.refreshSeconds,
+    overview.updatedAt,
+  );
+  const { refreshSeconds, updatedAt, fromDatabase } = context;
 
   app.get('/api/health', async (c) =>
     (await checkDatabase())
@@ -54,26 +53,16 @@ export function createApp({
     if (!isPeriod(period) || !isTimeZone(timeZone)) {
       return c.json({ error: 'Expected period and tz query parameters' }, 400);
     }
-    const unreachable: OverviewResponse = {
-      status: 'unreachable',
-      refreshSeconds: overview.refreshSeconds,
-    };
-    if (!(await checkDatabase())) return c.json(unreachable, 503);
-    try {
-      const usage = await overview.load({ period, timeZone });
-      const body: OverviewResponse = {
-        status: 'ok',
-        sessionsFolder: overview.sessionsFolder,
-        updatedAt: overview.updatedAt()?.toISOString() ?? null,
-        refreshSeconds: overview.refreshSeconds,
-        overview: usage,
-      };
-      return c.json(body);
-    } catch (error) {
-      if (await checkDatabase()) throw error;
-      return c.json(unreachable, 503);
-    }
+    const body: OverviewResponse = await fromDatabase(async () => ({
+      status: 'ok',
+      sessionsFolder: overview.sessionsFolder,
+      updatedAt: updatedAt(),
+      refreshSeconds,
+      overview: await overview.load({ period, timeZone }),
+    }));
+    return c.json(body, body.status === 'ok' ? 200 : 503);
   });
+  app.route('/api/sessions', sessionRoutes(sessions, context));
   app.all('/api/*', (c) => c.json({ error: 'Not found' }, 404));
 
   if (!existsSync(join(uiDir, 'index.html'))) {

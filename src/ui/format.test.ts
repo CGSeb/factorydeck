@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
+  formatAgo,
   formatAxisCost,
   formatBucket,
   formatClock,
   formatCost,
   formatCount,
+  formatDateTime,
+  formatDuration,
   formatTokens,
+  orMissing,
 } from './format.ts';
 
 describe('formatCost', () => {
@@ -63,5 +67,50 @@ describe('formatBucket', () => {
   it('shows a day as month and day, an hour as hh:00', () => {
     expect(formatBucket('2026-11-05')).toBe('Nov 5');
     expect(formatBucket('2026-11-21T14:00')).toBe('14:00');
+  });
+});
+
+describe('formatAgo', () => {
+  const now = new Date('2026-01-07T12:00:00Z');
+
+  it('shows how long ago, in the largest whole unit', () => {
+    expect(formatAgo('2026-01-07T11:59:30Z', now)).toBe('just now');
+    expect(formatAgo('2026-01-07T11:57:00Z', now)).toBe('3 min ago');
+    expect(formatAgo('2026-01-07T09:10:00Z', now)).toBe('2 h ago');
+    expect(formatAgo('2026-01-02T12:00:00Z', now)).toBe('5 d ago');
+  });
+
+  it('shows — when the time is unknown', () => {
+    expect(formatAgo(null, now)).toBe('—');
+  });
+});
+
+describe('formatDuration', () => {
+  it('shows the time from first to last record', () => {
+    const from = '2026-01-07T12:00:00Z';
+    expect(formatDuration(from, '2026-01-07T12:00:42Z')).toBe('42 s');
+    expect(formatDuration(from, '2026-01-07T12:17:59Z')).toBe('17 min');
+    expect(formatDuration(from, '2026-01-07T14:05:00Z')).toBe('2 h 05 min');
+    expect(formatDuration(from, '2026-01-09T15:00:00Z')).toBe('2 d 3 h');
+  });
+
+  it('shows — when either end is unknown', () => {
+    expect(formatDuration(null, '2026-01-07T12:00:00Z')).toBe('—');
+  });
+});
+
+describe('formatDateTime', () => {
+  it('shows a local date and time', () => {
+    expect(formatDateTime(new Date(2026, 0, 7, 9, 5).toISOString())).toBe(
+      'Jan 7, 09:05',
+    );
+    expect(formatDateTime(null)).toBe('—');
+  });
+});
+
+describe('orMissing', () => {
+  it('shows — for an empty value', () => {
+    expect(orMissing('')).toBe('—');
+    expect(orMissing('main')).toBe('main');
   });
 });
