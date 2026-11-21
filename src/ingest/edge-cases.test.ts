@@ -4,6 +4,7 @@ import type { Database } from '../db/client.ts';
 import { apiCall, session, userPrompt } from '../db/schema.ts';
 import { createTestDatabase } from '../test/postgres.ts';
 import {
+  appendLog,
   assistant,
   sessionsFolder,
   userText,
@@ -72,5 +73,53 @@ describe('ingest edge cases', () => {
     await ingest(db, folder);
     const prompts = await db.select().from(userPrompt);
     expect(prompts.map((prompt) => prompt.recordUuid)).toEqual(['u1']);
+  });
+
+  it('lets a working directory found later in the main log win over a sub-agent one', async () => {
+    const main = join(folder, 'p', 'session-i.jsonl');
+    const agent = join(folder, 'p', 'session-i', 'subagents', 'agent-y.jsonl');
+    await writeLog(main, [userText({ uuid: 'u1', at: 0 }, 'Hi')]);
+    await writeLog(agent, [
+      assistant(
+        { uuid: 'y1', at: 1, cwd: '/gone/agent', sidechain: true },
+        { requestId: 'ry' },
+      ),
+    ]);
+    await ingest(db, folder);
+    expect((await db.select().from(session))[0]).toMatchObject({
+      cwd: '/gone/agent',
+      project: '/gone/agent',
+    });
+    await appendLog(main, [
+      assistant({ uuid: 'a2', at: 2, cwd: '/gone/main' }, { requestId: 'r2' }),
+    ]);
+    await ingest(db, folder);
+    expect((await db.select().from(session))[0]).toMatchObject({
+      cwd: '/gone/main',
+      cwdFromMain: true,
+      project: '/gone/main',
+    });
+  });
+
+  it('keeps the sub-agent working directory when a main log without one is read again', async () => {
+    const main = join(folder, 'p', 'session-j.jsonl');
+    const agent = join(folder, 'p', 'session-j', 'subagents', 'agent-w.jsonl');
+    await writeLog(main, [
+      userText({ uuid: 'u1', at: 0 }, 'First'),
+      userText({ uuid: 'u2', at: 1 }, 'Second'),
+    ]);
+    await writeLog(agent, [
+      assistant(
+        { uuid: 'w1', at: 1, cwd: '/gone/helper', sidechain: true },
+        { requestId: 'rw' },
+      ),
+    ]);
+    await ingest(db, folder);
+    await writeLog(main, [userText({ uuid: 'u3', at: 2 }, 'Hi')]);
+    expect(summaryLine(await ingest(db, folder))).toMatch(/^Ingested 1 files/);
+    expect((await db.select().from(session))[0]).toMatchObject({
+      cwd: '/gone/helper',
+      project: '/gone/helper',
+    });
   });
 });

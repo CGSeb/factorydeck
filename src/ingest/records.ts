@@ -299,6 +299,7 @@ export function nextTurnState(state: TurnState, record: LogRecord): TurnState {
       ...state,
       lastStopReason: typeof stopReason === 'string' ? stopReason : null,
       userAfterLastAssistant: false,
+      lastUserInterrupted: false,
     };
   }
   if (isInterruption(record)) {

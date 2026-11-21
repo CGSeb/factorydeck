@@ -272,6 +272,37 @@ describe('turn ended', () => {
     ).toBe(true);
   });
 
+  it('follows the stop reason of an assistant record after an interruption', () => {
+    const interruption = userText(
+      ctx,
+      '[Request interrupted by user for tool use]',
+    );
+    expect(
+      endedAfter([
+        assistant(ctx, { requestId: 'r1', stopReason: 'tool_use' }),
+        interruption,
+        userText(ctx, '<task-notification>\n<task-id>a</task-id>'),
+        assistant(ctx, { requestId: 'r2', stopReason: 'tool_use' }),
+      ]),
+    ).toBe(false);
+    expect(
+      endedAfter([
+        interruption,
+        assistant(ctx, { requestId: 'r3', stopReason: 'end_turn' }),
+      ]),
+    ).toBe(true);
+  });
+
+  it('is reopened by a prompt of images alone', () => {
+    const image = { type: 'image', source: { type: 'base64', data: 'AA==' } };
+    expect(
+      endedAfter([
+        assistant(ctx, { requestId: 'r' }),
+        userText(ctx, '', { message: { role: 'user', content: [image] } }),
+      ]),
+    ).toBe(false);
+  });
+
   it('is still going with no assistant record', () => {
     expect(endedAfter([ask])).toBe(false);
   });

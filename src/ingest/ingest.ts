@@ -79,8 +79,8 @@ export async function ingest(
       await ingestFile(run, file, counts);
       await ingestMeta(run, file, counts);
     }
-    await saveSessions(run);
     await saveSubAgents(run);
+    await saveSessions(run);
     return {
       status: 'done',
       ...counts,
@@ -156,7 +156,7 @@ async function ingestFile(
     if (agentRow === undefined) {
       resetSession(sessionRow);
     } else {
-      Object.assign(agentRow, { firstAt: null, lastAt: null });
+      Object.assign(agentRow, { firstAt: null, lastAt: null, cwd: null });
     }
   }
   const { records, skipped, consumed } = parseLines(chunk);
@@ -171,7 +171,7 @@ async function ingestFile(
     agentRow ?? sessionRow,
     agentRow === undefined ? sessionRow : undefined,
   );
-  sessionRow.cwd ??= rows.cwd;
+  keepFirstCwd(agentRow, rows.cwd);
   const inserted = await insertThreadRows(run, file.sessionId, rows);
   Object.assign(counts, {
     linesSkipped: counts.linesSkipped + skipped + rows.skipped,
@@ -182,6 +182,15 @@ async function ingestFile(
     sizeBytes: range.size,
     readOffset: range.start + consumed,
   });
+}
+
+function keepFirstCwd(
+  agent: { cwd: string | null } | undefined,
+  cwd: string | null,
+): void {
+  if (agent !== undefined && agent.cwd === null) {
+    agent.cwd = cwd;
+  }
 }
 
 /** Reads the meta file of a sub-agent when it is new or changed. */

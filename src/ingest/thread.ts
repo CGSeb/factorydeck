@@ -1,4 +1,9 @@
-import type { apiCall, skillLaunch, userPrompt } from '../db/schema.ts';
+import {
+  type apiCall,
+  type skillLaunch,
+  type userPrompt,
+  UNASSIGNED_PROJECT,
+} from '../db/schema.ts';
 import {
   type LogRecord,
   type TurnState,
@@ -25,7 +30,9 @@ export interface Span {
 
 /** What the main thread of a session tells about it, carried from one run to the next. */
 export interface MainThread extends TurnState {
+  project: string;
   cwd: string | null;
+  cwdFromMain: boolean;
   gitBranch: string;
   title: string;
 }
@@ -182,8 +189,12 @@ function readContext(main: MainThread, record: LogRecord): void {
   if (cwd === undefined) {
     return;
   }
-  if (main.cwd === null && cwd !== '') {
+  if (!main.cwdFromMain && cwd !== '') {
+    if (main.cwd !== cwd) {
+      main.project = UNASSIGNED_PROJECT;
+    }
     main.cwd = cwd;
+    main.cwdFromMain = true;
   }
   main.gitBranch = stringOf(record, 'gitBranch') ?? '';
 }

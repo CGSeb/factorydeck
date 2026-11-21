@@ -30,6 +30,8 @@ export const session = pgTable('session', {
   /** Root path of the project, or `unassigned`. */
   project: text().notNull().default(UNASSIGNED_PROJECT),
   cwd: text(),
+  /** Whether `cwd` comes from the main log; otherwise it comes from a sub-agent log, or is unknown. */
+  cwdFromMain: boolean('cwd_from_main').notNull().default(false),
   gitBranch: text('git_branch').notNull().default(''),
   title: text().notNull().default(''),
   firstAt: timestamp('first_at', { withTimezone: true }),
@@ -57,6 +59,7 @@ export const subAgent = pgTable(
     agentType: text('agent_type').notNull().default(''),
     description: text().notNull().default(''),
     model: text().notNull().default(''),
+    cwd: text(),
     firstAt: timestamp('first_at', { withTimezone: true }),
     lastAt: timestamp('last_at', { withTimezone: true }),
   },

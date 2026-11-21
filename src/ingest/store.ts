@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNotNull, ne } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, ne, sql } from 'drizzle-orm';
 import type { PgAsyncTransaction, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import {
   UNASSIGNED_PROJECT,
@@ -107,6 +107,7 @@ export function resetSession(row: SessionRow): void {
   Object.assign(row, {
     project: UNASSIGNED_PROJECT,
     cwd: null,
+    cwdFromMain: false,
     gitBranch: '',
     title: '',
     firstAt: null,
@@ -200,9 +201,30 @@ async function earlierSlashSkills(
   );
 }
 
+/**
+ * Gives a session whose main log has no working directory the one of its first sub-agent that
+ * has one, read from the stored sub-agents so that it survives a re-read of either log.
+ */
+async function useSubAgentCwds(run: Run, rows: SessionRow[]): Promise<void> {
+  for (const row of rows.filter((candidate) => !candidate.cwdFromMain)) {
+    const [first] = await run.tx
+      .select({ cwd: subAgent.cwd })
+      .from(subAgent)
+      .where(and(eq(subAgent.sessionId, row.id), isNotNull(subAgent.cwd)))
+      .orderBy(sql`${subAgent.firstAt} asc nulls last`, subAgent.id)
+      .limit(1);
+    const cwd = first?.cwd ?? null;
+    if (cwd !== row.cwd) {
+      row.cwd = cwd;
+      row.project = UNASSIGNED_PROJECT;
+    }
+  }
+}
+
 /** Resolves the projects of new working directories, then saves every session touched. */
 export async function saveSessions(run: Run): Promise<void> {
   const rows = [...run.sessions.values()];
+  await useSubAgentCwds(run, rows);
   const unresolved = rows.filter(
     (row) => row.cwd !== null && row.project === UNASSIGNED_PROJECT,
   );
