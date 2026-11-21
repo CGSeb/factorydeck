@@ -2,7 +2,7 @@
   "type": "diff",
   "version": "9",
   "dialect": "postgres",
-  "id": "d3afe629-3ca2-44dd-bc0e-b19d8cd3ddf6",
+  "id": "50859759-2c69-408e-9699-f75555b4c218",
   "prevIds": [
     "f05301da-4e26-42b1-89d1-fc2d8a679d98"
   ],
@@ -335,6 +335,22 @@
         "schema": "public",
         "table": "git_host_project",
         "name": "error",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "git_host_project",
+        "name": "error_git_host",
         "type": "text",
         "typeSchema": null,
         "notNull": false,

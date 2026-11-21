@@ -16,7 +16,8 @@ CREATE TABLE "git_host_project" (
 	"git_host" text,
 	"repository" text,
 	"synced_from" timestamp with time zone,
-	"error" text
+	"error" text,
+	"error_git_host" text
 );
 --> statement-breakpoint
 CREATE TABLE "git_host_request" (

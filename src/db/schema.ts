@@ -203,6 +203,7 @@ export const gitHostProject = pgTable('git_host_project', {
   repository: text(),
   syncedFrom: timestamp('synced_from', { withTimezone: true }),
   error: text(),
+  errorGitHost: text('error_git_host'),
 });
 
 export const gitHostRun = pgTable('git_host_run', {

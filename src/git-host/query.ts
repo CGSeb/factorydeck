@@ -183,7 +183,7 @@ export async function collectionStatus(
     failures.push({
       project: row.project,
       name: projectName(row.project),
-      gitHost: gitHostOf(row.gitHost),
+      gitHost: gitHostOf(row.errorGitHost) ?? gitHostOf(row.gitHost),
       reason: row.error,
     });
   }

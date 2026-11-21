@@ -88,7 +88,9 @@ function gitlabAnswer(resource: string[], query: URLSearchParams): unknown {
   }
   const request = data.requests.find((row) => String(row['iid']) === iid);
   if (request === undefined) fail('404 Not found');
-  return sub === 'closes_issues' ? (data.closes?.[iid ?? ''] ?? []) : request;
+  return sub === 'closes_issues'
+    ? gitlabPage(query, data.closes?.[iid ?? ''] ?? [])
+    : request;
 }
 
 function gitlab(): void {

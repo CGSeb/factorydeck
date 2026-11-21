@@ -180,7 +180,13 @@ export async function saveSuccess(
     if (!(await lockedProject(tx, project))) return;
     if (replace) await forgetGitHostData(tx, [project]);
     await saveChanges(tx, project, changes);
-    const state = { gitHost, repository, syncedFrom: startedAt, error: null };
+    const state = {
+      gitHost,
+      repository,
+      syncedFrom: startedAt,
+      error: null,
+      errorGitHost: null,
+    };
     await tx
       .insert(gitHostProject)
       .values({ project, ...state })
@@ -198,13 +204,10 @@ export async function saveFailure(
     if (!(await lockedProject(tx, project))) return;
     await tx
       .insert(gitHostProject)
-      .values({ project, gitHost, error })
+      .values({ project, errorGitHost: gitHost, error })
       .onConflictDoUpdate({
         target: gitHostProject.project,
-        set: {
-          error,
-          ...(gitHost === null ? {} : { gitHost }),
-        },
+        set: { error, errorGitHost: gitHost },
       });
   });
 }

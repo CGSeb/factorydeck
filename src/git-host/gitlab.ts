@@ -143,7 +143,11 @@ async function requestsOf(
   for (const iid of numbers) {
     const path = `${api.project}/merge_requests/${String(iid)}`;
     const detail = object(await api.run(['api', path]), 'merge request');
-    const closes = await api.run(['api', `${path}/closes_issues`]);
+    const closes = await pages(
+      api,
+      `merge_requests/${String(iid)}/closes_issues`,
+      new URLSearchParams(),
+    );
     const record = gitlabRequest(detail, closes, api.now());
     if (record !== undefined) found.push(record);
   }

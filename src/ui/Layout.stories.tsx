@@ -193,10 +193,13 @@ export const NeverCollected: Story = {
   },
 };
 
-export const CollectionError: Story = {
+export const RefreshClearsCollectionError: Story = {
   args: {
     loadCollection: collectionLoaderOf(
       collectionResponse(new Date().toISOString(), [appFailure]),
+    ),
+    refreshCollection: refresherOf(
+      collectionResponse(new Date().toISOString(), []),
     ),
   },
   decorators: [at('/')],
@@ -209,6 +212,12 @@ export const CollectionError: Story = {
       'Could not read GitHub for example-app: gh not found.',
     );
     await expect(canvas.getByText('Issues updated just now')).toBeVisible();
+    await userEvent.click(canvas.getByRole('button', { name: 'Refresh' }));
+    await waitFor(() =>
+      expect(
+        canvas.queryByRole('region', { name: 'Factory configuration' }),
+      ).toBeNull(),
+    );
   },
 };
 
