@@ -57,6 +57,8 @@ export interface ThreadRows {
   skipped: number;
   /** First working directory of the records, for a session whose main log has none. */
   cwd: string | null;
+  /** `gitBranch` of the last record carrying a working directory, or null when none does. */
+  gitBranch: string | null;
 }
 
 interface Entry {
@@ -90,6 +92,7 @@ export function readThread(
     earlierSkillPrompts: [],
     skipped: 0,
     cwd: null,
+    gitBranch: null,
   };
   const commands = new Map<string, SkillLaunchRow>();
   for (const { record, offset } of records) {
@@ -103,13 +106,21 @@ export function readThread(
       rows.skipped += 1;
       continue;
     }
-    rows.cwd ??= nonEmpty(stringOf(record, 'cwd'));
+    readCwd(record, rows);
     collectAssistant(entry, source.subAgentId, span, rows);
     if (main !== undefined && !isSidechain(record)) {
       readMainRecord(main, entry, rows, commands);
     }
   }
   return rows;
+}
+
+function readCwd(record: LogRecord, rows: ThreadRows): void {
+  const cwd = nonEmpty(stringOf(record, 'cwd'));
+  if (cwd !== null) {
+    rows.cwd ??= cwd;
+    rows.gitBranch = stringOf(record, 'gitBranch') ?? '';
+  }
 }
 
 function collectAssistant(

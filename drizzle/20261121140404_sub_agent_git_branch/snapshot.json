@@ -1,0 +1,47 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "5ac9a6c1-db6e-4176-9c3c-1d257c214166",
+  "prevIds": [
+    "6475ec4a-8d47-4cf4-99cb-326decdd8ca5"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "sub_agent",
+        "git_branch"
+      ],
+      "writes": [
+        "s|col|public.sub_agent.git_branch",
+        "n|col|public.sub_agent.git_branch",
+        "e|col|public.sub_agent.git_branch"
+      ],
+      "reads": [
+        "n|tbl|public.sub_agent",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "sub_agent",
+        "name": "git_branch",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "''",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

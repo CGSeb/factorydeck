@@ -1,0 +1,1 @@
+ALTER TABLE "sub_agent" ADD COLUMN "git_branch" text DEFAULT '' NOT NULL;

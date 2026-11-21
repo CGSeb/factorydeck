@@ -60,6 +60,7 @@ export const subAgent = pgTable(
     description: text().notNull().default(''),
     model: text().notNull().default(''),
     cwd: text(),
+    gitBranch: text('git_branch').notNull().default(''),
     firstAt: timestamp('first_at', { withTimezone: true }),
     lastAt: timestamp('last_at', { withTimezone: true }),
   },

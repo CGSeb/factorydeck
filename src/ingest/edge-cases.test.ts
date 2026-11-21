@@ -63,6 +63,71 @@ describe('ingest edge cases', () => {
     });
   });
 
+  it('takes the working directory and branch of the sub-agent that started first', async () => {
+    const main = join(folder, 'p', 'session-k.jsonl');
+    const agents = join(folder, 'p', 'session-k', 'subagents');
+    await writeLog(main, [userText({ uuid: 'u1', at: 0 }, 'Hi')]);
+    await writeLog(join(agents, 'agent-a.jsonl'), [
+      assistant(
+        {
+          uuid: 'a1',
+          at: 5,
+          cwd: '/gone/later',
+          gitBranch: 'feat/later',
+          sidechain: true,
+        },
+        { requestId: 'ra' },
+      ),
+    ]);
+    await writeLog(join(agents, 'agent-b.jsonl'), [
+      assistant(
+        {
+          uuid: 'b1',
+          at: 2,
+          cwd: '/gone/first',
+          gitBranch: 'feat/one',
+          sidechain: true,
+        },
+        { requestId: 'rb1' },
+      ),
+      assistant(
+        {
+          uuid: 'b2',
+          at: 3,
+          cwd: '/gone/first',
+          gitBranch: 'feat/two',
+          sidechain: true,
+        },
+        { requestId: 'rb2' },
+      ),
+      assistant({ uuid: 'b3', at: 4, sidechain: true }, { requestId: 'rb3' }),
+    ]);
+    await ingest(db, folder);
+    expect((await db.select().from(session))[0]).toMatchObject({
+      cwd: '/gone/first',
+      cwdFromMain: false,
+      gitBranch: 'feat/two',
+      project: '/gone/first',
+    });
+    await appendLog(join(agents, 'agent-b.jsonl'), [
+      assistant(
+        {
+          uuid: 'b4',
+          at: 6,
+          cwd: '/gone/first',
+          gitBranch: 'feat/three',
+          sidechain: true,
+        },
+        { requestId: 'rb4' },
+      ),
+    ]);
+    await ingest(db, folder);
+    expect((await db.select().from(session))[0]).toMatchObject({
+      cwd: '/gone/first',
+      gitBranch: 'feat/three',
+    });
+  });
+
   it('stores a prompt of images alone as a prompt marker', async () => {
     const image = { type: 'image', source: { type: 'base64', data: 'AA==' } };
     await writeLog(join(folder, 'p', 'session-h.jsonl'), [
