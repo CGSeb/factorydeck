@@ -28,3 +28,4 @@ Off while the repository is private (GitHub needs a paid plan). Turn it on, requ
 - No real session data, costs or project names in code, tests, fixtures or docs; only small synthetic examples.
 - Data that matches no configuration rule is still counted, as "unassigned", never dropped.
 - Imports use the `.ts` extension, and only erasable TypeScript syntax is used (no enums, no namespaces).
+- A story renders a small data set, a few dozen rows at most: each story renders and runs axe within the 5-second test timeout on a slower CI runner. A case that needs hundreds of items is proven by a unit test of the logic the component calls, not by a story.
