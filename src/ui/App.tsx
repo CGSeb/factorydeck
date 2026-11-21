@@ -1,22 +1,19 @@
-import { type ReactElement, Suspense, use } from 'react';
+import type { ReactElement } from 'react';
+import { Route, Routes } from 'react-router';
+import { Layout } from './Layout.tsx';
+import type { LoadOverview } from './overview-api.ts';
+import { OverviewPage } from './OverviewPage.tsx';
 
 export interface AppProps {
-  /** The database health sentence, read once when the page loads. */
-  healthMessage: Promise<string>;
+  loadOverview: LoadOverview;
 }
 
-function DatabaseStatus({ healthMessage }: AppProps): ReactElement {
-  return <p>{use(healthMessage)}</p>;
-}
-
-/** The FactoryDeck page: its heading and the database health. */
-export function App({ healthMessage }: AppProps): ReactElement {
+export function App({ loadOverview }: AppProps): ReactElement {
   return (
-    <main>
-      <h1>FactoryDeck</h1>
-      <Suspense fallback={<p />}>
-        <DatabaseStatus healthMessage={healthMessage} />
-      </Suspense>
-    </main>
+    <Routes>
+      <Route element={<Layout />}>
+        <Route index element={<OverviewPage loadOverview={loadOverview} />} />
+      </Route>
+    </Routes>
   );
 }

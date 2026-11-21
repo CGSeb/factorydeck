@@ -2,6 +2,13 @@ import { type ChildProcess, spawn } from 'node:child_process';
 import { type Server, createServer } from 'node:net';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
+import { createScratchDatabase } from '../test/postgres.ts';
+import {
+  appendLog,
+  assistant,
+  sessionsFolder,
+  writeLog,
+} from '../test/session-logs.ts';
 
 const MAIN = join(import.meta.dirname, 'main.ts');
 const DATABASE_URL = 'postgres://user:secret@127.0.0.1:1/factorydeck';
@@ -85,10 +92,69 @@ describe('pnpm start', () => {
     const run = start({
       DATABASE_URL: 'mysql://localhost/x',
       FACTORYDECK_PORT: 'abc',
+      FACTORYDECK_INGEST_INTERVAL_SECONDS: '0',
     });
     expect(await run.exited).toBe(1);
     expect(run.output()).toContain('Invalid environment');
     expect(run.output()).toContain('DATABASE_URL');
     expect(run.output()).toContain('FACTORYDECK_PORT');
+    expect(run.output()).toContain('FACTORYDECK_INGEST_INTERVAL_SECONDS');
   });
+
+  it('ingests the session logs at start-up, then at every interval', async () => {
+    const scratch = await createScratchDatabase();
+    const folder = await sessionsFolder();
+    const log = join(folder, 'p', 'session-live.jsonl');
+    await writeLog(log, [
+      assistant({ uuid: 'a1', at: 0 }, { requestId: 'r1' }),
+    ]);
+    const free = await occupy();
+    const port = portOf(free);
+    await new Promise((resolve) => free.close(resolve));
+    const run = start({
+      DATABASE_URL: scratch.url,
+      FACTORYDECK_PORT: String(port),
+      CLAUDE_PROJECTS_DIR: folder,
+      FACTORYDECK_INGEST_INTERVAL_SECONDS: '1',
+    });
+    running.push(run);
+    const apiCalls = async (): Promise<unknown> => {
+      const response = await fetch(
+        `http://127.0.0.1:${port}/api/overview?period=all&tz=UTC`,
+      ).catch(() => undefined);
+      const body: unknown = await response?.json();
+      return typeof body === 'object' && body !== null && 'overview' in body
+        ? body
+        : undefined;
+    };
+    try {
+      let body: unknown;
+      await waitFor(() => run.output().includes('FactoryDeck on'));
+      for (let i = 0; i < 50; i++) {
+        body = await apiCalls();
+        if (JSON.stringify(body).includes('"apiCalls":1')) break;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      expect(body).toMatchObject({
+        status: 'ok',
+        sessionsFolder: folder,
+        refreshSeconds: 1,
+        overview: { totals: { apiCalls: 1 } },
+      });
+      expect(body).not.toMatchObject({ updatedAt: null });
+      await appendLog(log, [
+        assistant({ uuid: 'a2', at: 1 }, { requestId: 'r2' }),
+      ]);
+      for (let i = 0; i < 50; i++) {
+        body = await apiCalls();
+        if (JSON.stringify(body).includes('"apiCalls":2')) break;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      expect(body).toMatchObject({ overview: { totals: { apiCalls: 2 } } });
+    } finally {
+      run.child.kill();
+      await run.exited;
+      await scratch.drop();
+    }
+  }, 20_000);
 });

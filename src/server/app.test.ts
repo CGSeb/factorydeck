@@ -2,7 +2,12 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { createApp } from './app.ts';
+import { type Socket, createServer } from 'node:net';
+import { createDatabase } from '../db/client.ts';
+import { usageOverview } from '../overview/query.ts';
+import type { UsageOverview } from '../overview/types.ts';
+import { type OverviewSource, createApp } from './app.ts';
+import { databaseCheck } from './health.ts';
 
 const builtUi = mkdtempSync(join(tmpdir(), 'factorydeck-ui-'));
 writeFileSync(join(builtUi, 'index.html'), '<title>FactoryDeck</title>');
@@ -15,11 +20,38 @@ afterAll(() => rmSync(builtUi, { recursive: true, force: true }));
 const up = (): Promise<boolean> => Promise.resolve(true);
 const down = (): Promise<boolean> => Promise.resolve(false);
 
+const usage: UsageOverview = {
+  hasData: true,
+  bucket: 'day',
+  totals: {
+    costUsd: 1.5,
+    unknownPriceCalls: 0,
+    tokens: { input: 1, cacheWrite: 2, cacheRead: 3, output: 4 },
+    sessions: 1,
+    apiCalls: 2,
+  },
+  series: [],
+  projects: [],
+  models: [],
+};
+
+const queries: unknown[] = [];
+const source: OverviewSource = {
+  load: (query) => {
+    queries.push(query);
+    return Promise.resolve(usage);
+  },
+  sessionsFolder: '/logs/claude',
+  refreshSeconds: 10,
+  updatedAt: () => new Date('2026-01-05T09:00:00Z'),
+};
+
 describe('GET /api/health', () => {
   it('answers 200 ok when the database answers', async () => {
     const response = await createApp({
       checkDatabase: up,
       uiDir: builtUi,
+      overview: source,
     }).request('/api/health');
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ status: 'ok', database: 'ok' });
@@ -29,6 +61,7 @@ describe('GET /api/health', () => {
     const response = await createApp({
       checkDatabase: down,
       uiDir: builtUi,
+      overview: source,
     }).request('/api/health');
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({
@@ -45,6 +78,7 @@ describe('other API paths', () => {
       const response = await createApp({
         checkDatabase: up,
         uiDir: builtUi,
+        overview: source,
       }).request(path);
       expect(response.status).toBe(404);
       expect(await response.json()).toEqual({ error: 'Not found' });
@@ -55,6 +89,7 @@ describe('other API paths', () => {
     const response = await createApp({
       checkDatabase: up,
       uiDir: missingUi,
+      overview: source,
     }).request('/api/nope');
     expect(response.status).toBe(404);
     expect(await response.json()).toEqual({ error: 'Not found' });
@@ -62,7 +97,11 @@ describe('other API paths', () => {
 });
 
 describe('UI', () => {
-  const app = createApp({ checkDatabase: up, uiDir: builtUi });
+  const app = createApp({
+    checkDatabase: up,
+    uiDir: builtUi,
+    overview: source,
+  });
 
   it('serves the built index page at /', async () => {
     const response = await app.request('/');
@@ -87,8 +126,92 @@ describe('UI', () => {
     const response = await createApp({
       checkDatabase: up,
       uiDir: missingUi,
+      overview: source,
     }).request('/');
     expect(response.headers.get('content-type')).toContain('text/plain');
     expect(await response.text()).toBe('UI not built. Run pnpm build.');
   });
+});
+
+describe('GET /api/overview', () => {
+  it('answers the usage of the period with the ingestion facts', async () => {
+    const response = await createApp({
+      checkDatabase: up,
+      uiDir: builtUi,
+      overview: source,
+    }).request('/api/overview?period=30d&tz=Europe/Paris');
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      status: 'ok',
+      sessionsFolder: '/logs/claude',
+      updatedAt: '2026-01-05T09:00:00.000Z',
+      refreshSeconds: 10,
+      overview: usage,
+    });
+    expect(queries.at(-1)).toEqual({ period: '30d', timeZone: 'Europe/Paris' });
+  });
+
+  it('answers 400 for an unknown period or time zone', async () => {
+    const app = createApp({
+      checkDatabase: up,
+      uiDir: builtUi,
+      overview: source,
+    });
+    for (const query of [
+      '',
+      '?period=year&tz=UTC',
+      '?period=7d',
+      '?period=7d&tz=Mars/Base',
+    ]) {
+      expect((await app.request(`/api/overview${query}`)).status).toBe(400);
+    }
+  });
+
+  it('answers 503 unreachable when the database does not answer', async () => {
+    const response = await createApp({
+      checkDatabase: down,
+      uiDir: builtUi,
+      overview: source,
+    }).request('/api/overview?period=7d&tz=UTC');
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      status: 'unreachable',
+      refreshSeconds: 10,
+    });
+  });
+
+  it('reports a database that accepts connections but never answers within 5 seconds', async () => {
+    const sockets: Socket[] = [];
+    const silent = createServer((socket) => sockets.push(socket));
+    await new Promise<void>((resolve) =>
+      silent.listen(0, '127.0.0.1', resolve),
+    );
+    const address = silent.address();
+    const port = typeof address === 'object' && address ? address.port : 0;
+    const { db, close } = createDatabase(
+      `postgres://user:secret@127.0.0.1:${port}/factorydeck`,
+    );
+    const app = createApp({
+      checkDatabase: databaseCheck(db),
+      uiDir: builtUi,
+      overview: { ...source, load: (query) => usageOverview(db, query) },
+    });
+    try {
+      const started = Date.now();
+      const responses = await Promise.all(
+        [1, 2, 3].map(() =>
+          Promise.resolve(app.request('/api/overview?period=7d&tz=UTC')),
+        ),
+      );
+      expect(responses.map((response) => response.status)).toEqual([
+        503, 503, 503,
+      ]);
+      expect(Date.now() - started).toBeLessThan(5000);
+      expect(sockets.length).toBeLessThanOrEqual(1);
+    } finally {
+      await close();
+      for (const socket of sockets) socket.destroy();
+      await new Promise((resolve) => silent.close(resolve));
+    }
+  }, 10_000);
 });

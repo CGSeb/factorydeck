@@ -2,7 +2,7 @@ import { type Socket, createServer } from 'node:net';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { describe, expect, it } from 'vitest';
 import { createDatabase } from '../db/client.ts';
-import { databaseCheck } from './health.ts';
+import { HEALTH_TIMEOUT_MS, databaseCheck } from './health.ts';
 
 function closedPort(): Promise<number> {
   return new Promise((resolve) => {
@@ -53,5 +53,37 @@ describe('databaseCheck', () => {
     const started = Date.now();
     await expect(databaseCheck(hanging, 200)()).resolves.toBe(false);
     expect(Date.now() - started).toBeLessThan(1000);
+  });
+
+  it('runs one query at a time and reports a silent database within 5 seconds', async () => {
+    let queries = 0;
+    const silent = {
+      execute: () => {
+        queries += 1;
+        return new Promise(() => undefined);
+      },
+    } as unknown as NodePgDatabase;
+    const check = databaseCheck(silent);
+    const started = Date.now();
+    const first = await Promise.all([check(), check(), check()]);
+    expect(first).toEqual([false, false, false]);
+    expect(await check()).toBe(false);
+    expect(queries).toBe(1);
+    expect(HEALTH_TIMEOUT_MS).toBeLessThan(5000);
+    expect(Date.now() - started).toBeLessThan(2 * HEALTH_TIMEOUT_MS + 1000);
+  }, 10_000);
+
+  it('sends a new query once the previous one has answered', async () => {
+    let queries = 0;
+    const answering = {
+      execute: () => {
+        queries += 1;
+        return Promise.resolve([]);
+      },
+    } as unknown as NodePgDatabase;
+    const check = databaseCheck(answering);
+    expect(await Promise.all([check(), check()])).toEqual([true, true]);
+    expect(await check()).toBe(true);
+    expect(queries).toBe(2);
   });
 });

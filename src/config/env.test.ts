@@ -67,3 +67,31 @@ describe('FACTORYDECK_PORT', () => {
     }
   });
 });
+
+describe('FACTORYDECK_INGEST_INTERVAL_SECONDS', () => {
+  const DATABASE_URL = 'postgres://user:secret@localhost:5434/factorydeck';
+  const interval = (value?: string): number =>
+    validateEnv(
+      value === undefined
+        ? { DATABASE_URL }
+        : { DATABASE_URL, FACTORYDECK_INGEST_INTERVAL_SECONDS: value },
+    ).FACTORYDECK_INGEST_INTERVAL_SECONDS;
+
+  it('defaults to 10, also when empty', () => {
+    expect(interval()).toBe(10);
+    expect(interval('')).toBe(10);
+  });
+
+  it('reads a whole number of at least 1', () => {
+    expect(interval('1')).toBe(1);
+    expect(interval('30')).toBe(30);
+  });
+
+  it('rejects anything else', () => {
+    for (const value of ['0', '-5', '2.5', 'often']) {
+      expect(() => interval(value)).toThrow(
+        /FACTORYDECK_INGEST_INTERVAL_SECONDS/,
+      );
+    }
+  });
+});

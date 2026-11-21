@@ -10,18 +10,18 @@ A developer opens FactoryDeck in their browser and sees, for a period they choos
 
 ## Acceptance criteria
 
-- [ ] While the server of spec 001 runs, it runs the ingestion of spec 002 at start-up and then every `FACTORYDECK_INGEST_INTERVAL_SECONDS` of the root `.env` (default `10`, a whole number of at least 1); a run never starts while the previous one is still going.
-- [ ] The page has a navigation bar with `Overview` (this spec) and room for the later sections; `Overview` replaces the skeleton page of spec 001 as the home page at `/`.
-- [ ] A period selector offers `Today`, `Last 7 days`, `Last 30 days` and `All time`, in that order; default `Last 7 days`. The choice is kept in the URL (`?period=7d`), so a reload or shared link keeps it.
-- [ ] Four tiles show, for the period: `Cost` (US dollars, two decimals, prefixed `~$`), `Tokens` (sum of the four token kinds, compact form such as `12.4M`), `Sessions` (sessions with at least one API call in the period) and `API calls`.
-- [ ] Under `Tokens`, a breakdown shows input, cache write, cache read and output tokens.
-- [ ] A chart shows cost per day over the period (hours for `Today`), one stacked series per model family (`opus`, `sonnet`, `haiku`, `other`). Days without calls show as zero, not as gaps.
-- [ ] A table `By project` lists each project with sessions, API calls, tokens and cost, sorted by cost descending; the project `unassigned` is listed like the others.
-- [ ] A table `By model` lists each model id with API calls, tokens and cost, sorted by cost descending.
-- [ ] Calls of a model with no known price count in tokens and API calls; their cost shows `—` and the `Cost` tile carries the note `Excludes <n> calls with unknown prices.`
-- [ ] The page refreshes its figures every interval of re-ingestion without a reload, and shows `Updated <hh:mm:ss>` with the time of the last finished ingestion.
-- [ ] With no data at all, the page shows `No sessions yet. FactoryDeck reads <sessions folder>.` instead of the tiles, chart and tables.
-- [ ] When the database is unreachable, the page shows `Database unreachable. Start it with pnpm db:up.` and the server keeps running and retries. A database that accepts connections but never answers is shown unreachable within 5 seconds.
+- [x] While the server of spec 001 runs, it runs the ingestion of spec 002 at start-up and then every `FACTORYDECK_INGEST_INTERVAL_SECONDS` of the root `.env` (default `10`, a whole number of at least 1); a run never starts while the previous one is still going.
+- [x] The page has a navigation bar with `Overview` (this spec) and room for the later sections; `Overview` replaces the skeleton page of spec 001 as the home page at `/`.
+- [x] A period selector offers `Today`, `Last 7 days`, `Last 30 days` and `All time`, in that order; default `Last 7 days`. The choice is kept in the URL (`?period=7d`), so a reload or shared link keeps it.
+- [x] Four tiles show, for the period: `Cost` (US dollars, two decimals, prefixed `~$`), `Tokens` (sum of the four token kinds, compact form such as `12.4M`), `Sessions` (sessions with at least one API call in the period) and `API calls`.
+- [x] Under `Tokens`, a breakdown shows input, cache write, cache read and output tokens.
+- [x] A chart shows cost per day over the period (hours for `Today`), one stacked series per model family (`opus`, `sonnet`, `haiku`, `other`). Days without calls show as zero, not as gaps.
+- [x] A table `By project` lists each project with sessions, API calls, tokens and cost, sorted by cost descending; the project `unassigned` is listed like the others.
+- [x] A table `By model` lists each model id with API calls, tokens and cost, sorted by cost descending.
+- [x] Calls of a model with no known price count in tokens and API calls; their cost shows `—` and the `Cost` tile carries the note `Excludes <n> calls with unknown prices.`
+- [x] The page refreshes its figures every interval of re-ingestion without a reload, and shows `Updated <hh:mm:ss>` with the time of the last finished ingestion.
+- [x] With no data at all, the page shows `No sessions yet. FactoryDeck reads <sessions folder>.` instead of the tiles, chart and tables.
+- [x] When the database is unreachable, the page shows `Database unreachable. Start it with pnpm db:up.` and the server keeps running and retries. A database that accepts connections but never answers is shown unreachable within 5 seconds.
 - [ ] The layout works from 1280 px wide down to 768 px.
 
 ## Rules
