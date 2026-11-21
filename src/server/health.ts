@@ -10,20 +10,26 @@ export type DatabaseCheck = () => Promise<boolean>;
 
 /** Checks the database with a trivial query, counting no answer within `timeoutMs` as a failure. */
 export function databaseCheck(
-  db: NodePgDatabase,
+  db: Pick<NodePgDatabase, 'execute'>,
   timeoutMs: number = HEALTH_TIMEOUT_MS,
 ): DatabaseCheck {
+  let pending: Promise<boolean> | undefined;
   return async () => {
+    pending ??= db
+      .execute(sql`select 1`)
+      .then(
+        () => true,
+        () => false,
+      )
+      .finally(() => {
+        pending = undefined;
+      });
     const timeout = new AbortController();
-    const answered = db.execute(sql`select 1`).then(
-      () => true,
-      () => false,
-    );
     const timedOut = delay(timeoutMs, false, { signal: timeout.signal }).catch(
       () => false,
     );
     try {
-      return await Promise.race([answered, timedOut]);
+      return await Promise.race([pending, timedOut]);
     } finally {
       timeout.abort();
     }
