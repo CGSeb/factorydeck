@@ -4,9 +4,13 @@ import { z } from 'zod';
 
 const EnvSchema = z.object({
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
+  FACTORYDECK_PORT: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.coerce.number().int().min(1).max(65_535).default(4317),
+  ),
 });
 
-export type Env = z.infer<typeof EnvSchema>;
+export type Env = z.output<typeof EnvSchema>;
 
 /** Parses the environment, failing with every invalid variable listed. */
 export function validateEnv(raw: Record<string, unknown>): Env {
