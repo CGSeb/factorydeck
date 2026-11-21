@@ -1,6 +1,6 @@
 import { type ReactElement, useId } from 'react';
 import type { ModelUsage } from '../overview/types.ts';
-import { formatCost, formatCount } from './format.ts';
+import { MISSING, formatCost, formatCount } from './format.ts';
 import { TokenCount } from './TokenCount.tsx';
 
 export function ModelTable({ models }: { models: ModelUsage[] }): ReactElement {
@@ -20,7 +20,7 @@ export function ModelTable({ models }: { models: ModelUsage[] }): ReactElement {
         <tbody>
           {models.map((row) => (
             <tr key={row.model}>
-              <th scope="row">{row.model}</th>
+              <th scope="row">{row.model === '' ? MISSING : row.model}</th>
               <td>{formatCount(row.apiCalls)}</td>
               <td>
                 <TokenCount value={row.tokens} />

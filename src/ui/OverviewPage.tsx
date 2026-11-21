@@ -55,7 +55,11 @@ export function OverviewPage({
   const [searchParams, setSearchParams] = useSearchParams();
   const requested = searchParams.get('period');
   const period: Period = isPeriod(requested) ? requested : DEFAULT_PERIOD;
-  const [response, setResponse] = useState<OverviewResponse>();
+  const [loaded, setLoaded] = useState<{
+    period: Period;
+    response: OverviewResponse;
+  }>();
+  const response = loaded?.period === period ? loaded.response : undefined;
 
   useEffect(() => {
     let active = true;
@@ -63,7 +67,7 @@ export function OverviewPage({
     async function refresh(): Promise<void> {
       const next = await loadOverview(period);
       if (!active) return;
-      if (next !== undefined) setResponse(next);
+      if (next !== undefined) setLoaded({ period, response: next });
       timer = setTimeout(
         () => void refresh(),
         (next?.refreshSeconds ?? RETRY_SECONDS) * 1000,

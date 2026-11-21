@@ -30,6 +30,10 @@ export function formatCount(value: number): string {
   return COUNT.format(value);
 }
 
+export function formatAxisCost(usd: number): string {
+  return `$${DOLLARS.format(usd)}`;
+}
+
 export function formatCost(usd: number | null): string {
   if (usd === null) return MISSING;
   if (usd > 0 && usd < 0.01) return '<$0.01';

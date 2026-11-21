@@ -68,6 +68,21 @@ export const Empty: Story = {
   },
 };
 
+export const PeriodChangeFails: Story = {
+  args: {
+    loadOverview: (period) =>
+      Promise.resolve(period === '7d' ? okResponse(weekOverview) : undefined),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('~$48.27');
+    await userEvent.click(canvas.getByRole('button', { name: 'Last 30 days' }));
+    await pressed(canvasElement, 'Last 30 days');
+    await canvas.findByText('Loading…');
+    await expect(canvas.queryByText('~$48.27')).toBeNull();
+  },
+};
+
 export const DatabaseUnreachable: Story = {
   args: { loadOverview: fixedLoader(() => unreachableResponse) },
   play: async ({ canvasElement }) => {
@@ -84,8 +99,9 @@ export const UnknownPrices: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('Excludes 37 calls with unknown prices.');
-    await expect(canvas.getByText('—')).toBeVisible();
+    await canvas.findByText('Excludes 40 calls with unknown prices.');
+    await expect(canvas.getByRole('rowheader', { name: '—' })).toBeVisible();
+    await expect(canvas.getAllByText('—')).toHaveLength(3);
     await userEvent.click(canvas.getByRole('button', { name: 'All time' }));
     await pressed(canvasElement, 'All time');
   },

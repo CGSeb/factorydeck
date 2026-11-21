@@ -14,7 +14,7 @@ import {
   type Family,
   type UsageOverview,
 } from '../overview/types.ts';
-import { formatBucket, formatCost } from './format.ts';
+import { formatAxisCost, formatBucket, formatCost } from './format.ts';
 
 const COLORS: Record<Family, string> = {
   opus: '#6d4fc2',
@@ -43,7 +43,7 @@ export function CostChart({ bucket, series }: CostChartProps): ReactElement {
         >
           <CartesianGrid vertical={false} stroke="#e3e5e8" />
           <XAxis dataKey="bucket" tickFormatter={formatBucket} />
-          <YAxis tickFormatter={(value: number) => `$${value}`} width={56} />
+          <YAxis tickFormatter={formatAxisCost} width={56} />
           <Tooltip
             formatter={(value) => formatCost(Number(value))}
             labelFormatter={(label) =>

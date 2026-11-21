@@ -96,7 +96,7 @@ export const weekOverview: UsageOverview = {
 
 export const unknownPricesOverview: UsageOverview = {
   ...weekOverview,
-  totals: { ...weekOverview.totals, unknownPriceCalls: 37, apiCalls: 1_364 },
+  totals: { ...weekOverview.totals, unknownPriceCalls: 40, apiCalls: 1_367 },
   models: [
     ...weekOverview.models,
     {
@@ -105,6 +105,7 @@ export const unknownPricesOverview: UsageOverview = {
       tokens: 58_200,
       costUsd: null,
     },
+    { model: '', apiCalls: 3, tokens: 1_200, costUsd: null },
   ],
 };
 

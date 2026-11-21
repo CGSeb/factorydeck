@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  formatAxisCost,
   formatBucket,
   formatClock,
   formatCost,
@@ -20,6 +21,13 @@ describe('formatCost', () => {
 
   it('shows an unknown cost as —', () => {
     expect(formatCost(null)).toBe('—');
+  });
+});
+
+describe('formatAxisCost', () => {
+  it('shows an axis tick in US dollars with two decimals', () => {
+    expect(formatAxisCost(0.5)).toBe('$0.50');
+    expect(formatAxisCost(2)).toBe('$2.00');
   });
 });
 
