@@ -4,9 +4,11 @@
 # this file; /setup-factory wrote it, and you can edit it by hand or from FactoryDeck.
 # Keep it to plain block YAML: two-space indentation, one key per line, strings in quotes
 # when they hold « : », « # » or start with a symbol. The stop gate reads repository.main_branch,
-# checks.command and checks.stop_gate with a small shell parser.
+# checks.command and checks.stop_gate with a small shell parser. What needs more than a value
+# (notes on the checks, the commit convention, the rules for the reviewer) goes in
+# docs/agents/factory-notes.md.
 
-version: 1
+version: 2
 
 repository:
   git_host: github
@@ -42,17 +44,9 @@ checks:
     # Succeeds only when the shared services the checks need answer; none when there are none.
     check: docker info >/dev/null 2>&1
     # Starts them, from the main checkout only.
-    start: pnpm db:up
+    start: pnpm db:up && pnpm db:migrate
     # What the person starts by hand when the check fails. Agents never start it themselves.
     manual_start: Docker Desktop
-  # Anything a builder must know to run the checks: narrower commands, a service to stub.
-  notes: >-
-    pnpm db:up starts PostgreSQL 18 on 127.0.0.1:5434 and waits until it is healthy; run it from
-    the main checkout only, never from a worktree. A worktree links .env from the main checkout.
-    Narrower checks while building: pnpm vitest run <file>, pnpm typecheck, pnpm lint. UI stories:
-    pnpm vitest run src/ui/stories.test.tsx, and pnpm build-storybook (part of pnpm check). Schema
-    changes go in src/db/schema.ts, then pnpm db:generate --name <change>; never edit a
-    generated migration.
 
 specs:
   folder: docs/specs/
@@ -92,21 +86,12 @@ build:
   commit_convention: 'type: :gitmoji: Subject'
   # With a squash merge, the title becomes the commit on the main branch.
   pull_request_title: 'feat: :sparkles: <Subject>'
-  # The full convention, with an example for each kind of change (feature, fix, test, docs).
-  commit_notes: >-
-    Checked by the commit-msg hook (scripts/check-commit-message.ts). Examples:
-    "feat: :sparkles: …" for a feature, "fix: :bug: …", "refactor: :recycle: …",
-    "test: :white_check_mark: …", "docs: :memo: …", "chore: :wrench: …".
   # Comments builders may add to the code: directives-only (tool directives only), documentation
   # (also documentation comments and a rare why), or any (the instructions files decide).
   code_comments: directives-only
   auto_merge: true
   serenity_threshold: 80
   main_branch_protection: false
-  main_branch_protection_notes: >-
-    Off while the repository is private (GitHub needs a paid plan). Turn it on, requiring the
-    check job of .github/workflows/ci.yml, when the repository goes public. Until then the merge
-    gate is the build-feature skill's prose.
 
 # A pull request that changes one of these needs a person, whatever its score: they hold the
 # rules the agents are graded by. The feature map of the verification skill is the exception.
@@ -128,13 +113,3 @@ protected_paths:
   - scripts/check-tsconfig.test.ts
   - src/ui/stories.test.tsx
   - the check, lint, typecheck and test scripts of package.json
-
-# Project rules a reviewer must check that no tool enforces, one string each; [] when none.
-reviewer_rules:
-  - >-
-    Nothing workflow-specific is hard-coded: no project, repository, path, role name, label,
-    issue pattern or workflow step. It comes from user configuration, with defaults that work on
-    a plain Claude Code setup.
-  - No real session data, costs or project names in code, tests, fixtures or docs; only small synthetic examples.
-  - Data that matches no configuration rule is still counted, as "unassigned", never dropped.
-  - Imports use the .ts extension, and only erasable TypeScript syntax is used (no enums, no namespaces).

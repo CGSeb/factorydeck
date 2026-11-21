@@ -9,6 +9,7 @@
     "dev": "node scripts/dev.ts",
     "build": "node scripts/build-ui.ts",
     "start": "node src/server/main.ts",
+    "demo": "node scripts/demo.ts",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build-storybook",
     "fix": "pnpm format && oxlint --type-aware --fix .",
     "format": "prettier --write .",

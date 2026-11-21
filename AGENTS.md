@@ -22,4 +22,4 @@ FactoryDeck is a public tool for anyone's projects and sessions.
 
 ## Agent workflow
 
-Specs, labels, checks, models and merge policy for agents: `docs/agents/factory.yml`. Git host commands: `docs/agents/git-host.md`.
+Specs, labels, checks, models and merge policy for agents: `docs/agents/factory.yml`; notes on checks, proofs and commits, and the rules for the reviewer: `docs/agents/factory-notes.md`. Git host commands: `docs/agents/git-host.md`.
