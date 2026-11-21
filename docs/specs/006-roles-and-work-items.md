@@ -54,7 +54,7 @@ A developer describes their agent workflow in one configuration file, and Factor
 - A project key must be an absolute path or start with `~`; anything else is a configuration error.
 - **Threads** on `/roles`: the sessions (for `main`) or sub-agents with at least one API call in the period and project, like the `Sessions` tile of spec 003.
 - An API call belongs to the role of its thread: main-thread calls to `main`, sub-agent calls to the sub-agent's role. Each call has exactly one role, so totals add up; nothing is dropped.
-- The work item belongs to the project of the session; linking it to a GitHub issue is spec 007.
+- The work item belongs to the project of the session; linking it to a GitHub issue is a later spec.
 - **Example file**: `factorydeck.example.yml` holds, as working rules for `build-feature`: `builder` (`^(Build|Worker for) `), `reviewer` (`^Review `), `shipper` (`^(Ship|Merge|Push) `), `reworker` (`^(Rework|Rebase|Update) `), `spec-checker` (`check-spec`), each on `description`; and a commented-out branch rule `from: branch, pattern: '^[a-z]+/(\d+)-'` explaining that it fits branches named after issue numbers.
 - Periods, cost, `—` and token formats follow spec 003; environment variables follow spec 001 (documented in `.env.example`).
 - The configuration file never holds secrets and is only read, never written, by FactoryDeck.
@@ -68,8 +68,8 @@ A developer describes their agent workflow in one configuration file, and Factor
 
 ## Out of scope
 
-- Outcomes (merged, needs rework, score) and any GitHub data: spec 007.
-- The cost-per-feature view (cost per work item): spec 008.
+- Outcomes (merged, needs rework, score) and any GitHub data: a later spec.
+- The cost-per-feature view (cost per work item): a later spec.
 - Editing the configuration from the interface, or reading `docs/agents/factory.yml` of a project.
 - Reloading the configuration while the server runs.
 - A detail page per role or per work item.
