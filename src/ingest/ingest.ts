@@ -136,7 +136,13 @@ async function ingestFile(
   counts: FileCounts,
 ): Promise<void> {
   const range = await unreadRange(run, file.path);
-  if (range === undefined) {
+  const chunk =
+    range === undefined
+      ? undefined
+      : await readRange(file.path, range.start, range.size).catch(
+          () => undefined,
+        );
+  if (range === undefined || chunk === undefined) {
     return;
   }
   counts.files += 1;
@@ -153,7 +159,6 @@ async function ingestFile(
       Object.assign(agentRow, { firstAt: null, lastAt: null });
     }
   }
-  const chunk = await readRange(file.path, range.start, range.size);
   const { records, skipped, consumed } = parseLines(chunk);
   const rows = readThread(
     records,
@@ -193,9 +198,13 @@ async function ingestMeta(
   if (size === undefined || run.storedFiles.get(metaPath)?.sizeBytes === size) {
     return;
   }
+  const content = await readFile(metaPath, 'utf8').catch(() => undefined);
+  if (content === undefined) {
+    return;
+  }
   counts.files += 1;
   const row = await loadSubAgent(run, file.sessionId, id);
-  const meta = await readFile(metaPath, 'utf8').then(parseJson);
+  const meta = parseJson(content);
   if (meta === undefined) {
     counts.linesSkipped += 1;
   } else {

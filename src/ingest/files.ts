@@ -11,20 +11,43 @@ export interface LogFile {
 
 const SUB_AGENT_FILE = /^agent-(.+)\.jsonl$/;
 
-/** Every `*.jsonl` file under the sessions folder, main threads first, in a stable order. */
+/**
+ * Every `*.jsonl` file under the sessions folder, main threads first, in a stable order.
+ * A sub-folder that cannot be read is left out, so it does not stop the others.
+ */
 export async function findLogFiles(folder: string): Promise<LogFile[]> {
-  const entries = await readdir(folder, {
-    recursive: true,
-    withFileTypes: true,
-  });
-  const files = entries
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.jsonl'))
-    .map((entry) => describe(join(entry.parentPath, entry.name)));
-  return files.sort(
-    (a, b) =>
-      Number(a.subAgent !== undefined) - Number(b.subAgent !== undefined) ||
-      a.path.localeCompare(b.path),
+  const paths: string[] = [];
+  await collectLogPaths(folder, paths, true);
+  return paths
+    .map(describe)
+    .sort(
+      (a, b) =>
+        Number(a.subAgent !== undefined) - Number(b.subAgent !== undefined) ||
+        a.path.localeCompare(b.path),
+    );
+}
+
+async function collectLogPaths(
+  folder: string,
+  paths: string[],
+  isRoot: boolean,
+): Promise<void> {
+  const entries = await readdir(folder, { withFileTypes: true }).catch(
+    (error: unknown) => {
+      if (isRoot) {
+        throw error;
+      }
+      return [];
+    },
   );
+  for (const entry of entries) {
+    const path = join(folder, entry.name);
+    if (entry.isDirectory()) {
+      await collectLogPaths(path, paths, false);
+    } else if (entry.isFile() && entry.name.endsWith('.jsonl')) {
+      paths.push(path);
+    }
+  }
 }
 
 function describe(path: string): LogFile {
