@@ -23,6 +23,7 @@ A developer starts FactoryDeck with one command and opens it in their browser, o
 ## Rules
 
 - The API is a thin, stateless [Hono](https://hono.dev/) app (decision recorded in issue #4): no session state in memory beyond caches, so authentication can be added later as middleware.
+- The UI is built with React, bundled by Vite (decision recorded in issue #4).
 - Route inputs are validated with zod; queries go through Drizzle.
 - Only erasable TypeScript syntax, `.ts` imports, run by Node without a build step for the server.
 

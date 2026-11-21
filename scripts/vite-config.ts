@@ -1,4 +1,5 @@
 import { join } from 'node:path';
+import react from '@vitejs/plugin-react';
 import type { InlineConfig } from 'vite';
 import { HOST } from '../src/server/listen.ts';
 import { UI_DIST_DIR } from '../src/server/paths.ts';
@@ -13,6 +14,7 @@ export function uiBuildConfig(): InlineConfig {
   return {
     configFile: false,
     root: UI_ROOT,
+    plugins: [react()],
     build: { outDir: UI_DIST_DIR, emptyOutDir: true },
   };
 }

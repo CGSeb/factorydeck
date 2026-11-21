@@ -4,7 +4,10 @@ import { z } from 'zod';
 
 const EnvSchema = z.object({
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
-  FACTORYDECK_PORT: z.coerce.number().int().min(1).max(65_535).default(4317),
+  FACTORYDECK_PORT: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.coerce.number().int().min(1).max(65_535).default(4317),
+  ),
 });
 
 export type Env = z.output<typeof EnvSchema>;

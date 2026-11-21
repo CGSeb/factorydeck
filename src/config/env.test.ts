@@ -22,6 +22,12 @@ describe('FACTORYDECK_PORT', () => {
     expect(validateEnv({ DATABASE_URL }).FACTORYDECK_PORT).toBe(4317);
   });
 
+  it('falls back to 4317 when the value is empty', () => {
+    expect(
+      validateEnv({ DATABASE_URL, FACTORYDECK_PORT: '' }).FACTORYDECK_PORT,
+    ).toBe(4317);
+  });
+
   it('reads a port number', () => {
     expect(
       validateEnv({ DATABASE_URL, FACTORYDECK_PORT: '5000' }).FACTORYDECK_PORT,
