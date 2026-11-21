@@ -54,7 +54,15 @@ export function SessionTable({
           <tr
             key={row.id}
             className="session-row"
-            onClick={() => void navigate(sessionPath(row.id))}
+            onClick={(event) => {
+              if (
+                event.target instanceof Element &&
+                event.target.closest('a') !== null
+              ) {
+                return;
+              }
+              void navigate(sessionPath(row.id));
+            }}
           >
             <td className="left">
               <SessionStateLabel state={row.state} />

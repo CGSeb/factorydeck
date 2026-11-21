@@ -8,7 +8,26 @@ import {
   sessionWithSubAgents,
   sessionWithoutSubAgents,
 } from './session-fixtures.ts';
+import type { LoadSession } from './sessions-api.ts';
 import { SessionPage } from './SessionPage.tsx';
+
+function refreshingLoader(): LoadSession {
+  let calls = 0;
+  let lastCall = 0;
+  return () => {
+    calls = Date.now() - lastCall > 1000 ? 1 : calls + 1;
+    lastCall = Date.now();
+    const session =
+      calls === 1
+        ? sessionWithSubAgents
+        : {
+            ...sessionWithSubAgents,
+            state: 'waiting' as const,
+            costUsd: 7.5,
+          };
+    return Promise.resolve({ ...detailResponse(session), refreshSeconds: 0.2 });
+  };
+}
 
 const meta = {
   component: SessionPage,
@@ -75,5 +94,16 @@ export const DatabaseUnreachable: Story = {
     await within(canvasElement).findByText(
       'Database unreachable. Start it with pnpm db:up.',
     );
+  },
+};
+
+export const RefreshesWithoutReload: Story = {
+  args: { loadSession: refreshingLoader() },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('~$6.42');
+    await expect(canvas.getByText('Working')).toBeVisible();
+    await canvas.findByText('~$7.50');
+    await expect(canvas.getByText('Waiting for you')).toBeVisible();
   },
 };

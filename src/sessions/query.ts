@@ -141,7 +141,10 @@ export async function listSessions(
   query: SessionListQuery,
   options: StateOptions,
 ): Promise<SessionList> {
-  const startAt = await periodStart(db, query);
+  const startAt = await periodStart(db, {
+    ...query,
+    now: options.now ?? new Date(),
+  });
   const project = query.project ?? null;
   const filtered = sql`select * from ${statedSessions(options)} t
     where (${project}::text is null or t.project = ${project}::text)

@@ -136,3 +136,30 @@ export const RefreshesWithoutReload: Story = {
     ).toBeVisible();
   },
 };
+
+function slowWideLoader(): LoadSessions {
+  const load = listLoader(manySessions);
+  return (filters, limit) =>
+    filters.state === undefined && limit > 50
+      ? new Promise((resolve) => {
+          setTimeout(() => resolve(load(filters, limit)), 400);
+        })
+      : load(filters, limit);
+}
+
+export const NoStaleRowsFromAnotherFilter: Story = {
+  args: { loadSessions: slowWideLoader() },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('1 working · 1 waiting for you · 73 inactive');
+    await userEvent.click(canvas.getByRole('button', { name: 'Show more' }));
+    await waitFor(() => expect(canvas.getAllByRole('row')).toHaveLength(76));
+    const state = canvas.getByRole('combobox', { name: 'State' });
+    await userEvent.selectOptions(state, 'working');
+    await waitFor(() => expect(canvas.getAllByRole('row')).toHaveLength(2));
+    await userEvent.selectOptions(state, '');
+    await canvas.findByText('Loading…');
+    await expect(canvas.queryByRole('table')).toBeNull();
+    await waitFor(() => expect(canvas.getAllByRole('row')).toHaveLength(76));
+  },
+};

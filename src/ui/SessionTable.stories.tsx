@@ -1,8 +1,18 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { MemoryRouter, Route, Routes } from 'react-router';
+import type { ReactElement } from 'react';
+import { MemoryRouter, Route, Routes, useNavigate } from 'react-router';
 import { expect, userEvent, within } from 'storybook/test';
 import { someSessions } from './session-fixtures.ts';
 import { SessionTable } from './SessionTable.tsx';
+
+function SessionStub(): ReactElement {
+  const navigate = useNavigate();
+  return (
+    <button type="button" onClick={() => void navigate(-1)}>
+      Back
+    </button>
+  );
+}
 
 const meta = {
   component: SessionTable,
@@ -11,7 +21,7 @@ const meta = {
       <MemoryRouter initialEntries={['/sessions']}>
         <Routes>
           <Route path="/sessions" element={<Story />} />
-          <Route path="/sessions/:id" element={<p>Session page</p>} />
+          <Route path="/sessions/:id" element={<SessionStub />} />
         </Routes>
       </MemoryRouter>
     ),
@@ -32,6 +42,11 @@ export const Rows: Story = {
     await expect(canvas.getByRole('link', { name: 'b81e44d0' })).toBeVisible();
     await expect(canvas.getByText('~$6.42')).toBeVisible();
     await userEvent.click(canvas.getByText('/home/dev/example-lib'));
-    await canvas.findByText('Session page');
+    await userEvent.click(await canvas.findByRole('button', { name: 'Back' }));
+    await userEvent.click(
+      await canvas.findByRole('link', { name: 'Add the export button' }),
+    );
+    await userEvent.click(await canvas.findByRole('button', { name: 'Back' }));
+    await expect(await canvas.findByRole('table')).toBeVisible();
   },
 };

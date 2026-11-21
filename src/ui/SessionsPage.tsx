@@ -88,19 +88,24 @@ function useSessionList(
     key: string;
     response: SessionListResponse;
   }>();
-  const [last, setLast] = useState<SessionListResponse>();
+  const filterKey = JSON.stringify({ period, project, state });
+  const [last, setLast] = useState<{
+    filterKey: string;
+    response: SessionListResponse;
+  }>();
 
   useEffect(() => {
     let active = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const current: SessionFilters = { period, project, state };
+    const currentFilterKey = JSON.stringify(current);
     const currentKey = JSON.stringify({ ...current, limit });
     async function refresh(): Promise<void> {
       const next = await loadSessions(current, limit);
       if (!active) return;
       if (next !== undefined) {
         setLoaded({ key: currentKey, response: next });
-        setLast(next);
+        setLast({ filterKey: currentFilterKey, response: next });
       }
       timer = setTimeout(
         () => void refresh(),
@@ -115,7 +120,7 @@ function useSessionList(
   }, [loadSessions, period, project, state, limit]);
 
   if (loaded?.key === key) return loaded.response;
-  return limit > SESSION_PAGE_SIZE ? last : undefined;
+  return last?.filterKey === filterKey ? last.response : undefined;
 }
 
 function FilterBar({

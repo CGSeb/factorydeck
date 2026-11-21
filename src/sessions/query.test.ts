@@ -196,7 +196,12 @@ describe('listSessions', () => {
     expect(inactive.total).toBe(2);
     expect(inactive.counts).toEqual({ working: 2, waiting: 1, inactive: 2 });
     const week = await listSessions(db, { ...all, period: '7d' }, options);
-    expect(week.sessions.map((row) => row.id)).not.toContain('old-ended');
+    expect(week.sessions.map((row) => row.id)).toEqual([
+      'waiting-1',
+      'agent-busy',
+      'working-1',
+      'edge-inactive',
+    ]);
     expect(week.projects).toEqual(['/work/app', '/work/lib', 'unassigned']);
     const none = await listSessions(
       db,
