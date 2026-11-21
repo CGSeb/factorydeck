@@ -1,0 +1,68 @@
+import { spawn } from 'node:child_process';
+import { rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { parseArgs } from 'node:util';
+import { migrate } from 'drizzle-orm/node-postgres/migrator';
+import pg from 'pg';
+import { loadRootEnvFile, validateEnv } from '../src/config/env.ts';
+import { createDatabase } from '../src/db/client.ts';
+import { writeDemoSessions } from '../src/demo/sessions.ts';
+import { ingest, summaryLine } from '../src/ingest/ingest.ts';
+
+const ROOT = join(import.meta.dirname, '..');
+
+const { values } = parseArgs({
+  options: { port: { type: 'string', default: '4318' } },
+});
+
+const port = Number(values.port);
+if (!Number.isInteger(port) || port < 1 || port > 65_535) {
+  throw new Error(`--port must be a port number, not ${values.port}`);
+}
+const DATABASE = `factorydeck_demo_${String(port)}`;
+
+loadRootEnvFile();
+const env = validateEnv(process.env);
+
+const admin = new pg.Client({ connectionString: env.DATABASE_URL });
+await admin.connect();
+await admin.query(`drop database if exists ${DATABASE} with (force)`);
+await admin.query(`create database ${DATABASE}`);
+await admin.end();
+
+const url = new URL(env.DATABASE_URL);
+url.pathname = `/${DATABASE}`;
+const demoUrl = url.toString();
+
+const folder = join(tmpdir(), `factorydeck-demo-sessions-${String(port)}`);
+await rm(folder, { recursive: true, force: true });
+await writeDemoSessions(folder, new Date());
+
+const { db, close } = createDatabase(demoUrl);
+try {
+  await migrate(db, { migrationsFolder: join(ROOT, 'drizzle') });
+  console.log(summaryLine(await ingest(db, folder)));
+} finally {
+  await close();
+}
+
+const server = spawn(
+  process.execPath,
+  [join(ROOT, 'src', 'server', 'main.ts')],
+  {
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      DATABASE_URL: demoUrl,
+      CLAUDE_PROJECTS_DIR: folder,
+      FACTORYDECK_PORT: String(port),
+    },
+  },
+);
+for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+  process.on(signal, () => server.kill(signal));
+}
+server.once('exit', (code) => {
+  process.exitCode = code ?? 0;
+});
