@@ -53,13 +53,16 @@ export function createApp({
     if (!isPeriod(period) || !isTimeZone(timeZone)) {
       return c.json({ error: 'Expected period and tz query parameters' }, 400);
     }
-    const body: OverviewResponse = await fromDatabase(async () => ({
-      status: 'ok',
-      sessionsFolder: overview.sessionsFolder,
-      updatedAt: updatedAt(),
-      refreshSeconds,
-      overview: await overview.load({ period, timeZone }),
-    }));
+    const body: OverviewResponse = await fromDatabase(async () => {
+      const usage = await overview.load({ period, timeZone });
+      return {
+        status: 'ok',
+        sessionsFolder: overview.sessionsFolder,
+        updatedAt: updatedAt(),
+        refreshSeconds,
+        overview: usage,
+      };
+    });
     return c.json(body, body.status === 'ok' ? 200 : 503);
   });
   app.route('/api/sessions', sessionRoutes(sessions, context));

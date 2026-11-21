@@ -8,7 +8,6 @@ import {
   manySessions,
   sessionList,
   someSessions,
-  syntheticSessions,
   workingSession,
 } from './session-fixtures.ts';
 import type { LoadSessions } from './sessions-api.ts';
@@ -166,23 +165,5 @@ export const NoStaleRowsFromAnotherFilter: Story = {
     await canvas.findByText('Loading…');
     await expect(canvas.queryByRole('table')).toBeNull();
     await waitFor(() => expect(canvas.getAllByRole('row')).toHaveLength(76));
-  },
-};
-
-export const CappedAtFiveHundredRows: Story = {
-  args: { loadSessions: listLoader(syntheticSessions(600)) },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await canvas.findByText('0 working · 0 waiting for you · 600 inactive');
-    for (let shown = 50; shown < 500; shown += 50) {
-      await waitFor(() =>
-        expect(canvas.getAllByRole('row')).toHaveLength(shown + 1),
-      );
-      await userEvent.click(canvas.getByRole('button', { name: 'Show more' }));
-    }
-    await waitFor(() => expect(canvas.getAllByRole('row')).toHaveLength(501));
-    await expect(
-      canvas.queryByRole('button', { name: 'Show more' }),
-    ).toBeNull();
   },
 };

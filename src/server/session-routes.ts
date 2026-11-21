@@ -51,12 +51,10 @@ export function sessionRoutes(
         400,
       );
     }
-    const body: SessionListResponse = await fromDatabase(async () => ({
-      status: 'ok',
-      updatedAt: updatedAt(),
-      refreshSeconds,
-      list: await sessions.list(query),
-    }));
+    const body: SessionListResponse = await fromDatabase(async () => {
+      const list = await sessions.list(query);
+      return { status: 'ok', updatedAt: updatedAt(), refreshSeconds, list };
+    });
     return c.json(body, body.status === 'ok' ? 200 : 503);
   });
   routes.get('/:id', async (c) => {

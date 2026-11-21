@@ -2,7 +2,6 @@ import { type ReactElement, useEffect, useId, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { DEFAULT_PERIOD, type Period, isPeriod } from '../overview/types.ts';
 import {
-  SESSION_MAX_ROWS,
   SESSION_PAGE_SIZE,
   SESSION_STATES,
   type SessionListResponse,
@@ -13,6 +12,7 @@ import { formatClock, formatCount } from './format.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { PeriodSelector } from './PeriodSelector.tsx';
 import type { LoadSessions, SessionFilters } from './sessions-api.ts';
+import { canShowMore, nextLimit } from './session-paging.ts';
 import { STATE_LABELS } from './SessionStateLabel.tsx';
 import { SessionTable } from './SessionTable.tsx';
 
@@ -70,12 +70,11 @@ function SessionsContent({
           <SessionTable sessions={list.sessions} now={new Date()} />
         </section>
       )}
-      {list.sessions.length < list.total &&
-        list.sessions.length < SESSION_MAX_ROWS && (
-          <button type="button" className="show-more" onClick={onMore}>
-            Show more
-          </button>
-        )}
+      {canShowMore(list.sessions.length, list.total) && (
+        <button type="button" className="show-more" onClick={onMore}>
+          Show more
+        </button>
+      )}
     </>
   );
 }
@@ -220,7 +219,7 @@ export function SessionsPage({
         onMore={() =>
           setShown({
             filterKey,
-            limit: Math.min(limit + SESSION_PAGE_SIZE, SESSION_MAX_ROWS),
+            limit: nextLimit(limit),
           })
         }
       />
