@@ -49,7 +49,8 @@ checks:
   notes: >-
     pnpm db:up starts PostgreSQL 18 on 127.0.0.1:5434 and waits until it is healthy; run it from
     the main checkout only, never from a worktree. A worktree links .env from the main checkout.
-    Narrower checks while building: pnpm vitest run <file>, pnpm typecheck, pnpm lint. Schema
+    Narrower checks while building: pnpm vitest run <file>, pnpm typecheck, pnpm lint. UI stories:
+    pnpm vitest run src/ui/stories.test.tsx, and pnpm build-storybook (part of pnpm check). Schema
     changes go in src/db/schema.ts, then pnpm db:generate --name <change>; never edit a
     generated migration.
 
@@ -122,6 +123,7 @@ protected_paths:
   - scripts/check-commit-message.ts
   - scripts/check-tsconfig.ts
   - scripts/check-tsconfig.test.ts
+  - src/ui/stories.test.tsx
   - the check, lint, typecheck and test scripts of package.json
 
 # Project rules a reviewer must check that no tool enforces, one string each; [] when none.
