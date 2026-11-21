@@ -6,12 +6,15 @@
   "description": "Local-first dashboard for an AI agent software factory: tokens, cost per issue and per role, review rounds and frictions.",
   "license": "MIT",
   "scripts": {
+    "dev": "node scripts/dev.ts",
+    "build": "node scripts/build-ui.ts",
+    "start": "node src/server/main.ts",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
     "fix": "pnpm format && oxlint --type-aware --fix .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "oxlint --type-aware --deny-warnings .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "node scripts/check-tsconfig.ts && tsc --noEmit",
     "test": "vitest run",
     "prepare": "lefthook install",
     "db:up": "docker compose up -d --wait",
@@ -24,20 +27,28 @@
     "node": ">=24"
   },
   "dependencies": {
+    "@hono/node-server": "^2.1.11",
     "drizzle-orm": "1.0.0-rc.5",
+    "hono": "^4.13.19",
     "pg": "^8.23.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.17",
     "@types/node": "^24.0.0",
     "@types/pg": "^8.23.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
     "drizzle-kit": "1.0.0-rc.5",
     "lefthook": "^2.2.2",
     "oxlint": "^1.94.0",
     "oxlint-tsgolint": "^7.0.2007",
     "prettier": "^3.4.2",
     "typescript": "^7.0.2",
+    "vite": "^8.3.8",
     "vitest": "^5.1.0"
   },
   "packageManager": "pnpm@12.21.0"

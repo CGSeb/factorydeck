@@ -41,6 +41,15 @@ pnpm check
 
 `pnpm ingest` reads `~/.claude/projects` by default; set `CLAUDE_PROJECTS_DIR` in `.env` to read another folder. A second run only reads what is new.
 
+Run FactoryDeck on `http://127.0.0.1:4317` (set `FACTORYDECK_PORT` in `.env` to change the port):
+
+```bash
+pnpm build              # builds the UI into dist/ui
+pnpm start              # serves the UI and the JSON API, on 127.0.0.1 only
+```
+
+While working on it, `pnpm dev` runs the API and the Vite dev server together: open `http://127.0.0.1:5173`, which reloads on UI changes and proxies `/api` to the API.
+
 To use your own PostgreSQL server instead of Docker, set `DATABASE_URL` and skip `pnpm db:up`.
 
 Schema changes go in `src/db/schema.ts`, then `pnpm db:generate --name <change>` writes the migration to `drizzle/`.

@@ -106,6 +106,8 @@ build:
 
 # A pull request that changes one of these needs a person, whatever its score: they hold the
 # rules the agents are graded by. The feature map of the verification skill is the exception.
+# tsconfig.json is not listed: agents may add options to it, and scripts/check-tsconfig.ts (run by
+# pnpm typecheck) fails when a change loosens a strictness flag or takes source files out of the check.
 protected_paths:
   - AGENTS.md
   - CLAUDE.md
@@ -113,12 +115,13 @@ protected_paths:
   - .claude/
   - .github/
   - .oxlintrc.json
-  - tsconfig.json
   - .prettierrc.json
   - .prettierignore
   - lefthook.yml
   - .lefthookrc
   - scripts/check-commit-message.ts
+  - scripts/check-tsconfig.ts
+  - scripts/check-tsconfig.test.ts
   - the check, lint, typecheck and test scripts of package.json
 
 # Project rules a reviewer must check that no tool enforces, one string each; [] when none.

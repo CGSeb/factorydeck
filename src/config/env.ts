@@ -5,10 +5,18 @@ import { z } from 'zod';
 
 const EnvSchema = z.object({
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
-  CLAUDE_PROJECTS_DIR: z.string().trim().min(1).optional(),
+  FACTORYDECK_PORT: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.coerce.number().int().min(1).max(65_535).default(4317),
+  ),
+  CLAUDE_PROJECTS_DIR: z.preprocess(
+    (value) =>
+      typeof value === 'string' && value.trim() === '' ? undefined : value,
+    z.string().trim().min(1).optional(),
+  ),
 });
 
-export type Env = z.infer<typeof EnvSchema>;
+export type Env = z.output<typeof EnvSchema>;
 
 /** Parses the environment, failing with every invalid variable listed. */
 export function validateEnv(raw: Record<string, unknown>): Env {
