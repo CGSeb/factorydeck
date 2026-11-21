@@ -124,6 +124,34 @@ describe('FACTORYDECK_INACTIVE_AFTER_MINUTES', () => {
   });
 });
 
+describe('FACTORYDECK_COLLECT_INTERVAL_MINUTES', () => {
+  const DATABASE_URL = 'postgres://user:secret@localhost:5434/factorydeck';
+  const minutes = (value?: string): number =>
+    validateEnv(
+      value === undefined
+        ? { DATABASE_URL }
+        : { DATABASE_URL, FACTORYDECK_COLLECT_INTERVAL_MINUTES: value },
+    ).FACTORYDECK_COLLECT_INTERVAL_MINUTES;
+
+  it('defaults to 5, also when empty', () => {
+    expect(minutes()).toBe(5);
+    expect(minutes('')).toBe(5);
+  });
+
+  it('reads a whole number of at least 1', () => {
+    expect(minutes('1')).toBe(1);
+    expect(minutes('60')).toBe(60);
+  });
+
+  it('rejects anything else', () => {
+    for (const value of ['0', '-5', '2.5', 'often']) {
+      expect(() => minutes(value)).toThrow(
+        /FACTORYDECK_COLLECT_INTERVAL_MINUTES/,
+      );
+    }
+  });
+});
+
 describe('workflowConfigPath', () => {
   const root = join(import.meta.dirname, '..', '..');
 
