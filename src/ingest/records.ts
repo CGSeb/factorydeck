@@ -224,7 +224,15 @@ export function isInterruption(record: LogRecord): boolean {
   );
 }
 
-/** Whether a record is a prompt typed by the user in the main thread. */
+function hasImage(record: LogRecord): boolean {
+  const blocks = contentBlocks(record);
+  return (
+    blocks.some((block) => block['type'] === 'image') &&
+    !blocks.some((block) => block['type'] === 'tool_result')
+  );
+}
+
+/** Whether a record is a prompt typed by the user in the main thread: text, or images alone. */
 export function isTypedPrompt(record: LogRecord): boolean {
   if (
     record.type !== 'user' ||
@@ -235,10 +243,10 @@ export function isTypedPrompt(record: LogRecord): boolean {
     return false;
   }
   const text = userText(record)?.trimStart();
-  return (
-    text !== undefined &&
-    !GENERATED_PREFIXES.some((prefix) => text.startsWith(prefix))
-  );
+  if (text === undefined) {
+    return hasImage(record);
+  }
+  return !GENERATED_PREFIXES.some((prefix) => text.startsWith(prefix));
 }
 
 const COMMAND_NAME = /<command-name>\/([^<\s]+)<\/command-name>/;
@@ -271,6 +279,18 @@ export interface TurnState {
   lastUserInterrupted: boolean;
 }
 
+/**
+ * Whether a user record reaches the model as a new prompt: a typed prompt that is not a slash
+ * command, or the instructions of a slash skill. Built-in commands and the records Claude Code
+ * writes itself do not.
+ */
+function reopensTurn(record: LogRecord): boolean {
+  return (
+    (isTypedPrompt(record) && slashCommandOf(record) === undefined) ||
+    isSlashSkillInstructions(record)
+  );
+}
+
 /** The turn state after one more record of the main thread. */
 export function nextTurnState(state: TurnState, record: LogRecord): TurnState {
   if (record.type === 'assistant') {
@@ -281,11 +301,14 @@ export function nextTurnState(state: TurnState, record: LogRecord): TurnState {
       userAfterLastAssistant: false,
     };
   }
-  if (record.type === 'user') {
+  if (isInterruption(record)) {
+    return { ...state, lastUserInterrupted: true };
+  }
+  if (reopensTurn(record)) {
     return {
       ...state,
       userAfterLastAssistant: true,
-      lastUserInterrupted: isInterruption(record),
+      lastUserInterrupted: false,
     };
   }
   return state;

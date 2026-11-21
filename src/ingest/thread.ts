@@ -46,6 +46,10 @@ export interface ThreadRows {
   prompts: UserPromptRow[];
   /** Prompt ids of slash skill instructions whose prompt was read by an earlier run. */
   earlierSkillPrompts: string[];
+  /** User and assistant records without a valid timestamp: skipped, and counted. */
+  skipped: number;
+  /** First working directory of the records, for a session whose main log has none. */
+  cwd: string | null;
 }
 
 interface Entry {
@@ -53,6 +57,13 @@ interface Entry {
   at: Date | undefined;
   uuid: string;
   base: { sourcePath: string; sessionId: string };
+}
+
+/** Record types that must carry a timestamp to be stored. */
+const TIMED_TYPES: ReadonlySet<string> = new Set(['user', 'assistant']);
+
+function nonEmpty(value: string | undefined): string | null {
+  return value === undefined || value === '' ? null : value;
 }
 
 /**
@@ -70,6 +81,8 @@ export function readThread(
     launches: [],
     prompts: [],
     earlierSkillPrompts: [],
+    skipped: 0,
+    cwd: null,
   };
   const commands = new Map<string, SkillLaunchRow>();
   for (const { record, offset } of records) {
@@ -79,6 +92,11 @@ export function readThread(
       uuid: stringOf(record, 'uuid') ?? `offset:${source.startOffset + offset}`,
       base: { sourcePath: source.sourcePath, sessionId: source.sessionId },
     };
+    if (entry.at === undefined && TIMED_TYPES.has(record.type)) {
+      rows.skipped += 1;
+      continue;
+    }
+    rows.cwd ??= nonEmpty(stringOf(record, 'cwd'));
     collectAssistant(entry, source.subAgentId, span, rows);
     if (main !== undefined && !isSidechain(record)) {
       readMainRecord(main, entry, rows, commands);

@@ -171,10 +171,13 @@ async function ingestFile(
     agentRow ?? sessionRow,
     agentRow === undefined ? sessionRow : undefined,
   );
+  sessionRow.cwd ??= rows.cwd;
   const inserted = await insertThreadRows(run, file.sessionId, rows);
-  counts.linesSkipped += skipped;
-  counts.apiCalls += inserted.apiCalls;
-  counts.skillLaunches += inserted.skillLaunches;
+  Object.assign(counts, {
+    linesSkipped: counts.linesSkipped + skipped + rows.skipped,
+    apiCalls: counts.apiCalls + inserted.apiCalls,
+    skillLaunches: counts.skillLaunches + inserted.skillLaunches,
+  });
   await saveOffset(run, file.path, {
     sizeBytes: range.size,
     readOffset: range.start + consumed,

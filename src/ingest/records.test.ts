@@ -124,6 +124,49 @@ describe('skills and prompts', () => {
     ).toBe(false);
   });
 
+  it.each([
+    '<task-notification>\n<task-id>a</task-id>',
+    '<local-command-stdout>Compacted</local-command-stdout>',
+    '<local-command-stderr>Failed</local-command-stderr>',
+    '<local-command-caveat>Caveat</local-command-caveat>',
+    '<bash-stdout>ok</bash-stdout>',
+    '<bash-stderr>error</bash-stderr>',
+    '[Request interrupted by user]',
+    '[Request interrupted by user for tool use]',
+  ])('does not count %s as a typed prompt', (text) => {
+    expect(isTypedPrompt(record(userText(ctx, text)))).toBe(false);
+    const blocks = { role: 'user', content: [{ type: 'text', text }] };
+    expect(isTypedPrompt(record(userText(ctx, '', { message: blocks })))).toBe(
+      false,
+    );
+  });
+
+  it('counts a prompt of images alone', () => {
+    const image = { type: 'image', source: { type: 'base64', data: 'AA==' } };
+    expect(
+      isTypedPrompt(
+        record(
+          userText(ctx, '', { message: { role: 'user', content: [image] } }),
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      isTypedPrompt(
+        record(
+          userText(ctx, '', {
+            message: {
+              role: 'user',
+              content: [
+                { type: 'tool_result', tool_use_id: 't', content: [image] },
+                image,
+              ],
+            },
+          }),
+        ),
+      ),
+    ).toBe(false);
+  });
+
   it('reads the slash command a prompt holds', () => {
     const prompt = userText(
       ctx,
@@ -181,13 +224,33 @@ describe('turn ended', () => {
     },
   );
 
-  it('is still going when a user record follows the end of turn', () => {
+  it('is reopened by a typed prompt or a slash skill', () => {
+    const done = assistant(ctx, { requestId: 'r' });
+    expect(endedAfter([done, userText(ctx, 'Next')])).toBe(false);
     expect(
-      endedAfter([assistant(ctx, { requestId: 'r' }), userText(ctx, 'Next')]),
+      endedAfter([
+        done,
+        userText(ctx, '<command-name>/review</command-name>'),
+        skillInstructions(ctx),
+      ]),
     ).toBe(false);
+  });
+
+  it('stays ended after built-in commands and records Claude Code writes', () => {
+    const done = assistant(ctx, { requestId: 'r' });
     expect(
-      endedAfter([assistant(ctx, { requestId: 'r' }), toolResult(ctx)]),
-    ).toBe(false);
+      endedAfter([
+        done,
+        userText(ctx, '<local-command-caveat>x</local-command-caveat>', {
+          isMeta: true,
+        }),
+        userText(ctx, '<command-name>/model</command-name>'),
+        userText(ctx, '<local-command-stdout>Set model</local-command-stdout>'),
+        userText(ctx, '<task-notification>\n<task-id>a</task-id>'),
+        userText(ctx, 'Another session sent a message', { isMeta: true }),
+        toolResult(ctx),
+      ]),
+    ).toBe(true);
   });
 
   it('has ended when the last user record is an interruption', () => {
