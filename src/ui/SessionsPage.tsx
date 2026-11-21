@@ -11,6 +11,7 @@ import {
 import { formatClock, formatCount } from './format.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { PeriodSelector } from './PeriodSelector.tsx';
+import { ProjectSelect } from './ProjectSelect.tsx';
 import type { LoadSessions, SessionFilters } from './sessions-api.ts';
 import { canShowMore, nextLimit } from './session-paging.ts';
 import { STATE_LABELS } from './SessionStateLabel.tsx';
@@ -133,32 +134,15 @@ function FilterBar({
   projects: string[];
   onChange: (next: SessionFilters) => void;
 }): ReactElement {
-  const projectId = useId();
   const stateId = useId();
   const { project, state } = filters;
-  const options =
-    project === undefined || projects.includes(project)
-      ? projects
-      : [...projects, project];
   return (
     <div className="filters">
-      <label htmlFor={projectId}>
-        Project
-        <select
-          id={projectId}
-          value={project ?? ''}
-          onChange={(event) =>
-            onChange({ ...filters, project: event.target.value || undefined })
-          }
-        >
-          <option value="">All projects</option>
-          {options.map((name) => (
-            <option key={name} value={name}>
-              {name}
-            </option>
-          ))}
-        </select>
-      </label>
+      <ProjectSelect
+        value={project}
+        projects={projects}
+        onChange={(next) => onChange({ ...filters, project: next })}
+      />
       <label htmlFor={stateId}>
         State
         <select

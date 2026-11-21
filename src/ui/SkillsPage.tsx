@@ -60,11 +60,13 @@ export function SkillsPage({ loadSkills }: SkillsPageProps): ReactElement {
           onChange={(period: Period) => setFilters({ ...filters, period })}
         />
       </div>
-      <ProjectSelect
-        value={filters.project}
-        projects={response?.status === 'ok' ? response.list.projects : []}
-        onChange={(project) => setFilters({ ...filters, project })}
-      />
+      <div className="filters">
+        <ProjectSelect
+          value={filters.project}
+          projects={response?.status === 'ok' ? response.list.projects : []}
+          onChange={(project) => setFilters({ ...filters, project })}
+        />
+      </div>
       <SkillsContent response={response} search={search} />
     </div>
   );

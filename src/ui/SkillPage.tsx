@@ -131,11 +131,13 @@ export function SkillPage({ loadSkill }: SkillPageProps): ReactElement {
           onChange={(period: Period) => setFilters({ ...filters, period })}
         />
       </div>
-      <ProjectSelect
-        value={filters.project}
-        projects={response?.status === 'ok' ? response.skill.projects : []}
-        onChange={(project) => setFilters({ ...filters, project })}
-      />
+      <div className="filters">
+        <ProjectSelect
+          value={filters.project}
+          projects={response?.status === 'ok' ? response.skill.projects : []}
+          onChange={(project) => setFilters({ ...filters, project })}
+        />
+      </div>
       <SkillContent response={response} />
     </div>
   );

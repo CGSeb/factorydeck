@@ -17,22 +17,20 @@ export function ProjectSelect({
       ? projects
       : [...projects, value];
   return (
-    <div className="filters">
-      <label htmlFor={id}>
-        Project
-        <select
-          id={id}
-          value={value ?? ''}
-          onChange={(event) => onChange(event.target.value || undefined)}
-        >
-          <option value="">All projects</option>
-          {options.map((name) => (
-            <option key={name} value={name}>
-              {name}
-            </option>
-          ))}
-        </select>
-      </label>
-    </div>
+    <label htmlFor={id}>
+      Project
+      <select
+        id={id}
+        value={value ?? ''}
+        onChange={(event) => onChange(event.target.value || undefined)}
+      >
+        <option value="">All projects</option>
+        {options.map((name) => (
+          <option key={name} value={name}>
+            {name}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
