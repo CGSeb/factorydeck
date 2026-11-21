@@ -11,7 +11,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "oxlint --type-aware --deny-warnings .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "node scripts/check-tsconfig.ts && tsc --noEmit",
     "test": "vitest run",
     "prepare": "lefthook install",
     "db:up": "docker compose up -d --wait",
