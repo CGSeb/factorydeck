@@ -10,6 +10,12 @@ import {
   sessionWithSubAgents,
   someSessions,
 } from './session-fixtures.ts';
+import {
+  skillLoader,
+  skillsLoader,
+  someSkills,
+  writeSpecDetail,
+} from './skill-fixtures.ts';
 
 const meta = {
   component: App,
@@ -30,6 +36,8 @@ const loaders = {
   loadOverview: fixedLoader(() => okResponse(weekOverview)),
   loadSessions: listLoader(someSessions),
   loadSession: detailLoader(detailResponse(sessionWithSubAgents)),
+  loadSkills: skillsLoader(someSkills),
+  loadSkill: skillLoader(writeSpecDetail),
 };
 
 export const Home: Story = {
@@ -60,5 +68,22 @@ export const Sessions: Story = {
     );
     await canvas.findByRole('heading', { name: 'Add the export button' });
     await expect(canvas.getByText('Find the export code')).toBeVisible();
+  },
+};
+
+export const Skills: Story = {
+  args: loaders,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('link', { name: 'Skills' }));
+    await expect(canvas.getByRole('link', { name: 'Skills' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    await userEvent.click(
+      await canvas.findByRole('link', { name: 'kit:write-spec' }),
+    );
+    await canvas.findByRole('heading', { name: 'kit:write-spec' });
+    await expect(canvas.getByText('Launches per day')).toBeVisible();
   },
 };

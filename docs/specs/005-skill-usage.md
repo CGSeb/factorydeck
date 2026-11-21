@@ -1,6 +1,6 @@
 # 005 · Skill usage
 
-Status: ready
+Status: done
 Depends on: 002, 003, 004
 Checked: 2026-11-21
 
@@ -10,13 +10,13 @@ A developer sees how many tokens and how much cost each skill takes, overall and
 
 ## Acceptance criteria
 
-- [ ] The navigation bar has a `Skills` entry, at `/skills`.
-- [ ] A table lists each skill with: name (as stored, such as `factorydeck-skills:write-spec`), launches, sessions that launched it, tokens, cost, and average cost per launch; sorted by cost descending.
-- [ ] A row `No skill` holds every call attributed to no skill, so the column totals equal the overview totals of spec 003 for the same period and project.
-- [ ] The period selector of spec 003 and a project filter (as in spec 004) apply; they are kept in the URL.
-- [ ] Clicking a skill opens `/skills/<name>` (the name URL-encoded, a React Router route that survives a reload) with its launches over time (one bar per day, launches count) and the list of sessions that launched it, each with the tokens and cost of the skill in that session, linking to the session page of spec 004.
-- [ ] The session page of spec 004 gains a `Skills` table: each skill launched in the session with launches, tokens and cost, plus the `No skill` row; its totals equal the session totals.
-- [ ] With no skill launched in the period, the page shows `No skills launched in this period.` and still shows the `No skill` row's figures.
+- [x] The navigation bar has a `Skills` entry, at `/skills`.
+- [x] A table lists each skill with: name (as stored, such as `factorydeck-skills:write-spec`), launches, sessions that launched it, tokens, cost, and average cost per launch; sorted by cost descending.
+- [x] A row `No skill` holds every call attributed to no skill, so the column totals equal the overview totals of spec 003 for the same period and project.
+- [x] The period selector of spec 003 and a project filter (as in spec 004) apply; they are kept in the URL.
+- [x] Clicking a skill opens `/skills/<name>` (the name URL-encoded, a React Router route that survives a reload) with its launches over time (one bar per day, launches count) and the list of sessions that launched it, each with the tokens and cost of the skill in that session, linking to the session page of spec 004.
+- [x] The session page of spec 004 gains a `Skills` table: each skill launched in the session with launches, tokens and cost, plus the `No skill` row; its totals equal the session totals.
+- [x] With no skill launched in the period, the page shows `No skills launched in this period.` and still shows the `No skill` row's figures.
 
 ## Rules
 

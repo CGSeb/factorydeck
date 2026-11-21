@@ -236,6 +236,8 @@ describe('sessionDetail', () => {
       },
     });
     expect(detail?.costUsd).toBeCloseTo(1.1);
+    expect(detail?.skills).toMatchObject([{ skill: null, tokens: 1_100_010 }]);
+    expect(detail?.skills[0]?.costUsd).toBeCloseTo(1.1, 10);
     expect(detail?.subAgents).toEqual([
       {
         id: 'a-first',

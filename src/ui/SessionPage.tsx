@@ -10,6 +10,7 @@ import {
 } from './format.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import type { LoadSession } from './sessions-api.ts';
+import { SessionSkillTable } from './SessionSkillTable.tsx';
 import { SessionStateLabel } from './SessionStateLabel.tsx';
 import { sessionTitle } from './SessionTable.tsx';
 import { SubAgentTable } from './SubAgentTable.tsx';
@@ -115,6 +116,7 @@ function SessionContent({
         session={response.session}
         updatedAt={response.updatedAt}
       />
+      <SessionSkillTable skills={response.session.skills} />
       <SubAgentTable subAgents={response.session.subAgents} />
     </>
   );

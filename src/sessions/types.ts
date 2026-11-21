@@ -1,4 +1,5 @@
 import type { Period, TokenCounts } from '../overview/types.ts';
+import type { SkillUsage } from '../skills/types.ts';
 
 export const SESSION_STATES = ['working', 'waiting', 'inactive'] as const;
 
@@ -56,6 +57,7 @@ export interface SessionDetail extends Omit<SessionSummary, 'tokens'> {
   cwd: string | null;
   tokens: TokenCounts;
   subAgents: SubAgentSummary[];
+  skills: SkillUsage[];
 }
 
 interface Refresh {

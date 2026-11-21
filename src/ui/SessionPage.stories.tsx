@@ -65,6 +65,10 @@ export const WithSubAgents: Story = {
     await expect(canvas.getByText('Cache read')).toBeVisible();
     await expect(canvas.getByText('~$6.42')).toBeVisible();
     await expect(canvas.getByText('Find the export code')).toBeVisible();
+    await expect(
+      canvas.getByRole('table', { name: 'Skills' }),
+    ).toHaveTextContent('kit:write-spec');
+    await expect(canvas.getByText('~$2.32')).toBeVisible();
   },
 };
 

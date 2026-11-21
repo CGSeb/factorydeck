@@ -3,6 +3,7 @@ import { createDatabase } from '../db/client.ts';
 import { ingest } from '../ingest/ingest.ts';
 import { usageOverview } from '../overview/query.ts';
 import { listSessions, sessionDetail } from '../sessions/query.ts';
+import { listSkills, skillDetail } from '../skills/query.ts';
 import { createApp } from './app.ts';
 import { databaseCheck } from './health.ts';
 import { startIngestLoop } from './ingest-loop.ts';
@@ -43,6 +44,10 @@ async function main(): Promise<void> {
     sessions: {
       list: (query) => listSessions(db, query, stateOptions),
       detail: (id) => sessionDetail(db, id, stateOptions),
+    },
+    skills: {
+      list: (query) => listSkills(db, query),
+      detail: (skill, query) => skillDetail(db, skill, query),
     },
   });
   await listen(app, env.FACTORYDECK_PORT);
