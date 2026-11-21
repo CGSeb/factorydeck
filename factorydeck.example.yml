@@ -1,0 +1,63 @@
+# FactoryDeck workflow configuration.
+#
+# Copy this file to factorydeck.yml at the repository root (ignored by git), or point
+# FACTORYDECK_CONFIG in .env at another path. FactoryDeck reads it once at start-up and never
+# writes it; restart the server after a change. Without a file, sub-agents are grouped by type.
+# Never put secrets in it.
+#
+# Patterns are JavaScript regular expressions, matched case-insensitively, anywhere in the text
+# unless anchored with ^ or $. Quote them with single quotes so YAML keeps backslashes as they are.
+
+# Required, and must be 1.
+version: 1
+
+# Roles of sub-agents, tried in order: the first rule that matches gives the role. A rule needs
+# `description`, `agent_type` or both (both must then match):
+#   name         the role shown on /roles. Several rules may share a name; a rule named like a
+#                sub-agent type (such as Explore) shares that type's row. `main` and `unassigned`
+#                are reserved.
+#   description  a pattern matched against the description the sub-agent was started with.
+#   agent_type   a pattern matched against the sub-agent type (Explore, general-purpose…).
+# A sub-agent no rule matches takes its type as role, or `unassigned` when it has none. A
+# session's main thread is always `main`.
+#
+# These rules fit the build-feature workflow of factorydeck-skills.
+roles:
+  - name: builder
+    description: '^(Build|Worker for) '
+  - name: reviewer
+    description: '^Review '
+  - name: shipper
+    description: '^(Ship|Merge|Push) '
+  - name: reworker
+    description: '^(Rework|Rebase|Update) '
+  - name: spec-checker
+    description: 'check-spec'
+
+# Work items (issue numbers) of threads, tried in order: the first rule whose pattern matches and
+# captures a positive whole number gives the work item.
+#   from     the text to read: description (a sub-agent's description; skipped for a main
+#            thread), branch (the thread's own git branch) or title (the session's title).
+#   pattern  a pattern with exactly one capture group, the issue number.
+# A sub-agent with no match takes the work item of its session's main thread.
+# Without this key, the defaults are the two rules below.
+work_items:
+  - from: description
+    pattern: '#(\d+)'
+  - from: title
+    pattern: '#(\d+)'
+  # Fits branches named after issue numbers, such as feat/52-export:
+  # - from: branch
+  #   pattern: '^[a-z]+/(\d+)-'
+
+# Optional overrides, keyed by project root path (absolute, or starting with ~). A project's
+# `roles` or `work_items`, when present, replace the global list for that project; they are not
+# merged.
+# projects:
+#   ~/code/my-app:
+#     roles:
+#       - name: builder
+#         agent_type: '^general-purpose$'
+#     work_items:
+#       - from: branch
+#         pattern: '^[a-z]+/(\d+)-'

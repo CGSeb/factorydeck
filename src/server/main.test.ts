@@ -1,5 +1,6 @@
 import { type ChildProcess, spawn } from 'node:child_process';
 import { type Server, createServer } from 'node:net';
+import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createScratchDatabase } from '../test/postgres.ts';
@@ -101,6 +102,22 @@ describe('pnpm start', () => {
     expect(run.output()).toContain('FACTORYDECK_PORT');
     expect(run.output()).toContain('FACTORYDECK_INGEST_INTERVAL_SECONDS');
     expect(run.output()).toContain('FACTORYDECK_INACTIVE_AFTER_MINUTES');
+  });
+
+  it('exits with code 1 listing every error of an invalid configuration', async () => {
+    const folder = await sessionsFolder();
+    const config = join(folder, 'factorydeck.yml');
+    await writeFile(
+      config,
+      'version: 1\nroles:\n  - name: main\n    description: "("\n',
+    );
+    const run = start({ DATABASE_URL, FACTORYDECK_CONFIG: config });
+    expect(await run.exited).toBe(1);
+    expect(run.output()).toContain(`Invalid configuration in ${config}:\n`);
+    expect(run.output()).toContain('  roles[0].name: ');
+    expect(run.output()).toContain(
+      '  roles[0].description: not a valid regular expression',
+    );
   });
 
   it('ingests the session logs at start-up, then at every interval', async () => {

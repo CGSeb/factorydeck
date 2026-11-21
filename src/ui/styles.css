@@ -114,6 +114,12 @@ main {
   color: var(--muted);
 }
 
+.source {
+  margin: 0 0 1rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
 .tiles {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -214,6 +220,13 @@ thead th:first-child {
 
   .tables {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  th,
+  td {
+    padding-inline: 0.35rem;
   }
 }
 

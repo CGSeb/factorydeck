@@ -3,6 +3,13 @@ import type { Database } from '../db/client.ts';
 import { periodStart, select } from '../overview/query.ts';
 import type { TokenCounts } from '../overview/types.ts';
 import { costOf } from '../pricing.ts';
+import {
+  DEFAULT_CONFIG,
+  type WorkflowConfig,
+  roleOf,
+  rulesFor,
+  workItemOf,
+} from '../roles/config.ts';
 import { sessionSkills } from '../skills/query.ts';
 import {
   type SessionDetail,
@@ -110,12 +117,20 @@ const USAGE_SUMS = sql`a.model,
 function summaryOf(
   row: Row,
   usage: Usage,
+  config: WorkflowConfig,
 ): Omit<SessionSummary, 'tokens'> & { usage: Usage } {
+  const project = text(row['project']);
+  const title = text(row['title']);
+  const gitBranch = text(row['git_branch']);
   return {
     id: text(row['id']),
-    title: text(row['title']),
-    project: text(row['project']),
-    gitBranch: text(row['git_branch']),
+    title,
+    project,
+    gitBranch,
+    workItem: workItemOf(rulesFor(config, project), {
+      branch: gitBranch,
+      title,
+    }),
     state: stateOf(row['state']),
     firstAt: timestamp(row['first_at']),
     lastAt: timestamp(row['last_at']),
@@ -141,6 +156,7 @@ export async function listSessions(
   db: Database,
   query: SessionListQuery,
   options: StateOptions,
+  config: WorkflowConfig = DEFAULT_CONFIG,
 ): Promise<SessionList> {
   const startAt = await periodStart(db, {
     ...query,
@@ -186,6 +202,7 @@ export async function listSessions(
       const { usage, ...summary } = summaryOf(
         row,
         usages.get(text(row['id'])) ?? emptyUsage(0),
+        config,
       );
       return { ...summary, tokens: totalTokens(usage.tokens) };
     }),
@@ -195,10 +212,43 @@ export async function listSessions(
   };
 }
 
+function subAgentsOf(
+  agentRows: Row[],
+  usageRows: Row[],
+  config: WorkflowConfig,
+  summary: Pick<SessionSummary, 'project' | 'title' | 'workItem'>,
+): SubAgentSummary[] {
+  const byAgent = usageBy(usageRows, 'sub_agent');
+  const rules = rulesFor(config, summary.project);
+  return agentRows.map((agent) => {
+    const agentUsage = byAgent.get(text(agent['id'])) ?? emptyUsage(0);
+    const agentType = text(agent['agent_type']);
+    const description = text(agent['description']);
+    return {
+      id: text(agent['id']),
+      agentType,
+      role: roleOf(rules, { agentType, description }),
+      workItem:
+        workItemOf(rules, {
+          description,
+          branch: text(agent['git_branch']),
+          title: summary.title,
+        }) ?? summary.workItem,
+      description,
+      model: text(agent['model']),
+      firstAt: timestamp(agent['first_at']),
+      lastAt: timestamp(agent['last_at']),
+      tokens: totalTokens(agentUsage.tokens),
+      costUsd: agentUsage.costUsd,
+    };
+  });
+}
+
 export async function sessionDetail(
   db: Database,
   id: string,
   options: StateOptions,
+  config: WorkflowConfig = DEFAULT_CONFIG,
 ): Promise<SessionDetail | undefined> {
   const [sessionRows, agentRows, usageRows, skills] = await Promise.all([
     select(
@@ -207,7 +257,7 @@ export async function sessionDetail(
     ),
     select(
       db,
-      sql`select id, agent_type, description, model, first_at, last_at
+      sql`select id, agent_type, description, model, git_branch, first_at, last_at
         from sub_agent where session_id = ${id}
         order by first_at asc nulls last, id`,
     ),
@@ -221,26 +271,13 @@ export async function sessionDetail(
   ]);
   const [row] = sessionRows;
   if (row === undefined) return undefined;
-  const byAgent = usageBy(usageRows, 'sub_agent');
   const total =
     usageBy(
       usageRows.map((usage) => ({ ...usage, sub_agent: '' })),
       'sub_agent',
     ).get('') ?? emptyUsage(0);
-  const subAgents: SubAgentSummary[] = agentRows.map((agent) => {
-    const usage = byAgent.get(text(agent['id'])) ?? emptyUsage(0);
-    return {
-      id: text(agent['id']),
-      agentType: text(agent['agent_type']),
-      description: text(agent['description']),
-      model: text(agent['model']),
-      firstAt: timestamp(agent['first_at']),
-      lastAt: timestamp(agent['last_at']),
-      tokens: totalTokens(usage.tokens),
-      costUsd: usage.costUsd,
-    };
-  });
-  const { usage, ...summary } = summaryOf(row, total);
+  const { usage, ...summary } = summaryOf(row, total, config);
+  const subAgents = subAgentsOf(agentRows, usageRows, config, summary);
   return {
     ...summary,
     cwd: typeof row['cwd'] === 'string' ? row['cwd'] : null,

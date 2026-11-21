@@ -18,6 +18,7 @@ export interface SessionSummary {
   title: string;
   project: string;
   gitBranch: string;
+  workItem: number | null;
   state: SessionState;
   firstAt: string | null;
   lastAt: string | null;
@@ -45,6 +46,8 @@ export interface SessionListQuery {
 export interface SubAgentSummary {
   id: string;
   agentType: string;
+  role: string;
+  workItem: number | null;
   description: string;
   model: string;
   firstAt: string | null;

@@ -242,6 +242,8 @@ describe('sessionDetail', () => {
       {
         id: 'a-first',
         agentType: '',
+        role: 'unassigned',
+        workItem: null,
         description: '',
         model: '',
         firstAt: ago(85).toISOString(),
@@ -252,6 +254,8 @@ describe('sessionDetail', () => {
       {
         id: 'b-second',
         agentType: 'Explore',
+        role: 'Explore',
+        workItem: null,
         description: 'Look around',
         model: 'claude-haiku-9',
         firstAt: ago(70).toISOString(),

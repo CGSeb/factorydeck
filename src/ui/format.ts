@@ -104,3 +104,7 @@ export function formatDateTime(at: string | null): string {
 export function orMissing(value: string): string {
   return value === '' ? MISSING : value;
 }
+
+export function formatWorkItem(value: number | null): string {
+  return value === null ? MISSING : `#${String(value)}`;
+}

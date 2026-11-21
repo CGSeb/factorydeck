@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
 import { App } from './App.tsx';
 import { overviewLoader } from './overview-api.ts';
+import { rolesLoader } from './roles-api.ts';
 import { sessionLoader, sessionsLoader } from './sessions-api.ts';
 import { skillLoader, skillsLoader } from './skills-api.ts';
 
@@ -10,6 +11,7 @@ const loadSessions = sessionsLoader();
 const loadSession = sessionLoader();
 const loadSkills = skillsLoader();
 const loadSkill = skillLoader();
+const loadRoles = rolesLoader();
 const root = document.querySelector('#root');
 if (root) {
   createRoot(root).render(
@@ -20,6 +22,7 @@ if (root) {
         loadSession={loadSession}
         loadSkills={loadSkills}
         loadSkill={loadSkill}
+        loadRoles={loadRoles}
       />
     </BrowserRouter>,
   );

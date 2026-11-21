@@ -10,6 +10,7 @@ import {
 } from '../overview/types.ts';
 import { apiContext, isTimeZone } from './api-context.ts';
 import type { DatabaseCheck } from './health.ts';
+import { type RoleSource, roleRoutes } from './role-routes.ts';
 import { type SessionSource, sessionRoutes } from './session-routes.ts';
 import { type SkillSource, skillRoutes } from './skill-routes.ts';
 
@@ -27,6 +28,7 @@ export interface AppOptions {
   overview: OverviewSource;
   sessions: SessionSource;
   skills: SkillSource;
+  roles: RoleSource;
 }
 
 /** The FactoryDeck HTTP app: the JSON API under `/api/`, the UI everywhere else. */
@@ -36,6 +38,7 @@ export function createApp({
   overview,
   sessions,
   skills,
+  roles,
 }: AppOptions): Hono {
   const app = new Hono();
   const context = apiContext(
@@ -70,6 +73,7 @@ export function createApp({
   });
   app.route('/api/sessions', sessionRoutes(sessions, context));
   app.route('/api/skills', skillRoutes(skills, context));
+  app.route('/api/roles', roleRoutes(roles, context));
   app.all('/api/*', (c) => c.json({ error: 'Not found' }, 404));
 
   if (!existsSync(join(uiDir, 'index.html'))) {

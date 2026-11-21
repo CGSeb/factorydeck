@@ -1,6 +1,6 @@
 # 006 · Roles and work items
 
-Status: ready
+Status: done
 Depends on: 002, 003, 004
 Checked: 2026-11-21
 
@@ -10,21 +10,21 @@ A developer describes their agent workflow in one configuration file, and Factor
 
 ## Acceptance criteria
 
-- [ ] FactoryDeck reads its workflow configuration from `factorydeck.yml` at the repository root, or from the path in `FACTORYDECK_CONFIG` of the root `.env` (an empty value means the default; a path starting with `~` is expanded to the home folder). `factorydeck.yml` is ignored by git; a versioned `factorydeck.example.yml` documents every key with comments and holds rules for the `build-feature` workflow of factorydeck-skills (see Rules).
-- [ ] A missing configuration file is not an error: the defaults of Rules apply.
-- [ ] An invalid file (YAML that does not parse, an unknown key, a wrong type, a regular expression that does not compile, a work item pattern without exactly one capture group, a role named `main` or `unassigned`) ends start-up of `pnpm start` and `pnpm dev` with exit code 1 and the message `Invalid configuration in <path>:` followed by one line per error, naming its key path (such as `roles[2].description`). `pnpm ingest` does not read the configuration.
-- [ ] The configuration is read once at start-up; a change applies at the next start, to all data already ingested, without re-ingesting.
-- [ ] Every sub-agent gets a role and every thread (a session's main thread, each sub-agent) gets a work item, by the rules below.
-- [ ] The session page of spec 004 shows `Work item` in its header (`#52`, or `—`), and its sub-agent table gains the columns `Role` and `Work item`, after `Type`.
-- [ ] The session list of spec 004 gains a `Work item` column after `Branch`: the work item of the session's main thread, or `—`.
-- [ ] The navigation bar has a `Roles` entry, after `Skills`, at `/roles` (a React Router route that survives a reload).
-- [ ] `/roles` shows a table with one row per role: name, threads (sessions for `main`, sub-agents for the others), API calls, tokens and cost; sorted by cost descending. Rows `main` and `unassigned` are listed like the others.
-- [ ] Under its heading, `/roles` says where the roles come from: `Rules from <path>` when the file exists, else `No configuration file at <path>: sub-agents are grouped by type.`, with the resolved path.
-- [ ] The column totals of `/roles` equal the overview totals of spec 003 for the same period and project.
-- [ ] The period selector of spec 003 and the project filter of spec 004 apply to `/roles`; both are kept in the URL.
-- [ ] With no API call in the period, `/roles` shows `No activity in this period.` instead of the table.
-- [ ] Figures on `/roles` refresh with each re-ingestion of spec 003, without a reload.
-- [ ] `/roles` and the session list with its new column work from 1280 px wide down to 768 px, like spec 003.
+- [x] FactoryDeck reads its workflow configuration from `factorydeck.yml` at the repository root, or from the path in `FACTORYDECK_CONFIG` of the root `.env` (an empty value means the default; a path starting with `~` is expanded to the home folder). `factorydeck.yml` is ignored by git; a versioned `factorydeck.example.yml` documents every key with comments and holds rules for the `build-feature` workflow of factorydeck-skills (see Rules).
+- [x] A missing configuration file is not an error: the defaults of Rules apply.
+- [x] An invalid file (YAML that does not parse, an unknown key, a wrong type, a regular expression that does not compile, a work item pattern without exactly one capture group, a role named `main` or `unassigned`) ends start-up of `pnpm start` and `pnpm dev` with exit code 1 and the message `Invalid configuration in <path>:` followed by one line per error, naming its key path (such as `roles[2].description`). `pnpm ingest` does not read the configuration.
+- [x] The configuration is read once at start-up; a change applies at the next start, to all data already ingested, without re-ingesting.
+- [x] Every sub-agent gets a role and every thread (a session's main thread, each sub-agent) gets a work item, by the rules below.
+- [x] The session page of spec 004 shows `Work item` in its header (`#52`, or `—`), and its sub-agent table gains the columns `Role` and `Work item`, after `Type`.
+- [x] The session list of spec 004 gains a `Work item` column after `Branch`: the work item of the session's main thread, or `—`.
+- [x] The navigation bar has a `Roles` entry, after `Skills`, at `/roles` (a React Router route that survives a reload).
+- [x] `/roles` shows a table with one row per role: name, threads (sessions for `main`, sub-agents for the others), API calls, tokens and cost; sorted by cost descending. Rows `main` and `unassigned` are listed like the others.
+- [x] Under its heading, `/roles` says where the roles come from: `Rules from <path>` when the file exists, else `No configuration file at <path>: sub-agents are grouped by type.`, with the resolved path.
+- [x] The column totals of `/roles` equal the overview totals of spec 003 for the same period and project.
+- [x] The period selector of spec 003 and the project filter of spec 004 apply to `/roles`; both are kept in the URL.
+- [x] With no API call in the period, `/roles` shows `No activity in this period.` instead of the table.
+- [x] Figures on `/roles` refresh with each re-ingestion of spec 003, without a reload.
+- [x] `/roles` and the session list with its new column work from 1280 px wide down to 768 px, like spec 003.
 
 ## Rules
 

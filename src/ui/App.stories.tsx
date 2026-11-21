@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router';
 import { expect, userEvent, within } from 'storybook/test';
 import { App } from './App.tsx';
 import { fixedLoader, okResponse, weekOverview } from './fixtures.ts';
+import { rolesLoader, someRoles } from './role-fixtures.ts';
 import {
   detailLoader,
   detailResponse,
@@ -38,6 +39,7 @@ const loaders = {
   loadSession: detailLoader(detailResponse(sessionWithSubAgents)),
   loadSkills: skillsLoader(someSkills),
   loadSkill: skillLoader(writeSpecDetail),
+  loadRoles: rolesLoader(someRoles),
 };
 
 export const Home: Story = {
@@ -85,5 +87,21 @@ export const Skills: Story = {
     );
     await canvas.findByRole('heading', { name: 'kit:write-spec' });
     await expect(canvas.getByText('Launches per day')).toBeVisible();
+  },
+};
+
+export const Roles: Story = {
+  args: loaders,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('link', { name: 'Roles' }));
+    await expect(canvas.getByRole('link', { name: 'Roles' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    await canvas.findByRole('heading', { name: 'Roles' });
+    await expect(
+      await canvas.findByRole('rowheader', { name: 'builder' }),
+    ).toBeVisible();
   },
 };

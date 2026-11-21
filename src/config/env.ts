@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { z } from 'zod';
 
 const EnvSchema = z.object({
@@ -22,6 +22,11 @@ const EnvSchema = z.object({
       typeof value === 'string' && value.trim() === '' ? undefined : value,
     z.string().trim().min(1).optional(),
   ),
+  FACTORYDECK_CONFIG: z.preprocess(
+    (value) =>
+      typeof value === 'string' && value.trim() === '' ? undefined : value,
+    z.string().trim().min(1).optional(),
+  ),
 });
 
 export type Env = z.output<typeof EnvSchema>;
@@ -35,8 +40,10 @@ export function validateEnv(raw: Record<string, unknown>): Env {
   return result.data;
 }
 
+const ROOT = join(import.meta.dirname, '..', '..');
+
 /** The repository root `.env`, shared with Docker Compose. */
-export const ROOT_ENV_FILE = join(import.meta.dirname, '..', '..', '.env');
+export const ROOT_ENV_FILE = join(ROOT, '.env');
 
 /** Loads the root `.env` into `process.env` when it exists. */
 export function loadRootEnvFile(): void {
@@ -51,8 +58,20 @@ export function sessionsFolder(env: Pick<Env, 'CLAUDE_PROJECTS_DIR'>): string {
   if (configured === undefined) {
     return join(homedir(), '.claude', 'projects');
   }
-  if (configured === '~' || configured.startsWith('~/')) {
-    return join(homedir(), configured.slice(1));
+  return expandHome(configured);
+}
+
+export function expandHome(path: string): string {
+  if (path === '~' || path.startsWith('~/')) {
+    return join(homedir(), path.slice(1));
   }
-  return configured;
+  return path;
+}
+
+export function workflowConfigPath(
+  env: Pick<Env, 'FACTORYDECK_CONFIG'>,
+): string {
+  const configured = env.FACTORYDECK_CONFIG;
+  if (configured === undefined) return join(ROOT, 'factorydeck.yml');
+  return resolve(ROOT, expandHome(configured));
 }

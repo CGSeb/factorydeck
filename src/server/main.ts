@@ -1,7 +1,14 @@
-import { loadRootEnvFile, sessionsFolder, validateEnv } from '../config/env.ts';
+import {
+  loadRootEnvFile,
+  sessionsFolder,
+  validateEnv,
+  workflowConfigPath,
+} from '../config/env.ts';
 import { createDatabase } from '../db/client.ts';
 import { ingest } from '../ingest/ingest.ts';
 import { usageOverview } from '../overview/query.ts';
+import { loadWorkflowConfig } from '../roles/config.ts';
+import { listRoles } from '../roles/query.ts';
 import { listSessions, sessionDetail } from '../sessions/query.ts';
 import { listSkills, skillDetail } from '../skills/query.ts';
 import { createApp } from './app.ts';
@@ -13,6 +20,7 @@ import { UI_DIST_DIR } from './paths.ts';
 async function main(): Promise<void> {
   loadRootEnvFile();
   const env = validateEnv(process.env);
+  const config = loadWorkflowConfig(workflowConfigPath(env));
   const { db } = createDatabase(env.DATABASE_URL);
   const folder = sessionsFolder(env);
   const stateOptions = {
@@ -42,12 +50,16 @@ async function main(): Promise<void> {
       updatedAt: ingestion.lastFinishedAt,
     },
     sessions: {
-      list: (query) => listSessions(db, query, stateOptions),
-      detail: (id) => sessionDetail(db, id, stateOptions),
+      list: (query) => listSessions(db, query, stateOptions, config),
+      detail: (id) => sessionDetail(db, id, stateOptions, config),
     },
     skills: {
       list: (query) => listSkills(db, query),
       detail: (skill, query) => skillDetail(db, skill, query),
+    },
+    roles: {
+      list: (query) => listRoles(db, query, config),
+      config: { path: config.path, exists: config.exists },
     },
   });
   await listen(app, env.FACTORYDECK_PORT);

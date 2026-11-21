@@ -20,6 +20,9 @@ export function Layout(): ReactElement {
             <li>
               <NavLink to="/skills">Skills</NavLink>
             </li>
+            <li>
+              <NavLink to="/roles">Roles</NavLink>
+            </li>
           </ul>
         </nav>
       </header>

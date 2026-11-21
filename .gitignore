@@ -16,3 +16,5 @@ Thumbs.db
 
 .claude/settings.local.json
 .claude/worktrees/
+
+factorydeck.yml

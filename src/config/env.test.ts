@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { sessionsFolder, validateEnv } from './env.ts';
+import { sessionsFolder, validateEnv, workflowConfigPath } from './env.ts';
 
 describe('validateEnv', () => {
   it('accepts a PostgreSQL URL', () => {
@@ -121,5 +121,27 @@ describe('FACTORYDECK_INACTIVE_AFTER_MINUTES', () => {
         /FACTORYDECK_INACTIVE_AFTER_MINUTES/,
       );
     }
+  });
+});
+
+describe('workflowConfigPath', () => {
+  const root = join(import.meta.dirname, '..', '..');
+
+  it('defaults to factorydeck.yml at the repository root, also when empty', () => {
+    expect(workflowConfigPath({})).toBe(join(root, 'factorydeck.yml'));
+    const env = validateEnv({
+      DATABASE_URL: 'postgres://user:secret@localhost:5434/factorydeck',
+      FACTORYDECK_CONFIG: '',
+    });
+    expect(workflowConfigPath(env)).toBe(join(root, 'factorydeck.yml'));
+  });
+
+  it('uses FACTORYDECK_CONFIG, expanding a leading ~', () => {
+    expect(workflowConfigPath({ FACTORYDECK_CONFIG: '/etc/fd.yml' })).toBe(
+      '/etc/fd.yml',
+    );
+    expect(workflowConfigPath({ FACTORYDECK_CONFIG: '~/fd.yml' })).toBe(
+      join(homedir(), 'fd.yml'),
+    );
   });
 });

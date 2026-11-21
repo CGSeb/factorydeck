@@ -16,10 +16,13 @@ export const WithSubAgents: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const rows = canvas.getAllByRole('row');
-    await expect(rows).toHaveLength(3);
-    await expect(rows[1]).toHaveTextContent('Explore');
+    await expect(rows).toHaveLength(4);
+    await expect(rows[0]).toHaveTextContent('TypeRoleWork itemDescription');
+    await expect(rows[1]).toHaveTextContent('ExploreExplore#52');
     await expect(rows[1]).toHaveTextContent('2 min');
-    await expect(rows[2]).toHaveTextContent('45 min');
+    await expect(rows[2]).toHaveTextContent('general-purposebuilder#53');
+    await expect(rows[3]).toHaveTextContent('unassigned#52');
+    await expect(rows[3]).toHaveTextContent('45 min');
     await expect(canvas.getAllByText('—')).toHaveLength(4);
   },
 };

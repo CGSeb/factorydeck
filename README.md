@@ -26,6 +26,8 @@ Every team splits agent work differently. FactoryDeck reads your workflow from c
 
 Sessions that match no rule still count, under an "unassigned" role, so the totals are always complete.
 
+Roles and work items come from `factorydeck.yml` at the repository root (or the path in `FACTORYDECK_CONFIG` of `.env`). Copy `factorydeck.example.yml`, which documents every key and holds rules for the `build-feature` workflow of factorydeck-skills, then restart FactoryDeck. Without a file, sub-agents are grouped by type and work items are read from `#<number>` in sub-agent descriptions and session titles.
+
 ## Development
 
 Requires Node.js 24+, pnpm and Docker (or any PostgreSQL 16+ server).
