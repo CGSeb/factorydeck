@@ -1,0 +1,132 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/CGSeb/factorydeck-skills/main/skills/setup-factory/factory.schema.json
+#
+# How this repository runs its agent workflow. The factorydeck skills and their stop gate read
+# this file; /setup-factory wrote it, and you can edit it by hand or from FactoryDeck.
+# Keep it to plain block YAML: two-space indentation, one key per line, strings in quotes
+# when they hold « : », « # » or start with a symbol. The stop gate reads repository.main_branch,
+# checks.command and checks.stop_gate with a small shell parser.
+
+version: 1
+
+repository:
+  git_host: github
+  # Path of the file that holds the exact CLI command of each operation the skills name in bold.
+  git_host_commands: docs/agents/git-host.md
+  main_branch: main
+  merge_method: squash # squash | merge | rebase
+
+agents:
+  # Coding agents that work on this repository: claude-code, codex, copilot, gemini-cli, cursor, or another name.
+  used: [claude-code]
+  instructions_file: AGENTS.md
+  skills_folder: .claude/skills/
+  # A model name the agent that runs build-feature accepts for a subagent, or session-default.
+  # With several agents, map each one to its model: { claude-code: haiku, codex: <model> }.
+  models:
+    spec_check: opus
+    worker: session-default
+    reviewer: session-default
+    shipper: haiku
+
+people:
+  # Language of issue comments, questions, pull request bodies and score reports.
+  language: English
+  hand_work_to: '@me'
+
+checks:
+  # One command that runs format, lint, types and tests.
+  command: pnpm check
+  stop_gate: true
+  verification_skill: none
+  services:
+    # Succeeds only when the shared services the checks need answer; none when there are none.
+    check: docker info >/dev/null 2>&1
+    # Starts them, from the main checkout only.
+    start: pnpm db:up
+    # What the person starts by hand when the check fails. Agents never start it themselves.
+    manual_start: Docker Desktop
+  # Anything a builder must know to run the checks: narrower commands, a service to stub.
+  notes: >-
+    pnpm db:up starts PostgreSQL 18 on 127.0.0.1:5434 and waits until it is healthy; run it from
+    the main checkout only, never from a worktree. A worktree links .env from the main checkout.
+    Narrower checks while building: pnpm vitest run <file>, pnpm typecheck, pnpm lint. Schema
+    changes go in src/db/schema.ts, then pnpm db:generate --name <change>; never edit a
+    generated migration.
+
+specs:
+  folder: docs/specs/
+  file_name: NNN-short-name.md
+  product_context: README.md
+  # The exact text this repository uses for each part of a spec.
+  format:
+    status_line: 'Status:'
+    status_values:
+      draft: draft
+      ready: ready
+      done: done
+    depends_on_line: 'Depends on:'
+    checked_line: 'Checked:'
+    sections:
+      user_goal: '## User goal'
+      criteria: '## Acceptance criteria'
+      rules: '## Rules'
+      proof: '## Expected proof'
+      out_of_scope: '## Out of scope'
+
+issues:
+  title: 'NNN · Name'
+  dependencies: blocking-links # blocking-links | depends-on-line
+  labels:
+    spec: spec
+    ready: agent:ready
+    working: agent:working
+    needs_spec: agent:needs-spec
+    review: agent:review
+    blocked: agent:blocked
+
+build:
+  parallel_workers: 3
+  branch_name: feat/<NNN>-<short-name>
+  # The repository's own commit convention, or none.
+  commit_convention: 'type: :gitmoji: Subject'
+  # With a squash merge, the title becomes the commit on the main branch.
+  pull_request_title: 'feat: :sparkles: <Subject>'
+  # The full convention, with an example for each kind of change (feature, fix, test, docs).
+  commit_notes: >-
+    Checked by the commit-msg hook (scripts/check-commit-message.ts). Examples:
+    "feat: :sparkles: …" for a feature, "fix: :bug: …", "refactor: :recycle: …",
+    "test: :white_check_mark: …", "docs: :memo: …", "chore: :wrench: …".
+  auto_merge: true
+  serenity_threshold: 80
+  main_branch_protection: false
+  main_branch_protection_notes: >-
+    Off while the repository is private (GitHub needs a paid plan). Turn it on, requiring the
+    check job of .github/workflows/ci.yml, when the repository goes public. Until then the merge
+    gate is the build-feature skill's prose.
+
+# A pull request that changes one of these needs a person, whatever its score: they hold the
+# rules the agents are graded by. The feature map of the verification skill is the exception.
+protected_paths:
+  - AGENTS.md
+  - CLAUDE.md
+  - docs/agents/
+  - .claude/
+  - .github/
+  - .oxlintrc.json
+  - tsconfig.json
+  - .prettierrc.json
+  - .prettierignore
+  - lefthook.yml
+  - .lefthookrc
+  - scripts/check-commit-message.ts
+  - the check, lint, typecheck and test scripts of package.json
+
+# Project rules a reviewer must check that no tool enforces, one string each; [] when none.
+reviewer_rules:
+  - >-
+    Nothing workflow-specific is hard-coded: no project, repository, path, role name, label,
+    issue pattern or workflow step. It comes from user configuration, with defaults that work on
+    a plain Claude Code setup.
+  - No real session data, costs or project names in code, tests, fixtures or docs; only small synthetic examples.
+  - Data that matches no configuration rule is still counted, as "unassigned", never dropped.
+  - Imports use the .ts extension, and only erasable TypeScript syntax is used (no enums, no namespaces).
