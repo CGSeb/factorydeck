@@ -61,8 +61,17 @@ export function summarizeRoles(
     usage.threadIds.add(threadOf(role, row));
     roles.set(role, usage);
   }
-  const main = roles.get(MAIN_ROLE);
-  if (main !== undefined) main.threadIds = sessions;
+  if (sessions.size > 0) {
+    roles.set(MAIN_ROLE, {
+      role: MAIN_ROLE,
+      threads: 0,
+      apiCalls: 0,
+      tokens: 0,
+      costUsd: 0,
+      ...roles.get(MAIN_ROLE),
+      threadIds: sessions,
+    });
+  }
   return [...roles.values()]
     .map(({ threadIds, ...usage }) => ({ ...usage, threads: threadIds.size }))
     .sort(byCostDescending((row) => row.role));

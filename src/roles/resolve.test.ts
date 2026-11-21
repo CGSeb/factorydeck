@@ -93,6 +93,28 @@ describe('roleOf', () => {
       { role: 'main', threads: 1, apiCalls: 2, tokens: 2, costUsd: null },
     ]);
   });
+
+  it('keeps a main row counting the sessions when only sub-agents called in the period', () => {
+    const roles = summarizeRoles(DEFAULT_CONFIG, [
+      {
+        model: 'mystery-model',
+        calls: 1,
+        input: 1,
+        cache_write: 0,
+        cache_read: 0,
+        output: 0,
+        session_id: 's1',
+        project: '/p',
+        sub_agent: 'a1',
+        agent_type: 'Explore',
+        description: '',
+      },
+    ]);
+    expect(roles).toEqual([
+      { role: 'main', threads: 1, apiCalls: 0, tokens: 0, costUsd: 0 },
+      { role: 'Explore', threads: 1, apiCalls: 1, tokens: 1, costUsd: null },
+    ]);
+  });
 });
 
 describe('workItemOf', () => {

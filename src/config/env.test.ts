@@ -144,4 +144,10 @@ describe('workflowConfigPath', () => {
       join(homedir(), 'fd.yml'),
     );
   });
+
+  it('resolves a relative FACTORYDECK_CONFIG from the repository root', () => {
+    expect(workflowConfigPath({ FACTORYDECK_CONFIG: 'config/fd.yml' })).toBe(
+      join(root, 'config', 'fd.yml'),
+    );
+  });
 });
