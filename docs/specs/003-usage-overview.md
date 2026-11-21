@@ -1,6 +1,6 @@
 # 003 · Usage overview
 
-Status: ready
+Status: done
 Depends on: 001, 002
 Checked: 2026-11-21
 
@@ -22,7 +22,7 @@ A developer opens FactoryDeck in their browser and sees, for a period they choos
 - [x] The page refreshes its figures every interval of re-ingestion without a reload, and shows `Updated <hh:mm:ss>` with the time of the last finished ingestion.
 - [x] With no data at all, the page shows `No sessions yet. FactoryDeck reads <sessions folder>.` instead of the tiles, chart and tables.
 - [x] When the database is unreachable, the page shows `Database unreachable. Start it with pnpm db:up.` and the server keeps running and retries. A database that accepts connections but never answers is shown unreachable within 5 seconds.
-- [ ] The layout works from 1280 px wide down to 768 px.
+- [x] The layout works from 1280 px wide down to 768 px.
 
 ## Rules
 
