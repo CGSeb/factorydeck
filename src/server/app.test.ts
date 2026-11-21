@@ -7,6 +7,7 @@ import { createDatabase } from '../db/client.ts';
 import { usageOverview } from '../overview/query.ts';
 import type { UsageOverview } from '../overview/types.ts';
 import { type OverviewSource, createApp } from './app.ts';
+import type { SessionSource } from './session-routes.ts';
 import { databaseCheck } from './health.ts';
 
 const builtUi = mkdtempSync(join(tmpdir(), 'factorydeck-ui-'));
@@ -35,6 +36,11 @@ const usage: UsageOverview = {
   models: [],
 };
 
+const sessionSource: SessionSource = {
+  list: () => Promise.reject(new Error('Not used')),
+  detail: () => Promise.resolve(undefined),
+};
+
 const queries: unknown[] = [];
 const source: OverviewSource = {
   load: (query) => {
@@ -52,6 +58,7 @@ describe('GET /api/health', () => {
       checkDatabase: up,
       uiDir: builtUi,
       overview: source,
+      sessions: sessionSource,
     }).request('/api/health');
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ status: 'ok', database: 'ok' });
@@ -62,6 +69,7 @@ describe('GET /api/health', () => {
       checkDatabase: down,
       uiDir: builtUi,
       overview: source,
+      sessions: sessionSource,
     }).request('/api/health');
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({
@@ -79,6 +87,7 @@ describe('other API paths', () => {
         checkDatabase: up,
         uiDir: builtUi,
         overview: source,
+        sessions: sessionSource,
       }).request(path);
       expect(response.status).toBe(404);
       expect(await response.json()).toEqual({ error: 'Not found' });
@@ -90,6 +99,7 @@ describe('other API paths', () => {
       checkDatabase: up,
       uiDir: missingUi,
       overview: source,
+      sessions: sessionSource,
     }).request('/api/nope');
     expect(response.status).toBe(404);
     expect(await response.json()).toEqual({ error: 'Not found' });
@@ -101,6 +111,7 @@ describe('UI', () => {
     checkDatabase: up,
     uiDir: builtUi,
     overview: source,
+    sessions: sessionSource,
   });
 
   it('serves the built index page at /', async () => {
@@ -127,6 +138,7 @@ describe('UI', () => {
       checkDatabase: up,
       uiDir: missingUi,
       overview: source,
+      sessions: sessionSource,
     }).request('/');
     expect(response.headers.get('content-type')).toContain('text/plain');
     expect(await response.text()).toBe('UI not built. Run pnpm build.');
@@ -139,6 +151,7 @@ describe('GET /api/overview', () => {
       checkDatabase: up,
       uiDir: builtUi,
       overview: source,
+      sessions: sessionSource,
     }).request('/api/overview?period=30d&tz=Europe/Paris');
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
@@ -156,6 +169,7 @@ describe('GET /api/overview', () => {
       checkDatabase: up,
       uiDir: builtUi,
       overview: source,
+      sessions: sessionSource,
     });
     for (const query of [
       '',
@@ -172,6 +186,7 @@ describe('GET /api/overview', () => {
       checkDatabase: down,
       uiDir: builtUi,
       overview: source,
+      sessions: sessionSource,
     }).request('/api/overview?period=7d&tz=UTC');
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({
@@ -195,6 +210,7 @@ describe('GET /api/overview', () => {
       checkDatabase: databaseCheck(db),
       uiDir: builtUi,
       overview: { ...source, load: (query) => usageOverview(db, query) },
+      sessions: sessionSource,
     });
     try {
       const started = Date.now();

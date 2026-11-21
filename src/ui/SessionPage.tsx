@@ -1,0 +1,155 @@
+import { type ReactElement, useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router';
+import type { TokenCounts } from '../overview/types.ts';
+import type { SessionDetail, SessionResponse } from '../sessions/types.ts';
+import {
+  formatClock,
+  formatCost,
+  formatDateTime,
+  orMissing,
+} from './format.ts';
+import { UNREACHABLE_MESSAGE } from './overview-api.ts';
+import type { LoadSession } from './sessions-api.ts';
+import { SessionStateLabel } from './SessionStateLabel.tsx';
+import { sessionTitle } from './SessionTable.tsx';
+import { SubAgentTable } from './SubAgentTable.tsx';
+import { TokenCount } from './TokenCount.tsx';
+
+const RETRY_SECONDS = 10;
+
+export interface SessionPageProps {
+  loadSession: LoadSession;
+}
+
+function TokenBreakdown({ tokens }: { tokens: TokenCounts }): ReactElement {
+  const kinds = [
+    { label: 'Input', value: tokens.input },
+    { label: 'Cache write', value: tokens.cacheWrite },
+    { label: 'Cache read', value: tokens.cacheRead },
+    { label: 'Output', value: tokens.output },
+  ];
+  return (
+    <>
+      <TokenCount value={kinds.reduce((sum, { value }) => sum + value, 0)} />
+      <dl className="breakdown">
+        {kinds.map(({ label, value }) => (
+          <div key={label}>
+            <dt>{label}</dt>
+            <dd>
+              <TokenCount value={value} />
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </>
+  );
+}
+
+function SessionHeader({
+  session,
+  updatedAt,
+}: {
+  session: SessionDetail;
+  updatedAt: string | null;
+}): ReactElement {
+  const { tokens } = session;
+  const facts = [
+    { label: 'Project', value: session.project },
+    { label: 'Working directory', value: orMissing(session.cwd ?? '') },
+    { label: 'Branch', value: orMissing(session.gitBranch) },
+    { label: 'First activity', value: formatDateTime(session.firstAt) },
+    { label: 'Last activity', value: formatDateTime(session.lastAt) },
+    { label: 'Cost', value: formatCost(session.costUsd) },
+  ];
+  return (
+    <>
+      <div className="session-title">
+        <h1>{sessionTitle(session)}</h1>
+        <SessionStateLabel state={session.state} />
+        {updatedAt !== null && (
+          <p className="updated">Updated {formatClock(new Date(updatedAt))}</p>
+        )}
+      </div>
+      <section className="panel" aria-label="Session">
+        <dl className="session-facts">
+          {facts.map(({ label, value }) => (
+            <div key={label}>
+              <dt>{label}</dt>
+              <dd>{value}</dd>
+            </div>
+          ))}
+          <div>
+            <dt>Tokens</dt>
+            <dd>
+              <TokenBreakdown tokens={tokens} />
+            </dd>
+          </div>
+        </dl>
+      </section>
+    </>
+  );
+}
+
+function SessionContent({
+  response,
+}: {
+  response: SessionResponse | undefined;
+}): ReactElement {
+  if (response === undefined) return <p className="status">Loading…</p>;
+  if (response.status === 'unreachable') {
+    return <p className="status">{UNREACHABLE_MESSAGE}</p>;
+  }
+  if (response.status === 'not-found') {
+    return (
+      <>
+        <p className="status">Session not found.</p>
+        <Link className="back-link" to="/sessions">
+          Back to sessions
+        </Link>
+      </>
+    );
+  }
+  return (
+    <>
+      <SessionHeader
+        session={response.session}
+        updatedAt={response.updatedAt}
+      />
+      <SubAgentTable subAgents={response.session.subAgents} />
+    </>
+  );
+}
+
+export function SessionPage({ loadSession }: SessionPageProps): ReactElement {
+  const { id = '' } = useParams();
+  const [loaded, setLoaded] = useState<{
+    id: string;
+    response: SessionResponse;
+  }>();
+  const response = loaded?.id === id ? loaded.response : undefined;
+
+  useEffect(() => {
+    let active = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    async function refresh(): Promise<void> {
+      const next = await loadSession(id);
+      if (!active) return;
+      if (next !== undefined) setLoaded({ id, response: next });
+      timer = setTimeout(
+        () => void refresh(),
+        (next?.refreshSeconds ?? RETRY_SECONDS) * 1000,
+      );
+    }
+    void refresh();
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [loadSession, id]);
+
+  return (
+    <div className="sessions">
+      <SessionContent response={response} />
+    </div>
+  );
+}
