@@ -1,8 +1,11 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { parseDocument } from 'yaml';
 import { expandHome } from '../config/env.ts';
-import { FACTORY_FILE, factoryFile } from '../ingest/factory.ts';
+import {
+  type FactorySettings,
+  FactorySettingsError,
+  readFactorySettings,
+} from '../factory/settings.ts';
 import { GIT_HOSTS, type GitHostName } from './types.ts';
 
 export interface GitHostConfig {
@@ -56,15 +59,6 @@ async function readText(
   }
 }
 
-function stringAt(
-  document: ReturnType<typeof parseDocument>,
-  path: string[],
-): string | undefined {
-  const value: unknown = document.getIn(path);
-  if (typeof value !== 'string' || value.trim() === '') return undefined;
-  return value.trim();
-}
-
 export function lineValue(text: string, label: string): string | undefined {
   const pattern = new RegExp(`^\\s*[-*]\\s+${label}:\\s*\`([^\`]*)\``, 'i');
   for (const line of text.split(/\r?\n/)) {
@@ -74,32 +68,42 @@ export function lineValue(text: string, label: string): string | undefined {
   return undefined;
 }
 
+function required(
+  settings: FactorySettings,
+  key: string,
+  gitHost: GitHostName | null,
+): string {
+  try {
+    return settings.requireText(key);
+  } catch (error) {
+    if (error instanceof FactorySettingsError) {
+      throw new GitHostConfigError(error.message, gitHost);
+    }
+    throw error;
+  }
+}
+
 async function factorySettings(
   root: string,
 ): Promise<{ gitHost: GitHostName; commandsPath: string }> {
-  const document = parseDocument(
-    await readText(factoryFile(root), FACTORY_FILE, null),
-  );
-  if (document.errors.length > 0) {
-    throw new GitHostConfigError(`${FACTORY_FILE} is not valid YAML`);
-  }
-  const hostValue = stringAt(document, ['repository', 'git_host']);
-  if (hostValue === undefined) {
-    throw new GitHostConfigError(`${FACTORY_FILE} has no repository.git_host`);
-  }
+  const settings = await readFactorySettings(root).catch((error: unknown) => {
+    if (error instanceof FactorySettingsError) {
+      throw new GitHostConfigError(error.message);
+    }
+    throw error;
+  });
+  const hostValue = required(settings, 'repository.git_host', null);
   const gitHost = hostValue.toLowerCase();
   if (!isGitHost(gitHost)) {
     throw new GitHostConfigError(
       `repository.git_host is ${hostValue}, not github or gitlab`,
     );
   }
-  const commandsPath = stringAt(document, ['repository', 'git_host_commands']);
-  if (commandsPath === undefined) {
-    throw new GitHostConfigError(
-      `${FACTORY_FILE} has no repository.git_host_commands`,
-      gitHost,
-    );
-  }
+  const commandsPath = required(
+    settings,
+    'repository.git_host_commands',
+    gitHost,
+  );
   return { gitHost, commandsPath };
 }
 
