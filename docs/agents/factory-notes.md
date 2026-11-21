@@ -12,6 +12,7 @@ What agents must know about this repository that `docs/agents/factory.yml` canno
 
 - Prove on synthetic data, never on the person's sessions: `pnpm build`, then `pnpm demo [--port <n>]` (default port 4318). It recreates the `factorydeck_demo_<port>` database, writes the synthetic sessions of `src/demo/sessions.ts` and serves them; parallel workers each pick their own port. Screenshots of it can go in a pull request. A case the demo lacks goes in `src/demo/sessions.ts`, with its assertion in `src/demo/sessions.test.ts`.
 - Layout at a given width: Chrome runs on Windows, and `resize_window` does not change the viewport from WSL even when it reports success. Inject a same-origin `<iframe>` of the exact width with `javascript_tool`, wait for its load, read its `contentWindow.innerWidth` and `document.documentElement.scrollWidth` (no horizontal overflow when they match), then screenshot.
+- A new page or panel: screenshot it at 1280 px and at 2560 px wide, the same way.
 - Start the server with a background command and stop it with the agent's own task stop; `pkill` is refused.
 
 ## Commits
@@ -24,7 +25,9 @@ Off while the repository is private (GitHub needs a paid plan). Turn it on, requ
 
 ## Reviewer rules
 
-- Nothing workflow-specific is hard-coded: no project, repository, path, role name, label, issue pattern or workflow step. It comes from user configuration, with defaults that work on a plain Claude Code setup.
+- Nothing workflow-specific is hard-coded: no project, repository, path, role name, label, issue pattern or workflow step. It comes from user configuration, with defaults that work whatever coding agent the person uses.
+- Open each real-app screenshot and judge the layout, not only overflow: alignment with the top bar and the content column, and how the empty space falls at the widest width.
+- A text may name a coding agent to describe it or compare agents; an instruction to the user (install, setup, next step) works whatever agent they use.
 - No real session data, costs or project names in code, tests, fixtures or docs; only small synthetic examples.
 - Data that matches no configuration rule is still counted, as "unassigned", never dropped.
 - Imports use the `.ts` extension, and only erasable TypeScript syntax is used (no enums, no namespaces).
