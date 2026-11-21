@@ -12,8 +12,9 @@ FactoryDeck is a public tool for anyone's projects and sessions.
 
 ## Conventions
 
-- Stack: TypeScript run directly by Node 24+ (type stripping), pnpm, zod, vitest, oxlint (type-aware), prettier. Planned: SQLite through `node:sqlite`, Vite + React.
+- Stack: TypeScript run directly by Node 24+ (type stripping), pnpm, zod, vitest, oxlint (type-aware), prettier. PostgreSQL 18 in Docker Compose (`pnpm db:up`), Drizzle ORM and drizzle-kit migrations in `drizzle/`, configuration from the root `.env` (`src/config/env.ts`). Planned: Vite + React.
 - Code, comments, commits and docs are in English.
 - Imports use the `.ts` extension; only erasable TypeScript syntax (no enums, no namespaces).
 - Run `pnpm check` before declaring work done: format, lint, typecheck and tests must all pass.
 - Commit messages: `type: :gitmoji: Subject` (checked by a `commit-msg` hook).
+- Never edit a generated migration: change `src/db/schema.ts` and run `pnpm db:generate --name <change>`.

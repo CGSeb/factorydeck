@@ -10,7 +10,7 @@ It works with any project and any agent workflow. Point it at your own Claude Co
 
 ## How it works
 
-- **Ingest** Claude Code session logs (`~/.claude/projects/**/*.jsonl`, including sub-agents) into a local SQLite database, incrementally.
+- **Ingest** Claude Code session logs (`~/.claude/projects/**/*.jsonl`, including sub-agents) into a local PostgreSQL database, incrementally.
 - **Collect** issues, pull requests and labels from GitHub with `gh`.
 - **Show** three views: cost per feature, overview by day, project and model, and frictions (tool errors, refusals, failed checks, context peaks).
 
@@ -28,12 +28,19 @@ Sessions that match no rule still count, under an "unassigned" role, so the tota
 
 ## Development
 
-Requires Node.js 24+ and pnpm.
+Requires Node.js 24+, pnpm and Docker (or any PostgreSQL 16+ server).
 
 ```bash
+cp .env.example .env    # then set POSTGRES_PASSWORD and DATABASE_URL
 pnpm install
+pnpm db:up              # PostgreSQL 18 in Docker, on 127.0.0.1:5434
+pnpm db:migrate
 pnpm check
 ```
+
+To use your own PostgreSQL server instead of Docker, set `DATABASE_URL` and skip `pnpm db:up`.
+
+Schema changes go in `src/db/schema.ts`, then `pnpm db:generate --name <change>` writes the migration to `drizzle/`.
 
 Commit messages follow `type: :gitmoji: Subject`, for example `feat: :sparkles: Add the cost-per-issue view`.
 
