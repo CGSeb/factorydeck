@@ -84,9 +84,9 @@ function addCost(
   return cost === undefined ? total : (total ?? 0) + cost;
 }
 
-function byCostDescending<T extends { costUsd: number | null; tokens: number }>(
-  name: (row: T) => string,
-): (left: T, right: T) => number {
+export function byCostDescending<
+  T extends { costUsd: number | null; tokens: number },
+>(name: (row: T) => string): (left: T, right: T) => number {
   return (left, right) =>
     (right.costUsd ?? -1) - (left.costUsd ?? -1) ||
     right.tokens - left.tokens ||

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { SessionDetail, SessionList } from '../sessions/types.ts';
 import { type OverviewSource, createApp } from './app.ts';
 import type { SessionSource } from './session-routes.ts';
+import { unusedSkills } from '../test/skill-source.ts';
 
 const builtUi = '/nonexistent/factorydeck-ui';
 const up = (): Promise<boolean> => Promise.resolve(true);
@@ -33,6 +34,7 @@ const detail: SessionDetail = {
   tokens: { input: 1, cacheWrite: 2, cacheRead: 3, output: 4 },
   costUsd: 0.5,
   subAgents: [],
+  skills: [],
 };
 
 const sessionQueries: unknown[] = [];
@@ -50,6 +52,7 @@ describe('GET /api/sessions', () => {
     uiDir: builtUi,
     overview: source,
     sessions: sessionSource,
+    skills: unusedSkills,
   });
 
   it('answers the filtered list with the ingestion facts', async () => {
@@ -109,6 +112,7 @@ describe('GET /api/sessions', () => {
       uiDir: builtUi,
       overview: source,
       sessions: sessionSource,
+      skills: unusedSkills,
     }).request('/api/sessions?period=7d&tz=UTC');
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({
@@ -124,6 +128,7 @@ describe('GET /api/sessions/:id', () => {
     uiDir: builtUi,
     overview: source,
     sessions: sessionSource,
+    skills: unusedSkills,
   });
 
   it('answers the session', async () => {

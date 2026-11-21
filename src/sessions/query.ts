@@ -3,6 +3,7 @@ import type { Database } from '../db/client.ts';
 import { periodStart, select } from '../overview/query.ts';
 import type { TokenCounts } from '../overview/types.ts';
 import { costOf } from '../pricing.ts';
+import { sessionSkills } from '../skills/query.ts';
 import {
   type SessionDetail,
   type SessionList,
@@ -199,7 +200,7 @@ export async function sessionDetail(
   id: string,
   options: StateOptions,
 ): Promise<SessionDetail | undefined> {
-  const [sessionRows, agentRows, usageRows] = await Promise.all([
+  const [sessionRows, agentRows, usageRows, skills] = await Promise.all([
     select(
       db,
       sql`select * from ${statedSessions(options)} t where t.id = ${id}`,
@@ -216,6 +217,7 @@ export async function sessionDetail(
         from api_call a where a.session_id = ${id}
         group by a.sub_agent_id, a.model`,
     ),
+    sessionSkills(db, id),
   ]);
   const [row] = sessionRows;
   if (row === undefined) return undefined;
@@ -244,5 +246,6 @@ export async function sessionDetail(
     cwd: typeof row['cwd'] === 'string' ? row['cwd'] : null,
     tokens: usage.tokens,
     subAgents,
+    skills,
   };
 }

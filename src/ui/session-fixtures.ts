@@ -126,6 +126,26 @@ export const sessionWithSubAgents: SessionDetail = {
     cacheRead: 3_610_000,
     output: 69_600,
   },
+  skills: [
+    {
+      skill: 'kit:write-spec',
+      launches: 2,
+      sessions: 1,
+      apiCalls: 30,
+      tokens: 2_900_000,
+      costUsd: 4.1,
+      averageCostUsd: 2.05,
+    },
+    {
+      skill: null,
+      launches: 0,
+      sessions: 0,
+      apiCalls: 12,
+      tokens: 1_310_000,
+      costUsd: 2.32,
+      averageCostUsd: null,
+    },
+  ],
   subAgents: [
     {
       id: 'a1',
@@ -154,6 +174,17 @@ export const sessionWithoutSubAgents: SessionDetail = {
   ...waitingSession,
   cwd: null,
   tokens: { input: 2_400, cacheWrite: 30_000, cacheRead: 150_000, output: 0 },
+  skills: [
+    {
+      skill: null,
+      launches: 0,
+      sessions: 0,
+      apiCalls: 4,
+      tokens: 182_400,
+      costUsd: null,
+      averageCostUsd: null,
+    },
+  ],
   subAgents: [],
 };
 
