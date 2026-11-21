@@ -435,6 +435,7 @@ th.left {
 
 .welcome {
   max-width: 48rem;
+  margin-inline: auto;
 }
 
 .welcome h1 {
