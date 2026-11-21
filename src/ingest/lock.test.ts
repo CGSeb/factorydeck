@@ -3,18 +3,16 @@ import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createDatabase } from '../db/client.ts';
 import { apiCall } from '../db/schema.ts';
-import { createScratchDatabase, postgresUrl } from '../test/postgres.ts';
+import { createScratchDatabase } from '../test/postgres.ts';
 import { assistant, sessionsFolder, writeLog } from '../test/session-logs.ts';
 import { LOCK_KEY, ingest, summaryLine } from './ingest.ts';
 
-const serverUrl = postgresUrl();
-
-describe.skipIf(serverUrl === undefined)('concurrent ingestions', () => {
+describe('concurrent ingestions', () => {
   let scratch: Awaited<ReturnType<typeof createScratchDatabase>>;
   let folder: string;
 
   beforeAll(async () => {
-    scratch = await createScratchDatabase(serverUrl ?? '');
+    scratch = await createScratchDatabase();
     folder = await sessionsFolder();
     const calls = Array.from({ length: 200 }, (_, n) =>
       assistant(

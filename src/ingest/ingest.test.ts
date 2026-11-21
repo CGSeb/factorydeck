@@ -9,7 +9,7 @@ import {
   subAgent,
   userPrompt,
 } from '../db/schema.ts';
-import { createTestDatabase } from '../test/database.ts';
+import { createTestDatabase } from '../test/postgres.ts';
 import {
   assistant,
   minute,

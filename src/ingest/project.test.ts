@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { asc } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 import { session } from '../db/schema.ts';
-import { createTestDatabase } from '../test/database.ts';
+import { createTestDatabase } from '../test/postgres.ts';
 import { assistant, sessionsFolder, writeLog } from '../test/session-logs.ts';
 import { ingest } from './ingest.ts';
 import { gitProjectRoot, resolveProjects } from './project.ts';

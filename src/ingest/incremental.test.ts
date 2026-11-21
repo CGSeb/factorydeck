@@ -10,7 +10,7 @@ import {
   subAgent,
   userPrompt,
 } from '../db/schema.ts';
-import { createTestDatabase } from '../test/database.ts';
+import { createTestDatabase } from '../test/postgres.ts';
 import {
   type Line,
   appendLog,
@@ -160,36 +160,33 @@ describe('incremental ingestion', () => {
     expect((await db.select().from(session))[0]?.turnEnded).toBe(true);
   });
 
-  it.skipIf(process.getuid?.() === 0)(
-    'skips files and folders it cannot read, and reads them once it can',
-    async () => {
-      const root = join(log, '..', '..');
-      const blocked = join(root, 'other', 'session-d.jsonl');
-      const agents = join(root, 'project', 'session-b', 'subagents');
-      const lockedFolder = join(root, 'locked');
-      await writeLog(log, turn(1));
-      await writeLog(blocked, turn(2));
-      await writeLog(join(agents, 'agent-x.jsonl'), turn(3));
-      await writeLog(join(agents, 'agent-x.meta.json'), [
-        { agentType: 'helper' },
-      ]);
-      await writeLog(join(lockedFolder, 'session-e.jsonl'), turn(4));
-      const unreadable = [blocked, join(agents, 'agent-x.meta.json')];
-      await Promise.all(unreadable.map((path) => chmod(path, 0o000)));
-      await chmod(lockedFolder, 0o000);
-      try {
-        expect(await run()).toBe(
-          'Ingested 2 files: 1 sessions, 1 sub-agents, 2 API calls, 0 skill launches, 0 lines skipped.',
-        );
-      } finally {
-        await Promise.all(unreadable.map((path) => chmod(path, 0o600)));
-        await chmod(lockedFolder, 0o700);
-      }
+  it('skips files and folders it cannot read, and reads them once it can', async () => {
+    const root = join(log, '..', '..');
+    const blocked = join(root, 'other', 'session-d.jsonl');
+    const agents = join(root, 'project', 'session-b', 'subagents');
+    const lockedFolder = join(root, 'locked');
+    await writeLog(log, turn(1));
+    await writeLog(blocked, turn(2));
+    await writeLog(join(agents, 'agent-x.jsonl'), turn(3));
+    await writeLog(join(agents, 'agent-x.meta.json'), [
+      { agentType: 'helper' },
+    ]);
+    await writeLog(join(lockedFolder, 'session-e.jsonl'), turn(4));
+    const unreadable = [blocked, join(agents, 'agent-x.meta.json')];
+    await Promise.all(unreadable.map((path) => chmod(path, 0o000)));
+    await chmod(lockedFolder, 0o000);
+    try {
       expect(await run()).toBe(
-        'Ingested 3 files: 3 sessions, 1 sub-agents, 2 API calls, 0 skill launches, 0 lines skipped.',
+        'Ingested 2 files: 1 sessions, 1 sub-agents, 2 API calls, 0 skill launches, 0 lines skipped.',
       );
-      expect(await requestKeys()).toEqual(['req_1', 'req_2', 'req_3', 'req_4']);
-      expect((await db.select().from(subAgent))[0]?.agentType).toBe('helper');
-    },
-  );
+    } finally {
+      await Promise.all(unreadable.map((path) => chmod(path, 0o600)));
+      await chmod(lockedFolder, 0o700);
+    }
+    expect(await run()).toBe(
+      'Ingested 3 files: 3 sessions, 1 sub-agents, 2 API calls, 0 skill launches, 0 lines skipped.',
+    );
+    expect(await requestKeys()).toEqual(['req_1', 'req_2', 'req_3', 'req_4']);
+    expect((await db.select().from(subAgent))[0]?.agentType).toBe('helper');
+  });
 });
