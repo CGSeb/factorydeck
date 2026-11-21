@@ -1,0 +1,16 @@
+rc: ./.lefthookrc
+
+pre-commit:
+  parallel: true
+  jobs:
+    - name: format
+      run: node_modules/.bin/prettier --write --ignore-unknown {staged_files}
+      stage_fixed: true
+    - name: lint
+      glob: '*.{ts,tsx,mts,js,mjs,jsx}'
+      run: node_modules/.bin/oxlint --type-aware --deny-warnings {staged_files}
+
+commit-msg:
+  jobs:
+    - name: commit-message
+      run: node scripts/check-commit-message.ts {1}
