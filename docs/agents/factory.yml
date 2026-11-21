@@ -97,6 +97,9 @@ build:
     Checked by the commit-msg hook (scripts/check-commit-message.ts). Examples:
     "feat: :sparkles: …" for a feature, "fix: :bug: …", "refactor: :recycle: …",
     "test: :white_check_mark: …", "docs: :memo: …", "chore: :wrench: …".
+  # Comments builders may add to the code: directives-only (tool directives only), documentation
+  # (also documentation comments and a rare why), or any (the instructions files decide).
+  code_comments: directives-only
   auto_merge: true
   serenity_threshold: 80
   main_branch_protection: false
