@@ -1,4 +1,5 @@
 import { type Socket, createServer } from 'node:net';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { describe, expect, it } from 'vitest';
 import { createDatabase } from '../db/client.ts';
 import { databaseCheck } from './health.ts';
@@ -23,7 +24,7 @@ describe('databaseCheck', () => {
     await close();
   });
 
-  it('resolves false within its timeout when the database accepts but never answers', async () => {
+  it('resolves false when the connection is accepted but never completes', async () => {
     const sockets: Socket[] = [];
     const silent = createServer((socket) => sockets.push(socket));
     await new Promise<void>((resolve) =>
@@ -37,11 +38,20 @@ describe('databaseCheck', () => {
     );
 
     const started = Date.now();
-    await expect(databaseCheck(db, 300)()).resolves.toBe(false);
+    await expect(databaseCheck(db)()).resolves.toBe(false);
     expect(Date.now() - started).toBeLessThan(1000);
 
     await close();
     for (const socket of sockets) socket.destroy();
     await new Promise((resolve) => silent.close(resolve));
+  });
+
+  it('resolves false within its timeout when a query never answers', async () => {
+    const hanging = {
+      execute: () => new Promise(() => undefined),
+    } as unknown as NodePgDatabase;
+    const started = Date.now();
+    await expect(databaseCheck(hanging, 200)()).resolves.toBe(false);
+    expect(Date.now() - started).toBeLessThan(1000);
   });
 });
