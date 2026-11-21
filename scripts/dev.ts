@@ -7,16 +7,16 @@ import { uiDevConfig } from './vite-config.ts';
 loadRootEnvFile();
 const env = validateEnv(process.env);
 
-const api = spawn(
-  process.execPath,
-  ['--watch', join(import.meta.dirname, '..', 'src', 'server', 'main.ts')],
-  {
-    stdio: 'inherit',
-  },
-);
+// Vite starts first: if it cannot listen, no API child is left running behind it.
 const ui = await createServer(uiDevConfig(env.FACTORYDECK_PORT));
 await ui.listen();
 ui.printUrls();
+
+const api = spawn(
+  process.execPath,
+  ['--watch', join(import.meta.dirname, '..', 'src', 'server', 'main.ts')],
+  { stdio: 'inherit' },
+);
 
 async function stop(): Promise<void> {
   api.kill();
