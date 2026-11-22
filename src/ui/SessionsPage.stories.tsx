@@ -2,10 +2,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { type ReactElement, useState } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { SESSION_PAGE_SIZE } from '../sessions/types.ts';
 import {
   listLoader,
   listResponse,
-  manySessions,
   sessionList,
   someSessions,
   workingSession,
@@ -49,49 +49,129 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const WithRows: Story = {
+function stateCounts(canvasElement: HTMLElement): string[] {
+  return within(within(canvasElement).getByRole('group', { name: 'State' }))
+    .getAllByRole('button')
+    .map((button) => button.textContent);
+}
+
+export const AllStates: Story = {
   args: { loadSessions: listLoader(someSessions) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('1 working · 1 waiting for you · 1 inactive');
-    await expect(canvas.getAllByRole('row')).toHaveLength(4);
-    await userEvent.selectOptions(
-      canvas.getByRole('combobox', { name: 'State' }),
-      'waiting',
-    );
-    await waitFor(() => expect(canvas.getAllByRole('row')).toHaveLength(2));
-    await expect(canvas.getByRole('link', { name: 'b81e44d0' })).toBeVisible();
+    await canvas.findByText('3 sessions');
     await expect(
-      canvas.queryByRole('combobox', { name: 'Project' }),
+      canvas.getByRole('heading', { level: 1, name: 'Sessions' }),
+    ).toBeVisible();
+    await expect(stateCounts(canvasElement)).toEqual([
+      'All3',
+      'Working1',
+      'Waiting for you1',
+      'Inactive1',
+    ]);
+    await expect(
+      canvas.getByRole('button', { name: 'All 3', pressed: true }),
+    ).toBeVisible();
+    const rows = within(
+      canvas.getByRole('region', { name: 'Sessions' }),
+    ).getAllByRole('row');
+    await expect(rows[0]).toHaveTextContent(
+      'StateTitleProjectBranchWork itemLast activityDurationTokens',
+    );
+    await expect(rows).toHaveLength(4);
+    await expect(rows[1]).toHaveTextContent('WorkingAdd the export button');
+    await expect(
+      within(canvas.getByRole('region', { name: 'Sessions' })).getByRole(
+        'link',
+        { name: '#52' },
+      ),
+    ).toHaveAttribute(
+      'href',
+      '/features/52?project=%2Fhome%2Fdev%2Fexample-app&period=all',
+    );
+    await expect(rows[2]).toHaveTextContent('Waiting for youb81e44d0');
+    await expect(rows[2]).toHaveTextContent('—');
+    await expect(rows[3]).toHaveTextContent('InactiveFix the flaky test');
+    await expect(
+      canvas.getByRole('link', { name: 'Add the export button' }),
+    ).toHaveAttribute(
+      'href',
+      '/sessions/7f3a9c21-0000-4000-8000-000000000001?period=all',
+    );
+    await expect(
+      canvas.queryByRole('button', { name: 'Show more' }),
     ).toBeNull();
+  },
+};
+
+function slowStateLoader(): LoadSessions {
+  const load = listLoader(someSessions);
+  return (filters, limit) =>
+    filters.state === undefined
+      ? load(filters, limit)
+      : new Promise((resolve) => {
+          setTimeout(() => resolve(load(filters, limit)), 300);
+        });
+}
+
+export const OneStateSelected: Story = {
+  args: { loadSessions: slowStateLoader() },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('3 sessions');
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Waiting for you 1' }),
+    );
+    await canvas.findByText('Loading…');
+    const pressed = canvas.getByRole('button', {
+      name: 'Waiting for you 1',
+      pressed: true,
+    });
+    await expect(pressed).toHaveFocus();
+    await canvas.findByText('1 session');
+    await expect(pressed).toHaveFocus();
+    await expect(pressed).toBeVisible();
     await expect(
       canvas.getByRole('status', { name: 'Address' }),
     ).toHaveTextContent('?period=all&state=waiting');
+    await expect(
+      within(canvas.getByRole('region', { name: 'Sessions' })).getAllByRole(
+        'row',
+      ),
+    ).toHaveLength(2);
+    await userEvent.click(canvas.getByRole('button', { name: 'All 3' }));
+    await canvas.findByText('3 sessions');
+    await expect(canvas.getByRole('button', { name: 'All 3' })).toHaveFocus();
+    await expect(
+      canvas.getByRole('status', { name: 'Address' }),
+    ).toHaveTextContent(/^\?period=all$/);
   },
 };
 
 export const OneProject: Story = {
   args: { loadSessions: listLoader(someSessions) },
   parameters: {
-    entry: '/sessions?period=all&project=%2Fhome%2Fdev%2Fexample-app',
+    entry: '/sessions?period=7d&project=%2Fhome%2Fdev%2Fexample-app',
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('1 working · 0 waiting for you · 0 inactive');
+    await canvas.findByText('1 session');
     await expect(
-      canvas.queryByRole('combobox', { name: 'Project' }),
+      canvas.queryByRole('columnheader', { name: 'Project' }),
     ).toBeNull();
-    const [link] = canvas.getAllByRole('link');
-    await expect(link).toHaveAttribute(
+    await expect(
+      canvas.getByRole('link', { name: 'Add the export button' }),
+    ).toHaveAttribute(
       'href',
-      expect.stringMatching(
-        /^\/sessions\/[^?]+\?project=%2Fhome%2Fdev%2Fexample-app$/,
-      ),
+      '/sessions/7f3a9c21-0000-4000-8000-000000000001?project=%2Fhome%2Fdev%2Fexample-app&period=7d',
     );
-    await userEvent.selectOptions(
-      canvas.getByRole('combobox', { name: 'State' }),
-      'working',
+    await userEvent.click(canvas.getByRole('button', { name: 'Working 1' }));
+    await expect(
+      canvas.getByRole('status', { name: 'Address' }),
+    ).toHaveTextContent(
+      '?period=7d&project=%2Fhome%2Fdev%2Fexample-app&state=working',
     );
+    await userEvent.click(canvas.getByRole('button', { name: 'All time' }));
     await expect(
       canvas.getByRole('status', { name: 'Address' }),
     ).toHaveTextContent(
@@ -100,31 +180,50 @@ export const OneProject: Story = {
   },
 };
 
-export const NoMatch: Story = {
-  args: { loadSessions: listLoader([]) },
+function moreToShowLoader(): LoadSessions {
+  return (filters, limit) => {
+    const list = sessionList(someSessions, filters, limit);
+    const firstPage = limit <= SESSION_PAGE_SIZE;
+    return Promise.resolve(
+      listResponse({
+        ...list,
+        sessions: firstPage ? list.sessions.slice(0, 2) : list.sessions,
+        total: firstPage ? 75 : list.sessions.length,
+      }),
+    );
+  };
+}
+
+export const MoreToShow: Story = {
+  args: { loadSessions: moreToShowLoader() },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('No sessions match these filters.');
-    await expect(
-      canvas.getByText('0 working · 0 waiting for you · 0 inactive'),
-    ).toBeVisible();
+    await canvas.findByText('75 sessions');
+    await expect(canvas.getByText('2 of 75')).toBeVisible();
+    await userEvent.click(canvas.getByRole('button', { name: 'Show more' }));
+    await canvas.findByText('3 sessions');
     await expect(
       canvas.queryByRole('button', { name: 'Show more' }),
     ).toBeNull();
   },
 };
 
-export const MoreThanFifty: Story = {
-  args: { loadSessions: listLoader(manySessions) },
+export const NoMatch: Story = {
+  args: { loadSessions: listLoader([]) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('1 working · 1 waiting for you · 73 inactive');
-    await expect(canvas.getAllByRole('row')).toHaveLength(51);
-    await userEvent.click(canvas.getByRole('button', { name: 'Show more' }));
-    await waitFor(() => expect(canvas.getAllByRole('row')).toHaveLength(76));
+    await canvas.findByText('No sessions match these filters.');
+    await expect(canvas.getByText('0 sessions')).toBeVisible();
     await expect(
       canvas.queryByRole('button', { name: 'Show more' }),
     ).toBeNull();
+  },
+};
+
+export const Loading: Story = {
+  args: { loadSessions: () => new Promise(() => undefined) },
+  play: async ({ canvasElement }) => {
+    await within(canvasElement).findByText('Loading…');
   },
 };
 
@@ -165,37 +264,28 @@ export const RefreshesWithoutReload: Story = {
   render: () => <Refreshing />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('1 working · 0 waiting for you · 0 inactive');
-    await canvas.findByText('0 working · 1 waiting for you · 0 inactive');
-    await expect(
-      canvas.getByText('Waiting for you', { selector: '.state' }),
-    ).toBeVisible();
+    await canvas.findByRole('button', { name: 'Working 1' });
+    await canvas.findByRole('button', { name: 'Waiting for you 1' });
+    await waitFor(() =>
+      expect(
+        within(canvas.getByRole('region', { name: 'Sessions' })).getByText(
+          'Waiting for you',
+        ),
+      ).toBeVisible(),
+    );
   },
 };
 
-function slowWideLoader(): LoadSessions {
-  const load = listLoader(manySessions);
-  return (filters, limit) =>
-    filters.state === undefined && limit > 50
-      ? new Promise((resolve) => {
-          setTimeout(() => resolve(load(filters, limit)), 400);
-        })
-      : load(filters, limit);
-}
-
-export const NoStaleRowsFromAnotherFilter: Story = {
-  args: { loadSessions: slowWideLoader() },
+export const At1024: Story = {
+  args: { loadSessions: listLoader(someSessions) },
+  decorators: [
+    (Story) => (
+      <div style={{ width: 1024 }}>
+        <Story />
+      </div>
+    ),
+  ],
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await canvas.findByText('1 working · 1 waiting for you · 73 inactive');
-    await userEvent.click(canvas.getByRole('button', { name: 'Show more' }));
-    await waitFor(() => expect(canvas.getAllByRole('row')).toHaveLength(76));
-    const state = canvas.getByRole('combobox', { name: 'State' });
-    await userEvent.selectOptions(state, 'working');
-    await waitFor(() => expect(canvas.getAllByRole('row')).toHaveLength(2));
-    await userEvent.selectOptions(state, '');
-    await canvas.findByText('Loading…');
-    await expect(canvas.queryByRole('table')).toBeNull();
-    await waitFor(() => expect(canvas.getAllByRole('row')).toHaveLength(76));
+    await within(canvasElement).findByText('3 sessions');
   },
 };

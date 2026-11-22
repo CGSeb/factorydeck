@@ -303,5 +303,6 @@ export async function sessionDetail(
     tokens: usage.tokens,
     subAgents,
     skills,
+    projects: names.options(),
   };
 }

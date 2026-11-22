@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Database } from '../db/client.ts';
 import { createTestDatabase } from '../test/postgres.ts';
 import { ago, options, seedSessions } from '../test/sessions.ts';
-import { sessionDetail } from './query.ts';
+import { listSessions, sessionDetail } from './query.ts';
 
 let db: Database;
 let close: () => Promise<void>;
@@ -79,6 +79,19 @@ describe('sessionDetail', () => {
       cacheRead: 5,
       output: 5,
     });
+  });
+
+  it('gives the project options of the project select', async () => {
+    const detail = await sessionDetail(db, 'working-1', options);
+    const list = await listSessions(
+      db,
+      { period: 'all', timeZone: 'UTC', limit: 1 },
+      options,
+    );
+    expect(detail?.projects).toEqual(list.projects);
+    expect(detail?.projects.map(({ project }) => project)).toContain(
+      '/work/app',
+    );
   });
 
   it('gives nothing for an unknown session', async () => {
