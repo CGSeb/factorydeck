@@ -1,9 +1,22 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { MemoryRouter } from 'react-router';
-import { expect, within } from 'storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 import { boardFeatures } from './feature-board-fixtures.ts';
 import { APP, featureList } from './feature-fixtures.ts';
+import type { ListGroup } from './features-list.ts';
 import { IssueGroupsTable } from './IssueGroupsTable.tsx';
+import {
+  COLLAPSED_GROUPS_KEY,
+  writeCollapsedGroups,
+} from './issue-groups-state.ts';
+
+function storedGroups(): string | null {
+  try {
+    return window.localStorage.getItem(COLLAPSED_GROUPS_KEY);
+  } catch {
+    return null;
+  }
+}
 
 const meta = {
   component: IssueGroupsTable,
@@ -14,11 +27,18 @@ const meta = {
     stage: null,
   },
   decorators: [
-    (Story) => (
-      <MemoryRouter>
-        <Story />
-      </MemoryRouter>
-    ),
+    (Story, { parameters }) => {
+      writeCollapsedGroups(
+        new Set(
+          (parameters as { collapsedGroups?: ListGroup[] }).collapsedGroups,
+        ),
+      );
+      return (
+        <MemoryRouter>
+          <Story />
+        </MemoryRouter>
+      );
+    },
   ],
 } satisfies Meta<typeof IssueGroupsTable>;
 
@@ -134,5 +154,40 @@ export const ClosedAndUnknown: Story = {
       canvas.queryByRole('rowheader', { name: 'No work item' }),
     ).toBeNull();
     await expect(canvas.getByRole('rowheader', { name: '#12' })).toBeVisible();
+  },
+};
+
+export const FoldGroup: Story = {
+  args: { stage: 'working', sort: 'tokens' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const toggle = canvas.getByRole('button', { name: 'Working 2' });
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await userEvent.click(toggle);
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(canvas.queryAllByRole('rowheader')).toEqual([]);
+    await expect(storedGroups()).toBe('["working"]');
+    await userEvent.click(toggle);
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(canvas.getAllByRole('rowheader')).toHaveLength(2);
+    await expect(storedGroups()).toBeNull();
+  },
+};
+
+export const KeptFolded: Story = {
+  parameters: { collapsedGroups: ['merged', 'ready'] },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas
+        .getAllByRole('button', { expanded: false })
+        .map((button) => button.textContent),
+    ).toEqual(['Ready2', 'Merged3']);
+    await expect(
+      canvas.queryByRole('rowheader', { name: '#52 Export button' }),
+    ).toBeNull();
+    await expect(
+      canvas.getByRole('rowheader', { name: 'Total' }),
+    ).toBeVisible();
   },
 };
