@@ -58,45 +58,49 @@ export function SessionTable({
   const navigate = useNavigate();
   const project = useProject();
   return (
-    <table className="session-table" aria-label="Sessions">
-      <SessionTableHead />
-      <tbody>
-        {sessions.map((row) => (
-          <tr
-            key={row.id}
-            className="session-row"
-            onClick={(event) => {
-              if (
-                event.target instanceof Element &&
-                event.target.closest('a') !== null
-              ) {
-                return;
-              }
-              void navigate(sessionPath(row.id, project));
-            }}
-          >
-            <td className="left">
-              <SessionStateLabel state={row.state} />
-            </td>
-            <th scope="row" className="left">
-              <Link to={sessionPath(row.id, project)}>{sessionTitle(row)}</Link>
-            </th>
-            <td className="left">
-              <ProjectName project={row.project} name={row.projectName} />
-            </td>
-            <td className="left">{orMissing(row.gitBranch)}</td>
-            <td>
-              <WorkItemLink workItem={row.workItem} issue={row.issue} />
-            </td>
-            <td>{formatAgo(row.lastAt, now)}</td>
-            <td>{formatDuration(row.firstAt, row.lastAt)}</td>
-            <td>
-              <TokenCount value={row.tokens} />
-            </td>
-            <td>{formatCost(row.costUsd)}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <div className="table-scroll">
+      <table className="session-table" aria-label="Sessions">
+        <SessionTableHead />
+        <tbody>
+          {sessions.map((row) => (
+            <tr
+              key={row.id}
+              className="session-row"
+              onClick={(event) => {
+                if (
+                  event.target instanceof Element &&
+                  event.target.closest('a') !== null
+                ) {
+                  return;
+                }
+                void navigate(sessionPath(row.id, project));
+              }}
+            >
+              <td className="left">
+                <SessionStateLabel state={row.state} />
+              </td>
+              <th scope="row" className="left">
+                <Link to={sessionPath(row.id, project)}>
+                  {sessionTitle(row)}
+                </Link>
+              </th>
+              <td className="left">
+                <ProjectName project={row.project} name={row.projectName} />
+              </td>
+              <td className="left">{orMissing(row.gitBranch)}</td>
+              <td>
+                <WorkItemLink workItem={row.workItem} issue={row.issue} />
+              </td>
+              <td>{formatAgo(row.lastAt, now)}</td>
+              <td>{formatDuration(row.firstAt, row.lastAt)}</td>
+              <td>
+                <TokenCount value={row.tokens} />
+              </td>
+              <td>{formatCost(row.costUsd)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

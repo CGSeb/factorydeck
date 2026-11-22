@@ -17,6 +17,7 @@ export interface DialogDanger {
 
 export interface DialogProps {
   title: ReactNode;
+  titleTooltip?: string | undefined;
   text: ReactNode;
   cancelLabel: string;
   onCancel: () => void;
@@ -62,6 +63,7 @@ function DialogActions({
 
 export function Dialog({
   title,
+  titleTooltip,
   text,
   cancelLabel,
   onCancel,
@@ -87,7 +89,7 @@ export function Dialog({
         aria-labelledby={titleId}
         aria-describedby={textId}
       >
-        <h2 id={titleId} className="fd-dialog-title">
+        <h2 id={titleId} className="fd-dialog-title" title={titleTooltip}>
           {title}
         </h2>
         <p id={textId} className="fd-dialog-text">

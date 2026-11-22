@@ -26,38 +26,40 @@ export function FeatureSessionTable({
           No session worked on this issue in this period.
         </p>
       ) : (
-        <table aria-labelledby={titleId}>
-          <thead>
-            <tr>
-              <th scope="col">Session</th>
-              <th scope="col" className="left">
-                State
-              </th>
-              <th scope="col">Last activity</th>
-              <th scope="col">Tokens</th>
-              <th scope="col">Cost</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sessions.map((row) => (
-              <tr key={row.id}>
-                <th scope="row">
-                  <Link to={sessionPath(row.id, project)}>
-                    {sessionTitle(row)}
-                  </Link>
+        <div className="table-scroll">
+          <table aria-labelledby={titleId}>
+            <thead>
+              <tr>
+                <th scope="col">Session</th>
+                <th scope="col" className="left">
+                  State
                 </th>
-                <td className="left">
-                  <SessionStateLabel state={row.state} />
-                </td>
-                <td>{formatAgo(row.lastAt, now)}</td>
-                <td>
-                  <TokenCount value={Math.round(row.tokens)} />
-                </td>
-                <td>{formatCost(row.costUsd)}</td>
+                <th scope="col">Last activity</th>
+                <th scope="col">Tokens</th>
+                <th scope="col">Cost</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {sessions.map((row) => (
+                <tr key={row.id}>
+                  <th scope="row">
+                    <Link to={sessionPath(row.id, project)}>
+                      {sessionTitle(row)}
+                    </Link>
+                  </th>
+                  <td className="left">
+                    <SessionStateLabel state={row.state} />
+                  </td>
+                  <td>{formatAgo(row.lastAt, now)}</td>
+                  <td>
+                    <TokenCount value={Math.round(row.tokens)} />
+                  </td>
+                  <td>{formatCost(row.costUsd)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   );

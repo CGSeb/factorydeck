@@ -1,6 +1,7 @@
-import { type ReactElement, type RefObject, useId, useRef } from 'react';
+import type { ReactElement } from 'react';
 import { projectText } from '../projects/label.ts';
-import { useDialogFocus } from './components/dialog-focus.ts';
+import { Dialog } from './components/Dialog.tsx';
+import './DeleteProjectDialog.css';
 
 export type DeleteDialogState =
   'idle' | 'deleting' | 'failed' | 'has-factory' | 'not-found';
@@ -23,34 +24,6 @@ const MESSAGES: Readonly<
   'not-found': (name) => `${name} is no longer in FactoryDeck.`,
 };
 
-function DialogActions({
-  cancel,
-  deleting,
-  onCancel,
-  onConfirm,
-}: {
-  cancel: RefObject<HTMLButtonElement | null>;
-  deleting: boolean;
-  onCancel: () => void;
-  onConfirm: () => void;
-}): ReactElement {
-  return (
-    <div className="dialog-actions">
-      <button type="button" ref={cancel} onClick={onCancel}>
-        Cancel
-      </button>
-      <button
-        type="button"
-        className="danger"
-        disabled={deleting}
-        onClick={onConfirm}
-      >
-        {deleting ? 'Deleting…' : 'Delete project'}
-      </button>
-    </div>
-  );
-}
-
 export function DeleteProjectDialog({
   project,
   name,
@@ -59,49 +32,27 @@ export function DeleteProjectDialog({
   onCancel,
   onConfirm,
 }: DeleteProjectDialogProps): ReactElement {
-  const titleId = useId();
-  const textId = useId();
-  const dialog = useRef<HTMLDivElement>(null);
-  const cancel = useDialogFocus(onCancel, dialog);
   const label = projectText(project, name);
   const message = MESSAGES[state]?.(label.text);
+  const deleting = state === 'deleting';
   return (
-    <div
-      className="dialog-backdrop"
-      data-testid="dialog-backdrop"
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onCancel();
+    <Dialog
+      title={`Delete ${label.text}?`}
+      titleTooltip={label.title}
+      text={`This removes its ${sessions} sessions and everything FactoryDeck stored about them (sub-agents, API calls, skill launches, prompts). The session logs on disk are not touched. If the factory is installed again in this project, its sessions are read again.`}
+      cancelLabel="Cancel"
+      onCancel={onCancel}
+      danger={{
+        label: deleting ? 'Deleting…' : 'Delete project',
+        onClick: onConfirm,
+        disabled: deleting,
       }}
     >
-      <div
-        ref={dialog}
-        className="dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={textId}
-      >
-        <h2 id={titleId} title={label.title}>
-          Delete {label.text}?
-        </h2>
-        <p id={textId}>
-          This removes its {sessions} sessions and everything FactoryDeck stored
-          about them (sub-agents, API calls, skill launches, prompts). The
-          session logs on disk are not touched. If the factory is installed
-          again in this project, its sessions are read again.
+      {message === undefined ? undefined : (
+        <p className="fd-dialog-message" role="alert">
+          {message}
         </p>
-        {message !== undefined && (
-          <p className="dialog-message" role="alert">
-            {message}
-          </p>
-        )}
-        <DialogActions
-          cancel={cancel}
-          deleting={state === 'deleting'}
-          onCancel={onCancel}
-          onConfirm={onConfirm}
-        />
-      </div>
-    </div>
+      )}
+    </Dialog>
   );
 }

@@ -56,38 +56,40 @@ function SkillSessions({ skill }: { skill: SkillDetail }): ReactElement {
       {skill.sessions.length === 0 ? (
         <p className="status">No session launched this skill in this period.</p>
       ) : (
-        <table aria-labelledby={titleId}>
-          <thead>
-            <tr>
-              <th scope="col">Session</th>
-              <th scope="col" className="left">
-                Project
-              </th>
-              <th scope="col">Launches</th>
-              <th scope="col">Tokens</th>
-              <th scope="col">Cost</th>
-            </tr>
-          </thead>
-          <tbody>
-            {skill.sessions.map((row) => (
-              <tr key={row.id}>
-                <th scope="row">
-                  <Link to={sessionPath(row.id, project)}>
-                    {sessionTitle(row)}
-                  </Link>
+        <div className="table-scroll">
+          <table aria-labelledby={titleId}>
+            <thead>
+              <tr>
+                <th scope="col">Session</th>
+                <th scope="col" className="left">
+                  Project
                 </th>
-                <td className="left">
-                  <ProjectName project={row.project} name={row.projectName} />
-                </td>
-                <td>{formatCount(row.launches)}</td>
-                <td>
-                  <TokenCount value={row.tokens} />
-                </td>
-                <td>{formatCost(row.costUsd)}</td>
+                <th scope="col">Launches</th>
+                <th scope="col">Tokens</th>
+                <th scope="col">Cost</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {skill.sessions.map((row) => (
+                <tr key={row.id}>
+                  <th scope="row">
+                    <Link to={sessionPath(row.id, project)}>
+                      {sessionTitle(row)}
+                    </Link>
+                  </th>
+                  <td className="left">
+                    <ProjectName project={row.project} name={row.projectName} />
+                  </td>
+                  <td>{formatCount(row.launches)}</td>
+                  <td>
+                    <TokenCount value={row.tokens} />
+                  </td>
+                  <td>{formatCost(row.costUsd)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   );

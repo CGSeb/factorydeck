@@ -1,0 +1,6 @@
+.fd-dialog-message {
+  margin: 0;
+  font-family: var(--fd-font-body);
+  font-size: var(--fd-text-md);
+  color: var(--fd-danger);
+}

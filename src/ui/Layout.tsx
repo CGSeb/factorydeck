@@ -1,7 +1,8 @@
 import { type ReactElement, useEffect, useState } from 'react';
 import {
-  NavLink,
+  Link,
   Outlet,
+  matchPath,
   useLocation,
   useNavigate,
   useSearchParams,
@@ -12,14 +13,17 @@ import type {
 } from '../git-host/types.ts';
 import type { ProjectOption } from '../projects/label.ts';
 import type { FactoryResponse, MissingFactory } from '../projects/types.ts';
-import { CollectionStatus } from './CollectionStatus.tsx';
+import type { RenderLink } from './components/link.ts';
+import { ProjectPill } from './components/ProjectPill.tsx';
+import { RefreshControl } from './components/RefreshControl.tsx';
+import { TopBar, type TopBarLink } from './components/TopBar.tsx';
 import type { DeleteProject, LoadFactory } from './factory-api.ts';
 import { FactoryBanner } from './FactoryBanner.tsx';
 import type { LoadCollection, RefreshCollection } from './git-host-api.ts';
 import { projectOf, projectTarget, withProject } from './project-param.ts';
-import { ProjectSelect } from './ProjectSelect.tsx';
 import { WelcomePanel } from './WelcomePanel.tsx';
 import './styles.css';
+import './shell.css';
 
 const RETRY_SECONDS = 10;
 
@@ -134,25 +138,20 @@ const SECTIONS: readonly { path: string; label: string }[] = [
   { path: '/roles', label: 'Roles' },
 ];
 
-function SectionNav({
-  project,
-}: {
-  project: string | undefined;
-}): ReactElement {
-  return (
-    <nav aria-label="Sections">
-      <ul>
-        {SECTIONS.map(({ path, label }) => (
-          <li key={path}>
-            <NavLink to={withProject(path, project)} end={path === '/'}>
-              {label}
-            </NavLink>
-          </li>
-        ))}
-      </ul>
-    </nav>
-  );
+function sectionLinks(
+  pathname: string,
+  project: string | undefined,
+): TopBarLink[] {
+  return SECTIONS.map(({ path, label }) => ({
+    label,
+    href: withProject(path, project),
+    current: matchPath({ path, end: path === '/' }, pathname) !== null,
+  }));
 }
+
+const renderRouterLink: RenderLink = ({ href, ...props }) => (
+  <Link to={href} {...props} />
+);
 
 function viewOf(
   status: FactoryResponse | undefined,
@@ -209,34 +208,39 @@ export function Layout({
     status,
     collection.status,
   );
+  const { pathname } = useLocation();
   return (
     <>
-      <header className="topbar">
-        <span className="brand">FactoryDeck</span>
-        <SectionNav project={project} />
-        {!welcome && (
-          <ProjectSelect
-            value={project}
-            projects={projects}
-            onChange={choose}
-          />
-        )}
-        <CollectionStatus
-          collectedAt={collectedAt}
-          now={new Date()}
-          refreshing={collection.refreshing}
-          onRefresh={collection.refresh}
+      <TopBar
+        links={sectionLinks(pathname, project)}
+        renderLink={renderRouterLink}
+        actions={
+          <>
+            {!welcome && (
+              <ProjectPill
+                value={project}
+                projects={projects}
+                onChange={choose}
+              />
+            )}
+            <RefreshControl
+              collectedAt={collectedAt}
+              now={new Date()}
+              refreshing={collection.refreshing}
+              onRefresh={collection.refresh}
+            />
+          </>
+        }
+      />
+      {missing.length + failures.length > 0 && (
+        <FactoryBanner
+          missing={missing}
+          failures={failures}
+          deleteProject={deleteProject}
+          onDeleted={onDeleted}
         />
-      </header>
-      <main>
-        {missing.length + failures.length > 0 && (
-          <FactoryBanner
-            missing={missing}
-            failures={failures}
-            deleteProject={deleteProject}
-            onDeleted={onDeleted}
-          />
-        )}
+      )}
+      <main className={`fd-column fd-main${welcome ? ' fd-main-welcome' : ''}`}>
         {welcome ? <WelcomePanel /> : <Outlet key={version} />}
       </main>
     </>

@@ -1,0 +1,29 @@
+body {
+  margin: 0;
+  font-family: var(--fd-font-body);
+  color: var(--fd-ink);
+  background: var(--fd-page);
+}
+
+@media (max-width: 479.98px) {
+  :root {
+    --fd-gutter: 16px;
+  }
+}
+
+main.fd-main {
+  padding-top: 28px;
+  padding-bottom: 40px;
+}
+
+main.fd-main-welcome {
+  padding-top: 64px;
+  padding-bottom: 64px;
+}
+
+@media (max-width: 479.98px) {
+  main.fd-main-welcome {
+    padding-top: var(--fd-space-6);
+    padding-bottom: var(--fd-space-6);
+  }
+}

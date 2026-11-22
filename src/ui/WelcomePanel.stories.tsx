@@ -16,6 +16,17 @@ export const Default: Story = {
     await expect(
       canvas.getByRole('heading', { name: 'Install the factory in a project' }),
     ).toBeVisible();
+    await expect(canvas.getByText('No factory project yet')).toBeVisible();
+    await expect(
+      canvas.getByText(
+        'FactoryDeck shows the projects that use the factorydeck-skills workflow. None of yours does yet.',
+      ),
+    ).toBeVisible();
+    await expect(
+      canvas.getByText(
+        'The project select appears once a project has sessions.',
+      ),
+    ).toBeVisible();
     const steps = canvas.getAllByRole('listitem');
     await expect(steps.map((step) => step.textContent)).toEqual([
       'Install factorydeck-skills in your coding agent: see the install steps.',
