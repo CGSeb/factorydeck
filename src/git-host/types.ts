@@ -97,9 +97,40 @@ export type IssueStage = (typeof ISSUE_STAGES)[number];
 
 export interface IssueOutcome {
   stage: IssueStage;
-  report: { score: number; threshold: number; rounds: number | null } | null;
+  report: {
+    score: number;
+    threshold: number;
+    rounds: number | null;
+    firstScore?: number;
+  } | null;
   reworked: boolean;
 }
+
+export const REFUSAL_REASONS = [
+  'below-threshold',
+  'gates-failed',
+  'auto-merge-off',
+] as const;
+
+export type RefusalReason = (typeof REFUSAL_REASONS)[number];
+
+export interface ReportMilestone {
+  kind: 'report';
+  at: string;
+  request: { number: number; url: string };
+  score: number;
+  threshold: number;
+  refused: boolean;
+  reasons: RefusalReason[];
+}
+
+export interface NeedsSpecMilestone {
+  kind: 'needs-spec';
+  at: string;
+  removedAt: string | null;
+}
+
+export type IssueMilestone = ReportMilestone | NeedsSpecMilestone;
 
 export interface IssueDetail {
   gitHost: GitHostName;
@@ -110,6 +141,7 @@ export interface IssueDetail {
   labels: IssueLabel[];
   requests: ClosingRequest[];
   outcome: IssueOutcome;
+  milestones: IssueMilestone[];
 }
 
 export interface CollectionFailure {

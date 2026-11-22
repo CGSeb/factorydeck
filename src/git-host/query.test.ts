@@ -113,6 +113,7 @@ describe('work item lookup', () => {
         expect.objectContaining({ number: 11, state: 'merged' }),
       ],
       outcome: { stage: 'merged', report: null, reworked: true },
+      milestones: [],
     });
     expect(detail?.subAgents.map((agent) => agent.issue)).toEqual([
       { status: 'not-found' },

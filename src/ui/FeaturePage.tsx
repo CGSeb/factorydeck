@@ -10,6 +10,7 @@ import { DEFAULT_PERIOD, type Period, isPeriod } from '../overview/types.ts';
 import { issueTitleText } from './components/IssueCard.tsx';
 import { IssueSummary } from './components/IssueSummary.tsx';
 import { IssueTimeline } from './components/IssueTimeline.tsx';
+import { serenityScore } from './components/SerenityBadge.tsx';
 import { PageHeader } from './components/PageHeader.tsx';
 import { Panel } from './components/Panel.tsx';
 import { PeriodPills } from './components/PeriodPills.tsx';
@@ -20,6 +21,7 @@ import { type LoadFeature, featuresPath } from './features-api.ts';
 import {
   issueActivity,
   issueColors,
+  issueMilestones,
   issuePullRequest,
   issueSteps,
   issueTotal,
@@ -105,11 +107,7 @@ function IssueAside({
             }
       }
       roles={roleSegments(feature, colors)}
-      serenity={
-        report === null
-          ? null
-          : { score: report.score, threshold: report.threshold }
-      }
+      serenity={report === null ? null : serenityScore(report)}
       rounds={report?.rounds ?? null}
       pullRequest={summaryPullRequest(request)}
       checks={request?.checks ?? null}
@@ -154,7 +152,11 @@ function FeatureContent({
           {steps.length === 0 ? (
             <StatusLine>No activity in this period.</StatusLine>
           ) : (
-            <IssueTimeline steps={steps} renderLink={renderRouterLink} />
+            <IssueTimeline
+              steps={steps}
+              milestones={issueMilestones(feature)}
+              renderLink={renderRouterLink}
+            />
           )}
         </Panel>
       </div>

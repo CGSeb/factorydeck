@@ -126,6 +126,7 @@ describe('collect from GitLab', () => {
         }),
       ],
       outcome: { stage: 'merged', report: null, reworked: true },
+      milestones: [],
     });
     const first = (await calls(root))[0];
     expect(first?.args).toEqual([

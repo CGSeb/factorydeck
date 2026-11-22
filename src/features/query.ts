@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import { issueDetail, lookupOutcomes } from '../git-host/query.ts';
+import { detailInPeriod } from '../git-host/milestones.ts';
 import { byCostDescending, periodStart, select } from '../overview/query.ts';
 import { emptyCounts, withTokenCounts } from '../overview/tokens.ts';
 import { projectNames } from '../projects/names.ts';
@@ -265,11 +266,12 @@ export async function featureDetail(
 ): Promise<FeatureDetail | undefined> {
   const scoped = { ...query, project: key.project };
   const markers = await loadMarkers(db, config, { project: key.project });
-  const [rows, outcomeOf, detail, names] = await Promise.all([
+  const [rows, outcomeOf, detail, names, startAt] = await Promise.all([
     usageRows(db, scoped, markers),
     lookupOutcomes(db, [key]),
     issueDetail(db, key.project, key.number),
     projectNames(db),
+    periodStart(db, scoped),
   ]);
   const issueOf = (found: Row[]): IssueAccumulator | undefined =>
     allocate(config, found, markers).issues.get(
@@ -289,7 +291,7 @@ export async function featureDetail(
     ...key,
     projectName: names.label(key.project),
     issue: status,
-    detail,
+    detail: detailInPeriod(detail, startAt),
     roles: [...(issue?.roles.values() ?? [])]
       .map(roleOfAccumulator)
       .sort(byCostDescending((row) => row.role)),

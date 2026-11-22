@@ -118,6 +118,7 @@
 .fd-issue-card-title:focus-visible,
 .fd-stage-column-more:focus-visible,
 .fd-thread-link:focus-visible,
+.fd-timeline-milestone a:focus-visible,
 .fd-summary-list a:focus-visible {
   outline: 2px solid var(--fd-accent);
   outline-offset: 2px;
@@ -164,6 +165,51 @@
   background: var(--fd-surface);
   border: 4px solid;
   border-radius: 50%;
+}
+
+.fd-timeline-milestone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fd-space-1);
+  min-width: 0;
+}
+
+.fd-timeline-milestone-marker {
+  position: absolute;
+  top: 5px;
+  left: -29px;
+  box-sizing: border-box;
+  width: 10px;
+  height: 10px;
+  background: var(--fd-surface);
+  border: 3px solid var(--fd-success);
+  border-radius: 50%;
+}
+
+.fd-timeline-milestone[data-tone='warning'] .fd-timeline-milestone-marker {
+  border-color: var(--fd-warning);
+}
+
+.fd-timeline-milestone-title {
+  font-size: var(--fd-text-sm);
+  font-weight: 600;
+  color: var(--fd-success);
+  overflow-wrap: anywhere;
+}
+
+.fd-timeline-milestone[data-tone='warning'] .fd-timeline-milestone-title {
+  color: var(--fd-warning);
+}
+
+.fd-timeline-milestone a {
+  font-weight: 600;
+  color: var(--fd-link);
+  text-decoration: none;
+}
+
+.fd-timeline-milestone a:hover {
+  color: var(--fd-link-hover);
 }
 
 .fd-timeline-head {
@@ -251,6 +297,14 @@
 
 .fd-summary-figure[data-below='true'] {
   color: var(--fd-warning);
+}
+
+.fd-summary-from {
+  display: block;
+  font-family: var(--fd-font-body);
+  font-size: var(--fd-text-sm);
+  font-weight: 400;
+  color: var(--fd-muted);
 }
 
 .fd-summary-below {

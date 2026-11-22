@@ -78,6 +78,12 @@ function SerenityFigure({
           <span className="fd-summary-below">below threshold</span>
         </>
       ) : null}
+      {serenity.firstScore === undefined ? null : (
+        <>
+          {' '}
+          <span className="fd-summary-from">from {serenity.firstScore}</span>
+        </>
+      )}
     </span>
   );
 }

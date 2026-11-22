@@ -62,6 +62,31 @@ export const MergedAfterAPerson: Story = {
   },
 };
 
+export const WithAScorePath: Story = {
+  name: 'With a score path',
+  args: {
+    session: {
+      ...sessionWithSubAgents,
+      issueDetail:
+        sessionWithSubAgents.issueDetail === null
+          ? null
+          : {
+              ...sessionWithSubAgents.issueDetail,
+              outcome: {
+                stage: 'merged-after-person',
+                report: { score: 88, threshold: 80, rounds: 2, firstScore: 64 },
+                reworked: true,
+              },
+            },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByText('serenity 64 → 88'),
+    ).toHaveAttribute('data-tone', 'success');
+  },
+};
+
 export const WithoutWorkItem: Story = {
   args: { session: sessionWithoutSubAgents },
   play: async ({ canvasElement }) => {

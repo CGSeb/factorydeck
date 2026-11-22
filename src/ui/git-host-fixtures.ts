@@ -68,6 +68,7 @@ export const githubIssue: IssueDetail = {
     report: { score: 86, threshold: 80, rounds: 1 },
     reworked: true,
   },
+  milestones: [],
 };
 
 export const gitlabIssue: IssueDetail = {
@@ -92,6 +93,7 @@ export const gitlabIssue: IssueDetail = {
     },
   ],
   outcome: { stage: 'merged', report: null, reworked: false },
+  milestones: [],
 };
 
 export const appFailure: CollectionFailure = {
