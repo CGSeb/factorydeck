@@ -6,11 +6,20 @@
 }
 
 .fd-brand {
+  display: inline-flex;
   flex: none;
+  align-items: center;
+  gap: var(--fd-space-2);
   font-family: var(--fd-font-display);
   font-size: var(--fd-title-sm);
   font-weight: 700;
   white-space: nowrap;
+}
+
+.fd-logo {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
 }
 
 .fd-brand-accent {

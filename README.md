@@ -1,4 +1,4 @@
-# FactoryDeck
+# <img src="src/ui/public/logo.svg" alt="" width="32" height="32" align="top" /> FactoryDeck
 
 A local-first, open-source dashboard for an AI agent software factory.
 
