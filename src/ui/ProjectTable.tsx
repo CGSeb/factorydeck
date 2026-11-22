@@ -1,6 +1,7 @@
 import { type ReactElement, useId } from 'react';
 import type { ProjectUsage } from '../overview/types.ts';
 import { formatCost, formatCount } from './format.ts';
+import { ProjectName } from './ProjectName.tsx';
 import { TokenCount } from './TokenCount.tsx';
 
 export function ProjectTable({
@@ -25,7 +26,9 @@ export function ProjectTable({
         <tbody>
           {projects.map((row) => (
             <tr key={row.project}>
-              <th scope="row">{row.project}</th>
+              <th scope="row">
+                <ProjectName project={row.project} name={row.projectName} />
+              </th>
               <td>{formatCount(row.sessions)}</td>
               <td>{formatCount(row.apiCalls)}</td>
               <td>

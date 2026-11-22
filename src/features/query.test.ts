@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Database } from '../db/client.ts';
 import { usageOverview } from '../overview/query.ts';
+import { folderName } from '../projects/label.ts';
 import { DEFAULT_CONFIG } from '../roles/config.ts';
 import { APP, LIB, allTime, seedFeatures, week } from '../test/features.ts';
 import { createTestDatabase } from '../test/postgres.ts';
@@ -188,6 +189,9 @@ describe('listFeatures', () => {
     expect(list.rows).toEqual([]);
     expect(list.noWorkItem).toBeNull();
     expect(list.totals.apiCalls).toBe(0);
-    expect(list.projects).toEqual([APP, LIB]);
+    expect(list.projects).toEqual([
+      { project: APP, name: folderName(APP) },
+      { project: LIB, name: folderName(LIB) },
+    ]);
   });
 });

@@ -1,5 +1,6 @@
 import { type ReactElement, useId, useState } from 'react';
 import { type CollectionFailure, failureMessage } from '../git-host/types.ts';
+import { projectText } from '../projects/label.ts';
 import type { MissingFactory } from '../projects/types.ts';
 import {
   type DeleteDialogState,
@@ -29,12 +30,12 @@ function BannerLine({
   onDelete: () => void;
 }): ReactElement {
   const textId = useId();
+  const label = projectText(project.project, project.name);
   return (
     <li>
-      <span id={textId}>
-        Factory configuration not found for {project.name}:{' '}
-        {project.factoryFile}. Its data is kept, but new sessions are no longer
-        read.
+      <span id={textId} title={label.title}>
+        Factory configuration not found for {label.text}: {project.factoryFile}.
+        Its data is kept, but new sessions are no longer read.
       </span>
       <button type="button" aria-describedby={textId} onClick={onDelete}>
         Delete project
@@ -110,12 +111,18 @@ export function FactoryBanner({
         ))}
         {failures.map((failure) => (
           <li key={`git-host ${failure.project}`}>
-            <span>{failureMessage(failure)}</span>
+            <span>
+              {failureMessage({
+                ...failure,
+                name: projectText(failure.project, failure.name).text,
+              })}
+            </span>
           </li>
         ))}
       </ul>
       {shown !== undefined && (
         <DeleteProjectDialog
+          project={shown.project}
           name={shown.name}
           sessions={shown.sessions}
           state={shown.state}

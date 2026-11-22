@@ -51,7 +51,11 @@ export const Rows: Story = {
     await expect(canvas.getByText('2 h 02 min')).toBeVisible();
     await expect(canvas.getByRole('link', { name: 'b81e44d0' })).toBeVisible();
     await expect(canvas.getByText('~$6.42')).toBeVisible();
-    await userEvent.click(canvas.getByText('/home/dev/example-lib'));
+    await expect(canvas.getByText('example-lib')).toHaveAttribute(
+      'title',
+      '/home/dev/example-lib',
+    );
+    await userEvent.click(canvas.getByText('example-lib'));
     await userEvent.click(await canvas.findByRole('button', { name: 'Back' }));
     await userEvent.click(
       await canvas.findByRole('link', { name: 'Add the export button' }),

@@ -1,6 +1,7 @@
 import { readFile, stat } from 'node:fs/promises';
 import { sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
+import { storeProjectNames } from '../projects/names.ts';
 import { forgetProjectsWithoutFactoryOnce } from '../projects/remove.ts';
 import {
   type FactoryCheck,
@@ -98,6 +99,7 @@ export async function ingest(
     }
     await saveSubAgents(run);
     await saveSessions(run);
+    await storeProjectNames(tx);
     return {
       status: 'done',
       ...counts,

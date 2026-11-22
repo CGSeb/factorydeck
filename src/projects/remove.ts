@@ -1,4 +1,3 @@
-import { basename } from 'node:path';
 import { count, eq, inArray, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import {
@@ -13,6 +12,7 @@ import { type FactoryCheck, factoryFile } from '../ingest/factory.ts';
 import { sessionIdOfPath } from '../ingest/files.ts';
 import { LOCK_KEY } from '../ingest/lock.ts';
 import type { Transaction } from '../ingest/store.ts';
+import { forgetProjectNames, projectNames } from './names.ts';
 import type { DeleteResult, FactoryStatus, MissingFactory } from './types.ts';
 
 const CHUNK = 1000;
@@ -33,6 +33,7 @@ export async function forgetProjects(
 ): Promise<number> {
   if (projects.length === 0) return 0;
   await forgetGitHostData(tx, [...projects]);
+  await forgetProjectNames(tx, [...projects]);
   const ids = new Set(
     (
       await tx
@@ -81,30 +82,31 @@ export async function forgetProjectsWithoutFactoryOnce(
     });
 }
 
-export function projectName(project: string): string {
-  return basename(project) || project;
-}
-
 export async function factoryStatus(
   db: Database,
   hasFactory: FactoryCheck,
 ): Promise<FactoryStatus> {
-  const rows = await db
-    .select({ project: session.project, sessions: count() })
-    .from(session)
-    .groupBy(session.project);
+  const [rows, names] = await Promise.all([
+    db
+      .select({ project: session.project, sessions: count() })
+      .from(session)
+      .groupBy(session.project),
+    projectNames(db),
+  ]);
   const missing: MissingFactory[] = [];
   for (const { project, sessions } of rows) {
     if (project === UNASSIGNED_PROJECT || (await hasFactory(project))) continue;
     missing.push({
       project,
-      name: projectName(project),
+      name: names.label(project),
       factoryFile: factoryFile(project),
       sessions,
     });
   }
   missing.sort(
-    (a, b) => compare(a.name, b.name) || compare(a.project, b.project),
+    (a, b) =>
+      compare(a.name.toLowerCase(), b.name.toLowerCase()) ||
+      compare(a.project, b.project),
   );
   return { hasSessions: rows.length > 0, missing };
 }

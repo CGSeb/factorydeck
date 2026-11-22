@@ -1,3 +1,4 @@
+import type { ProjectOption } from '../projects/label.ts';
 import type { Period } from '../overview/types.ts';
 
 export const NO_SKILL_LABEL = 'No skill';
@@ -15,7 +16,7 @@ export interface SkillUsage {
 export interface SkillList {
   skills: SkillUsage[];
   launches: number;
-  projects: string[];
+  projects: ProjectOption[];
 }
 
 export interface SkillQuery {
@@ -34,6 +35,7 @@ export interface SkillSession {
   id: string;
   title: string;
   project: string;
+  projectName: string;
   launches: number;
   tokens: number;
   costUsd: number | null;
@@ -47,7 +49,7 @@ export interface SkillDetail {
   averageCostUsd: number | null;
   series: LaunchPoint[];
   sessions: SkillSession[];
-  projects: string[];
+  projects: ProjectOption[];
 }
 
 interface Refresh {

@@ -107,7 +107,9 @@ describe('factory projects only', () => {
     );
     expect(await storedSessions()).toEqual([['in-factory', factory]]);
     const all = { period: 'all', timeZone: 'UTC' } as const;
-    expect((await listSkills(db, all)).projects).toEqual([factory]);
+    expect((await listSkills(db, all)).projects).toEqual([
+      { project: factory, name: 'factory-app' },
+    ]);
     expect(
       (
         await listSessions(
@@ -116,7 +118,7 @@ describe('factory projects only', () => {
           { inactiveAfterMinutes: 30 },
         )
       ).projects,
-    ).toEqual([factory]);
+    ).toEqual([{ project: factory, name: 'factory-app' }]);
     expect(await db.select().from(subAgent)).toEqual([]);
     expect(await db.select().from(userPrompt)).toHaveLength(1);
     expect((await db.select().from(sourceFile)).map((row) => row.path)).toEqual(

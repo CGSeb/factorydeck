@@ -184,11 +184,11 @@ export const FactoryNotFound: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
-      await canvas.findByText(/Factory configuration not found for old-app/),
+      await canvas.findByText(/Factory configuration not found for Old App/),
     ).toBeVisible();
     await userEvent.click(canvas.getByRole('link', { name: 'Sessions' }));
     await expect(
-      canvas.getByText(/Factory configuration not found for old-app/),
+      canvas.getByText(/Factory configuration not found for Old App/),
     ).toBeVisible();
     await canvas.findByText('1 working · 1 waiting for you · 1 inactive');
   },

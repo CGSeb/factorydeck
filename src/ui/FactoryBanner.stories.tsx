@@ -28,13 +28,19 @@ export const OneProject: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole('listitem')).toHaveTextContent(
-      'Factory configuration not found for old-app: /home/dev/old-app/docs/agents/factory.yml. Its data is kept, but new sessions are no longer read.Delete project',
+      'Factory configuration not found for Old App: /home/dev/old-app/docs/agents/factory.yml. Its data is kept, but new sessions are no longer read.Delete project',
     );
+    await expect(
+      canvas.getByText(/Factory configuration not found for Old App/),
+    ).toHaveAttribute('title', '/home/dev/old-app');
     const open = canvas.getByRole('button', { name: 'Delete project' });
     await userEvent.click(open);
     await expect(
-      canvas.getByRole('dialog', { name: 'Delete old-app?' }),
+      canvas.getByRole('dialog', { name: 'Delete Old App?' }),
     ).toBeVisible();
+    await expect(
+      canvas.getByRole('heading', { name: 'Delete Old App?' }),
+    ).toHaveAttribute('title', '/home/dev/old-app');
     await userEvent.keyboard('{Escape}');
     await expect(canvas.queryByRole('dialog')).toBeNull();
     await expect(open).toHaveFocus();
@@ -56,7 +62,7 @@ export const TwoProjects: Story = {
     const lines = within(canvasElement).getAllByRole('listitem');
     await expect(lines.map((line) => line.textContent)).toEqual([
       'Factory configuration not found for archived-lib: /home/dev/archived-lib/docs/agents/factory.yml. Its data is kept, but new sessions are no longer read.Delete project',
-      'Factory configuration not found for old-app: /home/dev/old-app/docs/agents/factory.yml. Its data is kept, but new sessions are no longer read.Delete project',
+      'Factory configuration not found for Old App: /home/dev/old-app/docs/agents/factory.yml. Its data is kept, but new sessions are no longer read.Delete project',
     ]);
   },
 };
@@ -104,7 +110,7 @@ export const DeleteFailed: Story = {
       dialog.getByRole('button', { name: 'Delete project' }),
     );
     await expect(await dialog.findByRole('alert')).toHaveTextContent(
-      'Could not delete old-app. Try again.',
+      'Could not delete Old App. Try again.',
     );
     await expect(args.onDeleted).not.toHaveBeenCalled();
   },
@@ -122,7 +128,7 @@ export const DeleteRefused: Story = {
       dialog.getByRole('button', { name: 'Delete project' }),
     );
     await expect(await dialog.findByRole('alert')).toHaveTextContent(
-      'old-app has its factory configuration again, so it was not deleted.',
+      'Old App has its factory configuration again, so it was not deleted.',
     );
   },
 };
@@ -205,13 +211,13 @@ export const DeletionKeepsAnotherDialogOpen: Story = {
     await userEvent.keyboard('{Escape}');
     await userEvent.click(second);
     await expect(
-      canvas.getByRole('dialog', { name: 'Delete old-app?' }),
+      canvas.getByRole('dialog', { name: 'Delete Old App?' }),
     ).toBeVisible();
     await userEvent.click(
       canvas.getByRole('button', { name: 'Finish deletion' }),
     );
     await expect(
-      canvas.getByRole('dialog', { name: 'Delete old-app?' }),
+      canvas.getByRole('dialog', { name: 'Delete Old App?' }),
     ).toBeVisible();
   },
 };

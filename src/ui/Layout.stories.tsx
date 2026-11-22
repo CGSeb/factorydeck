@@ -289,7 +289,7 @@ export const DeletingOneOfTwoProjects: Story = {
     await waitFor(() =>
       expect(within(banner).getAllByRole('listitem')).toHaveLength(1),
     );
-    await expect(banner).toHaveTextContent('old-app');
+    await expect(banner).toHaveTextContent('Old App');
     await waitFor(() => expect(loads(canvasElement)).toBeGreaterThan(before));
     await expect(canvas.queryByRole('dialog')).toBeNull();
   },

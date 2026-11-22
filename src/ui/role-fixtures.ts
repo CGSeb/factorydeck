@@ -5,6 +5,7 @@ import type {
   RoleUsage,
 } from '../roles/types.ts';
 import type { LoadRoles } from './roles-api.ts';
+import { optionsOf } from './project-fixtures.ts';
 
 const PROJECTS = ['/home/dev/example-app', '/home/dev/example-lib'];
 
@@ -43,7 +44,7 @@ export function roleList(roles: RoleUsage[]): RoleList {
   return {
     roles,
     apiCalls: roles.reduce((sum, row) => sum + row.apiCalls, 0),
-    projects: PROJECTS,
+    projects: optionsOf(PROJECTS),
   };
 }
 

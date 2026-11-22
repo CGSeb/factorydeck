@@ -1,3 +1,4 @@
+import type { ProjectOption } from '../projects/label.ts';
 import type { Period } from '../overview/types.ts';
 
 export interface RoleUsage {
@@ -11,7 +12,7 @@ export interface RoleUsage {
 export interface RoleList {
   roles: RoleUsage[];
   apiCalls: number;
-  projects: string[];
+  projects: ProjectOption[];
 }
 
 export interface RoleQuery {

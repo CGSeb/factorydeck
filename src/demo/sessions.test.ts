@@ -14,6 +14,7 @@ import { sessionsFolder } from '../test/session-logs.ts';
 import {
   EXAMPLE_API,
   EXAMPLE_APP,
+  EXAMPLE_APP_NAME,
   demoProjectRoot,
   writeDemoConfig,
   writeDemoSessions,
@@ -48,6 +49,14 @@ describe('demo sessions', () => {
       demoProjectRoot(projects, EXAMPLE_API),
       demoProjectRoot(projects, EXAMPLE_APP),
     ]);
+    expect(
+      Object.fromEntries(
+        all.projects.map((row) => [row.project, row.projectName]),
+      ),
+    ).toEqual({
+      [demoProjectRoot(projects, EXAMPLE_API)]: EXAMPLE_API,
+      [demoProjectRoot(projects, EXAMPLE_APP)]: EXAMPLE_APP_NAME,
+    });
     expect(all.totals.unknownPriceCalls).toBe(4);
     expect(all.models.map((row) => row.model)).toEqual(
       expect.arrayContaining(['', 'example-model-x', 'claude-haiku-demo']),

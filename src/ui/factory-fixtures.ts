@@ -7,7 +7,7 @@ import type {
 
 export const oldApp: MissingFactory = {
   project: '/home/dev/old-app',
-  name: 'old-app',
+  name: 'Old App',
   factoryFile: '/home/dev/old-app/docs/agents/factory.yml',
   sessions: 12,
 };

@@ -28,7 +28,7 @@ const sessions: SessionSource = {
 const list: RoleList = {
   roles: [{ role: 'main', threads: 1, apiCalls: 3, tokens: 300, costUsd: 0.5 }],
   apiCalls: 3,
-  projects: ['/work/app'],
+  projects: [{ project: '/work/app', name: 'app' }],
 };
 
 const queries: RoleQuery[] = [];

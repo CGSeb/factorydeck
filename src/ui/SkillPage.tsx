@@ -2,6 +2,7 @@ import { type ReactElement, useId } from 'react';
 import { Link, useParams } from 'react-router';
 import type { Period } from '../overview/types.ts';
 import type { SkillDetail, SkillResponse } from '../skills/types.ts';
+import { ProjectName } from './ProjectName.tsx';
 import { formatClock, formatCost, formatCount } from './format.ts';
 import { LaunchChart } from './LaunchChart.tsx';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
@@ -72,7 +73,9 @@ function SkillSessions({ skill }: { skill: SkillDetail }): ReactElement {
                 <th scope="row">
                   <Link to={sessionPath(row.id)}>{sessionTitle(row)}</Link>
                 </th>
-                <td className="left">{row.project}</td>
+                <td className="left">
+                  <ProjectName project={row.project} name={row.projectName} />
+                </td>
                 <td>{formatCount(row.launches)}</td>
                 <td>
                   <TokenCount value={row.tokens} />

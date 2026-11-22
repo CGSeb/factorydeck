@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import { issueDetail, lookupOutcomes } from '../git-host/query.ts';
 import { byCostDescending, periodStart, select } from '../overview/query.ts';
+import { projectNames } from '../projects/names.ts';
 import type { WorkflowConfig } from '../roles/config.ts';
 import { type StateOptions, statedSessions } from '../sessions/query.ts';
 import { isSessionState } from '../sessions/types.ts';
@@ -117,12 +118,9 @@ export async function listFeatures(
   query: FeatureQuery,
   config: WorkflowConfig,
 ): Promise<FeatureList> {
-  const [rows, projectRows] = await Promise.all([
+  const [rows, names] = await Promise.all([
     usageRows(db, query),
-    select(
-      db,
-      sql`select project from session group by project order by project collate "C"`,
-    ),
+    projectNames(db),
   ]);
   const allocation = allocate(config, rows);
   const issues = [...allocation.issues.values()];
@@ -130,6 +128,7 @@ export async function listFeatures(
   const features: FeatureRow[] = issues
     .map((issue) => ({
       project: issue.project,
+      projectName: names.label(issue.project),
       number: issue.number,
       ...outcomeOf(issue),
       ...usageOf(issue),
@@ -145,7 +144,7 @@ export async function listFeatures(
       allocation.noWorkItem === null ? null : usageOf(allocation.noWorkItem),
     totals: allocation.totals,
     merged: mergedSummary(features, allocation),
-    projects: projectRows.map((row) => text(row['project'])),
+    projects: names.options(),
   };
 }
 
@@ -201,10 +200,11 @@ export async function featureDetail(
   { config, state }: DetailContext,
 ): Promise<FeatureDetail | undefined> {
   const scoped = { ...query, project: key.project };
-  const [rows, outcomeOf, detail] = await Promise.all([
+  const [rows, outcomeOf, detail, names] = await Promise.all([
     usageRows(db, scoped),
     lookupOutcomes(db, [key]),
     issueDetail(db, key.project, key.number),
+    projectNames(db),
   ]);
   const issueOf = (found: Row[]): IssueAccumulator | undefined =>
     allocate(config, found).issues.get(issueKey(key.project, key.number));
@@ -219,6 +219,7 @@ export async function featureDetail(
   }
   return {
     ...key,
+    projectName: names.label(key.project),
     issue: status,
     detail,
     roles: [...(issue?.roles.values() ?? [])]

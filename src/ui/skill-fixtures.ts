@@ -6,6 +6,7 @@ import type {
   SkillUsage,
 } from '../skills/types.ts';
 import type { LoadSkill, LoadSkills } from './skills-api.ts';
+import { nameOf, optionsOf } from './project-fixtures.ts';
 
 const PROJECTS = ['/home/dev/example-app', '/home/dev/example-lib'];
 
@@ -60,7 +61,7 @@ function listOf(skills: SkillUsage[]): SkillList {
   return {
     skills,
     launches: skills.reduce((sum, row) => sum + row.launches, 0),
-    projects: PROJECTS,
+    projects: optionsOf(PROJECTS),
   };
 }
 
@@ -97,6 +98,7 @@ export const writeSpecDetail: SkillDetail = {
       id: '7f3a9c21-0000-4000-8000-000000000001',
       title: 'Add the export button',
       project: '/home/dev/example-app',
+      projectName: nameOf('/home/dev/example-app'),
       launches: 2,
       tokens: 1_900_000,
       costUsd: 2.5,
@@ -105,12 +107,13 @@ export const writeSpecDetail: SkillDetail = {
       id: 'b81e44d0-0000-4000-8000-000000000002',
       title: '',
       project: '/home/dev/example-lib',
+      projectName: nameOf('/home/dev/example-lib'),
       launches: 2,
       tokens: 500_000,
       costUsd: 0.7,
     },
   ],
-  projects: PROJECTS,
+  projects: optionsOf(PROJECTS),
 };
 
 export const unlaunchedDetail: SkillDetail = {

@@ -3,6 +3,7 @@ import type { Database } from '../db/client.ts';
 import { byCostDescending, periodStart, select } from '../overview/query.ts';
 import type { TokenCounts } from '../overview/types.ts';
 import { costOf } from '../pricing.ts';
+import { projectNames } from '../projects/names.ts';
 import { MAIN_ROLE, type WorkflowConfig, roleOf, rulesFor } from './config.ts';
 import type { RoleList, RoleQuery, RoleUsage } from './types.ts';
 
@@ -84,7 +85,7 @@ export async function listRoles(
 ): Promise<RoleList> {
   const startAt = await periodStart(db, query);
   const project = query.project ?? null;
-  const [usageRows, projectRows] = await Promise.all([
+  const [usageRows, names] = await Promise.all([
     select(
       db,
       sql`select a.session_id, s.project, coalesce(a.sub_agent_id, '') as sub_agent,
@@ -101,15 +102,12 @@ export async function listRoles(
           and (${startAt}::timestamptz is null or a.at >= ${startAt}::timestamptz)
         group by a.session_id, s.project, a.sub_agent_id, sa.agent_type, sa.description, a.model`,
     ),
-    select(
-      db,
-      sql`select project from session group by project order by project collate "C"`,
-    ),
+    projectNames(db),
   ]);
   const roles = summarizeRoles(config, usageRows);
   return {
     roles,
     apiCalls: roles.reduce((sum, row) => sum + row.apiCalls, 0),
-    projects: projectRows.map((row) => text(row['project'])),
+    projects: names.options(),
   };
 }

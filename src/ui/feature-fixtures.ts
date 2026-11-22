@@ -9,6 +9,7 @@ import type {
 import type { IssueOutcome } from '../git-host/types.ts';
 import type { LoadFeature, LoadFeatures } from './features-api.ts';
 import { githubIssue } from './git-host-fixtures.ts';
+import { nameOf, optionsOf } from './project-fixtures.ts';
 
 export const APP = '/home/dev/example-app';
 export const LIB = '/home/dev/example-lib';
@@ -34,6 +35,7 @@ function outcome(
 function found(project: string, number: number, title: string) {
   return {
     project,
+    projectName: nameOf(project),
     number,
     issue: {
       status: 'found' as const,
@@ -64,6 +66,7 @@ export const someFeatures: FeatureRow[] = [
   },
   {
     project: LIB,
+    projectName: nameOf(LIB),
     number: 28,
     issue: { status: 'not-collected' },
     outcome: null,
@@ -84,6 +87,7 @@ export const someFeatures: FeatureRow[] = [
   },
   {
     project: APP,
+    projectName: nameOf(APP),
     number: 99,
     issue: { status: 'not-found' },
     outcome: null,
@@ -135,7 +139,7 @@ export function featureList(
             merged.length,
       unknownPriceCalls: 0,
     },
-    projects: [APP, LIB],
+    projects: optionsOf([APP, LIB]),
   };
 }
 
@@ -171,6 +175,7 @@ export function featuresLoaderOf(rows: FeatureRow[]): LoadFeatures {
 
 export const exportFeature: FeatureDetail = {
   project: APP,
+  projectName: nameOf(APP),
   number: 52,
   issue: {
     status: 'found',
@@ -223,6 +228,7 @@ export const exportFeature: FeatureDetail = {
 
 export const uncollectedFeature: FeatureDetail = {
   project: LIB,
+  projectName: nameOf(LIB),
   number: 28,
   issue: { status: 'not-collected' },
   detail: null,

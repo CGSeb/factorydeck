@@ -4,6 +4,7 @@ import { issueDetail, withIssues } from '../git-host/query.ts';
 import { periodStart, select } from '../overview/query.ts';
 import type { TokenCounts } from '../overview/types.ts';
 import { costOf } from '../pricing.ts';
+import { type ProjectNames, projectNames } from '../projects/names.ts';
 import {
   DEFAULT_CONFIG,
   type WorkflowConfig,
@@ -119,6 +120,7 @@ function summaryOf(
   row: Row,
   usage: Usage,
   config: WorkflowConfig,
+  names: ProjectNames,
 ): Omit<SessionSummary, 'tokens' | 'issue'> & { usage: Usage } {
   const project = text(row['project']);
   const title = text(row['title']);
@@ -127,6 +129,7 @@ function summaryOf(
     id: text(row['id']),
     title,
     project,
+    projectName: names.label(project),
     gitBranch,
     workItem: workItemOf(rulesFor(config, project), {
       branch: gitBranch,
@@ -157,6 +160,7 @@ async function pageSummaries(
   db: Database,
   rows: Row[],
   config: WorkflowConfig,
+  names: ProjectNames,
 ): Promise<SessionSummary[]> {
   const usages = usageBy(
     await usageOfSessions(
@@ -168,7 +172,12 @@ async function pageSummaries(
   const summaries = await withIssues(
     db,
     rows.map((row) =>
-      summaryOf(row, usages.get(text(row['id'])) ?? emptyUsage(0), config),
+      summaryOf(
+        row,
+        usages.get(text(row['id'])) ?? emptyUsage(0),
+        config,
+        names,
+      ),
     ),
     (row) => row.project,
   );
@@ -193,7 +202,7 @@ export async function listSessions(
     where (${project}::text is null or t.project = ${project}::text)
       and (${startAt}::timestamptz is null or t.last_at >= ${startAt}::timestamptz)`;
   const state = query.state ?? null;
-  const [countRows, totalRows, pageRows, projectRows] = await Promise.all([
+  const [countRows, totalRows, pageRows, names] = await Promise.all([
     select(
       db,
       sql`select f.state, count(*) as sessions from (${filtered}) f group by f.state`,
@@ -210,19 +219,16 @@ export async function listSessions(
         order by f.last_at desc nulls last, f.id
         limit ${query.limit}`,
     ),
-    select(
-      db,
-      sql`select project from session group by project order by project collate "C"`,
-    ),
+    projectNames(db),
   ]);
   const counts: StateCounts = { working: 0, waiting: 0, inactive: 0 };
   for (const row of countRows)
     counts[stateOf(row['state'])] = Number(row['sessions']);
   return {
-    sessions: await pageSummaries(db, pageRows, config),
+    sessions: await pageSummaries(db, pageRows, config, names),
     total: Number(totalRows[0]?.['sessions'] ?? 0),
     counts,
-    projects: projectRows.map((row) => text(row['project'])),
+    projects: names.options(),
   };
 }
 
@@ -264,7 +270,7 @@ export async function sessionDetail(
   options: StateOptions,
   config: WorkflowConfig = DEFAULT_CONFIG,
 ): Promise<SessionDetail | undefined> {
-  const [sessionRows, agentRows, usageRows, skills] = await Promise.all([
+  const [sessionRows, agentRows, usageRows, skills, names] = await Promise.all([
     select(
       db,
       sql`select * from ${statedSessions(options)} t where t.id = ${id}`,
@@ -282,6 +288,7 @@ export async function sessionDetail(
         group by a.sub_agent_id, a.model`,
     ),
     sessionSkills(db, id),
+    projectNames(db),
   ]);
   const [row] = sessionRows;
   if (row === undefined) return undefined;
@@ -290,7 +297,7 @@ export async function sessionDetail(
       usageRows.map((usage) => ({ ...usage, sub_agent: '' })),
       'sub_agent',
     ).get('') ?? emptyUsage(0);
-  const { usage, ...summary } = summaryOf(row, total, config);
+  const { usage, ...summary } = summaryOf(row, total, config, names);
   const agents = subAgentsOf(agentRows, usageRows, config, summary);
   const { project, workItem } = summary;
   const [[main], subAgents, detail] = await Promise.all([

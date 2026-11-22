@@ -12,6 +12,7 @@ import type {
   LoadSessions,
   SessionFilters,
 } from './sessions-api.ts';
+import { nameOf, optionsOf } from './project-fixtures.ts';
 
 const MINUTE = 60_000;
 
@@ -23,6 +24,7 @@ export const workingSession: SessionSummary = {
   id: '7f3a9c21-0000-4000-8000-000000000001',
   title: 'Add the export button',
   project: '/home/dev/example-app',
+  projectName: nameOf('/home/dev/example-app'),
   gitBranch: 'feat/export',
   workItem: 52,
   issue: {
@@ -41,6 +43,7 @@ export const waitingSession: SessionSummary = {
   id: 'b81e44d0-0000-4000-8000-000000000002',
   title: '',
   project: '/home/dev/example-lib',
+  projectName: nameOf('/home/dev/example-lib'),
   gitBranch: '',
   workItem: null,
   issue: null,
@@ -55,6 +58,7 @@ export const inactiveSession: SessionSummary = {
   id: 'c0ffee00-0000-4000-8000-000000000003',
   title: 'Fix the flaky test',
   project: 'unassigned',
+  projectName: nameOf('unassigned'),
   gitBranch: 'main',
   workItem: null,
   issue: null,
@@ -103,7 +107,7 @@ export function sessionList(
     sessions: matching.slice(0, limit),
     total: matching.length,
     counts,
-    projects: PROJECTS,
+    projects: optionsOf(PROJECTS),
   };
 }
 
