@@ -11,7 +11,6 @@ import {
   type DemoRequest,
   serenityReport,
 } from './demo-items.ts';
-import { autoMergeOffDemo } from './autonomy.ts';
 import { FACTORY_WORKFLOW, type FakeGitHostData } from './fake-git-host.ts';
 
 const GITLAB_PROJECT = 'example-group/example-api';
@@ -78,8 +77,6 @@ const GITLAB_REQUESTS: DemoRequest[] = [
 ];
 
 export function demoGitLab(now: Date): FakeGitHostData {
-  const autoMergeOff = autoMergeOffDemo();
-  const requests = [...GITLAB_REQUESTS, ...autoMergeOff.requests];
   return {
     host: 'gitlab',
     repository: GITLAB_PROJECT,
@@ -104,11 +101,10 @@ export function demoGitLab(now: Date): FakeGitHostData {
         labels: ['priority::high', 'backend', 'triage'],
         daysAgo: 4,
       },
-      ...autoMergeOff.issues,
     ].map((issue) => gitlabIssueRow(now, issue)),
-    requests: requests.map((request) => gitlabRequestRow(now, request)),
+    requests: GITLAB_REQUESTS.map((request) => gitlabRequestRow(now, request)),
     notes: Object.fromEntries(
-      requests.map((request) => [
+      GITLAB_REQUESTS.map((request) => [
         String(request.number),
         [
           {
@@ -126,7 +122,7 @@ export function demoGitLab(now: Date): FakeGitHostData {
     ),
     reopened: [22],
     closes: Object.fromEntries(
-      requests.map((request) => [
+      GITLAB_REQUESTS.map((request) => [
         String(request.number),
         request.closes.map((iid) => ({ iid, project_id: 7 })),
       ]),

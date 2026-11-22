@@ -123,27 +123,3 @@ export function autonomyDemo(): Demo {
     requests: merged.flatMap((demo) => demo.requests),
   };
 }
-
-export function autoMergeOffDemo(): Demo {
-  const days = [40, 18, 4];
-  return {
-    issues: days.map((mergeDays, index) => ({
-      number: 31 + index,
-      title: `Add the demo endpoint ${String(index + 1)}`,
-      closed: true,
-      labels: ['backend'],
-      daysAgo: mergeDays + 2,
-      closedDaysAgo: mergeDays - 0.001,
-    })),
-    requests: days.map((mergeDays, index) => ({
-      number: 13 + index,
-      title: `Add the demo endpoint ${String(index + 1)}`,
-      state: 'merged',
-      closes: [31 + index],
-      checks: 'passing',
-      hoursAgo: mergeDays * 24 + 1,
-      report: serenityReport(92, 1),
-      reportLead: 0.25,
-    })),
-  };
-}
