@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, within } from 'storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 import { BLACK, WHITE } from '../colors.ts';
 import {
   ROLE_SEGMENTS,
@@ -137,5 +137,25 @@ export const AllZero: Story = {
     await expect(segments(canvasElement)).toHaveLength(0);
     await expect(spokenSegments(canvasElement)).toEqual([]);
     await expect(track(canvasElement).style.background).toBe('var(--fd-line)');
+  },
+};
+
+export const HoveredSegment: Story = {
+  name: 'Hovered segment',
+  args: { height: 'thin' },
+  play: async ({ canvasElement }) => {
+    const reviewer = bar(canvasElement).querySelector<HTMLElement>(
+      '[data-hit="reviewer"]',
+    );
+    if (reviewer === null) throw new Error('No hover zone');
+    await userEvent.hover(reviewer);
+    const tooltip = bar(canvasElement).querySelector('[data-tooltip]');
+    await expect(tooltip).toHaveTextContent(/^reviewer30%$/);
+    await expect(tooltip).toHaveStyle({ position: 'fixed' });
+    const [builder, hovered] = segments(canvasElement);
+    await expect(hovered).toHaveStyle({ opacity: '1' });
+    await expect(builder).toHaveStyle({ opacity: '0.45' });
+    await userEvent.unhover(reviewer);
+    await expect(bar(canvasElement).querySelector('[data-tooltip]')).toBeNull();
   },
 };

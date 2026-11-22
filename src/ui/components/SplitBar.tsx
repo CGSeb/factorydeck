@@ -1,13 +1,24 @@
-import type { CSSProperties, ReactElement } from 'react';
+import {
+  type CSSProperties,
+  type ReactElement,
+  useEffect,
+  useState,
+} from 'react';
 import { labelTextColor } from '../colors.ts';
 import {
   type ChartSegment,
   MIN_SEGMENT_PX,
   SEGMENT_GAP_PX,
   SHARE_MIN_WIDTH_PX,
+  type SplitPart,
   splitParts,
   visuallyHidden,
 } from './chart-math.ts';
+import {
+  chartTooltip,
+  chartTooltipLabel,
+  chartTooltipValue,
+} from './chart-tooltip.ts';
 
 export type SplitBarHeight = 'thin' | 'medium' | 'tall';
 
@@ -60,6 +71,113 @@ function segmentStyle(weight: number, color: string): CSSProperties {
   };
 }
 
+/** Extra px above and below the bar that still count as hovering it. */
+const HIT_SLOP_PX = 6;
+
+interface Hovered {
+  index: number;
+  x: number;
+  top: number;
+}
+
+const tipLine: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 'var(--fd-space-2)',
+};
+
+function SegmentTooltip({
+  part,
+  hovered,
+}: {
+  part: SplitPart<ChartSegment>;
+  hovered: Hovered;
+}): ReactElement {
+  return (
+    <span
+      data-tooltip=""
+      aria-hidden="true"
+      style={{
+        ...chartTooltip,
+        position: 'fixed',
+        left: hovered.x,
+        top: hovered.top,
+        transform: 'translate(-50%, calc(-100% - var(--fd-space-2)))',
+      }}
+    >
+      <span style={{ ...tipLine, ...chartTooltipLabel }}>
+        <span
+          style={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            background: part.color,
+          }}
+        />
+        {part.label}
+      </span>
+      <span style={chartTooltipValue}>{part.share}%</span>
+    </span>
+  );
+}
+
+function HitZones({
+  parts,
+  onHover,
+}: {
+  parts: readonly SplitPart<ChartSegment>[];
+  onHover: (hovered: Hovered | null) => void;
+}): ReactElement {
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        position: 'absolute',
+        inset: `-${String(HIT_SLOP_PX)}px 0`,
+        display: 'flex',
+        gap: `${String(SEGMENT_GAP_PX)}px`,
+      }}
+      onPointerLeave={() => {
+        onHover(null);
+      }}
+    >
+      {parts.map((part, index) => (
+        <div
+          key={`${String(index)} ${part.label}`}
+          data-hit={part.label}
+          style={{
+            flex: `${String(part.weight)} 1 0px`,
+            minWidth: `${String(MIN_SEGMENT_PX)}px`,
+          }}
+          onPointerEnter={(event) => {
+            const box = event.currentTarget.getBoundingClientRect();
+            onHover({
+              index,
+              x: box.left + box.width / 2,
+              top: box.top + HIT_SLOP_PX,
+            });
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function useHovered(): [Hovered | null, (next: Hovered | null) => void] {
+  const [hovered, setHovered] = useState<Hovered | null>(null);
+  useEffect(() => {
+    if (hovered === null) return undefined;
+    function clear(): void {
+      setHovered(null);
+    }
+    window.addEventListener('scroll', clear, true);
+    return () => {
+      window.removeEventListener('scroll', clear, true);
+    };
+  }, [hovered]);
+  return [hovered, setHovered];
+}
+
 export function SplitBar({
   label,
   segments,
@@ -67,6 +185,8 @@ export function SplitBar({
 }: SplitBarProps): ReactElement {
   const parts = splitParts(segments);
   const heightPx = HEIGHT_PX[height];
+  const [hovered, setHovered] = useHovered();
+  const hoveredPart = hovered === null ? undefined : parts[hovered.index];
   return (
     <div role="group" aria-label={label} style={{ position: 'relative' }}>
       {height === 'tall' ? (
@@ -79,7 +199,11 @@ export function SplitBar({
           <div
             key={`${String(index)} ${part.label}`}
             data-segment={part.label}
-            style={segmentStyle(part.weight, part.color)}
+            style={{
+              ...segmentStyle(part.weight, part.color),
+              opacity: hovered !== null && hovered.index !== index ? 0.45 : 1,
+              transition: 'opacity 120ms ease',
+            }}
           >
             {height === 'tall' ? (
               <span
@@ -92,6 +216,12 @@ export function SplitBar({
           </div>
         ))}
       </div>
+      {parts.length > 0 ? (
+        <HitZones parts={parts} onHover={setHovered} />
+      ) : null}
+      {hovered !== null && hoveredPart !== undefined ? (
+        <SegmentTooltip part={hoveredPart} hovered={hovered} />
+      ) : null}
       {parts.length > 0 ? (
         <ul style={visuallyHidden}>
           {parts.map((part, index) => (

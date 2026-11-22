@@ -6,6 +6,11 @@ import {
   edgeLabels,
   visuallyHidden,
 } from './chart-math.ts';
+import {
+  chartTooltip,
+  chartTooltipLabel,
+  chartTooltipValue,
+} from './chart-tooltip.ts';
 import type { TokenCounts } from './token-amount.ts';
 
 export interface DayBucket {
@@ -61,32 +66,9 @@ const TOOLTIP_ALIGN: Record<TooltipAlign, CSSProperties> = {
 };
 
 const tooltip: CSSProperties = {
+  ...chartTooltip,
   position: 'absolute',
   zIndex: 2,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '2px',
-  padding: 'var(--fd-space-2) var(--fd-space-3)',
-  fontFamily: 'var(--fd-font-body)',
-  fontSize: 'var(--fd-text-sm)',
-  lineHeight: 1.4,
-  whiteSpace: 'nowrap',
-  textAlign: 'left',
-  color: 'var(--fd-tooltip-ink)',
-  background: 'var(--fd-tooltip-bg)',
-  borderRadius: 'var(--fd-radius-card)',
-  boxShadow: 'var(--fd-shadow-tooltip)',
-  pointerEvents: 'none',
-};
-
-const tooltipLabel: CSSProperties = {
-  fontSize: 'var(--fd-text-xs)',
-  color: 'var(--fd-tooltip-muted)',
-};
-
-const tooltipValue: CSSProperties = {
-  fontWeight: 600,
-  fontVariantNumeric: 'tabular-nums',
 };
 
 type TooltipAlign = 'start' | 'center' | 'end';
@@ -170,8 +152,8 @@ function ColumnTooltip({
         bottom: `calc(${String(bottom)}px + var(--fd-space-2))`,
       }}
     >
-      <span style={tooltipLabel}>{formatBucket(bucket.label)}</span>
-      <span style={tooltipValue}>{bucketValue(bucket)}</span>
+      <span style={chartTooltipLabel}>{formatBucket(bucket.label)}</span>
+      <span style={chartTooltipValue}>{bucketValue(bucket)}</span>
     </span>
   );
 }
