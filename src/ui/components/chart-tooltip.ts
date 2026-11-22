@@ -18,6 +18,12 @@ export const chartTooltip: CSSProperties = {
   pointerEvents: 'none',
 };
 
+export const tooltipAlign: Record<'start' | 'center' | 'end', CSSProperties> = {
+  start: { left: 0 },
+  center: { left: '50%', transform: 'translateX(-50%)' },
+  end: { right: 0 },
+};
+
 export const chartTooltipLabel: CSSProperties = {
   fontSize: 'var(--fd-text-xs)',
   color: 'var(--fd-tooltip-muted)',
