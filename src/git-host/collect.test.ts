@@ -55,12 +55,18 @@ describe('collect', () => {
     const log = await calls(root);
     expect(log.every((call) => call.cwd === root)).toBe(true);
     expect(
-      log.every((call) => call.args.includes('example-org/example-app')),
+      log.every(
+        (call) =>
+          call.args.includes('example-org/example-app') ||
+          (call.args.includes('owner=example-org') &&
+            call.args.includes('name=example-app')),
+      ),
     ).toBe(true);
     expect(log.map((call) => call.args.join(' '))).toEqual([
       expect.stringContaining(
         'issue list --repo example-org/example-app --state all --limit 100 --search sort:updated-asc --json',
       ),
+      expect.stringMatching(/^api graphql -f query=.*REOPENED_EVENT/s),
       expect.stringContaining(
         'pr list --repo example-org/example-app --state all --limit 100 --search sort:updated-asc --json',
       ),
@@ -92,6 +98,7 @@ describe('collect', () => {
           checks: 'passing',
         }),
       ],
+      outcome: { stage: 'merged', report: null, reworked: true },
     });
     const [request] = await db
       .select()

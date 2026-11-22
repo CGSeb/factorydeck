@@ -6,6 +6,7 @@ import type {
   IssueLabel,
 } from '../git-host/types.ts';
 import { labelTextColor } from './colors.ts';
+import { OutcomeLine } from './OutcomeLine.tsx';
 
 const CHECKS: Record<ChecksSummary, string> = {
   passing: 'Passing',
@@ -89,6 +90,7 @@ export function IssuePanel({ issue }: { issue: IssueDetail }): ReactElement {
           })}
         </ul>
       )}
+      <OutcomeLine outcome={issue.outcome} />
     </section>
   );
 }

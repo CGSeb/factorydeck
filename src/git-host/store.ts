@@ -9,6 +9,7 @@ import {
 } from '../db/schema.ts';
 import { LOCK_KEY } from '../ingest/lock.ts';
 import type { Transaction } from '../ingest/store.ts';
+import type { ProjectOutcomeSettings } from './outcome-settings.ts';
 import type { Changes } from './parse.ts';
 import type { GitHostName } from './types.ts';
 
@@ -19,6 +20,7 @@ export interface ProjectState {
   gitHost: GitHostName | null;
   repository: string | null;
   syncedFrom: Date | null;
+  outcomeSettings: boolean;
 }
 
 function isGitHost(value: string | null): value is GitHostName {
@@ -38,6 +40,7 @@ export async function projectState(
     gitHost: isGitHost(row.gitHost) ? row.gitHost : null,
     repository: row.repository,
     syncedFrom: row.syncedFrom,
+    outcomeSettings: row.stageLabels !== null,
   };
 }
 
@@ -99,6 +102,7 @@ export interface Success {
   startedAt: Date;
   replace: boolean;
   changes: Changes;
+  settings: ProjectOutcomeSettings;
 }
 
 function dateOrNull(value: string | null): Date | null {
@@ -113,6 +117,7 @@ const EXCLUDED_ISSUE = {
   createdAt: sql`excluded.created_at`,
   closedAt: sql`excluded.closed_at`,
   updatedAt: sql`excluded.updated_at`,
+  reopened: sql`excluded.reopened`,
 };
 
 const EXCLUDED_REQUEST = {
@@ -127,6 +132,7 @@ const EXCLUDED_REQUEST = {
   updatedAt: sql`excluded.updated_at`,
   closes: sql`excluded.closes`,
   checks: sql`excluded.checks`,
+  report: sql`excluded.report`,
 };
 
 async function saveChanges(
@@ -174,7 +180,7 @@ async function saveChanges(
 export async function saveSuccess(
   db: Database,
   project: string,
-  { gitHost, repository, startedAt, replace, changes }: Success,
+  { gitHost, repository, startedAt, replace, changes, settings }: Success,
 ): Promise<void> {
   await db.transaction(async (tx) => {
     if (!(await lockedProject(tx, project))) return;
@@ -186,6 +192,8 @@ export async function saveSuccess(
       syncedFrom: startedAt,
       error: null,
       errorGitHost: null,
+      stageLabels: settings.labels,
+      autoMerge: settings.autoMerge,
     };
     await tx
       .insert(gitHostProject)

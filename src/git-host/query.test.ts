@@ -112,6 +112,7 @@ describe('work item lookup', () => {
         expect.objectContaining({ number: 13, draft: true, state: 'open' }),
         expect.objectContaining({ number: 11, state: 'merged' }),
       ],
+      outcome: { stage: 'merged', report: null, reworked: true },
     });
     expect(detail?.subAgents.map((agent) => agent.issue)).toEqual([
       { status: 'not-found' },

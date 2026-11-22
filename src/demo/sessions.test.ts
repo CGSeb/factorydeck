@@ -160,4 +160,44 @@ describe('demo sessions', () => {
       requests: [{ number: 3, state: 'merged', checks: 'passing' }],
     });
   });
+
+  it('cover each kind of outcome', async () => {
+    await collect(db, { hasFactory });
+    const options = { inactiveAfterMinutes: 30, now: NOW };
+    const outcomes = [];
+    for (const id of [1, 2, 3, 4, 5].map((n) => `demo-app-${String(n)}`)) {
+      outcomes.push(
+        (await sessionDetail(db, id, options))?.issueDetail?.outcome,
+      );
+    }
+    expect(outcomes).toEqual([
+      {
+        stage: 'merged',
+        report: { score: 86, threshold: 80, rounds: 1 },
+        reworked: false,
+      },
+      {
+        stage: 'in-review',
+        report: { score: 72, threshold: 80, rounds: 2 },
+        reworked: true,
+      },
+      { stage: 'ready', report: null, reworked: false },
+      { stage: 'blocked', report: null, reworked: false },
+      { stage: 'open', report: null, reworked: false },
+    ]);
+    const config = loadWorkflowConfig(join(await sessionsFolder(), 'none.yml'));
+    const branchRule = {
+      ...config,
+      rules: {
+        roles: [],
+        workItems: [{ from: 'branch' as const, pattern: /^[a-z]+\/(\d+)-/ }],
+      },
+    };
+    const api = await sessionDetail(db, 'demo-api-1', options, branchRule);
+    expect(api?.issueDetail?.outcome).toEqual({
+      stage: 'merged-by-person',
+      report: { score: 64, threshold: 80, rounds: 3 },
+      reworked: false,
+    });
+  });
 });
