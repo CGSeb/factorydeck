@@ -32,33 +32,21 @@ export interface AppProps {
   refreshCollection: RefreshCollection;
 }
 
-export function App({
-  loadOverview,
-  loadSessions,
-  loadSession,
-  loadSkills,
-  loadSkill,
-  loadRoles,
-  loadFeatures,
-  loadFeature,
-  loadFactory,
-  deleteProject,
-  loadCollection,
-  refreshCollection,
-}: AppProps): ReactElement {
+export function App(props: AppProps): ReactElement {
+  const {
+    loadOverview,
+    loadSessions,
+    loadSession,
+    loadSkills,
+    loadSkill,
+    loadRoles,
+    loadFeatures,
+    loadFeature,
+  } = props;
   return (
     <Routes>
-      <Route
-        element={
-          <Layout
-            loadFactory={loadFactory}
-            deleteProject={deleteProject}
-            loadCollection={loadCollection}
-            refreshCollection={refreshCollection}
-          />
-        }
-      >
-        <Route index element={<OverviewPage loadOverview={loadOverview} />} />
+      <Route element={<Layout {...props} />}>
+        <Route index element={<OverviewPage {...props} />} />
         <Route
           path="features"
           element={<FeaturesPage loadFeatures={loadFeatures} />}

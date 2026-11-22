@@ -1,107 +1,252 @@
-import { type ReactElement, useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router';
+import type { ReactElement } from 'react';
+import type { FeatureList } from '../features/types.ts';
+import type { UsageOverview } from '../overview/types.ts';
+import type { RoleList } from '../roles/types.ts';
+import { DayBars } from './components/DayBars.tsx';
+import { PageHeader } from './components/PageHeader.tsx';
+import { Panel } from './components/Panel.tsx';
+import { PeriodPills } from './components/PeriodPills.tsx';
+import { SplitBar } from './components/SplitBar.tsx';
+import { SplitLegend } from './components/SplitLegend.tsx';
+import { StageColumn } from './components/StageColumn.tsx';
+import { StatusLine } from './components/StatusLine.tsx';
+import { TokenAmount } from './components/TokenAmount.tsx';
+import type { LoadFeatures } from './features-api.ts';
+import { renderRouterLink } from './Layout.tsx';
 import {
-  DEFAULT_PERIOD,
-  type OverviewResponse,
-  type Period,
-  isPeriod,
-} from '../overview/types.ts';
-import { CostChart } from './CostChart.tsx';
-import { formatClock } from './format.ts';
-import { ModelTable } from './ModelTable.tsx';
+  boardColumns,
+  headlineCount,
+  headlineSummary,
+  listPath,
+  roleSegments,
+  tokenBuckets,
+} from './overview-board.ts';
 import { type LoadOverview, UNREACHABLE_MESSAGE } from './overview-api.ts';
-import { PeriodSelector } from './PeriodSelector.tsx';
-import { PROJECT_PARAM, projectOf } from './project-param.ts';
-import { ProjectTable } from './ProjectTable.tsx';
-import { UsageTiles } from './UsageTiles.tsx';
-import { WelcomePanel } from './WelcomePanel.tsx';
-
-const RETRY_SECONDS = 10;
+import type { LoadRoles } from './roles-api.ts';
+import {
+  type SkillFilters,
+  useRefreshing,
+  useSkillFilters,
+} from './skills-api.ts';
+import './overview-page.css';
 
 export interface OverviewPageProps {
   loadOverview: LoadOverview;
+  loadFeatures: LoadFeatures;
+  loadRoles: LoadRoles;
 }
 
-function OverviewContent({
-  response,
+type Block<T> = T | 'loading' | 'unreachable';
+
+function blockOf<T>(
+  response: { status: string } | undefined,
+  value: T | undefined,
+): Block<T> {
+  if (value !== undefined) return value;
+  return response === undefined ? 'loading' : 'unreachable';
+}
+
+function BlockStatus({
+  block,
 }: {
-  response: OverviewResponse | undefined;
+  block: 'loading' | 'unreachable';
 }): ReactElement {
-  if (response === undefined) return <p className="status">Loading…</p>;
-  if (response.status === 'unreachable') {
-    return <p className="status">{UNREACHABLE_MESSAGE}</p>;
-  }
-  const { overview } = response;
-  if (!overview.hasData) {
-    return <WelcomePanel />;
-  }
+  return (
+    <StatusLine>
+      {block === 'loading' ? 'Loading…' : UNREACHABLE_MESSAGE}
+    </StatusLine>
+  );
+}
+
+function Headline({
+  overview,
+  merged,
+}: {
+  overview: UsageOverview;
+  merged: number;
+}): ReactElement {
+  const { totals } = overview;
   return (
     <>
-      <UsageTiles totals={overview.totals} />
-      <CostChart bucket={overview.bucket} series={overview.series} />
-      <div className="tables">
-        <ProjectTable projects={overview.projects} />
-        <ModelTable models={overview.models} />
-      </div>
+      {headlineCount(merged)}
+      <TokenAmount
+        counts={totals.tokens}
+        costUsd={totals.costUsd}
+        unknownPriceCalls={totals.unknownPriceCalls}
+        placement="below"
+      />{' '}
+      tokens
     </>
+  );
+}
+
+function Header({
+  overview,
+  features,
+  filters,
+  setFilters,
+}: {
+  overview: Block<UsageOverview>;
+  features: Block<FeatureList>;
+  filters: SkillFilters;
+  setFilters: (next: SkillFilters) => void;
+}): ReactElement {
+  const pills = (
+    <PeriodPills
+      value={filters.period}
+      onChange={(period) => setFilters({ ...filters, period })}
+    />
+  );
+  if (typeof overview === 'string' || typeof features === 'string') {
+    const block =
+      overview === 'unreachable' || features === 'unreachable'
+        ? 'unreachable'
+        : 'loading';
+    return (
+      <PageHeader
+        variant="headline"
+        title="Overview"
+        summary={block === 'loading' ? 'Loading…' : UNREACHABLE_MESSAGE}
+        slot={pills}
+      />
+    );
+  }
+  return (
+    <PageHeader
+      variant="headline"
+      title={<Headline overview={overview} merged={features.merged.issues} />}
+      summary={headlineSummary(features.merged, overview.totals.sessions)}
+      slot={pills}
+    />
+  );
+}
+
+function Board({
+  features,
+  filters,
+}: {
+  features: Block<FeatureList>;
+  filters: SkillFilters;
+}): ReactElement {
+  return (
+    <section aria-label="Board" className="fd-overview-board">
+      {typeof features === 'string' ? (
+        <BlockStatus block={features} />
+      ) : (
+        boardColumns(features, filters).map((column) => (
+          <StageColumn
+            key={column.group}
+            {...column}
+            renderLink={renderRouterLink}
+          />
+        ))
+      )}
+    </section>
+  );
+}
+
+function TokensPanel({
+  overview,
+  roles,
+  filters,
+}: {
+  overview: Block<UsageOverview>;
+  roles: Block<RoleList>;
+  filters: SkillFilters;
+}): ReactElement {
+  return (
+    <Panel
+      heading="Where the tokens went"
+      link={{ label: 'Roles', href: listPath('/roles', filters) }}
+      renderLink={renderRouterLink}
+    >
+      {typeof overview === 'string' || typeof roles === 'string' ? (
+        <BlockStatus
+          block={
+            overview === 'unreachable' || roles === 'unreachable'
+              ? 'unreachable'
+              : 'loading'
+          }
+        />
+      ) : (
+        <TokensSplit overview={overview} roles={roles} />
+      )}
+    </Panel>
+  );
+}
+
+function TokensSplit({
+  overview,
+  roles,
+}: {
+  overview: UsageOverview;
+  roles: RoleList;
+}): ReactElement {
+  const segments = roleSegments(roles);
+  const chartTitle =
+    overview.bucket === 'hour' ? 'Tokens per hour' : 'Tokens per day';
+  return (
+    <div className="fd-overview-tokens">
+      <div className="fd-overview-roles">
+        <SplitBar label="Tokens by role" height="medium" segments={segments} />
+        <SplitLegend segments={segments} />
+      </div>
+      <div className="fd-overview-days">
+        <span className="fd-overview-days-title">{chartTitle}</span>
+        <DayBars
+          label={chartTitle}
+          buckets={tokenBuckets(overview.series)}
+          color="var(--fd-ink)"
+          height={56}
+        />
+      </div>
+    </div>
   );
 }
 
 export function OverviewPage({
   loadOverview,
+  loadFeatures,
+  loadRoles,
 }: OverviewPageProps): ReactElement {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const requested = searchParams.get('period');
-  const period: Period = isPeriod(requested) ? requested : DEFAULT_PERIOD;
-  const project = projectOf(searchParams);
-  const key = JSON.stringify({ period, project });
-  const [loaded, setLoaded] = useState<{
-    key: string;
-    response: OverviewResponse;
-  }>();
-  const response = loaded?.key === key ? loaded.response : undefined;
-
-  useEffect(() => {
-    let active = true;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    async function refresh(): Promise<void> {
-      const next = await loadOverview(period, project);
-      if (!active) return;
-      if (next !== undefined) setLoaded({ key, response: next });
-      timer = setTimeout(
-        () => void refresh(),
-        (next?.refreshSeconds ?? RETRY_SECONDS) * 1000,
-      );
-    }
-    void refresh();
-    return () => {
-      active = false;
-      clearTimeout(timer);
-    };
-  }, [loadOverview, period, project, key]);
-
-  const updatedAt =
-    response?.status === 'ok' && response.updatedAt !== null
-      ? formatClock(new Date(response.updatedAt))
-      : undefined;
+  const [filters, setFilters] = useSkillFilters();
+  const key = JSON.stringify(filters);
+  const overviewResponse = useRefreshing(key, () =>
+    loadOverview(filters.period, filters.project),
+  );
+  const featuresResponse = useRefreshing(key, () => loadFeatures(filters));
+  const rolesResponse = useRefreshing(key, () => loadRoles(filters));
+  const overview = blockOf(
+    overviewResponse,
+    overviewResponse?.status === 'ok' ? overviewResponse.overview : undefined,
+  );
+  const features = blockOf(
+    featuresResponse,
+    featuresResponse?.status === 'ok' ? featuresResponse.list : undefined,
+  );
+  const roles = blockOf(
+    rolesResponse,
+    rolesResponse?.status === 'ok' ? rolesResponse.list : undefined,
+  );
+  const noActivity =
+    typeof overview !== 'string' && overview.totals.apiCalls === 0;
 
   return (
-    <div className="overview">
-      <div className="overview-header">
-        <h1>Overview</h1>
-        {updatedAt !== undefined && (
-          <p className="updated">Updated {updatedAt}</p>
-        )}
-        <PeriodSelector
-          value={period}
-          onChange={(next) => {
-            const params = new URLSearchParams({ period: next });
-            if (project !== undefined) params.set(PROJECT_PARAM, project);
-            setSearchParams(params);
-          }}
-        />
-      </div>
-      <OverviewContent response={response} />
+    <div className="fd-overview">
+      <Header
+        overview={overview}
+        features={features}
+        filters={filters}
+        setFilters={setFilters}
+      />
+      {noActivity ? (
+        <StatusLine>No activity in this period.</StatusLine>
+      ) : (
+        <>
+          <Board features={features} filters={filters} />
+          <TokensPanel overview={overview} roles={roles} filters={filters} />
+        </>
+      )}
     </div>
   );
 }

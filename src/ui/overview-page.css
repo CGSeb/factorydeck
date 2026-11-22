@@ -1,0 +1,40 @@
+.fd-overview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fd-space-6);
+  min-width: 0;
+}
+
+.fd-overview-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.fd-overview-tokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fd-space-5) 20px;
+}
+
+.fd-overview-roles {
+  flex: 2 1 400px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fd-overview-days {
+  flex: 1 1 260px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fd-space-2);
+}
+
+.fd-overview-days-title {
+  font-size: 13px;
+  font-weight: 600;
+}
