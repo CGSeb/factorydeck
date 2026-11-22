@@ -13,11 +13,8 @@ import {
   factoryResponse,
   oldApp,
 } from './factory-fixtures.ts';
-import {
-  featureLoaderOf,
-  featuresLoaderOf,
-  someFeatures,
-} from './feature-fixtures.ts';
+import { featureLoaderOf } from './feature-detail-fixtures.ts';
+import { featuresLoaderOf, someFeatures } from './feature-fixtures.ts';
 import { fixedLoader, okResponse, weekOverview } from './fixtures.ts';
 import { optionsOf } from './project-fixtures.ts';
 import { rolesLoader, someRoles } from './role-fixtures.ts';
@@ -142,9 +139,9 @@ export const Features: Story = {
     await userEvent.click(
       await canvas.findByRole('link', { name: '#52 Export button' }),
     );
-    await canvas.findByRole('heading', { name: 'Issue #52' });
+    await canvas.findByRole('heading', { name: '#52 Export button' });
     await expect(
-      canvas.getByRole('link', { name: '#52 Export button' }),
+      canvas.getByRole('link', { name: 'Export button' }),
     ).toHaveAttribute(
       'href',
       'https://github.com/example-org/example-app/issues/52',

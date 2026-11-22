@@ -534,3 +534,9 @@
     padding: var(--fd-space-5);
   }
 }
+
+.fd-split > .fd-aside > .fd-aside:only-child {
+  padding: 0;
+  background: none;
+  border-radius: 0;
+}

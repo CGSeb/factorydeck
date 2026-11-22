@@ -1,26 +1,17 @@
 import type {
-  FeatureDetail,
   FeatureList,
   FeatureListResponse,
-  FeatureResponse,
   FeatureRoleShare,
   FeatureRow,
   FeatureUsage,
 } from '../features/types.ts';
 import type { IssueOutcome } from '../git-host/types.ts';
-import type { LoadFeature, LoadFeatures } from './features-api.ts';
-import { githubIssue } from './git-host-fixtures.ts';
+import type { LoadFeatures } from './features-api.ts';
 import { nameOf, optionsOf } from './project-fixtures.ts';
 import { splitTokens } from './token-fixtures.ts';
 
 export const APP = '/home/dev/example-app';
 export const LIB = '/home/dev/example-lib';
-
-const MINUTE = 60_000;
-
-function minutesAgo(minutes: number): string {
-  return new Date(Date.now() - minutes * MINUTE).toISOString();
-}
 
 function outcome(
   stage: IssueOutcome['stage'],
@@ -209,101 +200,6 @@ export function featuresLoaderOf(rows: FeatureRow[]): LoadFeatures {
           unassigned,
         ),
       ),
-    );
-  };
-}
-
-export const exportFeature: FeatureDetail = {
-  project: APP,
-  projectName: nameOf(APP),
-  number: 52,
-  issue: {
-    status: 'found',
-    title: githubIssue.title,
-    url: githubIssue.url,
-  },
-  detail: githubIssue,
-  roles: [
-    {
-      role: 'builder',
-      threads: 3,
-      apiCalls: 260,
-      tokens: 2_900_000,
-      tokenCounts: splitTokens(2_900_000),
-      costUsd: 5.6,
-    },
-    {
-      role: 'reviewer',
-      threads: 2,
-      apiCalls: 90,
-      tokens: 800_000,
-      tokenCounts: splitTokens(800_000),
-      costUsd: 1.7,
-    },
-  ],
-  orchestration: {
-    role: 'Orchestration',
-    threads: 2,
-    apiCalls: 60,
-    tokens: 500_000,
-    tokenCounts: splitTokens(500_000),
-    costUsd: 1.2,
-  },
-  sessions: [
-    {
-      id: '6f1c2d3e-0000-4000-8000-000000000001',
-      title: 'Build the export button',
-      state: 'working',
-      lastAt: minutesAgo(3),
-      tokens: 3_100_000,
-      tokenCounts: splitTokens(3_100_000),
-      costUsd: 6.4,
-    },
-    {
-      id: '6f1c2d3e-0000-4000-8000-000000000002',
-      title: '',
-      state: 'inactive',
-      lastAt: minutesAgo(60 * 26),
-      tokens: 1_100_000,
-      tokenCounts: splitTokens(1_100_000),
-      costUsd: 2.1,
-    },
-  ],
-  threads: [],
-};
-
-export const uncollectedFeature: FeatureDetail = {
-  project: LIB,
-  projectName: nameOf(LIB),
-  number: 28,
-  issue: { status: 'not-collected' },
-  detail: null,
-  roles: [],
-  orchestration: null,
-  sessions: [],
-  threads: [],
-};
-
-export function featureResponse(feature: FeatureDetail): FeatureResponse {
-  return {
-    status: 'ok',
-    updatedAt: '2026-01-07T09:41:05.000Z',
-    refreshSeconds: 3600,
-    feature,
-  };
-}
-
-export function featureLoaderOf(
-  features: FeatureDetail[] = [exportFeature, uncollectedFeature],
-): LoadFeature {
-  return ({ project, number }) => {
-    const feature = features.find(
-      (row) => row.project === project && row.number === number,
-    );
-    return Promise.resolve(
-      feature === undefined
-        ? { status: 'not-found', refreshSeconds: 3600 }
-        : featureResponse(feature),
     );
   };
 }

@@ -5,80 +5,156 @@ import {
   type FeatureResponse,
   issueNumber,
 } from '../features/types.ts';
+import type { IssueStage } from '../git-host/types.ts';
 import { DEFAULT_PERIOD, type Period, isPeriod } from '../overview/types.ts';
-import { ProjectName } from './ProjectName.tsx';
-import { FeatureSessionTable } from './FeatureSessionTable.tsx';
+import { issueTitleText } from './components/IssueCard.tsx';
+import { IssueSummary } from './components/IssueSummary.tsx';
+import { IssueTimeline } from './components/IssueTimeline.tsx';
+import { PageHeader } from './components/PageHeader.tsx';
+import { Panel } from './components/Panel.tsx';
+import { PeriodPills } from './components/PeriodPills.tsx';
+import { SplitPage } from './components/SplitPage.tsx';
+import { StageBadge } from './components/StageBadge.tsx';
+import { StatusLine } from './components/StatusLine.tsx';
 import { type LoadFeature, featuresPath } from './features-api.ts';
-import { formatClock } from './format.ts';
-import { IssuePanel } from './IssuePanel.tsx';
+import {
+  issueActivity,
+  issueColors,
+  issuePullRequest,
+  issueSteps,
+  issueTotal,
+  roleSegments,
+  summaryPullRequest,
+} from './issue-page.ts';
+import { renderRouterLink } from './Layout.tsx';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
-import { PeriodSelector } from './PeriodSelector.tsx';
 import { useProject, withProject } from './project-param.ts';
-import { RoleTable } from './RoleTable.tsx';
 import { useRefreshing } from './skills-api.ts';
+import './feature-page.css';
 
 export interface FeaturePageProps {
   loadFeature: LoadFeature;
 }
 
+const MERGED_STAGES: readonly IssueStage[] = ['merged', 'merged-by-person'];
+
 function NotFound(): ReactElement {
   const project = useProject();
   return (
-    <>
-      <p className="status">Issue not found.</p>
-      <Link className="back-link" to={withProject('/features', project)}>
-        Back to features
+    <div className="fd-issue-page">
+      <Link className="fd-back" to={withProject('/features', project)}>
+        ← Features
       </Link>
+      <StatusLine>Issue not found.</StatusLine>
+    </div>
+  );
+}
+
+function IssueTitle({ feature }: { feature: FeatureDetail }): ReactElement {
+  const title = issueTitleText(feature.issue);
+  return (
+    <>
+      <span className="fd-issue-number">#{feature.number}</span>
+      {title === null ? null : (
+        <>
+          {' '}
+          {feature.issue.status === 'found' ? (
+            <a
+              className="fd-issue-link"
+              href={feature.issue.url}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {title}
+              <span className="fd-issue-link-icon" aria-hidden="true">
+                ↗
+              </span>
+            </a>
+          ) : (
+            title
+          )}
+        </>
+      )}
     </>
   );
 }
 
-function headingOf({ number, issue }: FeatureDetail): string {
-  const label = `Issue #${String(number)}`;
-  return issue.status === 'not-found' ? `${label} (not found)` : label;
+function IssueAside({
+  feature,
+  colors,
+}: {
+  feature: FeatureDetail;
+  colors: Map<string, string>;
+}): ReactElement {
+  const { detail, orchestration } = feature;
+  const report = detail?.outcome.report ?? null;
+  const request = issuePullRequest(detail);
+  return (
+    <IssueSummary
+      total={issueTotal(feature)}
+      orchestration={
+        orchestration === null
+          ? null
+          : {
+              counts: orchestration.tokenCounts,
+              costUsd: orchestration.costUsd,
+            }
+      }
+      roles={roleSegments(feature, colors)}
+      serenity={
+        report === null
+          ? null
+          : { score: report.score, threshold: report.threshold }
+      }
+      rounds={report?.rounds ?? null}
+      pullRequest={summaryPullRequest(request)}
+      checks={request?.checks ?? null}
+      labels={detail === null ? null : detail.labels.map(({ name }) => name)}
+      reworked={detail?.outcome.reworked ?? null}
+    />
+  );
 }
 
 function FeatureContent({
   feature,
-  updatedAt,
   period,
   onPeriod,
 }: {
   feature: FeatureDetail;
-  updatedAt: string | null;
   period: Period;
   onPeriod: (period: Period) => void;
 }): ReactElement {
-  const roles =
-    feature.orchestration === null
-      ? feature.roles
-      : [...feature.roles, feature.orchestration];
+  const colors = issueColors(feature);
+  const steps = issueSteps(feature, colors);
+  const stage = feature.detail?.outcome.stage;
+  const merged = stage !== undefined && MERGED_STAGES.includes(stage);
   return (
-    <>
-      <Link
-        className="back-link"
-        to={featuresPath({ period, project: feature.project })}
-      >
-        Back to features
-      </Link>
-      <div className="overview-header">
-        <h1>{headingOf(feature)}</h1>
-        {updatedAt !== null && (
-          <p className="updated">Updated {formatClock(new Date(updatedAt))}</p>
-        )}
-        <PeriodSelector value={period} onChange={onPeriod} />
+    <SplitPage aside={<IssueAside feature={feature} colors={colors} />}>
+      <div className="fd-issue-page">
+        <PageHeader
+          back={{
+            label: `${feature.projectName} features`,
+            href: featuresPath({ period, project: feature.project }),
+          }}
+          title={<IssueTitle feature={feature} />}
+          summary={
+            <span className="fd-issue-meta">
+              {stage === undefined ? null : <StageBadge stage={stage} />}
+              <span>{issueActivity(feature)}</span>
+            </span>
+          }
+          slot={<PeriodPills value={period} onChange={onPeriod} />}
+          renderLink={renderRouterLink}
+        />
+        <Panel heading={merged ? 'How it got merged' : 'Where it stands'}>
+          {steps.length === 0 ? (
+            <StatusLine>No activity in this period.</StatusLine>
+          ) : (
+            <IssueTimeline steps={steps} renderLink={renderRouterLink} />
+          )}
+        </Panel>
       </div>
-      <p className="source">
-        <ProjectName project={feature.project} name={feature.projectName} />
-      </p>
-      {feature.detail !== null && <IssuePanel issue={feature.detail} />}
-      {roles.length === 0 ? (
-        <p className="status">No activity in this period.</p>
-      ) : (
-        <RoleTable roles={roles} />
-      )}
-      <FeatureSessionTable sessions={feature.sessions} now={new Date()} />
-    </>
+    </SplitPage>
   );
 }
 
@@ -91,15 +167,14 @@ function Loaded({
   period: Period;
   onPeriod: (period: Period) => void;
 }): ReactElement {
-  if (response === undefined) return <p className="status">Loading…</p>;
+  if (response === undefined) return <StatusLine>Loading…</StatusLine>;
   if (response.status === 'unreachable') {
-    return <p className="status">{UNREACHABLE_MESSAGE}</p>;
+    return <StatusLine>{UNREACHABLE_MESSAGE}</StatusLine>;
   }
   if (response.status === 'not-found') return <NotFound />;
   return (
     <FeatureContent
       feature={response.feature}
-      updatedAt={response.updatedAt}
       period={period}
       onPeriod={onPeriod}
     />
@@ -132,21 +207,17 @@ export function FeaturePage({ loadFeature }: FeaturePageProps): ReactElement {
   const project = searchParams.get('project') ?? '';
   const value = searchParams.get('period');
   const period = isPeriod(value) ? value : DEFAULT_PERIOD;
-  return (
-    <div className="sessions">
-      {number === undefined || project === '' ? (
-        <NotFound />
-      ) : (
-        <FeatureLoader
-          loadFeature={loadFeature}
-          project={project}
-          number={number}
-          period={period}
-          onPeriod={(next) =>
-            setSearchParams(new URLSearchParams({ project, period: next }))
-          }
-        />
-      )}
-    </div>
+  return number === undefined || project === '' ? (
+    <NotFound />
+  ) : (
+    <FeatureLoader
+      loadFeature={loadFeature}
+      project={project}
+      number={number}
+      period={period}
+      onPeriod={(next) =>
+        setSearchParams(new URLSearchParams({ project, period: next }))
+      }
+    />
   );
 }
