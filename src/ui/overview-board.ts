@@ -1,3 +1,4 @@
+import type { IssueStage } from '../git-host/types.ts';
 import type { FeatureList, FeatureRow } from '../features/types.ts';
 import type { SeriesPoint } from '../overview/types.ts';
 import type { RoleList } from '../roles/types.ts';
@@ -27,6 +28,11 @@ export function listPath(path: string, filters: SkillFilters): string {
   return `${path}?${params.toString()}`;
 }
 
+const PERSON_BADGES: Partial<Record<IssueStage, string>> = {
+  'merged-by-person': 'by a person',
+  'merged-after-person': 'after a person',
+};
+
 const BADGES: Record<
   StageGroup,
   (row: FeatureRow) => IssueCardBadge | IssueCardBadge[] | undefined
@@ -51,9 +57,9 @@ const BADGES: Record<
         report: { score: report.score, threshold: report.threshold },
       });
     }
-    if (row.outcome?.stage === 'merged-by-person') {
-      badges.push({ kind: 'text', text: 'by a person' });
-    }
+    const stage = row.outcome?.stage;
+    const person = stage === undefined ? undefined : PERSON_BADGES[stage];
+    if (person !== undefined) badges.push({ kind: 'text', text: person });
     return badges.length === 0 ? undefined : badges;
   },
 };

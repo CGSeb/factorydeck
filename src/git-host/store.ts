@@ -11,7 +11,7 @@ import { LOCK_KEY } from '../ingest/lock.ts';
 import type { Transaction } from '../ingest/store.ts';
 import type { ProjectOutcomeSettings } from './outcome-settings.ts';
 import type { Changes } from './parse.ts';
-import type { GitHostName } from './types.ts';
+import type { GitHostName, LabelChange, LabelEvent } from './types.ts';
 
 const CHUNK = 500;
 const RUN_ID = 'git-host';
@@ -21,6 +21,7 @@ export interface ProjectState {
   repository: string | null;
   syncedFrom: Date | null;
   outcomeSettings: boolean;
+  historyRead: boolean;
 }
 
 function isGitHost(value: string | null): value is GitHostName {
@@ -41,6 +42,7 @@ export async function projectState(
     repository: row.repository,
     syncedFrom: row.syncedFrom,
     outcomeSettings: row.stageLabels !== null,
+    historyRead: row.historyRead,
   };
 }
 
@@ -118,6 +120,7 @@ const EXCLUDED_ISSUE = {
   closedAt: sql`excluded.closed_at`,
   updatedAt: sql`excluded.updated_at`,
   reopened: sql`excluded.reopened`,
+  needsSpec: sql`excluded.needs_spec`,
 };
 
 const EXCLUDED_REQUEST = {
@@ -133,19 +136,36 @@ const EXCLUDED_REQUEST = {
   closes: sql`excluded.closes`,
   checks: sql`excluded.checks`,
   report: sql`excluded.report`,
+  reports: sql`excluded.reports`,
 };
+
+function sameLabel(a: string, b: string): boolean {
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
+export function labelChanges(
+  events: readonly LabelEvent[],
+  label: string,
+): LabelChange[] {
+  return events
+    .filter((event) => sameLabel(event.label, label))
+    .map(({ added, at }) => ({ added, at }))
+    .sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
+}
 
 async function saveChanges(
   tx: Transaction,
   project: string,
   changes: Changes,
+  needsSpecLabel: string,
 ): Promise<void> {
   await inChunks(changes.issues, (chunk) =>
     tx
       .insert(gitHostIssue)
       .values(
-        chunk.map((issue) => ({
+        chunk.map(({ labelEvents, ...issue }) => ({
           ...issue,
+          needsSpec: labelChanges(labelEvents, needsSpecLabel),
           project,
           createdAt: new Date(issue.createdAt),
           closedAt: dateOrNull(issue.closedAt),
@@ -185,7 +205,7 @@ export async function saveSuccess(
   await db.transaction(async (tx) => {
     if (!(await lockedProject(tx, project))) return;
     if (replace) await forgetGitHostData(tx, [project]);
-    await saveChanges(tx, project, changes);
+    await saveChanges(tx, project, changes, settings.labels.needs_spec);
     const state = {
       gitHost,
       repository,
@@ -194,6 +214,7 @@ export async function saveSuccess(
       errorGitHost: null,
       stageLabels: settings.labels,
       autoMerge: settings.autoMerge,
+      historyRead: true,
     };
     await tx
       .insert(gitHostProject)

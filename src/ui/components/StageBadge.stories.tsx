@@ -30,6 +30,7 @@ function stageStory(stage: IssueStage): Story {
 
 export const Merged = stageStory('merged');
 export const MergedByAPerson = stageStory('merged-by-person');
+export const MergedAfterAPerson = stageStory('merged-after-person');
 export const ClosedWithoutMerge = stageStory('closed');
 export const Blocked = stageStory('blocked');
 export const NeedsSpec = stageStory('needs-spec');

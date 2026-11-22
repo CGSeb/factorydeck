@@ -52,15 +52,17 @@ export function parseReport(
   };
 }
 
+export function reportHistory(
+  comments: readonly ReportComment[],
+): SerenityReport[] {
+  const reports = comments.flatMap(({ body, createdAt }) =>
+    createdAt === null ? [] : (parseReport(body, createdAt) ?? []),
+  );
+  return reports.sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
+}
+
 export function latestReport(
   comments: readonly ReportComment[],
 ): SerenityReport | null {
-  let latest: SerenityReport | null = null;
-  for (const { body, createdAt } of comments) {
-    if (createdAt === null) continue;
-    const report = parseReport(body, createdAt);
-    if (report === undefined) continue;
-    if (latest === null || report.at >= latest.at) latest = report;
-  }
-  return latest;
+  return reportHistory(comments).at(-1) ?? null;
 }

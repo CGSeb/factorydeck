@@ -14,7 +14,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { UNASSIGNED_PROJECT } from '../projects/label.ts';
 import type { StageLabels } from '../git-host/outcome.ts';
-import type { SerenityReport } from '../git-host/types.ts';
+import type { LabelChange, SerenityReport } from '../git-host/types.ts';
 
 /** A session log already read, so the next ingestion resumes where it stopped. */
 export const sourceFile = pgTable('source_file', {
@@ -198,6 +198,7 @@ export const gitHostIssue = pgTable(
     closedAt: timestamp('closed_at', { withTimezone: true }),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
     reopened: boolean().notNull().default(false),
+    needsSpec: jsonb('needs_spec').$type<LabelChange[]>().notNull().default([]),
   },
   (table) => [primaryKey({ columns: [table.project, table.number] })],
 );
@@ -219,6 +220,7 @@ export const gitHostRequest = pgTable(
     closes: jsonb().$type<number[]>().notNull(),
     checks: text().notNull(),
     report: jsonb().$type<SerenityReport>(),
+    reports: jsonb().$type<SerenityReport[]>().notNull().default([]),
   },
   (table) => [primaryKey({ columns: [table.project, table.number] })],
 );
@@ -232,6 +234,7 @@ export const gitHostProject = pgTable('git_host_project', {
   errorGitHost: text('error_git_host'),
   stageLabels: jsonb('stage_labels').$type<StageLabels>(),
   autoMerge: boolean('auto_merge'),
+  historyRead: boolean('history_read').notNull().default(false),
 });
 
 export const gitHostRun = pgTable('git_host_run', {

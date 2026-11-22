@@ -103,6 +103,20 @@ describe('groupOf', () => {
     ]);
   });
 
+  it('puts the three merged stages in merged', () => {
+    const row = at(63);
+    const stages = [
+      'merged',
+      'merged-by-person',
+      'merged-after-person',
+    ] as const;
+    expect(
+      stages.map((stage) =>
+        groupOf({ ...row, outcome: { stage, report: null, reworked: false } }),
+      ),
+    ).toEqual(['merged', 'merged', 'merged']);
+  });
+
   it('puts the open stage in ready', () => {
     const row = at(63);
     expect(

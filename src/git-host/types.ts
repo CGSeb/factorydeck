@@ -26,6 +26,15 @@ export interface SerenityReport {
   at: string;
 }
 
+export interface LabelChange {
+  added: boolean;
+  at: string;
+}
+
+export interface LabelEvent extends LabelChange {
+  label: string;
+}
+
 export interface IssueRecord {
   number: number;
   title: string;
@@ -36,6 +45,7 @@ export interface IssueRecord {
   closedAt: string | null;
   updatedAt: string;
   reopened: boolean;
+  labelEvents: LabelEvent[];
 }
 
 export interface RequestRecord {
@@ -52,6 +62,7 @@ export interface RequestRecord {
   closes: number[];
   checks: ChecksSummary;
   report: SerenityReport | null;
+  reports: SerenityReport[];
 }
 
 export type WorkItemIssue =
@@ -72,6 +83,7 @@ export interface ClosingRequest {
 export const ISSUE_STAGES = [
   'merged',
   'merged-by-person',
+  'merged-after-person',
   'closed',
   'blocked',
   'needs-spec',

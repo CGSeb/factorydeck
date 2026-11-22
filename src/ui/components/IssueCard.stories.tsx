@@ -120,6 +120,24 @@ export const TwoBadges: Story = {
   },
 };
 
+export const AfterAPerson: Story = {
+  name: 'After a person',
+  args: {
+    badge: [
+      { kind: 'serenity', report: { score: 88, threshold: 80 } },
+      { kind: 'text', text: 'after a person' },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('serenity 88')).toBeVisible();
+    await expect(canvas.getByText('after a person')).toHaveAttribute(
+      'data-tone',
+      'neutral',
+    );
+  },
+};
+
 export const TitleNotFound: Story = {
   name: 'Title not found',
   args: {

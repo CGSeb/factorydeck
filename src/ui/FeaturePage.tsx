@@ -36,7 +36,11 @@ export interface FeaturePageProps {
   loadFeature: LoadFeature;
 }
 
-const MERGED_STAGES: readonly IssueStage[] = ['merged', 'merged-by-person'];
+const MERGED_STAGES: readonly IssueStage[] = [
+  'merged',
+  'merged-by-person',
+  'merged-after-person',
+];
 
 function NotFound(): ReactElement {
   const project = useProject();

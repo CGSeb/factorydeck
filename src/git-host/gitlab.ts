@@ -1,6 +1,6 @@
 import { gitlabChecks } from './checks.ts';
 import type { RunCli } from './command.ts';
-import { latestReport } from './report.ts';
+import { reportHistory } from './report.ts';
 import {
   type GitHostReader,
   type Json,
@@ -19,6 +19,7 @@ import {
 import type {
   IssueLabel,
   IssueRecord,
+  LabelEvent,
   RequestRecord,
   RequestState,
 } from './types.ts';
@@ -35,11 +36,16 @@ function labelsOf(value: unknown, colors: Colors): IssueLabel[] {
   });
 }
 
+export interface IssueEvents {
+  reopened: boolean;
+  labelEvents: LabelEvent[];
+}
+
 export function gitlabIssue(
   row: Json,
   colors: Colors,
   now: string,
-  reopened: ReadonlySet<number> = new Set(),
+  events: ReadonlyMap<number, IssueEvents> = new Map(),
 ): IssueRecord | undefined {
   const number = positive(row['iid']);
   if (number === undefined) return undefined;
@@ -53,8 +59,20 @@ export function gitlabIssue(
     createdAt,
     closedAt: time(row['closed_at']),
     updatedAt: requiredTime(row['updated_at'], createdAt),
-    reopened: reopened.has(number),
+    reopened: events.get(number)?.reopened ?? false,
+    labelEvents: events.get(number)?.labelEvents ?? [],
   };
+}
+
+export function gitlabLabelEvents(rows: readonly Json[]): LabelEvent[] {
+  return rows.flatMap((row) => {
+    const action = text(row['action']);
+    const label = text(field(row['label'], 'name'));
+    const at = time(row['created_at']);
+    if (label === '' || at === null) return [];
+    if (action !== 'add' && action !== 'remove') return [];
+    return [{ label, added: action === 'add', at }];
+  });
 }
 
 function requestState(value: unknown): RequestState {
@@ -98,15 +116,20 @@ export function gitlabRequest(
     updatedAt: requiredTime(row['updated_at'], createdAt),
     closes: closesOf(closes, row['target_project_id'] ?? row['project_id']),
     checks: gitlabChecks(field(row['head_pipeline'], 'status')),
-    report: latestReport(
-      list(notes)
-        .filter((note) => note['system'] !== true)
-        .map((note) => ({
-          body: text(note['body']),
-          createdAt: time(note['created_at']),
-        })),
-    ),
+    ...reportsOf(notes),
   };
+}
+
+function reportsOf(notes: unknown): Pick<RequestRecord, 'report' | 'reports'> {
+  const reports = reportHistory(
+    list(notes)
+      .filter((note) => note['system'] !== true)
+      .map((note) => ({
+        body: text(note['body']),
+        createdAt: time(note['created_at']),
+      })),
+  );
+  return { report: reports.at(-1) ?? null, reports };
 }
 
 function updatedQuery(since: Date | null): URLSearchParams {
@@ -171,22 +194,28 @@ async function requestsOf(
   return found;
 }
 
-async function reopenedIssues(
+async function issueEvents(
   api: Api,
   numbers: number[],
-): Promise<Set<number>> {
-  const reopened = new Set<number>();
+): Promise<Map<number, IssueEvents>> {
+  const found = new Map<number, IssueEvents>();
   for (const iid of numbers) {
-    const events = await pages(
+    const states = await pages(
       api,
       `issues/${String(iid)}/resource_state_events`,
       new URLSearchParams(),
     );
-    if (events.some((event) => text(event['state']) === 'reopened')) {
-      reopened.add(iid);
-    }
+    const labels = await pages(
+      api,
+      `issues/${String(iid)}/resource_label_events`,
+      new URLSearchParams(),
+    );
+    found.set(iid, {
+      reopened: states.some((event) => text(event['state']) === 'reopened'),
+      labelEvents: gitlabLabelEvents(labels),
+    });
   }
-  return reopened;
+  return found;
 }
 
 export function gitlabReader(
@@ -203,7 +232,7 @@ export function gitlabReader(
     changes: async (since) => {
       const issueRows = await pages(api, 'issues', updatedQuery(since));
       const colors = issueRows.length > 0 ? await labelColors(api) : new Map();
-      const reopened = await reopenedIssues(
+      const events = await issueEvents(
         api,
         issueRows.flatMap((row) => positive(row['iid']) ?? []),
       );
@@ -215,7 +244,7 @@ export function gitlabReader(
       return {
         issues: byNumber(
           issueRows.flatMap(
-            (row) => gitlabIssue(row, colors, at, reopened) ?? [],
+            (row) => gitlabIssue(row, colors, at, events) ?? [],
           ),
         ),
         requests: byNumber(await requestsOf(api, numbers)),

@@ -96,6 +96,24 @@ export const MergedByPerson: Story = {
   },
 };
 
+export const MergedAfterPerson: Story = {
+  name: 'Merged after a person',
+  parameters: {
+    entry: '/features/62?project=%2Fhome%2Fdev%2Fexample-app&period=all',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole('heading', { name: '#62 Saved filters' });
+    await expect(canvas.getByText('Merged after a person')).toHaveAttribute(
+      'data-tone',
+      'success',
+    );
+    await expect(
+      canvas.getByRole('heading', { name: 'How it got merged' }),
+    ).toBeVisible();
+  },
+};
+
 export const ChangePeriod: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

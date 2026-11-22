@@ -126,12 +126,14 @@ function outcomeOf(
       state: issueState(issue.state),
       labels: issue.labels.map((label) => label.name),
       reopened: issue.reopened,
+      needsSpec: issue.needsSpec,
     },
     requests.map((request) => ({
       state: requestState(request.state),
       mergedAt: request.mergedAt?.toISOString() ?? null,
       updatedAt: request.updatedAt.toISOString(),
       report: request.report,
+      reports: request.reports,
     })),
     { labels: state.stageLabels, autoMerge: state.autoMerge },
   );

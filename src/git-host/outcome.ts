@@ -2,6 +2,7 @@ import type {
   IssueOutcome,
   IssueStage,
   IssueState,
+  LabelChange,
   RequestState,
   SerenityReport,
 } from './types.ts';
@@ -36,12 +37,14 @@ export interface OutcomeRequest {
   mergedAt: string | null;
   updatedAt: string;
   report: SerenityReport | null;
+  reports: readonly SerenityReport[];
 }
 
 export interface OutcomeIssue {
   state: IssueState;
   labels: readonly string[];
   reopened: boolean;
+  needsSpec: readonly LabelChange[];
 }
 
 function latest(
@@ -66,6 +69,26 @@ export function mergeRefused(
   );
 }
 
+function scoreOrGatesRefused(report: SerenityReport): boolean {
+  return mergeRefused(report, null);
+}
+
+function personHelped(
+  issue: OutcomeIssue,
+  requests: readonly OutcomeRequest[],
+  mergedAt: string,
+): boolean {
+  const refused = requests.some((request) =>
+    request.reports.some(
+      (report) => report.at < mergedAt && scoreOrGatesRefused(report),
+    ),
+  );
+  return (
+    refused ||
+    issue.needsSpec.some((change) => change.added && change.at < mergedAt)
+  );
+}
+
 function labelStage(
   labels: readonly string[],
   stageLabels: StageLabels | null,
@@ -76,6 +99,20 @@ function labelStage(
     carried.has(stageLabels[name].trim().toLowerCase()),
   );
   return key === undefined ? undefined : LABEL_STAGES[key];
+}
+
+function mergedStage(
+  issue: OutcomeIssue,
+  requests: readonly OutcomeRequest[],
+  merged: OutcomeRequest,
+  autoMerge: boolean | null,
+): IssueStage {
+  if (merged.report !== null && mergeRefused(merged.report, autoMerge)) {
+    return 'merged-by-person';
+  }
+  return personHelped(issue, requests, merged.mergedAt ?? merged.updatedAt)
+    ? 'merged-after-person'
+    : 'merged';
 }
 
 export function issueOutcome(
@@ -96,10 +133,7 @@ export function issueOutcome(
   const report = counted?.report ?? null;
   let stage: IssueStage;
   if (merged !== undefined) {
-    stage =
-      report !== null && mergeRefused(report, settings.autoMerge)
-        ? 'merged-by-person'
-        : 'merged';
+    stage = mergedStage(issue, requests, merged, settings.autoMerge);
   } else if (issue.state === 'closed') {
     stage = 'closed';
   } else {

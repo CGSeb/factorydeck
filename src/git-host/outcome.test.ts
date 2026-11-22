@@ -16,8 +16,16 @@ describe('issueOutcome', () => {
   it('lets a merge with a passing report count as merged when build.auto_merge is not set', () => {
     expect(
       issueOutcome(
-        { state: 'closed', labels: [], reopened: false },
-        [{ state: 'merged', mergedAt: AT, updatedAt: AT, report: passing }],
+        { state: 'closed', labels: [], reopened: false, needsSpec: [] },
+        [
+          {
+            state: 'merged',
+            mergedAt: AT,
+            updatedAt: AT,
+            report: passing,
+            reports: [passing],
+          },
+        ],
         { labels: null, autoMerge: null },
       ).stage,
     ).toBe('merged');
@@ -25,15 +33,22 @@ describe('issueOutcome', () => {
 
   it('counts the latest merge when two merged requests close the issue', () => {
     const outcome = issueOutcome(
-      { state: 'closed', labels: [], reopened: false },
+      { state: 'closed', labels: [], reopened: false, needsSpec: [] },
       [
         {
           state: 'merged',
           mergedAt: '2026-03-03T10:00:00.000Z',
           updatedAt: AT,
           report: { ...passing, score: 40 },
+          reports: [{ ...passing, score: 40 }],
         },
-        { state: 'merged', mergedAt: AT, updatedAt: AT, report: passing },
+        {
+          state: 'merged',
+          mergedAt: AT,
+          updatedAt: AT,
+          report: passing,
+          reports: [passing],
+        },
       ],
       { labels: null, autoMerge: true },
     );
@@ -47,7 +62,12 @@ describe('issueOutcome', () => {
   it('is open when the labels were never read', () => {
     expect(
       issueOutcome(
-        { state: 'open', labels: ['agent:ready'], reopened: false },
+        {
+          state: 'open',
+          labels: ['agent:ready'],
+          reopened: false,
+          needsSpec: [],
+        },
         [],
         {
           labels: null,

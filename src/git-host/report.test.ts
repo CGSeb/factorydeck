@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { latestReport, parseReport } from './report.ts';
+import { latestReport, parseReport, reportHistory } from './report.ts';
 
 const AT = '2026-03-02T10:00:00.000Z';
 
@@ -135,5 +135,38 @@ describe('latestReport', () => {
   it('is null without a report', () => {
     expect(latestReport([])).toBeNull();
     expect(latestReport([{ body: 'Thanks!', createdAt: AT }])).toBeNull();
+  });
+});
+
+describe('reportHistory', () => {
+  it('keeps every report in time order and ignores other comments', () => {
+    const history = reportHistory([
+      {
+        body: '## Serenity: 85/100 (threshold 80)\nGates: all passed.',
+        createdAt: '2026-03-02T12:00:00.000Z',
+      },
+      { body: 'Looks good to me.', createdAt: '2026-03-02T10:00:00.000Z' },
+      {
+        body: '## Serenity: 60/100 (threshold 80)\nReview: 1 round.',
+        createdAt: '2026-03-02T09:00:00.000Z',
+      },
+      { body: '## Serenity: 90/100 (threshold 80)', createdAt: null },
+    ]);
+    expect(history).toEqual([
+      {
+        score: 60,
+        threshold: 80,
+        rounds: 1,
+        gatesPassed: false,
+        at: '2026-03-02T09:00:00.000Z',
+      },
+      {
+        score: 85,
+        threshold: 80,
+        rounds: null,
+        gatesPassed: true,
+        at: '2026-03-02T12:00:00.000Z',
+      },
+    ]);
   });
 });

@@ -1,6 +1,6 @@
 # 034 · Help from a person
 
-Status: ready
+Status: done
 Depends on: 024, 026, 027
 Checked: 2026-11-22
 
@@ -10,16 +10,16 @@ A developer reading FactoryDeck can tell an issue the agents merged on their own
 
 ## Acceptance criteria
 
-- [ ] The collection of spec 008 stores every serenity report (spec 009) of each pull or merge request, not only the latest: score, threshold, rounds (or none), whether every gate passed, and the comment's time, ordered by time. A comment that is not a report is still not stored.
-- [ ] The collection also stores, for each issue, the times at which the needs-spec label (`issues.labels.needs_spec` of `docs/agents/factory.yml`, compared as stage labels are in spec 009) was added to it and removed from it: from the issue's timeline events on GitHub, from its label events on GitLab, every one of them however many there are (read page by page). No other label event is stored.
-- [ ] A new stage `Merged after a person` sits between `Merged by a person` and `Closed without merge` in the order of stages. A merged issue whose stage would be `Merged` under spec 009 is `Merged after a person` when a person helped it (rules below); `Merged by a person` keeps its rule and wins over this one.
-- [ ] `StageBadge` (spec 016) shows `Merged after a person` with the success tone, like the two other merged stages.
-- [ ] On the overview (spec 024), the `Merged` column holds `Merged after a person` issues; their card shows the `SerenityBadge` (when there is a report) and an `after a person` badge, side by side, as `by a person` does.
-- [ ] `Merged issues` (spec 010) and the merged count of the overview header count `Merged after a person`; `Merged without a person` (spec 010) and `<m> of <n> merged without a person` (spec 024) count only `Merged`.
-- [ ] On `/features` (spec 025), `Merged after a person` issues are in the `Merged` group and in `?stage=merged`; on the issue page (spec 026), the heading is `How it got merged`, as for the other merged stages.
-- [ ] The session header outcome (spec 009, 027) and `IssueSummary` (spec 020) show the new stage with its `StageBadge`; their serenity score is still the one of the report that counts (spec 009).
-- [ ] A project collected before this spec is read again in full at its next collection, as spec 009 did when it added outcome settings, so its earlier pull requests and issues get their report and label history; its current data stays on screen until that collection ends.
-- [ ] The demo data (`pnpm demo`) has at least one issue `Merged after a person` through a refused report and one through a needs-spec episode.
+- [x] The collection of spec 008 stores every serenity report (spec 009) of each pull or merge request, not only the latest: score, threshold, rounds (or none), whether every gate passed, and the comment's time, ordered by time. A comment that is not a report is still not stored.
+- [x] The collection also stores, for each issue, the times at which the needs-spec label (`issues.labels.needs_spec` of `docs/agents/factory.yml`, compared as stage labels are in spec 009) was added to it and removed from it: from the issue's timeline events on GitHub, from its label events on GitLab, every one of them however many there are (read page by page). No other label event is stored.
+- [x] A new stage `Merged after a person` sits between `Merged by a person` and `Closed without merge` in the order of stages. A merged issue whose stage would be `Merged` under spec 009 is `Merged after a person` when a person helped it (rules below); `Merged by a person` keeps its rule and wins over this one.
+- [x] `StageBadge` (spec 016) shows `Merged after a person` with the success tone, like the two other merged stages.
+- [x] On the overview (spec 024), the `Merged` column holds `Merged after a person` issues; their card shows the `SerenityBadge` (when there is a report) and an `after a person` badge, side by side, as `by a person` does.
+- [x] `Merged issues` (spec 010) and the merged count of the overview header count `Merged after a person`; `Merged without a person` (spec 010) and `<m> of <n> merged without a person` (spec 024) count only `Merged`.
+- [x] On `/features` (spec 025), `Merged after a person` issues are in the `Merged` group and in `?stage=merged`; on the issue page (spec 026), the heading is `How it got merged`, as for the other merged stages.
+- [x] The session header outcome (spec 009, 027) and `IssueSummary` (spec 020) show the new stage with its `StageBadge`; their serenity score is still the one of the report that counts (spec 009).
+- [x] A project collected before this spec is read again in full at its next collection, as spec 009 did when it added outcome settings, so its earlier pull requests and issues get their report and label history; its current data stays on screen until that collection ends.
+- [x] The demo data (`pnpm demo`) has at least one issue `Merged after a person` through a refused report and one through a needs-spec episode.
 
 ## Rules
 

@@ -1,0 +1,115 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "61ae6fee-ae7c-4957-85fb-7fa508ff1547",
+  "prevIds": [
+    "c82e1846-4092-4f22-800b-eedfafed453a"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "git_host_issue",
+        "needs_spec"
+      ],
+      "writes": [
+        "s|col|public.git_host_issue.needs_spec",
+        "n|col|public.git_host_issue.needs_spec",
+        "e|col|public.git_host_issue.needs_spec"
+      ],
+      "reads": [
+        "n|tbl|public.git_host_issue",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "git_host_project",
+        "history_read"
+      ],
+      "writes": [
+        "s|col|public.git_host_project.history_read",
+        "n|col|public.git_host_project.history_read",
+        "e|col|public.git_host_project.history_read"
+      ],
+      "reads": [
+        "n|tbl|public.git_host_project",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "git_host_request",
+        "reports"
+      ],
+      "writes": [
+        "s|col|public.git_host_request.reports",
+        "n|col|public.git_host_request.reports",
+        "e|col|public.git_host_request.reports"
+      ],
+      "reads": [
+        "n|tbl|public.git_host_request",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "git_host_issue",
+        "name": "needs_spec",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'[]'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "git_host_project",
+        "name": "history_read",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "git_host_request",
+        "name": "reports",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'[]'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}
