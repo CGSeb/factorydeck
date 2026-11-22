@@ -46,6 +46,10 @@ export const PILL_HEIGHT_PX = 16;
 export const DOTS_AREA_PX = 52;
 export const LINE_Y_PX = 48;
 export const MARK_ROW_PX = 16;
+export const MARK_ROWS = 2;
+export const FOOTER_ROWS = 2;
+export const STRIP_HEIGHT_PX =
+  (MARK_ROWS + FOOTER_ROWS) * MARK_ROW_PX + DOTS_AREA_PX;
 export const FALLBACK_WIDTH_PX = 320;
 const CHAR_WIDTH_PX = 7;
 
@@ -254,3 +258,15 @@ export function foldedStackOf(
   const dot = focused === null ? undefined : dots[focused];
   return dot?.folded === true ? dot.stack : null;
 }
+
+export const footerRow: CSSProperties = {
+  ...small,
+  height: `${String(MARK_ROW_PX)}px`,
+};
+
+export const axisStyle: CSSProperties = {
+  ...footerRow,
+  display: 'flex',
+  justifyContent: 'space-between',
+  color: 'var(--fd-muted)',
+};

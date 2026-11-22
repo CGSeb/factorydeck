@@ -49,6 +49,16 @@ function tooltip(canvasElement: HTMLElement): string[] {
   return [...shown.children].map((line) => line.textContent);
 }
 
+async function expectFixedHeight(canvasElement: HTMLElement): Promise<void> {
+  const strip = canvasElement.querySelector<HTMLElement>('[data-strip]');
+  await expect(strip?.style.height).toBe('116px');
+  for (const row of canvasElement.querySelectorAll(
+    '[data-axis], [data-notice]',
+  )) {
+    await expect(row).toHaveStyle({ height: '16px' });
+  }
+}
+
 function markLabels(canvasElement: HTMLElement): string[] {
   return [...canvasElement.querySelectorAll('[data-mark-label]')].map(
     (mark) => mark.textContent,
@@ -58,6 +68,7 @@ function markLabels(canvasElement: HTMLElement): string[] {
 export const ThirtyIssues: Story = {
   name: '30 issues with one outlier',
   play: async ({ canvasElement }) => {
+    await expectFixedHeight(canvasElement);
     const links = within(canvasElement).getAllByRole('link');
     await expect(links).toHaveLength(30);
     await expect(links[29]).toHaveAccessibleName(
@@ -112,6 +123,7 @@ export const CloseMarks: Story = {
     ]),
   },
   play: async ({ canvasElement }) => {
+    await expectFixedHeight(canvasElement);
     const rows = [...canvasElement.querySelectorAll('[data-mark-label]')].map(
       (mark) => [mark.textContent, mark.getAttribute('data-row')],
     );
@@ -126,6 +138,7 @@ export const ThreeItems: Story = {
   name: '3 items',
   args: { items: issues([800_000, 1_500_000, 3_100_000]) },
   play: async ({ canvasElement }) => {
+    await expectFixedHeight(canvasElement);
     await expect(within(canvasElement).getAllByRole('link')).toHaveLength(3);
     await expect(markLabels(canvasElement)).toEqual([]);
     await expect(
@@ -138,6 +151,7 @@ export const NoItem: Story = {
   name: 'No item',
   args: { items: [] },
   play: async ({ canvasElement }) => {
+    await expectFixedHeight(canvasElement);
     await expect(canvasElement.querySelector('[data-empty]')?.textContent).toBe(
       'No data',
     );

@@ -7,11 +7,15 @@ import {
 import {
   DOTS_AREA_PX,
   FALLBACK_WIDTH_PX,
+  MARK_ROWS,
   MARK_ROW_PX,
+  STRIP_HEIGHT_PX,
   type Mark,
   PILL_HEIGHT_PX,
   centreAt,
+  axisStyle,
   dotStyle,
+  footerRow,
   foldedStackOf,
   emptyStyle,
   lineStyle,
@@ -20,7 +24,6 @@ import {
   markTickStyle,
   marksFor,
   pillStyle,
-  small,
   toggled,
   tooltipPosition,
   useWidth,
@@ -161,30 +164,25 @@ function Footer({
   items: number;
   largest: number;
   format: (value: number) => string;
-}): ReactElement | null {
-  if (items === 0) return null;
+}): ReactElement {
   return (
     <>
-      <div
-        data-axis=""
-        style={{
-          ...small,
-          display: 'flex',
-          justifyContent: 'space-between',
-          color: 'var(--fd-muted)',
-        }}
-      >
-        <span>0</span>
-        <span>{format(largest)}</span>
+      <div data-axis="" style={axisStyle}>
+        {items === 0 ? null : (
+          <>
+            <span>0</span>
+            <span>{format(largest)}</span>
+          </>
+        )}
       </div>
-      {isEnough(items) ? null : (
-        <p
-          data-notice=""
-          style={{ ...small, margin: 0, color: 'var(--fd-muted)' }}
-        >
-          Not enough data for median and p90
-        </p>
-      )}
+      <p
+        data-notice=""
+        style={{ ...footerRow, margin: 0, color: 'var(--fd-muted)' }}
+      >
+        {items === 0 || isEnough(items)
+          ? null
+          : 'Not enough data for median and p90'}
+      </p>
     </>
   );
 }
@@ -262,14 +260,18 @@ export function RangeStrip({
   const values = ordered.map((item) => item.value);
   const largest = values.reduce((max, value) => Math.max(max, value), 0);
   const marks = marksFor(values, largest, width, format);
-  const marksPx =
-    Math.max(1, ...marks.map((mark) => mark.row + 1)) * MARK_ROW_PX;
+  const marksPx = MARK_ROWS * MARK_ROW_PX;
   return (
     <div
       ref={ref}
       role="group"
       aria-label={label}
-      style={{ position: 'relative', minWidth: 0 }}
+      data-strip=""
+      style={{
+        position: 'relative',
+        minWidth: 0,
+        height: `${String(STRIP_HEIGHT_PX)}px`,
+      }}
     >
       <div
         style={{
