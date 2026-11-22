@@ -76,7 +76,7 @@ export const AllStates: Story = {
       canvas.getByRole('region', { name: 'Sessions' }),
     ).getAllByRole('row');
     await expect(rows[0]).toHaveTextContent(
-      'StateTitleProjectBranchWork itemLast activityDurationTokens',
+      'StateTitleProjectWork itemLast activityDurationTokens',
     );
     await expect(rows).toHaveLength(4);
     await expect(rows[1]).toHaveTextContent('WorkingAdd the export button');
