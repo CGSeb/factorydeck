@@ -27,6 +27,7 @@
     "src/**/*.tsx",
     "scripts/**/*.ts",
     "drizzle.config.ts",
+    "vitest.config.ts",
     ".storybook/**/*.ts"
   ]
 }
