@@ -74,6 +74,7 @@ beforeAll(async () => {
     { id: 'only', project: APP, title: 'Another spec', lastAt: at(9) },
     { id: 'early', project: OTHER, title: 'Old spec', lastAt: at(3) },
     { id: 'tie', project: OTHER, title: 'Tied spec', lastAt: at(3) },
+    { id: 'named', project: OTHER, title: 'Fix #70', lastAt: at(3) },
   ]);
   await db.insert(subAgent).values([
     {
@@ -89,6 +90,13 @@ beforeAll(async () => {
       agentType: 'builder',
       description: 'Build #12',
       firstAt: at(1),
+    },
+    {
+      sessionId: 'named',
+      id: 'z',
+      agentType: 'Explore',
+      description: 'Explore the code',
+      firstAt: null,
     },
   ]);
   await db
@@ -107,6 +115,8 @@ beforeAll(async () => {
       call('only', 8),
       call('early', 3),
       call('tie', 3),
+      call('named', 3),
+      call('named', 1, 'z'),
     ]);
   await db.insert(closingLine).values([
     line('spec', 2, 'Work item: #10 (spec-writer)'),
@@ -121,6 +131,8 @@ beforeAll(async () => {
     },
     { ...line('tie', 2, 'Work item: #61'), position: 20 },
     { ...line('tie', 2, 'Work item: #60'), position: 10 },
+    line('named', 2, 'Work item: #71'),
+    line('named', 5, 'Work item: #72'),
   ]);
 });
 
@@ -231,7 +243,7 @@ describe('work item markers', () => {
       { ...week, project: OTHER },
       DEFAULT_CONFIG,
     );
-    expect(callsByIssue(list.rows)).toEqual({ 50: 1, 61: 1 });
+    expect(callsByIssue(list.rows)).toEqual({ 50: 1, 61: 1, 71: 1, 72: 1 });
     const roles = await listRoles(
       db,
       { period: '7d', timeZone: 'UTC', project: OTHER, now: NOW },
@@ -253,6 +265,28 @@ describe('work item markers', () => {
     expect(sessions.sessions.find((row) => row.id === 'tie')?.workItem).toBe(
       61,
     );
+  });
+
+  it('sends an unmatched sub-agent of a titled session to the marker in force, on both pages', async () => {
+    const list = await listFeatures(
+      db,
+      { ...allTime, project: OTHER },
+      DEFAULT_CONFIG,
+    );
+    expect(callsByIssue(list.rows)).toMatchObject({ 71: 1, 72: 1 });
+    expect(list.rows.map((row) => row.number)).not.toContain(70);
+    const issue = await featureDetail(
+      db,
+      { project: OTHER, number: 71 },
+      allTime,
+      { config: DEFAULT_CONFIG, state },
+    );
+    expect(issue?.threads.map((thread) => thread.threadId)).toEqual(['z']);
+    const detail = await sessionDetail(db, 'named', state, DEFAULT_CONFIG);
+    expect(detail?.workItem).toBe(72);
+    expect(
+      detail?.subAgents.map((agent) => [agent.id, agent.workItem]),
+    ).toEqual([['z', 71]]);
   });
 
   it('reads no marker when the configuration has no marker rule', async () => {

@@ -308,7 +308,7 @@ export function roleOf(
 export interface ThreadTexts {
   description?: string | undefined;
   branch: string;
-  title: string;
+  title?: string | undefined;
 }
 
 export function issueNumber(capture: string | undefined): number | null {

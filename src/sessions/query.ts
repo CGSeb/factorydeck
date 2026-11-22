@@ -207,6 +207,7 @@ function subAgentsOf(
 ): Omit<SubAgentSummary, 'issue'>[] {
   const byAgent = usageBy(usageRows, 'sub_agent');
   const rules = rulesFor(config, summary.project);
+  const sessionMarkers = markers.get(summary.id);
   return agentRows.map((agent) => {
     const agentUsage = byAgent.get(text(agent['id'])) ?? emptyUsage(0);
     const agentType = text(agent['agent_type']);
@@ -219,9 +220,10 @@ function subAgentsOf(
         workItemOf(rules, {
           description,
           branch: text(agent['git_branch']),
-          title: summary.title,
+          title: sessionMarkers === undefined ? summary.title : undefined,
         }) ??
-        markerAt(markers.get(summary.id), agent['first_at'])?.workItem ??
+        markerAt(sessionMarkers, agent['first_at'] ?? agent['first_call_at'])
+          ?.workItem ??
         summary.workItem,
       description,
       model: text(agent['model']),
@@ -248,8 +250,11 @@ export async function sessionDetail(
       ),
       select(
         db,
-        sql`select id, agent_type, description, model, git_branch, first_at, last_at
-        from sub_agent where session_id = ${id}
+        sql`select sa.id, sa.agent_type, sa.description, sa.model, sa.git_branch,
+          sa.first_at, sa.last_at,
+          (select min(a.at) from api_call a
+            where a.session_id = sa.session_id and a.sub_agent_id = sa.id) as first_call_at
+        from sub_agent sa where sa.session_id = ${id}
         order by first_at asc nulls last, id`,
       ),
       select(

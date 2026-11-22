@@ -9,11 +9,13 @@ import { costOf } from '../pricing.ts';
 import {
   MAIN_ROLE,
   type WorkflowConfig,
+  type WorkflowRules,
   roleOf,
   rulesFor,
   workItemOf,
 } from '../roles/config.ts';
 import {
+  type Marker,
   type SessionMarkers,
   markerAt,
   markerOfRow,
@@ -82,6 +84,26 @@ export interface Allocation {
   totals: FeatureTotals;
 }
 
+function subAgentWorkItem(
+  rules: WorkflowRules,
+  row: Row,
+  sessionMarkers: Marker[] | undefined,
+): number | null {
+  const own = workItemOf(rules, {
+    description: text(row['description']),
+    branch: text(row['agent_branch']),
+    title: sessionMarkers === undefined ? text(row['title']) : undefined,
+  });
+  if (own !== null) return own;
+  return sessionMarkers === undefined
+    ? workItemOf(rules, {
+        branch: text(row['session_branch']),
+        title: text(row['title']),
+      })
+    : (markerAt(sessionMarkers, row['agent_first_at'] ?? row['first_at'])
+        ?.workItem ?? null);
+}
+
 function groupOf(
   config: WorkflowConfig,
   markers: SessionMarkers,
@@ -91,18 +113,11 @@ function groupOf(
   const rules = rulesFor(config, project);
   const title = text(row['title']);
   const sessionId = text(row['session_id']);
-  const sessionMarkers = markers.get(sessionId);
-  const sessionWorkItem = workItemOf(rules, {
-    branch: text(row['session_branch']),
-    title,
-  });
   const subAgent = text(row['sub_agent']);
   const description = text(row['description']);
   const counts = countsOf(row);
   const main = subAgent === '';
-  const marker = main
-    ? markerOfRow(markers, row)
-    : markerAt(sessionMarkers, row['agent_first_at'] ?? row['first_at']);
+  const marker = main ? markerOfRow(markers, row) : undefined;
   return {
     sessionId,
     sessionTitle: title,
@@ -113,16 +128,9 @@ function groupOf(
       ? (marker?.role ?? MAIN_ROLE)
       : roleOf(rules, { agentType: text(row['agent_type']), description }),
     workItem: main
-      ? marker === undefined
-        ? sessionWorkItem
-        : marker.workItem
-      : (workItemOf(rules, {
-          description,
-          branch: text(row['agent_branch']),
-          title,
-        }) ??
-        marker?.workItem ??
-        sessionWorkItem),
+      ? (marker?.workItem ??
+        workItemOf(rules, { branch: text(row['session_branch']), title }))
+      : subAgentWorkItem(rules, row, markers.get(sessionId)),
     calls: Number(row['calls']),
     tokens: totalTokens(counts),
     counts,

@@ -139,6 +139,16 @@ describe('demo sessions', () => {
       config,
     );
     expect(spec?.workItem).toBe(31);
+    const specs = await sessionDetail(
+      db,
+      'demo-app-specs',
+      { inactiveAfterMinutes: 30, now: NOW },
+      config,
+    );
+    expect(specs?.workItem).toBe(34);
+    expect(
+      specs?.subAgents.map((agent) => [agent.role, agent.workItem]),
+    ).toEqual([['Explore', 33]]);
   });
 
   it('cover issues and requests of a GitHub and a GitLab project', async () => {

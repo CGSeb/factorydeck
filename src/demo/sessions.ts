@@ -8,12 +8,12 @@ import {
   launching,
   noModel,
   opus,
-  replying,
   sonnet,
   unknownPrice,
 } from './calls.ts';
 import { factoryFile } from '../ingest/factory.ts';
 import { installFakeGitHost } from './fake-git-host.ts';
+import { markerSessions } from './marker-sessions.ts';
 import { demoGitHub, demoGitLab } from './git-host.ts';
 
 const HOUR = 3_600_000;
@@ -102,22 +102,7 @@ export const DEMO_SESSIONS: readonly DemoSession[] = [
     prompt: 'Fix the layout',
     calls: [launching(sonnet, SPEC_SKILL), sonnet, haiku],
   },
-  {
-    id: 'demo-app-spec',
-    folder: '-demo-example-app',
-    project: EXAMPLE_APP,
-    gitBranch: 'main',
-    startsAgo: 2 * DAY + 3 * HOUR,
-    prompt: 'Write the export spec',
-    calls: [
-      launching(opus, SPEC_SKILL),
-      opus,
-      replying(
-        sonnet,
-        `Spec written and issue opened.\n\nWork item: #31 (spec-writer)`,
-      ),
-    ],
-  },
+  ...markerSessions(EXAMPLE_APP, DAY, SPEC_SKILL),
   ...[7, 2].map((days, index) => ({
     id: `demo-api-${String(index + 1)}`,
     folder: '-demo-example-api',
