@@ -147,6 +147,25 @@ export const userPrompt = pgTable(
   ],
 );
 
+export const closingLine = pgTable(
+  'closing_line',
+  {
+    id: bigserial({ mode: 'number' }).primaryKey(),
+    sourcePath: text('source_path').notNull(),
+    recordUuid: text('record_uuid').notNull(),
+    sessionId: text('session_id')
+      .notNull()
+      .references(() => session.id, { onDelete: 'cascade' }),
+    at: timestamp({ withTimezone: true }).notNull(),
+    position: bigint({ mode: 'number' }).notNull(),
+    line: text().notNull(),
+  },
+  (table) => [
+    unique().on(table.sourcePath, table.recordUuid),
+    index().on(table.sessionId),
+  ],
+);
+
 export const skippedFile = pgTable(
   'skipped_file',
   {

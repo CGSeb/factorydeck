@@ -37,12 +37,20 @@ roles:
 
 # Work items (issue numbers) of threads, tried in order: the first rule whose pattern matches and
 # captures a positive whole number gives the work item.
-#   from     the text to read: description (a sub-agent's description; skipped for a main
-#            thread), branch (the thread's own git branch) or title (the session's title).
-#   pattern  a pattern with exactly one capture group, the issue number.
+#   from     the text to read: marker (the last line of each of the agent's replies in the main
+#            thread), description (a sub-agent's description; skipped for a main thread), branch
+#            (the thread's own git branch) or title (the session's title).
+#   pattern  a pattern with exactly one capture group, the issue number. A marker pattern may also
+#            hold a named group `role`.
+# The marker rule reads the last line of the agent's replies: the write-spec skill of
+# factorydeck-skills ends its work with `Work item: #<n> (spec-writer)` there. When a session has
+# markers, its main-thread calls are split at them, whatever the rule's position: each call goes to
+# the issue of the next marker, and the text in parentheses becomes the role of those calls.
 # A sub-agent with no match takes the work item of its session's main thread.
-# Without this key, the defaults are the two rules below.
+# Without this key, the defaults are the three rules below.
 work_items:
+  - from: marker
+    pattern: '^Work item: #(\d+)(?: \((?<role>[a-z][a-z0-9-]*)\))?$'
   - from: description
     pattern: '#(\d+)'
   - from: title

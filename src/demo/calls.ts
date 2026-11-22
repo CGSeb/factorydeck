@@ -2,6 +2,11 @@ export interface Call {
   model: string | undefined;
   tokens: [number, number, number, number];
   skill?: string;
+  text?: string;
+}
+
+export function replying(call: Call, text: string): Call {
+  return { ...call, text };
 }
 
 export function launching(call: Call, skill: string): Call {
@@ -68,7 +73,7 @@ export function callLines(
         stop_reason: 'end_turn',
         content:
           call.skill === undefined
-            ? [{ type: 'text', text: 'Done.' }]
+            ? [{ type: 'text', text: call.text ?? 'Done.' }]
             : [
                 {
                   type: 'tool_use',

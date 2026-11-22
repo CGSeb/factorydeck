@@ -1,5 +1,6 @@
 import {
   type apiCall,
+  type closingLine,
   type skillLaunch,
   type userPrompt,
   UNASSIGNED_PROJECT,
@@ -7,6 +8,7 @@ import {
 import {
   type LogRecord,
   type TurnState,
+  closingLineOf,
   isSidechain,
   isSlashSkillInstructions,
   isTypedPrompt,
@@ -21,6 +23,7 @@ import {
 export type ApiCallRow = typeof apiCall.$inferInsert;
 export type SkillLaunchRow = typeof skillLaunch.$inferInsert;
 export type UserPromptRow = typeof userPrompt.$inferInsert;
+export type ClosingLineRow = typeof closingLine.$inferInsert;
 
 /** First and last record times of a session or a sub-agent. */
 export interface Span {
@@ -51,6 +54,7 @@ export interface ThreadRows {
   calls: ApiCallRow[];
   launches: SkillLaunchRow[];
   prompts: UserPromptRow[];
+  closingLines: ClosingLineRow[];
   /** Prompt ids of slash skill instructions whose prompt was read by an earlier run. */
   earlierSkillPrompts: string[];
   /** User and assistant records without a valid timestamp: skipped, and counted. */
@@ -64,6 +68,7 @@ interface Entry {
   record: LogRecord;
   at: Date | undefined;
   uuid: string;
+  position: number;
   base: { sourcePath: string; sessionId: string };
 }
 
@@ -88,6 +93,7 @@ export function readThread(
     calls: [],
     launches: [],
     prompts: [],
+    closingLines: [],
     earlierSkillPrompts: [],
     skipped: 0,
     cwd: null,
@@ -95,10 +101,12 @@ export function readThread(
   };
   const commands = new Map<string, SkillLaunchRow>();
   for (const { record, offset } of records) {
+    const position = source.startOffset + offset;
     const entry: Entry = {
       record,
       at: timestampOf(record),
-      uuid: stringOf(record, 'uuid') ?? `offset:${source.startOffset + offset}`,
+      uuid: stringOf(record, 'uuid') ?? `offset:${String(position)}`,
+      position,
       base: { sourcePath: source.sourcePath, sessionId: source.sessionId },
     };
     if (entry.at === undefined && TIMED_TYPES.has(record.type)) {
@@ -162,8 +170,12 @@ function readMainRecord(
   rows: ThreadRows,
   commands: Map<string, SkillLaunchRow>,
 ): void {
-  const { record, at, uuid, base } = entry;
+  const { record, at, uuid, position, base } = entry;
   readContext(main, record);
+  const line = closingLineOf(record);
+  if (at !== undefined && line !== undefined) {
+    rows.closingLines.push({ ...base, recordUuid: uuid, at, position, line });
+  }
   Object.assign(main, nextTurnState(main, record));
   const promptId = stringOf(record, 'promptId') ?? null;
   if (at !== undefined && isTypedPrompt(record)) {

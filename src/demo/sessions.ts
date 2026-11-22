@@ -13,6 +13,7 @@ import {
 } from './calls.ts';
 import { factoryFile } from '../ingest/factory.ts';
 import { installFakeGitHost } from './fake-git-host.ts';
+import { markerSessions } from './marker-sessions.ts';
 import { demoGitHub, demoGitLab } from './git-host.ts';
 
 const HOUR = 3_600_000;
@@ -101,6 +102,7 @@ export const DEMO_SESSIONS: readonly DemoSession[] = [
     prompt: 'Fix the layout',
     calls: [launching(sonnet, SPEC_SKILL), sonnet, haiku],
   },
+  ...markerSessions(EXAMPLE_APP, DAY, SPEC_SKILL),
   ...[7, 2].map((days, index) => ({
     id: `demo-api-${String(index + 1)}`,
     folder: '-demo-example-api',
