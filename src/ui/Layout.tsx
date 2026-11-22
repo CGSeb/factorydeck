@@ -149,7 +149,7 @@ function sectionLinks(
   }));
 }
 
-const renderRouterLink: RenderLink = ({ href, ...props }) => (
+export const renderRouterLink: RenderLink = ({ href, ...props }) => (
   <Link to={href} {...props} />
 );
 

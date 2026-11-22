@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { MemoryRouter } from 'react-router';
 import { expect, within } from 'storybook/test';
-import { exportFeature } from './feature-fixtures.ts';
+import { exportFeature } from './feature-detail-fixtures.ts';
 import { FeatureSessionTable } from './FeatureSessionTable.tsx';
 
 const meta = {
