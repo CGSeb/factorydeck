@@ -117,6 +117,7 @@ beforeAll(async () => {
       call('tie', 3),
       call('named', 3),
       call('named', 1, 'z'),
+      { ...call('named', 6, 'z'), model: 'claude-haiku-4-5' },
     ]);
   await db.insert(closingLine).values([
     line('spec', 2, 'Work item: #10 (spec-writer)'),
@@ -243,7 +244,7 @@ describe('work item markers', () => {
       { ...week, project: OTHER },
       DEFAULT_CONFIG,
     );
-    expect(callsByIssue(list.rows)).toEqual({ 50: 1, 61: 1, 71: 1, 72: 1 });
+    expect(callsByIssue(list.rows)).toEqual({ 50: 1, 61: 1, 71: 2, 72: 1 });
     const roles = await listRoles(
       db,
       { period: '7d', timeZone: 'UTC', project: OTHER, now: NOW },
@@ -273,7 +274,7 @@ describe('work item markers', () => {
       { ...allTime, project: OTHER },
       DEFAULT_CONFIG,
     );
-    expect(callsByIssue(list.rows)).toMatchObject({ 71: 1, 72: 1 });
+    expect(callsByIssue(list.rows)).toMatchObject({ 71: 2, 72: 1 });
     expect(list.rows.map((row) => row.number)).not.toContain(70);
     const issue = await featureDetail(
       db,

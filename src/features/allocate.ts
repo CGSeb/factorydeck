@@ -100,8 +100,7 @@ function subAgentWorkItem(
         branch: text(row['session_branch']),
         title: text(row['title']),
       })
-    : (markerAt(sessionMarkers, row['agent_first_at'] ?? row['first_at'])
-        ?.workItem ?? null);
+    : (markerAt(sessionMarkers, row['agent_first_at'])?.workItem ?? null);
 }
 
 function groupOf(
