@@ -14,7 +14,7 @@
     "fix": "pnpm format && oxlint --type-aware --fix .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "oxlint --type-aware --deny-warnings .",
+    "lint": "oxlint --type-aware --deny-warnings . && node scripts/check-design-colors.ts",
     "typecheck": "node scripts/check-tsconfig.ts && tsc --noEmit",
     "test": "vitest run",
     "storybook": "storybook dev --host 127.0.0.1 -p 6006",
@@ -31,6 +31,8 @@
     "node": ">=24"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "^5.3.0",
+    "@fontsource-variable/space-grotesk": "^5.3.0",
     "@hono/node-server": "^2.1.11",
     "drizzle-orm": "1.0.0-rc.5",
     "hono": "^4.13.19",
