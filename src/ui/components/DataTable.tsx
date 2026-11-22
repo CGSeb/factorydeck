@@ -1,4 +1,5 @@
 import type { ReactElement, ReactNode } from 'react';
+import { Icon } from './Icon.tsx';
 import { StageDot, type StageGroup } from './StageDot.tsx';
 import './layout.css';
 
@@ -29,6 +30,9 @@ export interface GroupHeaderRowProps {
   count: number;
   colSpan: number;
   marker: GroupMarker;
+  /** With `onToggle`, the header becomes a button that folds the group's rows. */
+  expanded?: boolean;
+  onToggle?: () => void;
 }
 
 function Marker({ marker }: { marker: GroupMarker }): ReactElement {
@@ -48,15 +52,32 @@ export function GroupHeaderRow({
   count,
   colSpan,
   marker,
+  expanded = true,
+  onToggle,
 }: GroupHeaderRowProps): ReactElement {
+  const label = (
+    <span className="fd-table-group-label">
+      <Marker marker={marker} />
+      {name}
+      <span className="fd-table-group-count">{count}</span>
+    </span>
+  );
   return (
     <tr className="fd-table-group">
       <th scope="colgroup" colSpan={colSpan}>
-        <span className="fd-table-group-label">
-          <Marker marker={marker} />
-          {name}
-          <span className="fd-table-group-count">{count}</span>
-        </span>
+        {onToggle === undefined ? (
+          label
+        ) : (
+          <button
+            type="button"
+            className="fd-table-group-toggle"
+            aria-expanded={expanded}
+            onClick={onToggle}
+          >
+            <Icon name="chevron" size={14} className="fd-table-group-chevron" />
+            {label}
+          </button>
+        )}
       </th>
     </tr>
   );

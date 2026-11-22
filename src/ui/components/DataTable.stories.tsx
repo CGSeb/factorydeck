@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, within } from 'storybook/test';
+import { type ReactElement, useState } from 'react';
+import { expect, userEvent, within } from 'storybook/test';
 import {
   DataTable,
   GroupHeaderRow,
@@ -174,4 +175,42 @@ export const ScrollingNarrow: Story = {
       </div>
     ),
   ],
+};
+
+function FoldableGroup(): ReactElement {
+  const [expanded, setExpanded] = useState(true);
+  return (
+    <DataTable label="Features">
+      <table>
+        <Head />
+        <tbody>
+          <GroupHeaderRow
+            name="Working"
+            count={ROWS.length}
+            colSpan={3}
+            marker={{ stage: 'working' }}
+            expanded={expanded}
+            onToggle={() => {
+              setExpanded(!expanded);
+            }}
+          />
+          {expanded &&
+            ROWS.map((row) => <BodyRow key={row.feature} row={row} />)}
+        </tbody>
+      </table>
+    </DataTable>
+  );
+}
+
+export const FoldableGroupHeader: Story = {
+  render: () => <FoldableGroup />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const toggle = canvas.getByRole('button', { name: 'Working 3' });
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(canvas.getAllByRole('row')).toHaveLength(5);
+    await userEvent.click(toggle);
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(canvas.getAllByRole('row')).toHaveLength(2);
+  },
 };

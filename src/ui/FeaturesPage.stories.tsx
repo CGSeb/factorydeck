@@ -71,9 +71,7 @@ function groupHeaders(canvasElement: HTMLElement): string[] {
 }
 
 async function ready(canvasElement: HTMLElement): Promise<void> {
-  await within(canvasElement).findByRole('rowheader', {
-    name: '#61 Bulk import',
-  });
+  await within(canvasElement).findByRole('rowheader', { name: /^#61 / });
 }
 
 export const AllProjects: Story = {
@@ -143,9 +141,11 @@ export const OneProject: Story = {
 
 export const StageSelected: Story = {
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
     await ready(canvasElement);
-    const merged = canvas.getByRole('button', { name: /^Merged/ });
+    const merged = within(canvasElement).getByRole('button', {
+      name: /^Merged/,
+      pressed: false,
+    });
     await userEvent.click(merged);
     await expect(address(canvasElement)).toHaveTextContent(
       '/features?period=all&stage=merged',
@@ -173,8 +173,8 @@ export const StageFromAddress: Story = {
     const canvas = within(canvasElement);
     await ready(canvasElement);
     await expect(
-      canvas.getByRole('button', { name: /^In review/ }),
-    ).toHaveAttribute('aria-pressed', 'true');
+      canvas.getByRole('button', { name: /^In review/, pressed: true }),
+    ).toBeVisible();
     await expect(rowHeaders(canvasElement)).toEqual([
       '#61 Bulk import',
       '#60 Retry policy',

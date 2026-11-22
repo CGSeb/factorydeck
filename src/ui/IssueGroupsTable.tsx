@@ -26,6 +26,7 @@ import {
   rowRoleColors,
 } from './features-list.ts';
 import { MISSING, formatCount } from './format.ts';
+import { useCollapsedGroups } from './issue-groups-state.ts';
 import type { SkillFilters } from './skills-api.ts';
 import './features-page.css';
 
@@ -229,6 +230,7 @@ export function IssueGroupsTable({
   const projects = projectColors(list.projects.map(({ project }) => project));
   const roleColors = rowRoleColors(list.rows);
   const columns = showProject ? 7 : 6;
+  const [collapsed, toggleGroup] = useCollapsedGroups();
   return (
     <DataTable label="Issues">
       <table className="fd-features-table">
@@ -240,20 +242,25 @@ export function IssueGroupsTable({
               count={rows.length}
               colSpan={columns}
               marker={markerOf(group)}
+              expanded={!collapsed.has(group)}
+              onToggle={() => {
+                toggleGroup(group);
+              }}
             />
-            {rows.map((row) => (
-              <IssueRow
-                key={`${row.project} ${String(row.number)}`}
-                row={row}
-                filters={filters}
-                roleColors={roleColors}
-                projectColor={
-                  showProject
-                    ? (projects.get(row.project) ?? 'var(--fd-muted)')
-                    : undefined
-                }
-              />
-            ))}
+            {!collapsed.has(group) &&
+              rows.map((row) => (
+                <IssueRow
+                  key={`${row.project} ${String(row.number)}`}
+                  row={row}
+                  filters={filters}
+                  roleColors={roleColors}
+                  projectColor={
+                    showProject
+                      ? (projects.get(row.project) ?? 'var(--fd-muted)')
+                      : undefined
+                  }
+                />
+              ))}
           </tbody>
         ))}
         {stage === null && (

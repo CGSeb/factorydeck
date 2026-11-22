@@ -46,6 +46,7 @@ const SHAPES = {
       <path d="m14 9 3 3-3 3" />
     </>
   ),
+  chevron: <path d="m6 9 6 6 6-6" />,
   menu: (
     <>
       <path d="M4 6h16" />
