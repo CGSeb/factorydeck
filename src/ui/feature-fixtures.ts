@@ -3,6 +3,7 @@ import type {
   FeatureList,
   FeatureListResponse,
   FeatureResponse,
+  FeatureRoleShare,
   FeatureRow,
   FeatureUsage,
 } from '../features/types.ts';
@@ -46,6 +47,13 @@ function found(project: string, number: number, title: string) {
   };
 }
 
+function builderOnly(tokens: number, costUsd: number | null) {
+  const roles: FeatureRoleShare[] = [
+    { role: 'builder', tokens, tokenCounts: splitTokens(tokens), costUsd },
+  ];
+  return { roles };
+}
+
 export const someFeatures: FeatureRow[] = [
   {
     ...found(APP, 52, 'Export button'),
@@ -57,6 +65,7 @@ export const someFeatures: FeatureRow[] = [
     tokenCounts: splitTokens(4_200_000),
     orchestrationCostUsd: 1.2,
     costUsd: 8.5,
+    ...builderOnly(4_200_000, 8.5),
   },
   {
     ...found(APP, 28, 'Session list'),
@@ -68,6 +77,7 @@ export const someFeatures: FeatureRow[] = [
     tokenCounts: splitTokens(2_100_000),
     orchestrationCostUsd: 0.4,
     costUsd: 4.25,
+    ...builderOnly(2_100_000, 4.25),
   },
   {
     project: LIB,
@@ -82,6 +92,7 @@ export const someFeatures: FeatureRow[] = [
     tokenCounts: splitTokens(600_000),
     orchestrationCostUsd: null,
     costUsd: 1.1,
+    ...builderOnly(600_000, 1.1),
   },
   {
     ...found(APP, 40, 'Dark mode'),
@@ -93,6 +104,7 @@ export const someFeatures: FeatureRow[] = [
     tokenCounts: splitTokens(300_000),
     orchestrationCostUsd: null,
     costUsd: 0.6,
+    ...builderOnly(300_000, 0.6),
   },
   {
     project: APP,
@@ -107,6 +119,7 @@ export const someFeatures: FeatureRow[] = [
     tokenCounts: splitTokens(50_000),
     orchestrationCostUsd: null,
     costUsd: null,
+    ...builderOnly(50_000, null),
   },
 ];
 
@@ -256,6 +269,7 @@ export const exportFeature: FeatureDetail = {
       costUsd: 2.1,
     },
   ],
+  threads: [],
 };
 
 export const uncollectedFeature: FeatureDetail = {
@@ -267,6 +281,7 @@ export const uncollectedFeature: FeatureDetail = {
   roles: [],
   orchestration: null,
   sessions: [],
+  threads: [],
 };
 
 export function featureResponse(feature: FeatureDetail): FeatureResponse {

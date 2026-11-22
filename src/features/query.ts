@@ -10,19 +10,21 @@ import { isSessionState } from '../sessions/types.ts';
 import {
   type Allocation,
   type IssueAccumulator,
-  type RoleAccumulator,
   type Row,
   type SessionUsage,
   allocate,
 } from './allocate.ts';
+import type { RoleAccumulator, ThreadAccumulator } from './shares.ts';
 import { issueKey, text, timestamp } from './values.ts';
 import type {
   FeatureDetail,
   FeatureList,
   FeatureQuery,
   FeatureRole,
+  FeatureRoleShare,
   FeatureRow,
   FeatureSession,
+  FeatureThread,
   FeatureUsage,
   MergedSummary,
 } from './types.ts';
@@ -48,6 +50,39 @@ function usageOf(issue: IssueAccumulator): FeatureUsage {
     },
     issue.tokenCounts,
   );
+}
+
+function shareOf({
+  role,
+  tokens,
+  tokenCounts,
+  costUsd,
+}: RoleAccumulator): FeatureRoleShare {
+  return withTokenCounts({ role, tokens, costUsd }, tokenCounts);
+}
+
+function roleShares(issue: IssueAccumulator): FeatureRoleShare[] {
+  const roles = [...issue.roles.values()]
+    .map(shareOf)
+    .sort(
+      (left, right) =>
+        right.tokens - left.tokens || left.role.localeCompare(right.role),
+    );
+  return issue.orchestration === null
+    ? roles
+    : [...roles, shareOf(issue.orchestration)];
+}
+
+function threadOf({
+  tokenCounts,
+  ...thread
+}: ThreadAccumulator): FeatureThread {
+  return withTokenCounts(thread, tokenCounts);
+}
+
+function byFirstCall(left: FeatureThread, right: FeatureThread): number {
+  const first = (left.firstAt ?? '').localeCompare(right.firstAt ?? '');
+  return first === 0 ? left.threadId.localeCompare(right.threadId) : first;
 }
 
 function mergedUnknownPriceCalls(
@@ -105,6 +140,7 @@ async function usageRows(db: Database, query: FeatureQuery): Promise<Row[]> {
         coalesce(a.sub_agent_id, '') as sub_agent,
         sa.agent_type, sa.description, sa.git_branch as agent_branch, a.model,
         count(*) as calls,
+        min(a.at) as first_at,
         max(a.at) as last_at,
         sum(a.input_tokens) as input,
         sum(a.cache_write_tokens) as cache_write,
@@ -140,6 +176,7 @@ export async function listFeatures(
       ...outcomeOf(issue),
       ...usageOf(issue),
       lastAt: issue.lastAt,
+      roles: roleShares(issue),
     }))
     .sort(
       byCostDescending(
@@ -244,5 +281,8 @@ export async function featureDetail(
       issue?.sessions ?? new Map<string, SessionUsage>(),
       state,
     ),
+    threads: [...(issue?.threads.values() ?? [])]
+      .map(threadOf)
+      .sort(byFirstCall),
   };
 }

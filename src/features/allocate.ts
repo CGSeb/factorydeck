@@ -14,30 +14,33 @@ import {
   workItemOf,
 } from '../roles/config.ts';
 import { type FeatureTotals, ORCHESTRATION_ROLE } from './types.ts';
+import {
+  type RoleAccumulator,
+  type Share,
+  type ThreadAccumulator,
+  addToRole,
+  addToThread,
+  emptyRole,
+  totalsOf,
+} from './shares.ts';
 import { addCost, issueKey, latest, text, timestamp } from './values.ts';
 
 export type Row = Record<string, unknown>;
 
 interface CallGroup {
   sessionId: string;
+  sessionTitle: string;
   project: string;
   subAgent: string;
+  description: string | null;
   role: string;
   workItem: number | null;
   calls: number;
   tokens: number;
   counts: TokenCounts;
+  firstAt: string | null;
   lastAt: string | null;
   costUsd: number | undefined;
-}
-
-export interface RoleAccumulator {
-  role: string;
-  threads: Set<string>;
-  apiCalls: number;
-  tokens: number;
-  tokenCounts: TokenCounts;
-  costUsd: number | null;
 }
 
 export interface SessionUsage {
@@ -59,6 +62,7 @@ export interface IssueAccumulator {
   sessions: Map<string, SessionUsage>;
   roles: Map<string, RoleAccumulator>;
   orchestration: RoleAccumulator | null;
+  threads: Map<string, ThreadAccumulator>;
 }
 
 export interface Pool {
@@ -71,12 +75,6 @@ export interface Allocation {
   noWorkItem: IssueAccumulator | null;
   pools: Pool[];
   totals: FeatureTotals;
-}
-
-interface Share {
-  cost: number | undefined;
-  tokens: number;
-  counts: TokenCounts;
 }
 
 function groupOf(config: WorkflowConfig, row: Row): CallGroup {
@@ -93,8 +91,10 @@ function groupOf(config: WorkflowConfig, row: Row): CallGroup {
   const main = subAgent === '';
   return {
     sessionId: text(row['session_id']),
+    sessionTitle: title,
     project,
     subAgent,
+    description: main ? null : description,
     role: main
       ? MAIN_ROLE
       : roleOf(rules, { agentType: text(row['agent_type']), description }),
@@ -108,6 +108,7 @@ function groupOf(config: WorkflowConfig, row: Row): CallGroup {
     calls: Number(row['calls']),
     tokens: totalTokens(counts),
     counts,
+    firstAt: timestamp(row['first_at']),
     lastAt: timestamp(row['last_at']),
     costUsd: costOf(text(row['model']), counts),
   };
@@ -127,17 +128,7 @@ function emptyAccumulator(project: string, number: number): IssueAccumulator {
     sessions: new Map(),
     roles: new Map(),
     orchestration: null,
-  };
-}
-
-function emptyRole(role: string): RoleAccumulator {
-  return {
-    role,
-    threads: new Set(),
-    apiCalls: 0,
-    tokens: 0,
-    tokenCounts: emptyCounts(),
-    costUsd: null,
+    threads: new Map(),
   };
 }
 
@@ -171,18 +162,6 @@ function roleFor(
   return role;
 }
 
-function addToRole(
-  role: RoleAccumulator,
-  group: CallGroup,
-  share: Share,
-): void {
-  role.threads.add(`${group.sessionId}/${group.subAgent}`);
-  role.apiCalls += group.calls;
-  role.tokens += share.tokens;
-  addCounts(role.tokenCounts, share.counts);
-  role.costUsd = addCost(role.costUsd, share.cost);
-}
-
 function addGroup(
   issue: IssueAccumulator,
   group: CallGroup,
@@ -209,6 +188,7 @@ function addGroup(
     );
   }
   addToSession(issue, group.sessionId, share);
+  if (!orchestration) addToThread(issue.threads, group, share);
   addToRole(roleFor(issue, group, orchestration), group, share);
 }
 
@@ -220,24 +200,6 @@ function groupsBySession(groups: CallGroup[]): CallGroup[][] {
     sessions.set(group.sessionId, list);
   }
   return [...sessions.values()];
-}
-
-function totalsOf(groups: CallGroup[]): FeatureTotals {
-  const totals: FeatureTotals = {
-    apiCalls: 0,
-    tokens: 0,
-    tokenCounts: emptyCounts(),
-    costUsd: 0,
-    unknownPriceCalls: 0,
-  };
-  for (const group of groups) {
-    totals.apiCalls += group.calls;
-    totals.tokens += group.tokens;
-    addCounts(totals.tokenCounts, group.counts);
-    if (group.costUsd === undefined) totals.unknownPriceCalls += group.calls;
-    else totals.costUsd += group.costUsd;
-  }
-  return totals;
 }
 
 class Allocator {

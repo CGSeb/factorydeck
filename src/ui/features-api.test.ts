@@ -44,6 +44,9 @@ function row(
     costUsd,
     orchestrationCostUsd: null,
     lastAt: '2026-01-05T09:00:00.000Z',
+    roles: [
+      { role: 'builder', tokens: 100, tokenCounts: splitTokens(100), costUsd },
+    ],
   };
 }
 
