@@ -67,6 +67,10 @@ export const Found: Story = {
         .getAllByRole('rowheader')
         .map((cell) => cell.textContent),
     ).toEqual(['builder', 'reviewer', 'Orchestration']);
+    await expect(within(roles).getByText('500.0K')).toHaveAttribute(
+      'title',
+      '500,000',
+    );
     await expect(
       canvas.getByRole('link', { name: 'Build the export button' }),
     ).toBeVisible();

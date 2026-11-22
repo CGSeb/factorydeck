@@ -29,7 +29,7 @@ export function RoleTable({ roles }: { roles: RoleUsage[] }): ReactElement {
               <td>{formatCount(row.threads)}</td>
               <td>{formatCount(row.apiCalls)}</td>
               <td>
-                <TokenCount value={row.tokens} />
+                <TokenCount value={Math.round(row.tokens)} />
               </td>
               <td>{formatCost(row.costUsd)}</td>
             </tr>
