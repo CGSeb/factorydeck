@@ -61,12 +61,14 @@ export const MergedByPerson: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByRole('heading', { name: '#52 Export button' });
-    await expect(
-      canvas.getByRole('link', { name: 'Export button' }),
-    ).toHaveAttribute(
+    const issueLink = canvas.getByRole('link', { name: 'Export button' });
+    await expect(issueLink).toHaveAttribute(
       'href',
       'https://github.com/example-org/example-app/issues/52',
     );
+    const icon = within(issueLink).getByText('↗');
+    await expect(icon).toHaveAttribute('aria-hidden', 'true');
+    await expect(issueLink).toHaveAccessibleName('Export button');
     await expect(canvas.getByText('Merged by a person')).toBeVisible();
     await expect(canvas.getByText(/ · 2 sessions$/)).toBeVisible();
     await expect(

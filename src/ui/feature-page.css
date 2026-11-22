@@ -15,13 +15,28 @@
   color: var(--fd-muted);
 }
 
-.fd-page-title a {
+.fd-issue-link {
   color: inherit;
   text-decoration: none;
 }
 
-.fd-page-title a:hover {
+.fd-issue-link:hover,
+.fd-issue-link:focus-visible {
   text-decoration: underline;
+}
+
+.fd-issue-link:focus-visible {
+  outline: 2px solid var(--fd-accent);
+  outline-offset: 2px;
+}
+
+.fd-issue-link-icon {
+  display: inline-block;
+  margin-left: 0.25em;
+  font-size: 0.6em;
+  vertical-align: 0.4em;
+  color: var(--fd-muted);
+  text-decoration: none;
 }
 
 .fd-issue-meta {

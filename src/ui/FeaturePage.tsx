@@ -59,8 +59,16 @@ function IssueTitle({ feature }: { feature: FeatureDetail }): ReactElement {
         <>
           {' '}
           {feature.issue.status === 'found' ? (
-            <a href={feature.issue.url} target="_blank" rel="noreferrer">
+            <a
+              className="fd-issue-link"
+              href={feature.issue.url}
+              target="_blank"
+              rel="noreferrer"
+            >
               {title}
+              <span className="fd-issue-link-icon" aria-hidden="true">
+                ↗
+              </span>
             </a>
           ) : (
             title
