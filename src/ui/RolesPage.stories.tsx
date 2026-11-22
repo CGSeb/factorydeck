@@ -10,6 +10,7 @@ import {
 } from './role-fixtures.ts';
 import type { LoadRoles } from './roles-api.ts';
 import { RolesPage } from './RolesPage.tsx';
+import { splitTokens } from './token-fixtures.ts';
 
 function Location(): ReactElement {
   const { search } = useLocation();
@@ -115,6 +116,7 @@ function refreshingLoader(): LoadRoles {
       threads: 4,
       apiCalls: 210,
       tokens: 8_400_000,
+      tokenCounts: splitTokens(8_400_000),
       costUsd: calls === 1 ? 12.4 : 15.25,
     };
     return Promise.resolve({

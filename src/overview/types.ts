@@ -19,7 +19,10 @@ export interface TokenCounts {
   output: number;
 }
 
-export type SeriesPoint = { bucket: string } & Record<Family, number>;
+export type SeriesPoint = { bucket: string; tokens: TokenCounts } & Record<
+  Family,
+  number
+>;
 
 export interface ProjectUsage {
   project: string;
@@ -27,6 +30,7 @@ export interface ProjectUsage {
   sessions: number;
   apiCalls: number;
   tokens: number;
+  tokenCounts: TokenCounts;
   costUsd: number | null;
 }
 
@@ -34,6 +38,7 @@ export interface ModelUsage {
   model: string;
   apiCalls: number;
   tokens: number;
+  tokenCounts: TokenCounts;
   costUsd: number | null;
 }
 

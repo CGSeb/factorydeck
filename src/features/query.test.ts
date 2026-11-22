@@ -106,6 +106,7 @@ describe('listFeatures', () => {
     expect(merged).toEqual({
       issues: 2,
       costPerIssueUsd: near(5.2),
+      tokensPerIssue: 2_650_000,
       withoutPerson: 0.5,
       unknownPriceCalls: 1,
     });
@@ -117,6 +118,7 @@ describe('listFeatures', () => {
     expect(lib.merged).toEqual({
       issues: 0,
       costPerIssueUsd: null,
+      tokensPerIssue: null,
       withoutPerson: null,
       unknownPriceCalls: 0,
     });
@@ -133,6 +135,7 @@ describe('listFeatures', () => {
         apiCalls: overview.totals.apiCalls,
         tokens:
           tokens.input + tokens.cacheWrite + tokens.cacheRead + tokens.output,
+        tokenCounts: tokens,
         costUsd: near(overview.totals.costUsd),
         unknownPriceCalls: overview.totals.unknownPriceCalls,
       });

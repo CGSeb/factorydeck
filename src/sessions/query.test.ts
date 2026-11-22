@@ -1,115 +1,17 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Database } from '../db/client.ts';
-import { apiCall, session, subAgent } from '../db/schema.ts';
 import { usageOverview } from '../overview/query.ts';
 import { createTestDatabase } from '../test/postgres.ts';
-import { listSessions, sessionDetail } from './query.ts';
+import { NOW, ago, options, seedSessions } from '../test/sessions.ts';
+import { listSessions } from './query.ts';
 import type { SessionListQuery } from './types.ts';
-
-const NOW = new Date('2026-11-21T12:00:00Z');
-const MINUTE = 60_000;
-const options = { inactiveAfterMinutes: 30, now: NOW };
-
-function ago(minutes: number): Date {
-  return new Date(NOW.getTime() - minutes * MINUTE);
-}
 
 let db: Database;
 let close: () => Promise<void>;
-let key = 0;
-
-function call(
-  sessionId: string,
-  model: string,
-  tokens: [number, number, number, number],
-  subAgentId: string | null = null,
-): typeof apiCall.$inferInsert {
-  key += 1;
-  return {
-    sourcePath: `/synthetic/${sessionId}.jsonl`,
-    requestKey: `req_${key}`,
-    sessionId,
-    subAgentId,
-    at: ago(40),
-    model,
-    inputTokens: tokens[0],
-    cacheWriteTokens: tokens[1],
-    cacheReadTokens: tokens[2],
-    outputTokens: tokens[3],
-  };
-}
 
 beforeAll(async () => {
   ({ db, close } = await createTestDatabase());
-  await db.insert(session).values([
-    {
-      id: 'working-1',
-      project: '/work/app',
-      cwd: '/work/app',
-      gitBranch: 'feat/x',
-      title: 'Build the thing',
-      firstAt: ago(120),
-      lastAt: ago(29.9),
-      turnEnded: false,
-    },
-    {
-      id: 'waiting-1',
-      project: '/work/app',
-      firstAt: ago(10),
-      lastAt: ago(1),
-      turnEnded: true,
-    },
-    {
-      id: 'edge-inactive',
-      project: '/work/lib',
-      firstAt: ago(60),
-      lastAt: ago(30),
-      turnEnded: false,
-    },
-    {
-      id: 'old-ended',
-      project: '/work/lib',
-      firstAt: ago(60 * 24 * 20),
-      lastAt: ago(60 * 24 * 20 - 5),
-      turnEnded: true,
-    },
-    {
-      id: 'agent-busy',
-      firstAt: ago(90),
-      lastAt: ago(80),
-      turnEnded: false,
-    },
-  ]);
-  await db.insert(subAgent).values([
-    {
-      sessionId: 'agent-busy',
-      id: 'b-second',
-      agentType: 'Explore',
-      description: 'Look around',
-      model: 'claude-haiku-9',
-      firstAt: ago(70),
-      lastAt: ago(5),
-    },
-    {
-      sessionId: 'agent-busy',
-      id: 'a-first',
-      agentType: '',
-      description: '',
-      model: '',
-      firstAt: ago(85),
-      lastAt: ago(75),
-    },
-  ]);
-  await db
-    .insert(apiCall)
-    .values([
-      call('working-1', 'claude-opus-9', [1_000_000, 0, 0, 0]),
-      call('working-1', 'mystery-model', [5, 5, 5, 5]),
-      call('agent-busy', 'claude-sonnet-9', [0, 0, 0, 100_000]),
-      call('agent-busy', 'claude-haiku-9', [1_000_000, 0, 0, 0], 'b-second'),
-      call('agent-busy', 'mystery-model', [1, 2, 3, 4], 'a-first'),
-      call('old-ended', 'mystery-model', [10, 0, 0, 0]),
-    ]);
+  await seedSessions(db);
 });
 
 afterAll(async () => {
@@ -243,73 +145,5 @@ describe('listSessions', () => {
       'agent-busy',
     ]);
     expect(first.total).toBe(5);
-  });
-});
-
-describe('sessionDetail', () => {
-  it('gives the session with its four token kinds and its sub-agents in start order', async () => {
-    const detail = await sessionDetail(db, 'agent-busy', options);
-    expect(detail).toMatchObject({
-      id: 'agent-busy',
-      state: 'working',
-      cwd: null,
-      tokens: {
-        input: 1_000_001,
-        cacheWrite: 2,
-        cacheRead: 3,
-        output: 100_004,
-      },
-    });
-    expect(detail?.costUsd).toBeCloseTo(1.1);
-    expect(detail?.skills).toMatchObject([{ skill: null, tokens: 1_100_010 }]);
-    expect(detail?.skills[0]?.costUsd).toBeCloseTo(1.1, 10);
-    expect(detail?.subAgents).toEqual([
-      {
-        id: 'a-first',
-        agentType: '',
-        role: 'unassigned',
-        workItem: null,
-        issue: null,
-        description: '',
-        model: '',
-        firstAt: ago(85).toISOString(),
-        lastAt: ago(75).toISOString(),
-        tokens: 10,
-        costUsd: null,
-      },
-      {
-        id: 'b-second',
-        agentType: 'Explore',
-        role: 'Explore',
-        workItem: null,
-        issue: null,
-        description: 'Look around',
-        model: 'claude-haiku-9',
-        firstAt: ago(70).toISOString(),
-        lastAt: ago(5).toISOString(),
-        tokens: 1_000_000,
-        costUsd: 0.1,
-      },
-    ]);
-  });
-
-  it('gives a session without sub-agents, with the figures of its row', async () => {
-    const detail = await sessionDetail(db, 'working-1', options);
-    expect(detail).toMatchObject({
-      cwd: '/work/app',
-      gitBranch: 'feat/x',
-      subAgents: [],
-      costUsd: 4,
-    });
-    expect(detail?.tokens).toEqual({
-      input: 1_000_005,
-      cacheWrite: 5,
-      cacheRead: 5,
-      output: 5,
-    });
-  });
-
-  it('gives nothing for an unknown session', async () => {
-    await expect(sessionDetail(db, 'nope', options)).resolves.toBeUndefined();
   });
 });

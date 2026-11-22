@@ -1,11 +1,12 @@
 import type { ProjectOption } from '../projects/label.ts';
-import type { Period } from '../overview/types.ts';
+import type { Period, TokenCounts } from '../overview/types.ts';
 
 export interface RoleUsage {
   role: string;
   threads: number;
   apiCalls: number;
   tokens: number;
+  tokenCounts: TokenCounts;
   costUsd: number | null;
 }
 

@@ -33,10 +33,17 @@ const sessions: SessionSource = {
 const list: FeatureList = {
   rows: [],
   noWorkItem: null,
-  totals: { apiCalls: 0, tokens: 0, costUsd: 0, unknownPriceCalls: 0 },
+  totals: {
+    apiCalls: 0,
+    tokens: 0,
+    tokenCounts: { input: 0, cacheWrite: 0, cacheRead: 0, output: 0 },
+    costUsd: 0,
+    unknownPriceCalls: 0,
+  },
   merged: {
     issues: 0,
     costPerIssueUsd: null,
+    tokensPerIssue: null,
     withoutPerson: null,
     unknownPriceCalls: 0,
   },

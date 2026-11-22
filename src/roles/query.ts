@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import { byCostDescending, periodStart, select } from '../overview/query.ts';
-import type { TokenCounts } from '../overview/types.ts';
+import { addCounts, countsOf, emptyCounts } from '../overview/tokens.ts';
 import { costOf } from '../pricing.ts';
 import { projectNames } from '../projects/names.ts';
 import { MAIN_ROLE, type WorkflowConfig, roleOf, rulesFor } from './config.ts';
@@ -45,15 +45,12 @@ export function summarizeRoles(
       threads: 0,
       apiCalls: 0,
       tokens: 0,
+      tokenCounts: emptyCounts(),
       costUsd: null,
       threadIds: new Set<string>(),
     };
-    const counts: TokenCounts = {
-      input: Number(row['input']),
-      cacheWrite: Number(row['cache_write']),
-      cacheRead: Number(row['cache_read']),
-      output: Number(row['output']),
-    };
+    const counts = countsOf(row);
+    addCounts(usage.tokenCounts, counts);
     usage.apiCalls += Number(row['calls']);
     usage.tokens +=
       counts.input + counts.cacheWrite + counts.cacheRead + counts.output;
@@ -68,6 +65,7 @@ export function summarizeRoles(
       threads: 0,
       apiCalls: 0,
       tokens: 0,
+      tokenCounts: emptyCounts(),
       costUsd: 0,
       ...roles.get(MAIN_ROLE),
       threadIds: sessions,

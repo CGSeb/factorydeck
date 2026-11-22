@@ -2,6 +2,7 @@ import { type SQL, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import { type ProjectNames, projectNames } from '../projects/names.ts';
 import { byCostDescending, periodStart, select } from '../overview/query.ts';
+import { addCounts, countsOf, emptyCounts } from '../overview/tokens.ts';
 import type { TokenCounts } from '../overview/types.ts';
 import { costOf } from '../pricing.ts';
 import { attributedCalls } from './attribution.ts';
@@ -51,20 +52,17 @@ function sessionInScope(scope: Scope): SQL {
 interface Usage {
   apiCalls: number;
   tokens: number;
+  tokenCounts: TokenCounts;
   costUsd: number | null;
 }
 
 function emptyUsage(): Usage {
-  return { apiCalls: 0, tokens: 0, costUsd: null };
+  return { apiCalls: 0, tokens: 0, tokenCounts: emptyCounts(), costUsd: null };
 }
 
 function addUsage(usage: Usage, row: Row): Usage {
-  const counts: TokenCounts = {
-    input: Number(row['input']),
-    cacheWrite: Number(row['cache_write']),
-    cacheRead: Number(row['cache_read']),
-    output: Number(row['output']),
-  };
+  const counts = countsOf(row);
+  addCounts(usage.tokenCounts, counts);
   usage.apiCalls += Number(row['calls']);
   usage.tokens +=
     counts.input + counts.cacheWrite + counts.cacheRead + counts.output;
@@ -125,6 +123,7 @@ function buildSkills(usageRows: Row[], launchRows: Row[]): SkillUsage[] {
         ...launched,
         apiCalls: usage.apiCalls,
         tokens: usage.tokens,
+        tokenCounts: usage.tokenCounts,
         costUsd,
         averageCostUsd: averageOf(costUsd, launched.launches),
       };
@@ -246,6 +245,7 @@ export async function skillDetail(
     skill,
     launches,
     tokens: total.tokens,
+    tokenCounts: total.tokenCounts,
     costUsd,
     averageCostUsd: averageOf(costUsd, launches),
     series: seriesRows.map((row) => ({
@@ -278,6 +278,7 @@ function buildSessions(
         projectName: names.label(text(row['project'])),
         launches: Number(row['launches']),
         tokens: usage.tokens,
+        tokenCounts: usage.tokenCounts,
         costUsd: costOrZero(usage),
       };
     })

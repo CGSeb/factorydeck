@@ -38,6 +38,7 @@ describe('usageOverview', () => {
     expect(today.series[0]?.opus).toBeCloseTo(4, 6);
     expect(today.series[1]).toEqual({
       bucket: '2026-11-21T01:00',
+      tokens: { input: 0, cacheWrite: 0, cacheRead: 0, output: 0 },
       opus: 0,
       sonnet: 0,
       haiku: 0,
@@ -66,6 +67,7 @@ describe('usageOverview', () => {
     expect(week.series[0]?.sonnet).toBeCloseTo(1, 6);
     expect(week.series[3]).toEqual({
       bucket: '2026-11-18',
+      tokens: { input: 0, cacheWrite: 0, cacheRead: 0, output: 0 },
       opus: 0,
       sonnet: 0,
       haiku: 0,
@@ -140,6 +142,7 @@ describe('usageOverview', () => {
       model: 'mystery-model',
       apiCalls: 1,
       tokens: 100,
+      tokenCounts: { input: 10, cacheWrite: 20, cacheRead: 30, output: 40 },
       costUsd: null,
     });
     expect(week.series.every((point) => point.other === 0)).toBe(true);

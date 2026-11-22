@@ -1,3 +1,9 @@
+import {
+  addCounts,
+  countsOf,
+  emptyCounts,
+  totalTokens,
+} from '../overview/tokens.ts';
 import type { TokenCounts } from '../overview/types.ts';
 import { costOf } from '../pricing.ts';
 import {
@@ -8,6 +14,7 @@ import {
   workItemOf,
 } from '../roles/config.ts';
 import { type FeatureTotals, ORCHESTRATION_ROLE } from './types.ts';
+import { addCost, issueKey, latest, text, timestamp } from './values.ts';
 
 export type Row = Record<string, unknown>;
 
@@ -19,6 +26,8 @@ interface CallGroup {
   workItem: number | null;
   calls: number;
   tokens: number;
+  counts: TokenCounts;
+  lastAt: string | null;
   costUsd: number | undefined;
 }
 
@@ -27,11 +36,13 @@ export interface RoleAccumulator {
   threads: Set<string>;
   apiCalls: number;
   tokens: number;
+  tokenCounts: TokenCounts;
   costUsd: number | null;
 }
 
 export interface SessionUsage {
   tokens: number;
+  tokenCounts: TokenCounts;
   costUsd: number | null;
 }
 
@@ -40,6 +51,8 @@ export interface IssueAccumulator {
   number: number;
   apiCalls: number;
   tokens: number;
+  tokenCounts: TokenCounts;
+  lastAt: string | null;
   costUsd: number | null;
   orchestrationCostUsd: number | null;
   unknownPriceCalls: number;
@@ -63,21 +76,7 @@ export interface Allocation {
 interface Share {
   cost: number | undefined;
   tokens: number;
-}
-
-export function text(value: unknown): string {
-  return typeof value === 'string' ? value : '';
-}
-
-export function addCost(
-  total: number | null,
-  cost: number | undefined,
-): number | null {
-  return cost === undefined ? total : (total ?? 0) + cost;
-}
-
-export function issueKey(project: string, number: number): string {
-  return `${String(number)} ${project}`;
+  counts: TokenCounts;
 }
 
 function groupOf(config: WorkflowConfig, row: Row): CallGroup {
@@ -90,12 +89,7 @@ function groupOf(config: WorkflowConfig, row: Row): CallGroup {
   });
   const subAgent = text(row['sub_agent']);
   const description = text(row['description']);
-  const counts: TokenCounts = {
-    input: Number(row['input']),
-    cacheWrite: Number(row['cache_write']),
-    cacheRead: Number(row['cache_read']),
-    output: Number(row['output']),
-  };
+  const counts = countsOf(row);
   const main = subAgent === '';
   return {
     sessionId: text(row['session_id']),
@@ -112,7 +106,9 @@ function groupOf(config: WorkflowConfig, row: Row): CallGroup {
           title,
         }) ?? sessionWorkItem),
     calls: Number(row['calls']),
-    tokens: counts.input + counts.cacheWrite + counts.cacheRead + counts.output,
+    tokens: totalTokens(counts),
+    counts,
+    lastAt: timestamp(row['last_at']),
     costUsd: costOf(text(row['model']), counts),
   };
 }
@@ -123,6 +119,8 @@ function emptyAccumulator(project: string, number: number): IssueAccumulator {
     number,
     apiCalls: 0,
     tokens: 0,
+    tokenCounts: emptyCounts(),
+    lastAt: null,
     costUsd: null,
     orchestrationCostUsd: null,
     unknownPriceCalls: 0,
@@ -133,7 +131,14 @@ function emptyAccumulator(project: string, number: number): IssueAccumulator {
 }
 
 function emptyRole(role: string): RoleAccumulator {
-  return { role, threads: new Set(), apiCalls: 0, tokens: 0, costUsd: null };
+  return {
+    role,
+    threads: new Set(),
+    apiCalls: 0,
+    tokens: 0,
+    tokenCounts: emptyCounts(),
+    costUsd: null,
+  };
 }
 
 function addToSession(
@@ -143,9 +148,11 @@ function addToSession(
 ): void {
   const session = issue.sessions.get(sessionId) ?? {
     tokens: 0,
+    tokenCounts: emptyCounts(),
     costUsd: null,
   };
   session.tokens += share.tokens;
+  addCounts(session.tokenCounts, share.counts);
   session.costUsd = addCost(session.costUsd, share.cost);
   issue.sessions.set(sessionId, session);
 }
@@ -172,6 +179,7 @@ function addToRole(
   role.threads.add(`${group.sessionId}/${group.subAgent}`);
   role.apiCalls += group.calls;
   role.tokens += share.tokens;
+  addCounts(role.tokenCounts, share.counts);
   role.costUsd = addCost(role.costUsd, share.cost);
 }
 
@@ -183,10 +191,13 @@ function addGroup(
 ): void {
   const share: Share = {
     tokens: group.tokens * weight,
+    counts: addCounts(emptyCounts(), group.counts, weight),
     cost: group.costUsd === undefined ? undefined : group.costUsd * weight,
   };
   issue.apiCalls += group.calls;
   issue.tokens += share.tokens;
+  addCounts(issue.tokenCounts, share.counts);
+  if (!orchestration) issue.lastAt = latest(issue.lastAt, group.lastAt);
   issue.costUsd = addCost(issue.costUsd, share.cost);
   if (group.costUsd === undefined && !orchestration) {
     issue.unknownPriceCalls += group.calls;
@@ -212,10 +223,17 @@ function groupsBySession(groups: CallGroup[]): CallGroup[][] {
 }
 
 function totalsOf(groups: CallGroup[]): FeatureTotals {
-  const totals = { apiCalls: 0, tokens: 0, costUsd: 0, unknownPriceCalls: 0 };
+  const totals: FeatureTotals = {
+    apiCalls: 0,
+    tokens: 0,
+    tokenCounts: emptyCounts(),
+    costUsd: 0,
+    unknownPriceCalls: 0,
+  };
   for (const group of groups) {
     totals.apiCalls += group.calls;
     totals.tokens += group.tokens;
+    addCounts(totals.tokenCounts, group.counts);
     if (group.costUsd === undefined) totals.unknownPriceCalls += group.calls;
     else totals.costUsd += group.costUsd;
   }

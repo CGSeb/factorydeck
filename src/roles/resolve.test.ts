@@ -90,7 +90,14 @@ describe('roleOf', () => {
       },
     ]);
     expect(roles).toEqual([
-      { role: 'main', threads: 1, apiCalls: 2, tokens: 2, costUsd: null },
+      {
+        role: 'main',
+        threads: 1,
+        apiCalls: 2,
+        tokens: 2,
+        tokenCounts: { input: 2, cacheWrite: 0, cacheRead: 0, output: 0 },
+        costUsd: null,
+      },
     ]);
   });
 
@@ -111,8 +118,22 @@ describe('roleOf', () => {
       },
     ]);
     expect(roles).toEqual([
-      { role: 'main', threads: 1, apiCalls: 0, tokens: 0, costUsd: 0 },
-      { role: 'Explore', threads: 1, apiCalls: 1, tokens: 1, costUsd: null },
+      {
+        role: 'main',
+        threads: 1,
+        apiCalls: 0,
+        tokens: 0,
+        tokenCounts: { input: 0, cacheWrite: 0, cacheRead: 0, output: 0 },
+        costUsd: 0,
+      },
+      {
+        role: 'Explore',
+        threads: 1,
+        apiCalls: 1,
+        tokens: 1,
+        tokenCounts: { input: 1, cacheWrite: 0, cacheRead: 0, output: 0 },
+        costUsd: null,
+      },
     ]);
   });
 });

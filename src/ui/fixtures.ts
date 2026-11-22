@@ -6,6 +6,7 @@ import type {
 } from '../overview/types.ts';
 import type { LoadOverview } from './overview-api.ts';
 import { nameOf } from './project-fixtures.ts';
+import { splitTokens } from './token-fixtures.ts';
 
 const DAYS = [
   '2026-01-01',
@@ -23,7 +24,14 @@ function point(
   sonnet: number,
   haiku: number,
 ): SeriesPoint {
-  return { bucket, opus, sonnet, haiku, other: 0 };
+  return {
+    bucket,
+    tokens: splitTokens(Math.round((opus + sonnet + haiku) * 200_000)),
+    opus,
+    sonnet,
+    haiku,
+    other: 0,
+  };
 }
 
 export const weekOverview: UsageOverview = {
@@ -57,6 +65,7 @@ export const weekOverview: UsageOverview = {
       sessions: 9,
       apiCalls: 982,
       tokens: 9_102_330,
+      tokenCounts: splitTokens(9_102_330),
       costUsd: 36.4,
     },
     {
@@ -65,6 +74,7 @@ export const weekOverview: UsageOverview = {
       sessions: 4,
       apiCalls: 301,
       tokens: 3_204_190,
+      tokenCounts: splitTokens(3_204_190),
       costUsd: 11.79,
     },
     {
@@ -73,6 +83,7 @@ export const weekOverview: UsageOverview = {
       sessions: 1,
       apiCalls: 44,
       tokens: 213_000,
+      tokenCounts: splitTokens(213_000),
       costUsd: 0.08,
     },
   ],
@@ -81,18 +92,21 @@ export const weekOverview: UsageOverview = {
       model: 'claude-opus-example',
       apiCalls: 801,
       tokens: 9_870_000,
+      tokenCounts: splitTokens(9_870_000),
       costUsd: 40.3,
     },
     {
       model: 'claude-sonnet-example',
       apiCalls: 402,
       tokens: 2_402_520,
+      tokenCounts: splitTokens(2_402_520),
       costUsd: 7.7,
     },
     {
       model: 'claude-haiku-example',
       apiCalls: 124,
       tokens: 247_000,
+      tokenCounts: splitTokens(247_000),
       costUsd: 0.004,
     },
   ],
@@ -107,9 +121,16 @@ export const unknownPricesOverview: UsageOverview = {
       model: 'local-model-example',
       apiCalls: 37,
       tokens: 58_200,
+      tokenCounts: splitTokens(58_200),
       costUsd: null,
     },
-    { model: '', apiCalls: 3, tokens: 1_200, costUsd: null },
+    {
+      model: '',
+      apiCalls: 3,
+      tokens: 1_200,
+      tokenCounts: splitTokens(1_200),
+      costUsd: null,
+    },
   ],
 };
 
