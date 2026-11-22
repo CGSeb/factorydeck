@@ -5,6 +5,7 @@ export const UNREACHABLE_MESSAGE =
 
 export type LoadOverview = (
   period: Period,
+  project?: string,
 ) => Promise<OverviewResponse | undefined>;
 
 function browserTimeZone(): string {
@@ -24,8 +25,9 @@ export function overviewLoader(
   fetchImpl: typeof fetch = (...args) => fetch(...args),
   timeZone: () => string = browserTimeZone,
 ): LoadOverview {
-  return async (period) => {
+  return async (period, project) => {
     const query = new URLSearchParams({ period, tz: timeZone() });
+    if (project !== undefined) query.set('project', project);
     try {
       const response = await fetchImpl(`/api/overview?${query.toString()}`);
       const body: unknown = await response.json();

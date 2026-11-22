@@ -99,9 +99,16 @@ describe('deleting a project', () => {
           sessions: 1,
         },
       ],
+      projects: [
+        { project: gone, name: 'gone-app' },
+        { project: kept, name: 'kept-app' },
+      ],
     });
 
     expect(await deleteProject(db, gone, hasFactory)).toBe('deleted');
+    expect((await factoryStatus(db, hasFactory)).projects).toEqual([
+      { project: kept, name: 'kept-app' },
+    ]);
     expect(await counts()).toEqual({
       sessions: 1,
       subAgents: 1,
@@ -233,6 +240,7 @@ describe('deleting a project', () => {
     expect(await factoryStatus(db, hasFactory)).toEqual({
       hasSessions: false,
       missing: [],
+      projects: [],
     });
     await db.insert(session).values([
       { id: 'a', project: '/gone/zeta' },
@@ -243,6 +251,10 @@ describe('deleting a project', () => {
     expect(status.missing.map((row) => [row.name, row.sessions])).toEqual([
       ['alpha', 2],
       ['zeta', 1],
+    ]);
+    expect(status.projects).toEqual([
+      { project: '/gone/alpha', name: 'alpha' },
+      { project: '/gone/zeta', name: 'zeta' },
     ]);
   });
 });

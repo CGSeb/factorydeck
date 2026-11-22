@@ -13,6 +13,7 @@ import { formatClock } from './format.ts';
 import { IssuePanel } from './IssuePanel.tsx';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { PeriodSelector } from './PeriodSelector.tsx';
+import { useProject, withProject } from './project-param.ts';
 import { RoleTable } from './RoleTable.tsx';
 import { useRefreshing } from './skills-api.ts';
 
@@ -21,10 +22,11 @@ export interface FeaturePageProps {
 }
 
 function NotFound(): ReactElement {
+  const project = useProject();
   return (
     <>
       <p className="status">Issue not found.</p>
-      <Link className="back-link" to="/features">
+      <Link className="back-link" to={withProject('/features', project)}>
         Back to features
       </Link>
     </>

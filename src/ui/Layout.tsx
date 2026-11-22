@@ -1,11 +1,23 @@
 import { type ReactElement, useEffect, useState } from 'react';
-import { NavLink, Outlet } from 'react-router';
-import type { CollectionResponse } from '../git-host/types.ts';
-import type { FactoryResponse } from '../projects/types.ts';
+import {
+  NavLink,
+  Outlet,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from 'react-router';
+import type {
+  CollectionFailure,
+  CollectionResponse,
+} from '../git-host/types.ts';
+import type { ProjectOption } from '../projects/label.ts';
+import type { FactoryResponse, MissingFactory } from '../projects/types.ts';
 import { CollectionStatus } from './CollectionStatus.tsx';
 import type { DeleteProject, LoadFactory } from './factory-api.ts';
 import { FactoryBanner } from './FactoryBanner.tsx';
 import type { LoadCollection, RefreshCollection } from './git-host-api.ts';
+import { projectOf, projectTarget, withProject } from './project-param.ts';
+import { ProjectSelect } from './ProjectSelect.tsx';
 import { WelcomePanel } from './WelcomePanel.tsx';
 import './styles.css';
 
@@ -56,6 +68,7 @@ function useFactoryStatus(loadFactory: LoadFactory): {
         ? {
             ...current,
             missing: current.missing.filter((row) => row.project !== project),
+            projects: current.projects.filter((row) => row.project !== project),
           }
         : current,
     );
@@ -113,30 +126,74 @@ function okOrUndefined(
   return response?.status === 'ok' ? response : undefined;
 }
 
-function SectionNav(): ReactElement {
+const SECTIONS: readonly { path: string; label: string }[] = [
+  { path: '/', label: 'Overview' },
+  { path: '/features', label: 'Features' },
+  { path: '/sessions', label: 'Sessions' },
+  { path: '/skills', label: 'Skills' },
+  { path: '/roles', label: 'Roles' },
+];
+
+function SectionNav({
+  project,
+}: {
+  project: string | undefined;
+}): ReactElement {
   return (
     <nav aria-label="Sections">
       <ul>
-        <li>
-          <NavLink to="/" end>
-            Overview
-          </NavLink>
-        </li>
-        <li>
-          <NavLink to="/features">Features</NavLink>
-        </li>
-        <li>
-          <NavLink to="/sessions">Sessions</NavLink>
-        </li>
-        <li>
-          <NavLink to="/skills">Skills</NavLink>
-        </li>
-        <li>
-          <NavLink to="/roles">Roles</NavLink>
-        </li>
+        {SECTIONS.map(({ path, label }) => (
+          <li key={path}>
+            <NavLink to={withProject(path, project)} end={path === '/'}>
+              {label}
+            </NavLink>
+          </li>
+        ))}
       </ul>
     </nav>
   );
+}
+
+function viewOf(
+  status: FactoryResponse | undefined,
+  collection: CollectionResponse | undefined,
+): {
+  collectedAt: string | null | undefined;
+  missing: MissingFactory[];
+  failures: CollectionFailure[];
+  projects: ProjectOption[];
+  welcome: boolean;
+} {
+  const factory = status?.status === 'ok' ? status : undefined;
+  const collected = okOrUndefined(collection);
+  return {
+    collectedAt: collected?.collectedAt,
+    missing: factory?.missing ?? [],
+    failures: collected?.failures ?? [],
+    projects: factory?.projects ?? [],
+    welcome: factory?.hasSessions === false,
+  };
+}
+
+function useProjectChoice(forget: (project: string) => void): {
+  project: string | undefined;
+  choose: (next: string | undefined) => void;
+  onDeleted: (deleted: string) => void;
+} {
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const project = projectOf(searchParams);
+  return {
+    project,
+    choose: (next) => void navigate(projectTarget(location, next)),
+    onDeleted: (deleted) => {
+      forget(deleted);
+      if (deleted === project) {
+        void navigate(projectTarget(location, undefined), { replace: true });
+      }
+    },
+  };
 }
 
 export function Layout({
@@ -146,18 +203,26 @@ export function Layout({
   refreshCollection,
 }: LayoutProps): ReactElement {
   const { status, forget, reload, version } = useFactoryStatus(loadFactory);
+  const { project, choose, onDeleted } = useProjectChoice(forget);
   const collection = useCollection(loadCollection, refreshCollection, reload);
-  const factory = status?.status === 'ok' ? status : undefined;
-  const collected = okOrUndefined(collection.status);
-  const missing = factory?.missing ?? [];
-  const failures = collected?.failures ?? [];
+  const { collectedAt, missing, failures, projects, welcome } = viewOf(
+    status,
+    collection.status,
+  );
   return (
     <>
       <header className="topbar">
         <span className="brand">FactoryDeck</span>
-        <SectionNav />
+        <SectionNav project={project} />
+        {!welcome && (
+          <ProjectSelect
+            value={project}
+            projects={projects}
+            onChange={choose}
+          />
+        )}
         <CollectionStatus
-          collectedAt={collected?.collectedAt}
+          collectedAt={collectedAt}
           now={new Date()}
           refreshing={collection.refreshing}
           onRefresh={collection.refresh}
@@ -169,14 +234,10 @@ export function Layout({
             missing={missing}
             failures={failures}
             deleteProject={deleteProject}
-            onDeleted={forget}
+            onDeleted={onDeleted}
           />
         )}
-        {factory?.hasSessions === false ? (
-          <WelcomePanel />
-        ) : (
-          <Outlet key={version} />
-        )}
+        {welcome ? <WelcomePanel /> : <Outlet key={version} />}
       </main>
     </>
   );

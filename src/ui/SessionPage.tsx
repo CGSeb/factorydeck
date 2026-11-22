@@ -10,6 +10,7 @@ import {
 } from './format.ts';
 import { ProjectName } from './ProjectName.tsx';
 import { IssuePanel } from './IssuePanel.tsx';
+import { useProject, withProject } from './project-param.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import type { LoadSession } from './sessions-api.ts';
 import { SessionSkillTable } from './SessionSkillTable.tsx';
@@ -106,6 +107,18 @@ function SessionHeader({
   );
 }
 
+function SessionNotFound(): ReactElement {
+  const project = useProject();
+  return (
+    <>
+      <p className="status">Session not found.</p>
+      <Link className="back-link" to={withProject('/sessions', project)}>
+        Back to sessions
+      </Link>
+    </>
+  );
+}
+
 function SessionContent({
   response,
 }: {
@@ -116,14 +129,7 @@ function SessionContent({
     return <p className="status">{UNREACHABLE_MESSAGE}</p>;
   }
   if (response.status === 'not-found') {
-    return (
-      <>
-        <p className="status">Session not found.</p>
-        <Link className="back-link" to="/sessions">
-          Back to sessions
-        </Link>
-      </>
-    );
+    return <SessionNotFound />;
   }
   return (
     <>

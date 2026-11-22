@@ -13,8 +13,14 @@ function Location(): ReactElement {
 const meta = {
   component: SkillsPage,
   decorators: [
-    (Story) => (
-      <MemoryRouter initialEntries={['/skills?period=all']}>
+    (Story, { parameters }) => (
+      <MemoryRouter
+        initialEntries={[
+          typeof parameters['entry'] === 'string'
+            ? parameters['entry']
+            : '/skills?period=all',
+        ]}
+      >
         <Routes>
           <Route
             path="/skills"
@@ -44,12 +50,20 @@ export const WithSkills: Story = {
     await expect(
       canvas.queryByText('No skills launched in this period.'),
     ).toBeNull();
-    await userEvent.selectOptions(
-      canvas.getByRole('combobox', { name: 'Project' }),
-      '/home/dev/example-lib',
-    );
+    await expect(canvas.queryByRole('combobox')).toBeNull();
+  },
+};
+
+export const OneProject: Story = {
+  args: { loadSkills: skillsLoader(someSkills) },
+  parameters: {
+    entry: '/skills?period=all&project=%2Fhome%2Fdev%2Fexample-lib',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
     await canvas.findByText('No skills launched in this period.');
     await waitFor(() => expect(canvas.getAllByRole('row')).toHaveLength(2));
+    await expect(canvas.queryByRole('combobox')).toBeNull();
     await userEvent.click(canvas.getByRole('button', { name: 'Last 30 days' }));
     await expect(
       canvas.getByRole('status', { name: 'Address' }),

@@ -1,4 +1,5 @@
 import { useSearchParams } from 'react-router';
+import { projectOf } from './project-param.ts';
 import type {
   FeatureListResponse,
   FeatureResponse,
@@ -150,7 +151,7 @@ export function useFeatureParams(): {
   const period = params.get('period');
   const filters: SkillFilters = {
     period: isPeriod(period) ? period : DEFAULT_PERIOD,
-    project: params.get('project') ?? undefined,
+    project: projectOf(params),
   };
   const sort = sortOf(params);
   const write = (nextFilters: SkillFilters, nextSort: FeatureSort): void => {

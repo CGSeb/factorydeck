@@ -4,7 +4,6 @@ import type { RoleListResponse, RoleSourceFile } from '../roles/types.ts';
 import { formatClock } from './format.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { PeriodSelector } from './PeriodSelector.tsx';
-import { ProjectSelect } from './ProjectSelect.tsx';
 import { RoleTable } from './RoleTable.tsx';
 import type { LoadRoles } from './roles-api.ts';
 import { useRefreshing, useSkillFilters } from './skills-api.ts';
@@ -59,13 +58,6 @@ export function RolesPage({ loadRoles }: RolesPageProps): ReactElement {
       {response?.status === 'ok' && (
         <p className="source">{roleSourceText(response.config)}</p>
       )}
-      <div className="filters">
-        <ProjectSelect
-          value={filters.project}
-          projects={response?.status === 'ok' ? response.list.projects : []}
-          onChange={(project) => setFilters({ ...filters, project })}
-        />
-      </div>
       <RolesContent response={response} />
     </div>
   );

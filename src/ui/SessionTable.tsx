@@ -6,6 +6,7 @@ import { formatAgo, formatCost, formatDuration, orMissing } from './format.ts';
 import { SessionStateLabel } from './SessionStateLabel.tsx';
 import { TokenCount } from './TokenCount.tsx';
 import { WorkItemLink } from './WorkItemLink.tsx';
+import { useProject, withProject } from './project-param.ts';
 
 export function sessionTitle({
   title,
@@ -17,8 +18,8 @@ export function sessionTitle({
   return title === '' ? id.slice(0, 8) : title;
 }
 
-export function sessionPath(id: string): string {
-  return `/sessions/${encodeURIComponent(id)}`;
+export function sessionPath(id: string, project?: string): string {
+  return withProject(`/sessions/${encodeURIComponent(id)}`, project);
 }
 
 function SessionTableHead(): ReactElement {
@@ -55,6 +56,7 @@ export function SessionTable({
   now,
 }: SessionTableProps): ReactElement {
   const navigate = useNavigate();
+  const project = useProject();
   return (
     <table className="session-table" aria-label="Sessions">
       <SessionTableHead />
@@ -70,14 +72,14 @@ export function SessionTable({
               ) {
                 return;
               }
-              void navigate(sessionPath(row.id));
+              void navigate(sessionPath(row.id, project));
             }}
           >
             <td className="left">
               <SessionStateLabel state={row.state} />
             </td>
             <th scope="row" className="left">
-              <Link to={sessionPath(row.id)}>{sessionTitle(row)}</Link>
+              <Link to={sessionPath(row.id, project)}>{sessionTitle(row)}</Link>
             </th>
             <td className="left">
               <ProjectName project={row.project} name={row.projectName} />

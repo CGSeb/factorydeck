@@ -1,4 +1,3 @@
-import type { ProjectOption } from '../projects/label.ts';
 import { type ReactElement, useEffect, useId, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { DEFAULT_PERIOD, type Period, isPeriod } from '../overview/types.ts';
@@ -12,7 +11,7 @@ import {
 import { formatClock, formatCount } from './format.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { PeriodSelector } from './PeriodSelector.tsx';
-import { ProjectSelect } from './ProjectSelect.tsx';
+import { projectOf } from './project-param.ts';
 import type { LoadSessions, SessionFilters } from './sessions-api.ts';
 import { canShowMore, nextLimit } from './session-paging.ts';
 import { STATE_LABELS } from './SessionStateLabel.tsx';
@@ -38,7 +37,7 @@ function useFilters(): [SessionFilters, (next: SessionFilters) => void] {
   const state = searchParams.get('state');
   const filters: SessionFilters = {
     period: isPeriod(period) ? period : DEFAULT_PERIOD,
-    project: searchParams.get('project') ?? undefined,
+    project: projectOf(searchParams),
     state: isSessionState(state) ? state : undefined,
   };
   const update = (next: SessionFilters): void => {
@@ -128,22 +127,15 @@ function useSessionList(
 
 function FilterBar({
   filters,
-  projects,
   onChange,
 }: {
   filters: SessionFilters;
-  projects: ProjectOption[];
   onChange: (next: SessionFilters) => void;
 }): ReactElement {
   const stateId = useId();
-  const { project, state } = filters;
+  const { state } = filters;
   return (
     <div className="filters">
-      <ProjectSelect
-        value={project}
-        projects={projects}
-        onChange={(next) => onChange({ ...filters, project: next })}
-      />
       <label htmlFor={stateId}>
         State
         <select
@@ -194,11 +186,7 @@ export function SessionsPage({
           onChange={(period: Period) => setFilters({ ...filters, period })}
         />
       </div>
-      <FilterBar
-        filters={filters}
-        projects={response?.status === 'ok' ? response.list.projects : []}
-        onChange={setFilters}
-      />
+      <FilterBar filters={filters} onChange={setFilters} />
       <SessionsContent
         response={response}
         onMore={() =>

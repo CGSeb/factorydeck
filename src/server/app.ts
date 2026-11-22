@@ -65,11 +65,15 @@ export function createApp({
   app.get('/api/overview', async (c) => {
     const period = c.req.query('period');
     const timeZone = c.req.query('tz') ?? '';
+    const project = c.req.query('project') || undefined;
     if (!isPeriod(period) || !isTimeZone(timeZone)) {
-      return c.json({ error: 'Expected period and tz query parameters' }, 400);
+      return c.json(
+        { error: 'Expected period, tz, and optional project query parameters' },
+        400,
+      );
     }
     const body: OverviewResponse = await fromDatabase(async () => {
-      const usage = await overview.load({ period, timeZone });
+      const usage = await overview.load({ period, timeZone, project });
       return {
         status: 'ok',
         sessionsFolder: overview.sessionsFolder,

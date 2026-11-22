@@ -37,8 +37,14 @@ function Refreshing(): ReactElement {
 const meta = {
   component: SessionPage,
   decorators: [
-    (Story) => (
-      <MemoryRouter initialEntries={['/sessions/7f3a9c21']}>
+    (Story, { parameters }) => (
+      <MemoryRouter
+        initialEntries={[
+          typeof parameters['entry'] === 'string'
+            ? parameters['entry']
+            : '/sessions/7f3a9c21',
+        ]}
+      >
         <Routes>
           <Route path="/sessions/:id" element={<Story />} />
           <Route path="/sessions" element={<p>Session list</p>} />
@@ -160,10 +166,27 @@ export const NotFound: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByText('Session not found.');
+    await expect(
+      canvas.getByRole('link', { name: 'Back to sessions' }),
+    ).toHaveAttribute('href', '/sessions');
     await userEvent.click(
       canvas.getByRole('link', { name: 'Back to sessions' }),
     );
     await canvas.findByText('Session list');
+  },
+};
+
+export const NotFoundInOneProject: Story = {
+  args: { loadSession: detailLoader(notFoundResponse) },
+  parameters: {
+    entry: '/sessions/7f3a9c21?project=%2Fhome%2Fdev%2Fexample-app',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Session not found.');
+    await expect(
+      canvas.getByRole('link', { name: 'Back to sessions' }),
+    ).toHaveAttribute('href', '/sessions?project=%2Fhome%2Fdev%2Fexample-app');
   },
 };
 

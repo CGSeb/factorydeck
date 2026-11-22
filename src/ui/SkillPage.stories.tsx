@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { ReactElement } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
-import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 import {
   skillLoader,
   unlaunchedDetail,
@@ -17,8 +17,14 @@ function Location(): ReactElement {
 const meta = {
   component: SkillPage,
   decorators: [
-    (Story) => (
-      <MemoryRouter initialEntries={['/skills/kit%3Awrite-spec?period=all']}>
+    (Story, { parameters }) => (
+      <MemoryRouter
+        initialEntries={[
+          typeof parameters['entry'] === 'string'
+            ? parameters['entry']
+            : '/skills/kit%3Awrite-spec?period=all',
+        ]}
+      >
         <Routes>
           <Route
             path="/skills/:name"
@@ -30,7 +36,15 @@ const meta = {
             }
           />
           <Route path="/skills" element={<p>Skill list</p>} />
-          <Route path="/sessions/:id" element={<p>Session page</p>} />
+          <Route
+            path="/sessions/:id"
+            element={
+              <>
+                <p>Session page</p>
+                <Location />
+              </>
+            }
+          />
         </Routes>
       </MemoryRouter>
     ),
@@ -51,21 +65,37 @@ export const WithLaunches: Story = {
     await expect(
       canvas.getByRole('link', { name: 'Add the export button' }),
     ).toHaveAttribute('href', '/sessions/7f3a9c21-0000-4000-8000-000000000001');
-    await userEvent.selectOptions(
-      canvas.getByRole('combobox', { name: 'Project' }),
-      '/home/dev/example-lib',
-    );
-    await waitFor(() =>
-      expect(
-        canvas.queryByRole('link', { name: 'Add the export button' }),
-      ).toBeNull(),
-    );
-    await expect(canvas.getByRole('link', { name: 'b81e44d0' })).toBeVisible();
+    await expect(canvas.queryByRole('combobox')).toBeNull();
     await expect(
-      canvas.getByRole('status', { name: 'Address' }),
-    ).toHaveTextContent('?period=all&project=%2Fhome%2Fdev%2Fexample-lib');
+      canvas.getByRole('link', { name: 'Back to skills' }),
+    ).toHaveAttribute('href', '/skills?period=all');
+  },
+};
+
+export const OneProject: Story = {
+  args: { loadSkill: skillLoader(writeSpecDetail) },
+  parameters: {
+    entry:
+      '/skills/kit%3Awrite-spec?period=all&project=%2Fhome%2Fdev%2Fexample-lib',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole('link', { name: 'b81e44d0' });
+    await expect(
+      canvas.queryByRole('link', { name: 'Add the export button' }),
+    ).toBeNull();
+    await expect(canvas.queryByRole('combobox')).toBeNull();
+    await expect(
+      canvas.getByRole('link', { name: 'Back to skills' }),
+    ).toHaveAttribute(
+      'href',
+      '/skills?period=all&project=%2Fhome%2Fdev%2Fexample-lib',
+    );
     await userEvent.click(canvas.getByRole('link', { name: 'b81e44d0' }));
     await canvas.findByText('Session page');
+    await expect(
+      canvas.getByRole('status', { name: 'Address' }),
+    ).toHaveTextContent('?project=%2Fhome%2Fdev%2Fexample-lib');
   },
 };
 

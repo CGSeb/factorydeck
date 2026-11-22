@@ -1,3 +1,5 @@
+import type { ProjectOption } from './label.ts';
+
 export interface MissingFactory {
   project: string;
   name: string;
@@ -8,6 +10,7 @@ export interface MissingFactory {
 export interface FactoryStatus {
   hasSessions: boolean;
   missing: MissingFactory[];
+  projects: ProjectOption[];
 }
 
 export type DeleteResult = 'deleted' | 'has-factory' | 'not-found';

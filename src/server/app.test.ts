@@ -206,6 +206,32 @@ describe('GET /api/overview', () => {
     expect(queries.at(-1)).toEqual({ period: '30d', timeZone: 'Europe/Paris' });
   });
 
+  it('passes the project on, an empty project meaning all projects', async () => {
+    const app = createApp({
+      checkDatabase: up,
+      uiDir: builtUi,
+      overview: source,
+      sessions: sessionSource,
+      skills: unusedSkills,
+      roles: unusedRoles,
+      features: unusedFeatures,
+      projects: unusedProjects,
+      gitHost: unusedGitHost,
+    });
+    await app.request('/api/overview?period=7d&tz=UTC&project=%2Fwork%2Fapp');
+    expect(queries.at(-1)).toStrictEqual({
+      period: '7d',
+      timeZone: 'UTC',
+      project: '/work/app',
+    });
+    await app.request('/api/overview?period=7d&tz=UTC&project=');
+    expect(queries.at(-1)).toStrictEqual({
+      period: '7d',
+      timeZone: 'UTC',
+      project: undefined,
+    });
+  });
+
   it('answers 400 for an unknown period or time zone', async () => {
     const app = createApp({
       checkDatabase: up,

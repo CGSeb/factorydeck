@@ -90,6 +90,7 @@ export const NoSessionYet: Story = {
       name: 'Install the factory in a project',
     });
     await expect(canvas.queryByText('Session list')).toBeNull();
+    await expect(canvas.queryByRole('combobox')).toBeNull();
   },
 };
 

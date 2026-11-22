@@ -11,6 +11,7 @@ import { formatClock } from './format.ts';
 import { ModelTable } from './ModelTable.tsx';
 import { type LoadOverview, UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { PeriodSelector } from './PeriodSelector.tsx';
+import { PROJECT_PARAM, projectOf } from './project-param.ts';
 import { ProjectTable } from './ProjectTable.tsx';
 import { UsageTiles } from './UsageTiles.tsx';
 import { WelcomePanel } from './WelcomePanel.tsx';
@@ -52,19 +53,21 @@ export function OverviewPage({
   const [searchParams, setSearchParams] = useSearchParams();
   const requested = searchParams.get('period');
   const period: Period = isPeriod(requested) ? requested : DEFAULT_PERIOD;
+  const project = projectOf(searchParams);
+  const key = JSON.stringify({ period, project });
   const [loaded, setLoaded] = useState<{
-    period: Period;
+    key: string;
     response: OverviewResponse;
   }>();
-  const response = loaded?.period === period ? loaded.response : undefined;
+  const response = loaded?.key === key ? loaded.response : undefined;
 
   useEffect(() => {
     let active = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
     async function refresh(): Promise<void> {
-      const next = await loadOverview(period);
+      const next = await loadOverview(period, project);
       if (!active) return;
-      if (next !== undefined) setLoaded({ period, response: next });
+      if (next !== undefined) setLoaded({ key, response: next });
       timer = setTimeout(
         () => void refresh(),
         (next?.refreshSeconds ?? RETRY_SECONDS) * 1000,
@@ -75,7 +78,7 @@ export function OverviewPage({
       active = false;
       clearTimeout(timer);
     };
-  }, [loadOverview, period]);
+  }, [loadOverview, period, project, key]);
 
   const updatedAt =
     response?.status === 'ok' && response.updatedAt !== null
@@ -91,7 +94,11 @@ export function OverviewPage({
         )}
         <PeriodSelector
           value={period}
-          onChange={(next) => setSearchParams({ period: next })}
+          onChange={(next) => {
+            const params = new URLSearchParams({ period: next });
+            if (project !== undefined) params.set(PROJECT_PARAM, project);
+            setSearchParams(params);
+          }}
         />
       </div>
       <OverviewContent response={response} />

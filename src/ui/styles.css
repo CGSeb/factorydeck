@@ -224,6 +224,22 @@ thead th:first-child {
   }
 }
 
+@media (max-width: 480px) {
+  .topbar {
+    gap: 0 1rem;
+    padding: 0 1rem 0.5rem;
+  }
+
+  .topbar ul {
+    flex-wrap: wrap;
+    gap: 0 0.75rem;
+  }
+
+  .topbar .project-select {
+    margin-left: 0;
+  }
+}
+
 @media (max-width: 900px) {
   .session-table th,
   .session-table td {
@@ -457,6 +473,26 @@ th.left {
   border-radius: 4px;
   overflow-wrap: anywhere;
   user-select: all;
+}
+
+.project-select {
+  box-sizing: border-box;
+  max-width: 16em;
+  margin-left: auto;
+  padding: 0.35rem 0.5rem;
+  overflow: hidden;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.project-select + .collection {
+  margin-left: 0;
 }
 
 .collection {

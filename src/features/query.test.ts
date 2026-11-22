@@ -142,13 +142,17 @@ describe('listFeatures', () => {
       );
       expect(shown).toBeCloseTo(list.totals.tokens);
       for (const project of overview.projects) {
-        const scoped = await listFeatures(
-          db,
-          { ...query, project: project.project },
-          DEFAULT_CONFIG,
-        );
+        const scopedQuery = { ...query, project: project.project };
+        const [scoped, scopedOverview] = await Promise.all([
+          listFeatures(db, scopedQuery, DEFAULT_CONFIG),
+          usageOverview(db, scopedQuery),
+        ]);
         expect(scoped.totals.tokens).toBe(project.tokens);
         expect(scoped.totals.costUsd).toBeCloseTo(project.costUsd ?? 0);
+        expect(scoped.totals.apiCalls).toBe(scopedOverview.totals.apiCalls);
+        expect(scoped.totals.costUsd).toBeCloseTo(
+          scopedOverview.totals.costUsd,
+        );
       }
     }
   });

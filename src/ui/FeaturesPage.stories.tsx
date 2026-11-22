@@ -103,22 +103,21 @@ export const AllProjects: Story = {
 };
 
 export const OneProject: Story = {
+  parameters: {
+    entry: `/features?period=all&project=${encodeURIComponent(APP)}`,
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByRole('rowheader', { name: '#52 Export button' });
-    await userEvent.selectOptions(
-      canvas.getByRole('combobox', { name: 'Project' }),
-      APP,
-    );
-    await expect(address(canvasElement)).toHaveTextContent(
-      '/features?period=all&project=%2Fhome%2Fdev%2Fexample-app',
-    );
-    await waitFor(() =>
-      expect(
-        canvas.queryByRole('columnheader', { name: 'Project' }),
-      ).toBeNull(),
-    );
+    await expect(canvas.queryByRole('combobox')).toBeNull();
+    await expect(
+      canvas.queryByRole('columnheader', { name: 'Project' }),
+    ).toBeNull();
     await expect(canvas.queryByRole('rowheader', { name: '#28' })).toBeNull();
+    await userEvent.click(canvas.getByRole('button', { name: 'Today' }));
+    await expect(address(canvasElement)).toHaveTextContent(
+      '/features?period=today&project=%2Fhome%2Fdev%2Fexample-app',
+    );
   },
 };
 

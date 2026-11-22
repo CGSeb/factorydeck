@@ -239,9 +239,17 @@ describe('listRoles', () => {
           { ...query, project: project.project },
           config,
         );
+        const { totals } = await usageOverview(db, {
+          ...query,
+          project: project.project,
+        });
         expect(sum(scoped.roles, 'apiCalls')).toBe(project.apiCalls);
+        expect(sum(scoped.roles, 'apiCalls')).toBe(totals.apiCalls);
         expect(sum(scoped.roles, 'tokens')).toBe(project.tokens);
-        expect(cost(scoped.roles)).toBeCloseTo(project.costUsd ?? 0, 9);
+        expect(cost(scoped.roles)).toBeCloseTo(totals.costUsd, 9);
+        expect(scoped.roles.find((row) => row.role === 'main')?.threads).toBe(
+          totals.sessions,
+        );
       }
     }
   });
