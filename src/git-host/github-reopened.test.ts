@@ -32,7 +32,7 @@ describe('GitHub reopened issues', () => {
           ]
         : [];
     }, 'example-org/example-app');
-    const changes = await reader.changes(new Date('2026-03-01T00:00:00Z'));
+    const changes = await reader.changes(new Date('2026-03-01T00:00:00.750Z'));
     expect(
       changes.issues.map((issue) => [issue.number, issue.reopened]),
     ).toEqual([
@@ -49,7 +49,7 @@ describe('GitHub reopened issues', () => {
         '-f',
         'name=example-app',
         '-f',
-        'since=2026-03-01T00:00:00.000Z',
+        'since=2026-03-01T00:00:00+00:00',
       ],
       [
         'api',
@@ -59,7 +59,7 @@ describe('GitHub reopened issues', () => {
         '-f',
         'name=example-app',
         '-f',
-        'since=2026-03-01T00:00:00.000Z',
+        'since=2026-03-01T00:00:00+00:00',
         '-f',
         'after=c1',
       ],

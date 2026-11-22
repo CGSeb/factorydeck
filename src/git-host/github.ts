@@ -187,7 +187,7 @@ async function reopenedIssues(
   for (;;) {
     const args = ['api', 'graphql', '-f', `query=${REOPENED_QUERY}`];
     args.push('-f', `owner=${owner}`, '-f', `name=${name}`);
-    if (since !== null) args.push('-f', `since=${since.toISOString()}`);
+    if (since !== null) args.push('-f', `since=${searchTime(since)}`);
     if (after !== null) args.push('-f', `after=${after}`);
     const issues = field(
       field(field(object(await run(args), 'graphql'), 'data'), 'repository'),
