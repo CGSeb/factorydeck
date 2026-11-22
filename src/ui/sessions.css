@@ -49,7 +49,7 @@
   text-decoration: underline;
 }
 
-.fd-mono {
+.fd-session-mono {
   font-family: var(--fd-font-mono);
   font-size: var(--fd-text-xs);
 }
@@ -136,6 +136,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.fd-anywhere {
+.fd-session-anywhere {
   overflow-wrap: anywhere;
 }

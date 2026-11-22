@@ -104,15 +104,33 @@ export const AllStates: Story = {
   },
 };
 
+function slowStateLoader(): LoadSessions {
+  const load = listLoader(someSessions);
+  return (filters, limit) =>
+    filters.state === undefined
+      ? load(filters, limit)
+      : new Promise((resolve) => {
+          setTimeout(() => resolve(load(filters, limit)), 300);
+        });
+}
+
 export const OneStateSelected: Story = {
-  args: { loadSessions: listLoader(someSessions) },
+  args: { loadSessions: slowStateLoader() },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByText('3 sessions');
     await userEvent.click(
       canvas.getByRole('button', { name: 'Waiting for you 1' }),
     );
+    await canvas.findByText('Loading…');
+    const pressed = canvas.getByRole('button', {
+      name: 'Waiting for you 1',
+      pressed: true,
+    });
+    await expect(pressed).toHaveFocus();
     await canvas.findByText('1 session');
+    await expect(pressed).toHaveFocus();
+    await expect(pressed).toBeVisible();
     await expect(
       canvas.getByRole('status', { name: 'Address' }),
     ).toHaveTextContent('?period=all&state=waiting');
@@ -121,11 +139,9 @@ export const OneStateSelected: Story = {
         'row',
       ),
     ).toHaveLength(2);
-    await expect(
-      canvas.getByRole('button', { name: 'Waiting for you 1', pressed: true }),
-    ).toBeVisible();
     await userEvent.click(canvas.getByRole('button', { name: 'All 3' }));
     await canvas.findByText('3 sessions');
+    await expect(canvas.getByRole('button', { name: 'All 3' })).toHaveFocus();
     await expect(
       canvas.getByRole('status', { name: 'Address' }),
     ).toHaveTextContent(/^\?period=all$/);

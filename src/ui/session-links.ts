@@ -1,5 +1,6 @@
 import { type Period, isPeriod } from '../overview/types.ts';
 import { PROJECT_PARAM, projectOf } from './project-param.ts';
+import { featurePath } from './features-api.ts';
 import { skillPath } from './skills-api.ts';
 
 export interface LinkScope {
@@ -49,10 +50,8 @@ export function issueHref(
   project: string,
   { period }: Pick<LinkScope, 'period'>,
 ): string {
-  return withQuery(`/features/${String(number)}`, [
-    [PROJECT_PARAM, project],
-    ['period', period],
-  ]);
+  if (period !== undefined) return featurePath({ project, number }, { period });
+  return withQuery(`/features/${String(number)}`, [[PROJECT_PARAM, project]]);
 }
 
 export function skillHref(

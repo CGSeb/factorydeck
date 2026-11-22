@@ -161,7 +161,10 @@ function Skills({
                   {row.skill === null ? (
                     NO_SKILL_LABEL
                   ) : (
-                    <Link className="fd-mono" to={skillHref(row.skill, scope)}>
+                    <Link
+                      className="fd-session-mono"
+                      to={skillHref(row.skill, scope)}
+                    >
                       {row.skill}
                     </Link>
                   )}
@@ -198,7 +201,7 @@ function SessionLine({
         color={colors.get(session.project) ?? 'var(--fd-muted)'}
       />
       {session.gitBranch !== '' && (
-        <span className="fd-mono">{session.gitBranch}</span>
+        <span className="fd-session-mono">{session.gitBranch}</span>
       )}
       {session.workItem !== null && (
         <span>

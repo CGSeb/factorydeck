@@ -56,7 +56,9 @@ export function SessionAside({
       <dl className="fd-session-facts">
         <div>
           <dt>Working directory</dt>
-          <dd className="fd-mono fd-anywhere">{session.cwd ?? MISSING}</dd>
+          <dd className="fd-session-mono fd-session-anywhere">
+            {session.cwd ?? MISSING}
+          </dd>
         </div>
         <div>
           <dt>First activity</dt>

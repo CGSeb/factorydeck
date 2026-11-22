@@ -4,6 +4,7 @@ import type { WorkItemIssue } from '../git-host/types.ts';
 import {
   SESSION_PAGE_SIZE,
   type SessionList,
+  type StateCounts,
   type SessionSummary,
 } from '../sessions/types.ts';
 import { DataTable, NUMERIC_CELL } from './components/DataTable.tsx';
@@ -88,7 +89,7 @@ function SessionRow({
           />
         </td>
       )}
-      <td className="fd-mono">
+      <td className="fd-session-mono">
         {row.gitBranch === '' ? MISSING : row.gitBranch}
       </td>
       <td>
@@ -147,30 +148,17 @@ function SessionsTable({
   );
 }
 
-function SessionsBody({
+function SessionRows({
   list,
   filters,
-  onFilters,
   onMore,
 }: {
   list: SessionList;
   filters: SessionFilters;
-  onFilters: (next: SessionFilters) => void;
   onMore: () => void;
 }): ReactElement {
   return (
     <>
-      <FilterPills
-        label="State"
-        options={stateOptions(list.counts)}
-        value={filters.state ?? ALL}
-        onChange={(choice) =>
-          onFilters({
-            ...filters,
-            state: choice === ALL ? undefined : choice,
-          })
-        }
-      />
       {list.sessions.length === 0 ? (
         <StatusLine>No sessions match these filters.</StatusLine>
       ) : (
@@ -194,6 +182,27 @@ function SessionsBody({
   );
 }
 
+function StatePills({
+  counts,
+  filters,
+  onFilters,
+}: {
+  counts: StateCounts;
+  filters: SessionFilters;
+  onFilters: (next: SessionFilters) => void;
+}): ReactElement {
+  return (
+    <FilterPills
+      label="State"
+      options={stateOptions(counts)}
+      value={filters.state ?? ALL}
+      onChange={(choice) =>
+        onFilters({ ...filters, state: choice === ALL ? undefined : choice })
+      }
+    />
+  );
+}
+
 export function SessionsPage({
   loadSessions,
 }: SessionsPageProps): ReactElement {
@@ -201,7 +210,7 @@ export function SessionsPage({
   const filterKey = JSON.stringify(filters);
   const [shown, setShown] = useState({ filterKey, limit: SESSION_PAGE_SIZE });
   const limit = shown.filterKey === filterKey ? shown.limit : SESSION_PAGE_SIZE;
-  const response = useSessionList(loadSessions, filters, limit);
+  const { response, counts } = useSessionList(loadSessions, filters, limit);
   const list = response?.status === 'ok' ? response.list : undefined;
 
   return (
@@ -216,15 +225,17 @@ export function SessionsPage({
           />
         }
       />
+      {counts !== undefined && (
+        <StatePills counts={counts} filters={filters} onFilters={setFilters} />
+      )}
       {response === undefined && <StatusLine>Loading…</StatusLine>}
       {response?.status === 'unreachable' && (
         <StatusLine>{UNREACHABLE_MESSAGE}</StatusLine>
       )}
       {list !== undefined && (
-        <SessionsBody
+        <SessionRows
           list={list}
           filters={filters}
-          onFilters={setFilters}
           onMore={() => setShown({ filterKey, limit: nextLimit(limit) })}
         />
       )}

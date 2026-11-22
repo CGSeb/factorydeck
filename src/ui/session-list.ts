@@ -55,11 +55,16 @@ export function useFilters(): [SessionFilters, (next: SessionFilters) => void] {
   return [filters, update];
 }
 
+export interface SessionListView {
+  response: SessionListResponse | undefined;
+  counts: StateCounts | undefined;
+}
+
 export function useSessionList(
   loadSessions: LoadSessions,
   { period, project, state }: SessionFilters,
   limit: number,
-): SessionListResponse | undefined {
+): SessionListView {
   const key = JSON.stringify({ period, project, state, limit });
   const [loaded, setLoaded] = useState<{
     key: string;
@@ -70,6 +75,11 @@ export function useSessionList(
     filterKey: string;
     response: SessionListResponse;
   }>();
+  const scopeKey = JSON.stringify({ period, project });
+  const [counts, setCounts] = useState<{
+    scopeKey: string;
+    counts: StateCounts;
+  }>();
 
   useEffect(() => {
     let active = true;
@@ -77,12 +87,16 @@ export function useSessionList(
     const current: SessionFilters = { period, project, state };
     const currentFilterKey = JSON.stringify(current);
     const currentKey = JSON.stringify({ ...current, limit });
+    const currentScopeKey = JSON.stringify({ period, project });
     async function refresh(): Promise<void> {
       const next = await loadSessions(current, limit);
       if (!active) return;
       if (next !== undefined) {
         setLoaded({ key: currentKey, response: next });
         setLast({ filterKey: currentFilterKey, response: next });
+        if (next.status === 'ok') {
+          setCounts({ scopeKey: currentScopeKey, counts: next.list.counts });
+        }
       }
       timer = setTimeout(
         () => void refresh(),
@@ -96,6 +110,14 @@ export function useSessionList(
     };
   }, [loadSessions, period, project, state, limit]);
 
-  if (loaded?.key === key) return loaded.response;
-  return last?.filterKey === filterKey ? last.response : undefined;
+  const response =
+    loaded?.key === key
+      ? loaded.response
+      : last?.filterKey === filterKey
+        ? last.response
+        : undefined;
+  return {
+    response,
+    counts: counts?.scopeKey === scopeKey ? counts.counts : undefined,
+  };
 }
