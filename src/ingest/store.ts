@@ -4,6 +4,7 @@ import {
   UNASSIGNED_PROJECT,
   apiCall,
   closingLine,
+  friction,
   ingestState,
   session,
   skillLaunch,
@@ -130,6 +131,7 @@ export async function forgetFileRows(run: Run, path: string): Promise<void> {
   await run.tx.delete(skillLaunch).where(eq(skillLaunch.sourcePath, path));
   await run.tx.delete(userPrompt).where(eq(userPrompt.sourcePath, path));
   await run.tx.delete(closingLine).where(eq(closingLine.sourcePath, path));
+  await run.tx.delete(friction).where(eq(friction.sourcePath, path));
 }
 
 export function resetSession(row: SessionRow): void {
@@ -149,7 +151,7 @@ export function resetSession(row: SessionRow): void {
   } satisfies Omit<SessionRow, 'id'>);
 }
 
-async function insertChunks<T>(
+export async function insertChunks<T>(
   rows: T[],
   insert: (chunk: T[]) => Promise<unknown[]>,
 ): Promise<number> {

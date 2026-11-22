@@ -1,6 +1,6 @@
 # 040 · Friction ingestion
 
-Status: ready
+Status: done
 Depends on: 007
 Checked: 2026-11-22
 
@@ -10,15 +10,15 @@ A developer will see where their agents stumble: tools that fail or are refused,
 
 ## Acceptance criteria
 
-- [ ] `pnpm ingest` stores one friction per event below, with: its session, its sub-agent (if any), its time, the coding agent that wrote the log (`claude-code` for the logs read today), its kind and the fields of that kind. Kinds and categories are the same for every coding agent; each agent's log format has its own reader, and this spec ships the Claude Code reader only.
-- [ ] **Tool error** (kind `tool-error`): a tool call whose result reports an error. Fields: the tool's name as the log writes it (`Bash`, `Edit`, `mcp__server__tool`), a category (rules), and for a shell command (`Bash` in Claude Code) its program, its exit code when the result gives one, and a hash of the full command.
-- [ ] **Stop blocked** (kind `stop-blocked`): a check or hook that refused to let the agent end its turn. Fields: the hook's command as configured, with the person's home folder written `~`. One friction per refusing hook.
-- [ ] **Context compacted** (kind `compaction`): the agent's conversation was compacted. Fields: the trigger (`auto` or `manual`), and the tokens before and after when the log gives them, else none.
-- [ ] No error text, tool output, command text, file content or prompt is stored, only the fields above. The command hash is the SHA-256 of the command text with leading and trailing spaces removed, in hexadecimal.
-- [ ] Re-reading a file follows spec 002: a grown file adds only its new frictions, a replaced or shorter file replaces its earlier frictions, nothing is stored twice; frictions are deleted with their session, and with their project (spec 007).
-- [ ] The first ingestion after this spec reads every file already ingested once more from its start for frictions only (no other row changes, no duplicate), then records that it is done, so later runs stay incremental.
-- [ ] The summary line of spec 002 gains `<f> frictions` after the skill launches: `Ingested 3 files: 2 sessions, 1 sub-agents, 40 API calls, 2 skill launches, 5 frictions, 0 lines skipped, 0 sessions skipped (no factory).`
-- [ ] The demo sessions (`src/demo/sessions.ts`) hold synthetic frictions of every kind and category, in a main thread and in sub-agents, including the same failing command three times in a row in one thread.
+- [x] `pnpm ingest` stores one friction per event below, with: its session, its sub-agent (if any), its time, the coding agent that wrote the log (`claude-code` for the logs read today), its kind and the fields of that kind. Kinds and categories are the same for every coding agent; each agent's log format has its own reader, and this spec ships the Claude Code reader only.
+- [x] **Tool error** (kind `tool-error`): a tool call whose result reports an error. Fields: the tool's name as the log writes it (`Bash`, `Edit`, `mcp__server__tool`), a category (rules), and for a shell command (`Bash` in Claude Code) its program, its exit code when the result gives one, and a hash of the full command.
+- [x] **Stop blocked** (kind `stop-blocked`): a check or hook that refused to let the agent end its turn. Fields: the hook's command as configured, with the person's home folder written `~`. One friction per refusing hook.
+- [x] **Context compacted** (kind `compaction`): the agent's conversation was compacted. Fields: the trigger (`auto` or `manual`), and the tokens before and after when the log gives them, else none.
+- [x] No error text, tool output, command text, file content or prompt is stored, only the fields above. The command hash is the SHA-256 of the command text with leading and trailing spaces removed, in hexadecimal.
+- [x] Re-reading a file follows spec 002: a grown file adds only its new frictions, a replaced or shorter file replaces its earlier frictions, nothing is stored twice; frictions are deleted with their session, and with their project (spec 007).
+- [x] The first ingestion after this spec reads every file already ingested once more from its start for frictions only (no other row changes, no duplicate), then records that it is done, so later runs stay incremental.
+- [x] The summary line of spec 002 gains `<f> frictions` after the skill launches: `Ingested 3 files: 2 sessions, 1 sub-agents, 40 API calls, 2 skill launches, 5 frictions, 0 lines skipped, 0 sessions skipped (no factory).`
+- [x] The demo sessions (`src/demo/sessions.ts`) hold synthetic frictions of every kind and category, in a main thread and in sub-agents, including the same failing command three times in a row in one thread.
 
 ## Rules
 

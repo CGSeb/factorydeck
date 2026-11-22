@@ -42,7 +42,7 @@ describe('ingest edge cases', () => {
     expect(
       summaryLine(await ingest(db, folder, EVERY_PROJECT_HAS_FACTORY)),
     ).toBe(
-      'Ingested 1 files: 1 sessions, 0 sub-agents, 1 API calls, 0 skill launches, 2 lines skipped, 0 sessions skipped (no factory).',
+      'Ingested 1 files: 1 sessions, 0 sub-agents, 1 API calls, 0 skill launches, 0 frictions, 2 lines skipped, 0 sessions skipped (no factory).',
     );
     expect(
       (await db.select().from(apiCall)).map((call) => call.requestKey),

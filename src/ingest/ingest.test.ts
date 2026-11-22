@@ -253,7 +253,7 @@ describe('ingest', () => {
     ).toEqual(['kit:check']);
     expect(await db.select().from(userPrompt)).toHaveLength(3);
     expect(summaryLine(result)).toBe(
-      'Ingested 4 files: 1 sessions, 2 sub-agents, 4 API calls, 4 skill launches, 0 lines skipped, 0 sessions skipped (no factory).',
+      'Ingested 4 files: 1 sessions, 2 sub-agents, 4 API calls, 4 skill launches, 0 frictions, 0 lines skipped, 0 sessions skipped (no factory).',
     );
   });
 
@@ -269,7 +269,7 @@ describe('ingest', () => {
     ]);
     const result = await ingest(db, folder, EVERY_PROJECT_HAS_FACTORY);
     expect(summaryLine(result)).toBe(
-      'Ingested 0 files: 0 sessions, 0 sub-agents, 0 API calls, 0 skill launches, 0 lines skipped, 1 sessions skipped (no factory).',
+      'Ingested 0 files: 0 sessions, 0 sub-agents, 0 API calls, 0 skill launches, 0 frictions, 0 lines skipped, 1 sessions skipped (no factory).',
     );
     expect(await db.select().from(session)).toEqual([]);
     expect(await db.select().from(apiCall)).toEqual([]);
