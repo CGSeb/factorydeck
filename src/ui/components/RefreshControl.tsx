@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import { formatAgo } from '../format.ts';
+import { Icon } from './Icon.tsx';
 import './controls.css';
 
 export interface RefreshControlProps {
@@ -7,6 +8,7 @@ export interface RefreshControlProps {
   now: Date;
   refreshing: boolean;
   onRefresh: () => void;
+  compact?: boolean;
 }
 
 export function collectionText(
@@ -28,11 +30,12 @@ export function RefreshControl({
   now,
   refreshing,
   onRefresh,
+  compact = false,
 }: RefreshControlProps): ReactElement {
   const status = collectionText(collectedAt, now);
   return (
     <div className="fd-refresh">
-      {status !== undefined && (
+      {!compact && status !== undefined && (
         <span className="fd-refresh-status">{status}</span>
       )}
       <button
@@ -42,23 +45,13 @@ export function RefreshControl({
         aria-busy={refreshing}
         onClick={onRefresh}
       >
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          aria-hidden="true"
-        >
-          <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
-          <path d="M21 3v5h-5" />
-        </svg>
+        <Icon name="refresh" size={16} />
         <span className="fd-visually-hidden">
           {refreshing ? 'Refreshing…' : 'Refresh'}
           {!refreshing && status !== undefined && (
-            <span className="fd-refresh-narrow">, {lowerFirst(status)}</span>
+            <span className={compact ? undefined : 'fd-refresh-narrow'}>
+              , {lowerFirst(status)}
+            </span>
           )}
         </span>
       </button>

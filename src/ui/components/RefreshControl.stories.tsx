@@ -55,3 +55,16 @@ export const Narrow: Story = {
     ).toBeEnabled();
   },
 };
+
+export const Compact: Story = {
+  args: { compact: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByRole('button', {
+        name: /^Refresh ?, issues updated 2 min ago$/,
+      }),
+    ).toBeEnabled();
+    await expect(canvas.queryByText('Issues updated 2 min ago')).toBeNull();
+  },
+};

@@ -1,4 +1,10 @@
-import { type ReactElement, useEffect, useId, useRef } from 'react';
+import {
+  type ReactElement,
+  type RefObject,
+  useEffect,
+  useId,
+  useRef,
+} from 'react';
 import { type SelectOption, useSelect } from './select-state.ts';
 import './controls.css';
 
@@ -16,6 +22,8 @@ export interface SelectProps<T extends string> {
   title?: string;
   className?: string;
   align?: SelectAlign;
+  defaultOpen?: boolean | undefined;
+  onClose?: (() => void) | undefined;
 }
 
 function Chevron(): ReactElement {
@@ -155,6 +163,32 @@ function SelectList<T extends string>({
   );
 }
 
+function listLabel(
+  ariaLabel: string | undefined,
+  labelId: string,
+): { 'aria-label'?: string; 'aria-labelledby'?: string } {
+  return ariaLabel === undefined
+    ? { 'aria-labelledby': labelId }
+    : { 'aria-label': ariaLabel };
+}
+
+function useOpenLifecycle(
+  open: boolean,
+  defaultOpen: boolean,
+  onClose: (() => void) | undefined,
+): RefObject<HTMLButtonElement | null> {
+  const trigger = useRef<HTMLButtonElement>(null);
+  const wasOpen = useRef(open);
+  useEffect(() => {
+    if (defaultOpen) trigger.current?.focus();
+  }, [trigger, defaultOpen]);
+  useEffect(() => {
+    if (wasOpen.current && !open) onClose?.();
+    wasOpen.current = open;
+  }, [open, onClose]);
+  return trigger;
+}
+
 /**
  * A select-only combobox (WAI-ARIA APG pattern): focus stays on the trigger
  * and the active option is announced through `aria-activedescendant`.
@@ -169,15 +203,19 @@ export function Select<T extends string>({
   title,
   className = 'fd-control fd-select-trigger',
   align = 'start',
+  defaultOpen = false,
+  onClose,
 }: SelectProps<T>): ReactElement {
   const ownId = useId();
   const triggerId = id ?? ownId;
-  const select = useSelect(options, value, onChange);
+  const select = useSelect(options, value, onChange, defaultOpen);
   const { rootRef, listId, optionId, open, active } = select;
+  const trigger = useOpenLifecycle(open, defaultOpen, onClose);
 
   return (
     <div ref={rootRef} className="fd-select" data-align={align}>
       <button
+        ref={trigger}
         id={triggerId}
         type="button"
         role="combobox"
@@ -202,11 +240,7 @@ export function Select<T extends string>({
         <SelectList
           id={listId}
           optionId={optionId}
-          labelProps={
-            ariaLabel === undefined
-              ? { 'aria-labelledby': labelId ?? triggerId }
-              : { 'aria-label': ariaLabel }
-          }
+          labelProps={listLabel(ariaLabel, labelId ?? triggerId)}
           options={options}
           active={active}
           selectedIndex={select.selectedIndex}

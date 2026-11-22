@@ -15,12 +15,22 @@ import type { ProjectOption } from '../projects/label.ts';
 import type { FactoryResponse, MissingFactory } from '../projects/types.ts';
 import type { RenderLink } from './components/link.ts';
 import { ProjectPill } from './components/ProjectPill.tsx';
-import { RefreshControl } from './components/RefreshControl.tsx';
-import { TopBar, type TopBarLink } from './components/TopBar.tsx';
+import type { IconName } from './components/Icon.tsx';
+import {
+  RefreshControl,
+  collectionText,
+} from './components/RefreshControl.tsx';
+import {
+  Sidebar,
+  type SidebarLink,
+  type SidebarProject,
+  type SidebarRefresh,
+} from './components/Sidebar.tsx';
 import type { DeleteProject, LoadFactory } from './factory-api.ts';
 import { FactoryBanner } from './FactoryBanner.tsx';
 import type { LoadCollection, RefreshCollection } from './git-host-api.ts';
 import { projectOf, projectTarget, withProject } from './project-param.ts';
+import { projectLabel } from './ProjectSelect.tsx';
 import { WelcomePanel } from './WelcomePanel.tsx';
 import './styles.css';
 import './shell.css';
@@ -130,20 +140,21 @@ function okOrUndefined(
   return response?.status === 'ok' ? response : undefined;
 }
 
-const SECTIONS: readonly { path: string; label: string }[] = [
-  { path: '/', label: 'Overview' },
-  { path: '/features', label: 'Features' },
-  { path: '/sessions', label: 'Sessions' },
-  { path: '/skills', label: 'Skills' },
-  { path: '/roles', label: 'Roles' },
+const SECTIONS: readonly { path: string; label: string; icon: IconName }[] = [
+  { path: '/', label: 'Overview', icon: 'overview' },
+  { path: '/features', label: 'Features', icon: 'features' },
+  { path: '/sessions', label: 'Sessions', icon: 'sessions' },
+  { path: '/skills', label: 'Skills', icon: 'skills' },
+  { path: '/roles', label: 'Roles', icon: 'roles' },
 ];
 
 function sectionLinks(
   pathname: string,
   project: string | undefined,
-): TopBarLink[] {
-  return SECTIONS.map(({ path, label }) => ({
+): SidebarLink[] {
+  return SECTIONS.map(({ path, label, icon }) => ({
     label,
+    icon,
     href: withProject(path, project),
     current: matchPath({ path, end: path === '/' }, pathname) !== null,
   }));
@@ -195,6 +206,43 @@ function useProjectChoice(forget: (project: string) => void): {
   };
 }
 
+function projectSlot(
+  project: string | undefined,
+  projects: ProjectOption[],
+  choose: (next: string | undefined) => void,
+): SidebarProject {
+  return {
+    label: projectLabel(project, projects),
+    render: (control) => (
+      <ProjectPill
+        value={project}
+        projects={projects}
+        onChange={choose}
+        {...control}
+      />
+    ),
+  };
+}
+
+function refreshSlot(
+  collectedAt: string | null | undefined,
+  collection: { refreshing: boolean; refresh: () => void },
+): SidebarRefresh {
+  const now = new Date();
+  return {
+    tip: collectionText(collectedAt, now) ?? 'Refresh',
+    render: (compact) => (
+      <RefreshControl
+        collectedAt={collectedAt}
+        now={now}
+        refreshing={collection.refreshing}
+        onRefresh={collection.refresh}
+        compact={compact}
+      />
+    ),
+  };
+}
+
 export function Layout({
   loadFactory,
   deleteProject,
@@ -210,39 +258,28 @@ export function Layout({
   );
   const { pathname } = useLocation();
   return (
-    <>
-      <TopBar
+    <div className="fd-shell">
+      <Sidebar
         links={sectionLinks(pathname, project)}
         renderLink={renderRouterLink}
-        actions={
-          <>
-            {!welcome && (
-              <ProjectPill
-                value={project}
-                projects={projects}
-                onChange={choose}
-              />
-            )}
-            <RefreshControl
-              collectedAt={collectedAt}
-              now={new Date()}
-              refreshing={collection.refreshing}
-              onRefresh={collection.refresh}
-            />
-          </>
-        }
+        project={welcome ? undefined : projectSlot(project, projects, choose)}
+        refresh={refreshSlot(collectedAt, collection)}
       />
-      {missing.length + failures.length > 0 && (
-        <FactoryBanner
-          missing={missing}
-          failures={failures}
-          deleteProject={deleteProject}
-          onDeleted={onDeleted}
-        />
-      )}
-      <main className={`fd-column fd-main${welcome ? ' fd-main-welcome' : ''}`}>
-        {welcome ? <WelcomePanel /> : <Outlet key={version} />}
-      </main>
-    </>
+      <div className="fd-shell-content">
+        {missing.length + failures.length > 0 && (
+          <FactoryBanner
+            missing={missing}
+            failures={failures}
+            deleteProject={deleteProject}
+            onDeleted={onDeleted}
+          />
+        )}
+        <main
+          className={`fd-column fd-main${welcome ? ' fd-main-welcome' : ''}`}
+        >
+          {welcome ? <WelcomePanel /> : <Outlet key={version} />}
+        </main>
+      </div>
+    </div>
   );
 }
