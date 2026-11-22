@@ -16,36 +16,26 @@ import type {
 } from './components/IssueTimeline.tsx';
 import type { TokenCounts } from './components/token-amount.ts';
 import { roleColors } from './design/palette.ts';
-import { MISSING } from './format.ts';
+import { MISSING, formatDateTime, formatDay, formatTime } from './format.ts';
 import { sessionPath, sessionTitle } from './session-links.ts';
 
-const MONTHS = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-];
-
 export const ORCHESTRATION_DETAIL = 'Share of the orchestrating sessions';
-
-export function formatDay(at: string): string {
-  const date = new Date(at);
-  return `${String(date.getDate())} ${MONTHS[date.getMonth()] ?? ''}`;
-}
 
 export function dateRange(first: string | null, last: string | null): string {
   const from = first === null ? null : formatDay(first);
   const to = last === null ? null : formatDay(last);
   if (from === null || to === null) return from ?? to ?? MISSING;
   return from === to ? from : `${from} → ${to}`;
+}
+
+export function timeRange(first: string | null, last: string | null): string {
+  if (first === null || last === null) return formatDateTime(first ?? last);
+  const from = formatDateTime(first);
+  if (formatDay(first) !== formatDay(last)) {
+    return `${from} → ${formatDateTime(last)}`;
+  }
+  const to = formatTime(last);
+  return to === formatTime(first) ? from : `${from} → ${to}`;
 }
 
 function earliest(values: (string | null)[]): string | null {
@@ -64,11 +54,14 @@ function latest(values: (string | null)[]): string | null {
   );
 }
 
-export function threadsRange(threads: FeatureThread[]): string | null {
+export function threadsRange(
+  threads: FeatureThread[],
+  format: (first: string | null, last: string | null) => string = dateRange,
+): string | null {
   const first = earliest(threads.map((thread) => thread.firstAt));
   const last = latest(threads.map((thread) => thread.lastAt ?? thread.firstAt));
   if (first === null && last === null) return null;
-  return dateRange(first, last);
+  return format(first, last);
 }
 
 function plural(count: number, word: string): string {
@@ -132,7 +125,7 @@ function timelineThread(
     id: `${thread.sessionId}:${thread.threadId}`,
     title: threadTitle(thread),
     href: sessionPath(thread.sessionId, project),
-    date: thread.firstAt === null ? MISSING : formatDay(thread.firstAt),
+    date: formatDateTime(thread.firstAt),
     counts: thread.tokenCounts,
     costUsd: thread.costUsd,
   };
@@ -157,7 +150,7 @@ export function issueSteps(
       const role = threads[0]?.role ?? '';
       const count = threads.length;
       const amount = sumAmounts(threads);
-      const range = threadsRange(threads);
+      const range = threadsRange(threads, timeRange);
       return {
         id: `step-${String(index)}`,
         role,

@@ -91,10 +91,19 @@ export function formatDuration(
   return `${Math.floor(elapsed / DAY_MS)} d ${Math.floor((elapsed % DAY_MS) / HOUR_MS)} h`;
 }
 
+export function formatDay(at: string): string {
+  const date = new Date(at);
+  return `${String(date.getDate())} ${MONTHS[date.getMonth()] ?? ''}`;
+}
+
+export function formatTime(at: string): string {
+  const date = new Date(at);
+  return `${twoDigits(date.getHours())}:${twoDigits(date.getMinutes())}`;
+}
+
 export function formatDateTime(at: string | null): string {
   if (at === null) return MISSING;
-  const date = new Date(at);
-  return `${MONTHS[date.getMonth()] ?? ''} ${date.getDate()}, ${twoDigits(date.getHours())}:${twoDigits(date.getMinutes())}`;
+  return `${formatDay(at)}, ${formatTime(at)}`;
 }
 
 export function formatWorkItem(value: number | null): string {
