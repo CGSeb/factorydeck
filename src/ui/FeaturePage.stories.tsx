@@ -111,6 +111,9 @@ export const MergedAfterPerson: Story = {
     await expect(
       canvas.getByRole('heading', { name: 'How it got merged' }),
     ).toBeVisible();
+    const serenity = canvas.getByText('Serenity').closest('div');
+    if (serenity === null) throw new Error('No serenity figure');
+    await expect(serenity).toHaveTextContent('Serenity88');
   },
 };
 

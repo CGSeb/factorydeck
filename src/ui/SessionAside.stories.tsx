@@ -34,6 +34,34 @@ export const WithAnOutcome: Story = {
   },
 };
 
+export const MergedAfterAPerson: Story = {
+  name: 'Merged after a person',
+  args: {
+    session: {
+      ...sessionWithSubAgents,
+      issueDetail:
+        sessionWithSubAgents.issueDetail === null
+          ? null
+          : {
+              ...sessionWithSubAgents.issueDetail,
+              outcome: {
+                stage: 'merged-after-person',
+                report: { score: 88, threshold: 80, rounds: 2 },
+                reworked: true,
+              },
+            },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('Merged after a person')).toHaveAttribute(
+      'data-tone',
+      'success',
+    );
+    await expect(canvas.getByText('serenity 88')).toBeVisible();
+  },
+};
+
 export const WithoutWorkItem: Story = {
   args: { session: sessionWithoutSubAgents },
   play: async ({ canvasElement }) => {
