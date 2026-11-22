@@ -2,12 +2,15 @@ import { type ReactElement, useId } from 'react';
 import type { RoleUsage } from '../roles/types.ts';
 import { DataTable, NUMERIC_CELL, TotalRow } from './components/DataTable.tsx';
 import { RoleTag } from './components/RoleTag.tsx';
+import { SplitBar } from './components/SplitBar.tsx';
 import { formatCount } from './format.ts';
 import { roleTotals, tokensPerThread } from './roles-view.ts';
 
 export const TABLE_HEADING = 'fd-panel-heading';
 
 export const headingSpace = { marginBottom: 'var(--fd-space-3)' };
+
+export const barSpace = { marginBottom: 'var(--fd-space-4)' };
 
 function RoleRow({
   row,
@@ -55,6 +58,17 @@ export function RoleTokensTable({
       <h2 id={titleId} className={TABLE_HEADING} style={headingSpace}>
         By role
       </h2>
+      <div style={barSpace}>
+        <SplitBar
+          label="Tokens by role"
+          height="tall"
+          segments={roles.map((row) => ({
+            label: row.role,
+            value: row.tokens,
+            color: colors.get(row.role) ?? 'var(--fd-muted)',
+          }))}
+        />
+      </div>
       <DataTable label="By role">
         <table aria-labelledby={titleId}>
           <thead>

@@ -2,8 +2,9 @@ import { type ReactElement, useId } from 'react';
 import type { ModelUsage } from '../overview/types.ts';
 import { DataTable, NUMERIC_CELL } from './components/DataTable.tsx';
 import { dotStyle, tagStyle } from './components/label-styles.ts';
+import { SplitBar } from './components/SplitBar.tsx';
 import { MISSING, formatCount } from './format.ts';
-import { TABLE_HEADING, headingSpace } from './RoleTokensTable.tsx';
+import { TABLE_HEADING, barSpace, headingSpace } from './RoleTokensTable.tsx';
 
 const mono = { fontFamily: 'var(--fd-font-mono)', fontWeight: 400 };
 
@@ -24,6 +25,17 @@ export function ModelTokensTable({
       <h2 id={titleId} className={TABLE_HEADING} style={headingSpace}>
         By model
       </h2>
+      <div style={barSpace}>
+        <SplitBar
+          label="Tokens by model"
+          height="tall"
+          segments={models.map((row) => ({
+            label: modelLabel(row.model),
+            value: row.tokens,
+            color: colors.get(row.model) ?? 'var(--fd-muted)',
+          }))}
+        />
+      </div>
       <DataTable label="By model">
         <table aria-labelledby={titleId}>
           <thead>

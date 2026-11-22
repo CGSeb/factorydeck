@@ -11,9 +11,9 @@ A developer sees how the factory's tokens split between its roles and its models
 ## Acceptance criteria
 
 - [x] `/roles` shows a `PageHeader` (spec 019) titled `Roles`, with today's source sentence of spec 006 and 011 as its summary line, and `PeriodPills`.
-- [x] Under it, a tall `SplitBar` (spec 018) of the period's tokens by role, with each share inside the segments wide enough, colours from `roleColors` (spec 014) in the order of the role configuration.
+- [x] Under the `By role` heading, above its table, a tall `SplitBar` (spec 018) of the period's tokens by role, with each share inside the segments wide enough, colours from `roleColors` (spec 014) in the order of the role configuration.
 - [x] A `DataTable` (spec 019) `By role`: `Role` (row header, `RoleTag` of spec 016), `Threads`, `API calls`, `Tokens per thread` (the row's tokens divided by its threads, compact format; `—` for a row with no thread); sorted by tokens descending; `unassigned` sorted like the others; a bold `Total` row with the threads and API calls of the period. The split of tokens is read from the bar above, so the table has no `Tokens` column.
-- [x] Under the roles, a tall `SplitBar` `Tokens by model` of the period's tokens by model, in the same style as the roles bar, coloured with the category colours (spec 014) in the order of the table, most tokens first; a model with no id is labelled `—`.
+- [x] Under the `By model` heading, above its table, a tall `SplitBar` `Tokens by model` of the period's tokens by model, in the same style as the roles bar, coloured with the category colours (spec 014) in the order of the table, most tokens first; a model with no id is labelled `—`.
 - [x] A second `DataTable` `By model`, from the overview's `models` (spec 003, with `tokenCounts` of spec 021): `Model` (mono, with a dot in the model's bar colour), `API calls`; sorted by tokens descending, with no `Tokens` column. It replaces the overview's `By model` table, removed by spec 024.
 - [x] Today's empty, loading and unreachable texts stay, shown with `StatusLine`.
 - [x] The roles and models totals equal the overview total for the same period and project.

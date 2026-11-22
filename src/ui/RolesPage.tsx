@@ -3,9 +3,8 @@ import type { OverviewResponse, Period } from '../overview/types.ts';
 import type { RoleListResponse, RoleSourceFile } from '../roles/types.ts';
 import { PageHeader } from './components/PageHeader.tsx';
 import { PeriodPills } from './components/PeriodPills.tsx';
-import { SplitBar } from './components/SplitBar.tsx';
 import { StatusLine } from './components/StatusLine.tsx';
-import { ModelTokensTable, modelLabel } from './ModelTokensTable.tsx';
+import { ModelTokensTable } from './ModelTokensTable.tsx';
 import { type LoadOverview, UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { RoleTokensTable } from './RoleTokensTable.tsx';
 import type { LoadRoles } from './roles-api.ts';
@@ -49,21 +48,7 @@ function ModelsContent({
     response.overview.models,
     (row) => row.model,
   );
-  const colors = colorsOfModels(models);
-  return (
-    <>
-      <SplitBar
-        label="Tokens by model"
-        height="tall"
-        segments={models.map((row) => ({
-          label: modelLabel(row.model),
-          value: row.tokens,
-          color: colors.get(row.model) ?? 'var(--fd-muted)',
-        }))}
-      />
-      <ModelTokensTable models={models} colors={colors} />
-    </>
-  );
+  return <ModelTokensTable models={models} colors={colorsOfModels(models)} />;
 }
 
 function RolesContent({
@@ -84,15 +69,6 @@ function RolesContent({
   const colors = colorsOfRoles(response.list.order, roles);
   return (
     <>
-      <SplitBar
-        label="Tokens by role"
-        height="tall"
-        segments={roles.map((row) => ({
-          label: row.role,
-          value: row.tokens,
-          color: colors.get(row.role) ?? 'var(--fd-muted)',
-        }))}
-      />
       <RoleTokensTable roles={roles} colors={colors} />
       <ModelsContent response={overview} />
     </>
