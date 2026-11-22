@@ -186,6 +186,27 @@ export function skillCalls(record: LogRecord): string[] {
   });
 }
 
+export const CLOSING_LINE_MAX_LENGTH = 200;
+
+export function closingLineOf(record: LogRecord): string | undefined {
+  if (record.type !== 'assistant') {
+    return undefined;
+  }
+  const texts = contentBlocks(record).flatMap((block) =>
+    block['type'] === 'text' && typeof block['text'] === 'string'
+      ? [block['text']]
+      : [],
+  );
+  const line = texts
+    .join('\n')
+    .split('\n')
+    .map((candidate) => candidate.trim())
+    .findLast((candidate) => candidate !== '');
+  return line === undefined || line.length > CLOSING_LINE_MAX_LENGTH
+    ? undefined
+    : line;
+}
+
 function userText(record: LogRecord): string | undefined {
   const content = message(record)?.['content'];
   if (typeof content === 'string') {

@@ -1,0 +1,269 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "ffeefe5a-5b4b-43c0-9c2e-64f5e044d318",
+  "prevIds": [
+    "1d8b4c0a-70db-4a72-8a70-55f346a6cf8d"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "closing_line"
+      ],
+      "writes": [
+        "s|tbl|public.closing_line",
+        "n|tbl|public.closing_line",
+        "e|tbl|public.closing_line",
+        "n|rel|public.closing_line",
+        "n|type|public.closing_line",
+        "n|rel|public.closing_line_pkey",
+        "n|rel|public.closing_line_source_path_record_uuid_unique"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "closing_line",
+        "closing_line_session_id_index"
+      ],
+      "writes": [
+        "s|idx|public.closing_line_session_id_index",
+        "n|idx|public.closing_line_session_id_index",
+        "e|idx|public.closing_line_session_id_index",
+        "n|rel|public.closing_line_session_id_index"
+      ],
+      "reads": [
+        "n|tbl|public.closing_line",
+        "n|sch|public",
+        "n|col|public.closing_line.session_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "closing_line"
+      ],
+      "writes": [
+        "s|fk|public.closing_line.closing_line_session_id_session_id_fkey",
+        "n|fk|public.closing_line.closing_line_session_id_session_id_fkey",
+        "e|fk|public.closing_line.closing_line_session_id_session_id_fkey",
+        "n|con|public.closing_line.closing_line_session_id_session_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.closing_line",
+        "n|sch|public",
+        "n|tbl|public.session",
+        "n|sch|public",
+        "n|col|public.closing_line.session_id",
+        "n|col|public.session.id",
+        "e|uniqueness|public.session.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "closing_line",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "closing_line",
+        "name": "id",
+        "type": "bigserial",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "closing_line",
+        "name": "source_path",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "closing_line",
+        "name": "record_uuid",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "closing_line",
+        "name": "session_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "closing_line",
+        "name": "at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "closing_line",
+        "name": "position",
+        "type": "bigint",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "closing_line",
+        "name": "line",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "closing_line",
+        "name": "closing_line_session_id_index",
+        "nameExplicit": false,
+        "columns": [
+          {
+            "value": "session_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "closing_line",
+        "name": "closing_line_session_id_session_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "session_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "session",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "closing_line",
+        "name": "closing_line_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "closing_line",
+        "name": "closing_line_source_path_record_uuid_unique",
+        "nameExplicit": false,
+        "columns": [
+          "source_path",
+          "record_uuid"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    }
+  ]
+}

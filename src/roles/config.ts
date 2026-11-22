@@ -3,12 +3,22 @@ import { isAbsolute } from 'node:path';
 import { parseDocument } from 'yaml';
 import { z } from 'zod';
 import { expandHome } from '../config/env.ts';
+import {
+  captureProblem,
+  markerCapture,
+  markerProblem,
+} from './work-item-pattern.ts';
 import { UNASSIGNED_ROLE } from './types.ts';
 
 export const MAIN_ROLE = 'main';
 export { UNASSIGNED_ROLE };
 
-export const WORK_ITEM_SOURCES = ['description', 'branch', 'title'] as const;
+export const WORK_ITEM_SOURCES = [
+  'marker',
+  'description',
+  'branch',
+  'title',
+] as const;
 
 export type WorkItemSource = (typeof WORK_ITEM_SOURCES)[number];
 
@@ -21,6 +31,7 @@ export interface RoleRule {
 export interface WorkItemRule {
   from: WorkItemSource;
   pattern: RegExp;
+  capture?: number | undefined;
 }
 
 export interface WorkflowRules {
@@ -46,6 +57,11 @@ export const DEFAULT_ROLES: readonly RoleRule[] = [
 export const DEFAULT_RULES: WorkflowRules = {
   roles: [...DEFAULT_ROLES],
   workItems: [
+    {
+      from: 'marker',
+      pattern: /^Work item: #(\d+)(?: \((?<role>[a-z][a-z0-9-]*)\))?$/i,
+      capture: 1,
+    },
     { from: 'description', pattern: /#(\d+)/i },
     { from: 'title', pattern: /#(\d+)/i },
   ],
@@ -64,10 +80,6 @@ function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function captureGroups(pattern: RegExp): number {
-  return (new RegExp(`${pattern.source}|`).exec('')?.length ?? 1) - 1;
-}
-
 const Pattern = z.string().transform((value, ctx) => {
   try {
     return new RegExp(value, 'i');
@@ -77,16 +89,6 @@ const Pattern = z.string().transform((value, ctx) => {
       message: `not a valid regular expression: ${errorText(error)}`,
     });
     return z.NEVER;
-  }
-});
-
-const WorkItemPattern = Pattern.superRefine((pattern, ctx) => {
-  const groups = captureGroups(pattern);
-  if (groups !== 1) {
-    ctx.addIssue({
-      code: 'custom',
-      message: `needs exactly one capture group, found ${String(groups)}`,
-    });
   }
 });
 
@@ -117,10 +119,22 @@ const RoleRuleSchema = z
     agentType: rule.agent_type,
   }));
 
-const WorkItemRuleSchema = z.strictObject({
-  from: z.enum(WORK_ITEM_SOURCES),
-  pattern: WorkItemPattern,
-});
+const WorkItemRuleSchema = z
+  .strictObject({ from: z.enum(WORK_ITEM_SOURCES), pattern: Pattern })
+  .superRefine((rule, ctx) => {
+    const problem =
+      rule.from === 'marker'
+        ? markerProblem(rule.pattern)
+        : captureProblem(rule.pattern);
+    if (problem !== undefined) {
+      ctx.addIssue({ code: 'custom', path: ['pattern'], message: problem });
+    }
+  })
+  .transform((rule): WorkItemRule =>
+    rule.from === 'marker'
+      ? { ...rule, capture: markerCapture(rule.pattern) }
+      : rule,
+  );
 
 const RulesSchema = {
   roles: z.array(RoleRuleSchema).optional(),
@@ -297,17 +311,22 @@ export interface ThreadTexts {
   title: string;
 }
 
+export function issueNumber(capture: string | undefined): number | null {
+  if (capture === undefined || !/^\d+$/.test(capture)) return null;
+  const value = Number(capture);
+  return Number.isSafeInteger(value) && value > 0 ? value : null;
+}
+
 export function workItemOf(
   rules: WorkflowRules,
   texts: ThreadTexts,
 ): number | null {
   for (const { from, pattern } of rules.workItems) {
+    if (from === 'marker') continue;
     const text = texts[from];
     if (text === undefined) continue;
-    const capture = pattern.exec(text)?.[1];
-    if (capture === undefined || !/^\d+$/.test(capture)) continue;
-    const value = Number(capture);
-    if (Number.isSafeInteger(value) && value > 0) return value;
+    const value = issueNumber(pattern.exec(text)?.[1]);
+    if (value !== null) return value;
   }
   return null;
 }

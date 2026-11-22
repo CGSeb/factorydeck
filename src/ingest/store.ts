@@ -3,6 +3,7 @@ import type { PgAsyncTransaction, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import {
   UNASSIGNED_PROJECT,
   apiCall,
+  closingLine,
   session,
   skillLaunch,
   sourceFile,
@@ -103,6 +104,7 @@ export async function forgetFileRows(run: Run, path: string): Promise<void> {
   await run.tx.delete(apiCall).where(eq(apiCall.sourcePath, path));
   await run.tx.delete(skillLaunch).where(eq(skillLaunch.sourcePath, path));
   await run.tx.delete(userPrompt).where(eq(userPrompt.sourcePath, path));
+  await run.tx.delete(closingLine).where(eq(closingLine.sourcePath, path));
 }
 
 export function resetSession(row: SessionRow): void {
@@ -145,6 +147,13 @@ export async function insertThreadRows(
       .values(chunk)
       .onConflictDoNothing()
       .returning({ id: userPrompt.id }),
+  );
+  await insertChunks(rows.closingLines, (chunk) =>
+    tx
+      .insert(closingLine)
+      .values(chunk)
+      .onConflictDoNothing()
+      .returning({ id: closingLine.id }),
   );
   const launches = [
     ...rows.launches,

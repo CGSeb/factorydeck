@@ -2,14 +2,7 @@ import { type SQL, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import { issueDetail, withIssues } from '../git-host/query.ts';
 import { periodStart, select } from '../overview/query.ts';
-import {
-  addCounts,
-  countsOf,
-  emptyCounts,
-  totalTokens,
-} from '../overview/tokens.ts';
-import type { TokenCounts } from '../overview/types.ts';
-import { costOf } from '../pricing.ts';
+import { totalTokens } from '../overview/tokens.ts';
 import { type ProjectNames, projectNames } from '../projects/names.ts';
 import {
   DEFAULT_CONFIG,
@@ -18,7 +11,14 @@ import {
   rulesFor,
   workItemOf,
 } from '../roles/config.ts';
+import {
+  type SessionMarkers,
+  lastMarker,
+  loadMarkers,
+  markerAt,
+} from '../roles/markers.ts';
 import { sessionSkills } from '../skills/query.ts';
+import { USAGE_SUMS, type Usage, emptyUsage, usageBy } from './usage.ts';
 import {
   type SessionDetail,
   type SessionList,
@@ -36,11 +36,6 @@ export interface StateOptions {
 }
 
 type Row = Record<string, unknown>;
-
-interface Usage {
-  tokens: TokenCounts;
-  costUsd: number | null;
-}
 
 function text(value: unknown): string {
   return typeof value === 'string' ? value : '';
@@ -78,34 +73,15 @@ export function statedSessions({
   )`;
 }
 
-function emptyUsage(costUsd: number | null): Usage {
-  return { tokens: emptyCounts(), costUsd };
+interface Rules {
+  config: WorkflowConfig;
+  markers: SessionMarkers;
 }
-
-function usageBy(rows: Row[], key: string): Map<string, Usage> {
-  const usages = new Map<string, Usage>();
-  for (const row of rows) {
-    const id = text(row[key]);
-    const usage = usages.get(id) ?? emptyUsage(null);
-    const counts = countsOf(row);
-    addCounts(usage.tokens, counts);
-    const cost = costOf(text(row['model']), counts);
-    if (cost !== undefined) usage.costUsd = (usage.costUsd ?? 0) + cost;
-    usages.set(id, usage);
-  }
-  return usages;
-}
-
-const USAGE_SUMS = sql`a.model,
-  sum(a.input_tokens) as input,
-  sum(a.cache_write_tokens) as cache_write,
-  sum(a.cache_read_tokens) as cache_read,
-  sum(a.output_tokens) as output`;
 
 function summaryOf(
   row: Row,
   usage: Usage,
-  config: WorkflowConfig,
+  { config, markers }: Rules,
   names: ProjectNames,
 ): Omit<SessionSummary, 'tokens' | 'tokenCounts' | 'issue'> & {
   usage: Usage;
@@ -113,16 +89,19 @@ function summaryOf(
   const project = text(row['project']);
   const title = text(row['title']);
   const gitBranch = text(row['git_branch']);
+  const id = text(row['id']);
   return {
-    id: text(row['id']),
+    id,
     title,
     project,
     projectName: names.label(project),
     gitBranch,
-    workItem: workItemOf(rulesFor(config, project), {
-      branch: gitBranch,
-      title,
-    }),
+    workItem:
+      lastMarker(markers, id)?.workItem ??
+      workItemOf(rulesFor(config, project), {
+        branch: gitBranch,
+        title,
+      }),
     state: stateOf(row['state']),
     firstAt: timestamp(row['first_at']),
     lastAt: timestamp(row['last_at']),
@@ -150,20 +129,19 @@ async function pageSummaries(
   config: WorkflowConfig,
   names: ProjectNames,
 ): Promise<SessionSummary[]> {
-  const usages = usageBy(
-    await usageOfSessions(
-      db,
-      rows.map((row) => text(row['id'])),
-    ),
-    'session_id',
-  );
+  const ids = rows.map((row) => text(row['id']));
+  const [usageRows, markers] = await Promise.all([
+    usageOfSessions(db, ids),
+    loadMarkers(db, config, { sessionIds: ids }),
+  ]);
+  const usages = usageBy(usageRows, 'session_id');
   const summaries = await withIssues(
     db,
     rows.map((row) =>
       summaryOf(
         row,
         usages.get(text(row['id'])) ?? emptyUsage(0),
-        config,
+        { config, markers },
         names,
       ),
     ),
@@ -224,8 +202,8 @@ export async function listSessions(
 function subAgentsOf(
   agentRows: Row[],
   usageRows: Row[],
-  config: WorkflowConfig,
-  summary: Pick<SessionSummary, 'project' | 'title' | 'workItem'>,
+  { config, markers }: Rules,
+  summary: Pick<SessionSummary, 'id' | 'project' | 'title' | 'workItem'>,
 ): Omit<SubAgentSummary, 'issue'>[] {
   const byAgent = usageBy(usageRows, 'sub_agent');
   const rules = rulesFor(config, summary.project);
@@ -242,7 +220,9 @@ function subAgentsOf(
           description,
           branch: text(agent['git_branch']),
           title: summary.title,
-        }) ?? summary.workItem,
+        }) ??
+        markerAt(markers.get(summary.id), agent['first_at'])?.workItem ??
+        summary.workItem,
       description,
       model: text(agent['model']),
       firstAt: timestamp(agent['first_at']),
@@ -260,26 +240,28 @@ export async function sessionDetail(
   options: StateOptions,
   config: WorkflowConfig = DEFAULT_CONFIG,
 ): Promise<SessionDetail | undefined> {
-  const [sessionRows, agentRows, usageRows, skills, names] = await Promise.all([
-    select(
-      db,
-      sql`select * from ${statedSessions(options)} t where t.id = ${id}`,
-    ),
-    select(
-      db,
-      sql`select id, agent_type, description, model, git_branch, first_at, last_at
+  const [sessionRows, agentRows, usageRows, skills, names, markers] =
+    await Promise.all([
+      select(
+        db,
+        sql`select * from ${statedSessions(options)} t where t.id = ${id}`,
+      ),
+      select(
+        db,
+        sql`select id, agent_type, description, model, git_branch, first_at, last_at
         from sub_agent where session_id = ${id}
         order by first_at asc nulls last, id`,
-    ),
-    select(
-      db,
-      sql`select coalesce(a.sub_agent_id, '') as sub_agent, ${USAGE_SUMS}
+      ),
+      select(
+        db,
+        sql`select coalesce(a.sub_agent_id, '') as sub_agent, ${USAGE_SUMS}
         from api_call a where a.session_id = ${id}
         group by a.sub_agent_id, a.model`,
-    ),
-    sessionSkills(db, id),
-    projectNames(db),
-  ]);
+      ),
+      sessionSkills(db, id),
+      projectNames(db),
+      loadMarkers(db, config, { sessionIds: [id] }),
+    ]);
   const [row] = sessionRows;
   if (row === undefined) return undefined;
   const total =
@@ -287,8 +269,9 @@ export async function sessionDetail(
       usageRows.map((usage) => ({ ...usage, sub_agent: '' })),
       'sub_agent',
     ).get('') ?? emptyUsage(0);
-  const { usage, ...summary } = summaryOf(row, total, config, names);
-  const agents = subAgentsOf(agentRows, usageRows, config, summary);
+  const rules = { config, markers };
+  const { usage, ...summary } = summaryOf(row, total, rules, names);
+  const agents = subAgentsOf(agentRows, usageRows, rules, summary);
   const { project, workItem } = summary;
   const [[main], subAgents, detail] = await Promise.all([
     withIssues(db, [summary], () => project),
