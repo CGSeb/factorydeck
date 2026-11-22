@@ -1,4 +1,5 @@
 import type { ReactElement, ReactNode } from 'react';
+import { THEME_LABELS, type Theme } from '../design/theme.ts';
 import { Icon, type IconName } from './Icon.tsx';
 import { type RenderLink, renderAnchor } from './link.ts';
 import type { Tip, TipHandlers } from './sidebar-state.ts';
@@ -35,6 +36,17 @@ export interface SidebarProps {
   refresh?: SidebarRefresh | undefined;
 }
 
+export interface ThemeControl {
+  theme: Theme;
+  onCycle: () => void;
+}
+
+const THEME_ICONS: Record<Theme, IconName> = {
+  system: 'monitor',
+  light: 'sun',
+  dark: 'moon',
+};
+
 export type TipFor = (text: string) => TipHandlers | undefined;
 
 export const NO_TIP: TipFor = () => undefined;
@@ -67,6 +79,31 @@ export function SidebarTip({
     >
       {tip.text}
     </span>
+  );
+}
+
+function ThemeButton({
+  theme,
+  onCycle,
+  folded,
+  tipFor,
+}: ThemeControl & { folded: boolean; tipFor: TipFor }): ReactElement {
+  const name = `Theme: ${THEME_LABELS[theme]}`;
+  return (
+    <button
+      type="button"
+      className="fd-control fd-sidebar-icon-button fd-sidebar-theme"
+      aria-label={name}
+      onClick={onCycle}
+      {...tipFor(name)}
+    >
+      <Icon name={THEME_ICONS[theme]} />
+      {!folded && (
+        <span className="fd-sidebar-label" aria-hidden="true">
+          {THEME_LABELS[theme]}
+        </span>
+      )}
+    </button>
   );
 }
 
@@ -113,6 +150,7 @@ function SidebarNav({
 export interface PanelProps extends SidebarProps {
   id?: string | undefined;
   folded: boolean;
+  themeControl: ThemeControl;
   tipFor: TipFor;
   top?: ReactNode;
   projectSlot: ReactNode;
@@ -125,6 +163,7 @@ export function SidebarPanel({
   renderLink = renderAnchor,
   refresh,
   folded,
+  themeControl,
   tipFor,
   top,
   projectSlot,
@@ -149,7 +188,10 @@ export function SidebarPanel({
             {refresh.render(folded)}
           </div>
         )}
-        {bottom}
+        <div className="fd-sidebar-actions">
+          <ThemeButton {...themeControl} folded={folded} tipFor={tipFor} />
+          {bottom}
+        </div>
       </div>
     </aside>
   );

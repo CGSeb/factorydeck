@@ -57,6 +57,9 @@ export const EveryIcon: Story = {
       'menu',
       'close',
       'project',
+      'monitor',
+      'sun',
+      'moon',
       'refresh',
     ]);
     for (const svg of canvasElement.querySelectorAll('svg')) {

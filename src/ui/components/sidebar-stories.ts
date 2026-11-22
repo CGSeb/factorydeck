@@ -1,6 +1,7 @@
 import type { Decorator } from '@storybook/react-vite';
 import { type ReactNode, createElement, useEffect, useState } from 'react';
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test';
+import { THEME_KEY } from '../design/theme.ts';
 import { SIDEBAR_KEY } from './sidebar-state.ts';
 
 export function storedFold(): string | null {
@@ -157,4 +158,48 @@ export async function tapLabelWhilePeeked(
   await pause(100);
   await expectFolded(canvasElement, false);
   await fireEvent.click(target);
+}
+
+export function storedTheme(): string | null {
+  try {
+    return window.localStorage.getItem(THEME_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function forgetTheme(): void {
+  try {
+    window.localStorage.removeItem(THEME_KEY);
+  } catch {
+    return;
+  }
+  delete document.documentElement.dataset.theme;
+}
+
+function ForgottenTheme({ children }: { children: ReactNode }): ReactNode {
+  useState(forgetTheme);
+  useEffect(() => forgetTheme, []);
+  return children;
+}
+
+export const withoutStoredTheme: Decorator = (Story) =>
+  createElement(ForgottenTheme, { children: createElement(Story) });
+
+export async function cycleThemes(canvasElement: HTMLElement): Promise<void> {
+  const canvas = within(canvasElement);
+  const root = document.documentElement;
+  await expect(storedTheme()).toBeNull();
+  await expect(['light', 'dark']).toContain(root.dataset.theme);
+  await userEvent.click(canvas.getByRole('button', { name: 'Theme: System' }));
+  await expect(root).toHaveAttribute('data-theme', 'light');
+  await expect(storedTheme()).toBe('light');
+  await userEvent.click(canvas.getByRole('button', { name: 'Theme: Light' }));
+  await expect(root).toHaveAttribute('data-theme', 'dark');
+  await expect(storedTheme()).toBe('dark');
+  await userEvent.click(canvas.getByRole('button', { name: 'Theme: Dark' }));
+  await expect(
+    canvas.getByRole('button', { name: 'Theme: System' }),
+  ).toBeInTheDocument();
+  await expect(storedTheme()).toBeNull();
 }

@@ -196,7 +196,7 @@ function TokensSplit({
         <DayBars
           label={chartTitle}
           buckets={tokenBuckets(overview.series)}
-          color="var(--fd-ink)"
+          color="var(--fd-chart-bar)"
           height={56}
         />
       </div>
