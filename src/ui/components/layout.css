@@ -89,7 +89,12 @@
   min-width: 0;
 }
 
-@container fd-topbar (max-width: 799.98px) {
+.fd-topbar .fd-refresh-status {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@container fd-topbar (max-width: 1199.98px) {
   .fd-topbar-inner {
     column-gap: var(--fd-space-4);
   }

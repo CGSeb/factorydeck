@@ -22,36 +22,38 @@ export function DataTable({ label, children }: DataTableProps): ReactElement {
   );
 }
 
+export type GroupMarker = { stage: StageGroup } | { color: string };
+
 export interface GroupHeaderRowProps {
   name: string;
   count: number;
   colSpan: number;
-  stage?: StageGroup;
-  color?: string;
+  marker: GroupMarker;
+}
+
+function Marker({ marker }: { marker: GroupMarker }): ReactElement {
+  return 'stage' in marker ? (
+    <StageDot group={marker.stage} />
+  ) : (
+    <span
+      className="fd-table-dot"
+      aria-hidden="true"
+      style={{ background: marker.color }}
+    />
+  );
 }
 
 export function GroupHeaderRow({
   name,
   count,
   colSpan,
-  stage,
-  color,
+  marker,
 }: GroupHeaderRowProps): ReactElement {
   return (
     <tr className="fd-table-group">
       <th scope="colgroup" colSpan={colSpan}>
         <span className="fd-table-group-label">
-          {stage !== undefined ? (
-            <StageDot group={stage} />
-          ) : (
-            color !== undefined && (
-              <span
-                className="fd-table-dot"
-                aria-hidden="true"
-                style={{ background: color }}
-              />
-            )
-          )}
+          <Marker marker={marker} />
           {name}
           <span className="fd-table-group-count">{count}</span>
         </span>

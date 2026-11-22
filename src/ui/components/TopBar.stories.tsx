@@ -91,3 +91,13 @@ export const Narrow: Story = {
     ),
   ],
 };
+
+export const Medium: Story = {
+  decorators: [
+    (Story) => (
+      <div style={{ maxWidth: 1024 }}>
+        <Story />
+      </div>
+    ),
+  ],
+};

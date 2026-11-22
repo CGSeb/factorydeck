@@ -70,7 +70,7 @@ const grouped = (
             name={stage === 'working' ? 'Working' : 'Merged'}
             count={rows.length}
             colSpan={3}
-            stage={stage}
+            marker={{ stage }}
           />
           {rows.map((row) => (
             <BodyRow key={row.feature} row={row} />
@@ -121,6 +121,36 @@ export const GroupedWithTotal: Story = {
     await expect(
       canvas.getByRole('rowheader', { name: 'Total' }).closest('tr'),
     ).toHaveClass('fd-table-total');
+  },
+};
+
+export const GroupedByColour: Story = {
+  args: {
+    children: (
+      <table>
+        <Head />
+        <tbody>
+          <GroupHeaderRow
+            name="Builder"
+            count={ROWS.length}
+            colSpan={3}
+            marker={{ color: 'var(--fd-kind-cache-read)' }}
+          />
+          {ROWS.map((row) => (
+            <BodyRow key={row.feature} row={row} />
+          ))}
+        </tbody>
+      </table>
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const group = within(canvasElement).getByRole('columnheader', {
+      name: 'Builder 3',
+    });
+    await expect(group.querySelector('.fd-table-dot')).toHaveAttribute(
+      'aria-hidden',
+      'true',
+    );
   },
 };
 
