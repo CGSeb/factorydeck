@@ -16,7 +16,7 @@ A developer sees how the factory's tokens split between its roles and its models
 - [ ] A second `DataTable` `By model`, from the overview's `models` (spec 003, with `tokenCounts` of spec 021): `Model` (mono), `API calls`, `Tokens` (`BarCell` in `--fd-accent`); sorted by tokens descending. It replaces the overview's `By model` table, removed by spec 024.
 - [ ] Today's empty, loading and unreachable texts stay, shown with `StatusLine`.
 - [ ] The roles and models totals equal the overview total for the same period and project.
-- [ ] At 360 px nothing scrolls horizontally; figures refresh without a reload.
+- [ ] From 1024 px wide, nothing scrolls horizontally; figures refresh without a reload.
 
 ## Rules
 
@@ -26,7 +26,7 @@ A developer sees how the factory's tokens split between its roles and its models
 ## Expected proof
 
 - Storybook stories of the roles page (default roles, a custom configuration, `unassigned` present, one model only, no activity) pass the axe check of `src/ui/stories.test.tsx`.
-- On the real app, with `pnpm demo`: screenshots at 360 px and 1280 px, attached to the pull request.
+- On the real app, with `pnpm demo`: screenshots at 1024 px, 1280 px and 2560 px, attached to the pull request.
 
 ## Out of scope
 
