@@ -18,10 +18,19 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
+function backdropOf(canvasElement: HTMLElement): HTMLElement {
+  const backdrop = canvasElement.querySelector('.fd-dialog-backdrop');
+  if (!(backdrop instanceof HTMLElement)) throw new Error('No backdrop');
+  return backdrop;
+}
+
 export const Open: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     const dialog = canvas.getByRole('dialog', { name: 'Delete Old App?' });
+    await expect(
+      canvas.getByRole('heading', { name: 'Delete Old App?' }),
+    ).toHaveAttribute('title', '/home/dev/old-app');
     await expect(dialog).toHaveTextContent(
       'This removes its 12 sessions and everything FactoryDeck stored about them (sub-agents, API calls, skill launches, prompts). The session logs on disk are not touched. If the factory is installed again in this project, its sessions are read again.',
     );
@@ -40,7 +49,7 @@ export const Open: Story = {
     await expect(args.onCancel).toHaveBeenCalledTimes(1);
     await userEvent.click(canvas.getByRole('button', { name: 'Cancel' }));
     await expect(args.onCancel).toHaveBeenCalledTimes(2);
-    await userEvent.click(canvas.getByTestId('dialog-backdrop'));
+    await userEvent.click(backdropOf(canvasElement));
     await expect(args.onCancel).toHaveBeenCalledTimes(3);
     await userEvent.click(
       canvas.getByRole('button', { name: 'Delete project' }),

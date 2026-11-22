@@ -1,7 +1,11 @@
-import { type ReactElement, useId, useState } from 'react';
+import { type ReactElement, useState } from 'react';
 import { type CollectionFailure, failureMessage } from '../git-host/types.ts';
 import { projectText } from '../projects/label.ts';
 import type { MissingFactory } from '../projects/types.ts';
+import {
+  type WarningMessage,
+  WarningBanner,
+} from './components/WarningBanner.tsx';
 import {
   type DeleteDialogState,
   DeleteProjectDialog,
@@ -22,26 +26,33 @@ interface OpenDialog {
   state: DeleteDialogState;
 }
 
-function BannerLine({
-  project,
-  onDelete,
-}: {
-  project: MissingFactory;
-  onDelete: () => void;
-}): ReactElement {
-  const textId = useId();
+function missingMessage(
+  project: MissingFactory,
+  onDelete: () => void,
+): WarningMessage {
   const label = projectText(project.project, project.name);
-  return (
-    <li>
-      <span id={textId} title={label.title}>
+  return {
+    key: `factory ${project.project}`,
+    text: (
+      <span title={label.title}>
         Factory configuration not found for {label.text}: {project.factoryFile}.
         Its data is kept, but new sessions are no longer read.
       </span>
-      <button type="button" aria-describedby={textId} onClick={onDelete}>
-        Delete project
-      </button>
-    </li>
-  );
+    ),
+    action: { label: 'Delete project', onClick: onDelete },
+  };
+}
+
+function failureLine(failure: CollectionFailure): WarningMessage {
+  const label = projectText(failure.project, failure.name);
+  return {
+    key: `git-host ${failure.project}`,
+    text: (
+      <span title={label.title}>
+        {failureMessage({ ...failure, name: label.text })}
+      </span>
+    ),
+  };
 }
 
 function useDeleteDialog(
@@ -92,34 +103,22 @@ export function FactoryBanner({
     deleteProject,
     onDeleted,
   );
+  const messages = [
+    ...missing.map((project) =>
+      missingMessage(project, () =>
+        setDialog({
+          project: project.project,
+          name: project.name,
+          sessions: project.sessions,
+          state: 'idle',
+        }),
+      ),
+    ),
+    ...failures.map(failureLine),
+  ];
   return (
-    <section className="factory-banner" aria-label="Factory configuration">
-      <ul>
-        {missing.map((project) => (
-          <BannerLine
-            key={project.project}
-            project={project}
-            onDelete={() =>
-              setDialog({
-                project: project.project,
-                name: project.name,
-                sessions: project.sessions,
-                state: 'idle',
-              })
-            }
-          />
-        ))}
-        {failures.map((failure) => {
-          const label = projectText(failure.project, failure.name);
-          return (
-            <li key={`git-host ${failure.project}`}>
-              <span title={label.title}>
-                {failureMessage({ ...failure, name: label.text })}
-              </span>
-            </li>
-          );
-        })}
-      </ul>
+    <>
+      <WarningBanner label="Factory configuration" messages={messages} />
       {shown !== undefined && (
         <DeleteProjectDialog
           project={shown.project}
@@ -130,6 +129,6 @@ export function FactoryBanner({
           onConfirm={() => void confirm(shown)}
         />
       )}
-    </section>
+    </>
   );
 }

@@ -1,6 +1,6 @@
 # 023 · App shell
 
-Status: ready
+Status: done
 Depends on: 019
 Checked: 2026-11-22
 
@@ -10,13 +10,13 @@ A developer opening any FactoryDeck page sees the new top bar with the project s
 
 ## Acceptance criteria
 
-- [ ] Every page uses the `TopBar` of spec 019 instead of today's header, with the links `Overview`, `Features`, `Sessions`, `Skills`, `Roles` and, in its right slot, the `ProjectPill` and `RefreshControl` of spec 017. The behaviour of specs 008 and 013 is unchanged: the links carry the `project` parameter, the select reads and writes it, the refresh control collects.
-- [ ] `src/ui/design/tokens.css` and the fonts of spec 014 are loaded by the app; `body` uses `--fd-font-body`, `--fd-ink` text and the `--fd-page` background; the main column is `--fd-page-max` wide, centred, with `--fd-gutter` padding (16 px below 480 px wide).
-- [ ] The factory banner of spec 007 uses `WarningBanner` (spec 019), under the top bar, with the same messages: `Factory configuration not found for <name>: <file>. Its data is kept, but new sessions are no longer read.` with a `Delete project` button, and each collection failure of spec 008 (`failureMessage`) without a button.
-- [ ] The delete confirmation of spec 007 uses `Dialog` (spec 019) with today's wording, states (`Deleting…`, errors) and behaviour.
-- [ ] While FactoryDeck holds no session, the welcome screen of spec 007 uses `EmptyState` (spec 019): eyebrow `No factory project yet`, title `Install the factory in a project`, today's paragraph and three numbered steps, and the footnote `The project select appears once a project has sessions.`; the project select is not shown (spec 013).
-- [ ] At 360 px wide, no page scrolls horizontally: the top bar wraps as spec 019 says and the banner's button goes under its message.
-- [ ] The old `Layout` header markup and its CSS rules in `src/ui/styles.css` are removed; `FactoryBanner`, `DeleteProjectDialog` and `WelcomePanel` keep their names and stories, now built on the components of spec 019.
+- [x] Every page uses the `TopBar` of spec 019 instead of today's header, with the links `Overview`, `Features`, `Sessions`, `Skills`, `Roles` and, in its right slot, the `ProjectPill` and `RefreshControl` of spec 017. The behaviour of specs 008 and 013 is unchanged: the links carry the `project` parameter, the select reads and writes it, the refresh control collects.
+- [x] `src/ui/design/tokens.css` and the fonts of spec 014 are loaded by the app; `body` uses `--fd-font-body`, `--fd-ink` text and the `--fd-page` background; the main column is `--fd-page-max` wide, centred, with `--fd-gutter` padding (16 px below 480 px wide).
+- [x] The factory banner of spec 007 uses `WarningBanner` (spec 019), under the top bar, with the same messages: `Factory configuration not found for <name>: <file>. Its data is kept, but new sessions are no longer read.` with a `Delete project` button, and each collection failure of spec 008 (`failureMessage`) without a button.
+- [x] The delete confirmation of spec 007 uses `Dialog` (spec 019) with today's wording, states (`Deleting…`, errors) and behaviour.
+- [x] While FactoryDeck holds no session, the welcome screen of spec 007 uses `EmptyState` (spec 019): eyebrow `No factory project yet`, title `Install the factory in a project`, today's paragraph and three numbered steps, and the footnote `The project select appears once a project has sessions.`; the project select is not shown (spec 013).
+- [x] At 360 px wide, no page scrolls horizontally: the top bar wraps as spec 019 says and the banner's button goes under its message.
+- [x] The old `Layout` header markup and its CSS rules in `src/ui/styles.css` are removed; `FactoryBanner`, `DeleteProjectDialog` and `WelcomePanel` keep their names and stories, now built on the components of spec 019.
 
 ## Rules
 

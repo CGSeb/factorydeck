@@ -214,7 +214,7 @@ export const RefreshClearsCollectionError: Story = {
       'Could not read GitHub for example-app: gh not found.',
     );
     await expect(canvas.getByText('Issues updated just now')).toBeVisible();
-    await userEvent.click(canvas.getByRole('button', { name: 'Refresh' }));
+    await userEvent.click(canvas.getByRole('button', { name: /^Refresh\b/ }));
     await waitFor(() =>
       expect(
         canvas.queryByRole('region', { name: 'Factory configuration' }),
@@ -229,7 +229,7 @@ export const RefreshStillRunning: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByText('Issues not collected yet');
-    await userEvent.click(canvas.getByRole('button', { name: 'Refresh' }));
+    await userEvent.click(canvas.getByRole('button', { name: /^Refresh\b/ }));
     await expect(
       canvas.getByRole('button', { name: 'Refreshing…' }),
     ).toBeDisabled();
@@ -268,10 +268,10 @@ export const RefreshReloadsThePage: Story = {
     const canvas = within(canvasElement);
     await canvas.findByText('Issues not collected yet');
     const before = loads(canvasElement);
-    await userEvent.click(canvas.getByRole('button', { name: 'Refresh' }));
+    await userEvent.click(canvas.getByRole('button', { name: /^Refresh\b/ }));
     await canvas.findByText('Issues updated just now');
     await expect(
-      canvas.getByRole('button', { name: 'Refresh' }),
+      canvas.getByRole('button', { name: /^Refresh\b/ }),
     ).not.toBeDisabled();
     await waitFor(() => expect(loads(canvasElement)).toBeGreaterThan(before));
   },
