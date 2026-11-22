@@ -6,6 +6,7 @@ import {
   unusedRoles,
   unusedSkills,
   unusedProjects,
+  unusedGitHost,
 } from '../test/skill-source.ts';
 
 const builtUi = '/nonexistent/factorydeck-ui';
@@ -60,6 +61,7 @@ describe('GET /api/sessions', () => {
     skills: unusedSkills,
     roles: unusedRoles,
     projects: unusedProjects,
+    gitHost: unusedGitHost,
   });
 
   it('answers the filtered list with the ingestion facts', async () => {
@@ -122,6 +124,7 @@ describe('GET /api/sessions', () => {
       skills: unusedSkills,
       roles: unusedRoles,
       projects: unusedProjects,
+      gitHost: unusedGitHost,
     }).request('/api/sessions?period=7d&tz=UTC');
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({
@@ -140,6 +143,7 @@ describe('GET /api/sessions/:id', () => {
     skills: unusedSkills,
     roles: unusedRoles,
     projects: unusedProjects,
+    gitHost: unusedGitHost,
   });
 
   it('answers the session', async () => {

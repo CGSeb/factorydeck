@@ -12,6 +12,7 @@ import {
   unusedRoles,
   unusedSkills,
   unusedProjects,
+  unusedGitHost,
 } from '../test/skill-source.ts';
 import { databaseCheck } from './health.ts';
 
@@ -67,6 +68,7 @@ describe('GET /api/health', () => {
       skills: unusedSkills,
       roles: unusedRoles,
       projects: unusedProjects,
+      gitHost: unusedGitHost,
     }).request('/api/health');
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ status: 'ok', database: 'ok' });
@@ -81,6 +83,7 @@ describe('GET /api/health', () => {
       skills: unusedSkills,
       roles: unusedRoles,
       projects: unusedProjects,
+      gitHost: unusedGitHost,
     }).request('/api/health');
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({
@@ -102,6 +105,7 @@ describe('other API paths', () => {
         skills: unusedSkills,
         roles: unusedRoles,
         projects: unusedProjects,
+        gitHost: unusedGitHost,
       }).request(path);
       expect(response.status).toBe(404);
       expect(await response.json()).toEqual({ error: 'Not found' });
@@ -117,6 +121,7 @@ describe('other API paths', () => {
       skills: unusedSkills,
       roles: unusedRoles,
       projects: unusedProjects,
+      gitHost: unusedGitHost,
     }).request('/api/nope');
     expect(response.status).toBe(404);
     expect(await response.json()).toEqual({ error: 'Not found' });
@@ -132,6 +137,7 @@ describe('UI', () => {
     skills: unusedSkills,
     roles: unusedRoles,
     projects: unusedProjects,
+    gitHost: unusedGitHost,
   });
 
   it('serves the built index page at /', async () => {
@@ -162,6 +168,7 @@ describe('UI', () => {
       skills: unusedSkills,
       roles: unusedRoles,
       projects: unusedProjects,
+      gitHost: unusedGitHost,
     }).request('/');
     expect(response.headers.get('content-type')).toContain('text/plain');
     expect(await response.text()).toBe('UI not built. Run pnpm build.');
@@ -178,6 +185,7 @@ describe('GET /api/overview', () => {
       skills: unusedSkills,
       roles: unusedRoles,
       projects: unusedProjects,
+      gitHost: unusedGitHost,
     }).request('/api/overview?period=30d&tz=Europe/Paris');
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
@@ -199,6 +207,7 @@ describe('GET /api/overview', () => {
       skills: unusedSkills,
       roles: unusedRoles,
       projects: unusedProjects,
+      gitHost: unusedGitHost,
     });
     for (const query of [
       '',
@@ -219,6 +228,7 @@ describe('GET /api/overview', () => {
       skills: unusedSkills,
       roles: unusedRoles,
       projects: unusedProjects,
+      gitHost: unusedGitHost,
     }).request('/api/overview?period=7d&tz=UTC');
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({
@@ -246,6 +256,7 @@ describe('GET /api/overview', () => {
       skills: unusedSkills,
       roles: unusedRoles,
       projects: unusedProjects,
+      gitHost: unusedGitHost,
     });
     try {
       const started = Date.now();

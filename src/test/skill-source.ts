@@ -1,3 +1,4 @@
+import type { GitHostSource } from '../server/git-host-routes.ts';
 import type { ProjectSource } from '../server/project-routes.ts';
 import type { RoleSource } from '../server/role-routes.ts';
 import type { SkillSource } from '../server/skill-routes.ts';
@@ -15,4 +16,9 @@ export const unusedRoles: RoleSource = {
 export const unusedProjects: ProjectSource = {
   factoryStatus: () => Promise.reject(new Error('Not used')),
   remove: () => Promise.reject(new Error('Not used')),
+};
+
+export const unusedGitHost: GitHostSource = {
+  status: () => Promise.reject(new Error('Not used')),
+  refresh: () => Promise.reject(new Error('Not used')),
 };
