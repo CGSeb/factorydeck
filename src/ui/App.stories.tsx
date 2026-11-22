@@ -69,7 +69,7 @@ export const Home: Story = {
     await expect(
       canvas.getByRole('link', { name: 'Overview' }),
     ).toHaveAttribute('aria-current', 'page');
-    await canvas.findByText('~$48.27');
+    await canvas.findByRole('region', { name: 'Board' });
     await expect(
       canvas.getByRole('button', { name: 'Last 7 days' }),
     ).toHaveAttribute('aria-pressed', 'true');
@@ -117,8 +117,11 @@ export const Roles: Story = {
   args: loaders,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('link', { name: 'Roles' }));
-    await expect(canvas.getByRole('link', { name: 'Roles' })).toHaveAttribute(
+    const sections = within(
+      canvas.getByRole('navigation', { name: 'Sections' }),
+    );
+    await userEvent.click(sections.getByRole('link', { name: 'Roles' }));
+    await expect(sections.getByRole('link', { name: 'Roles' })).toHaveAttribute(
       'aria-current',
       'page',
     );
