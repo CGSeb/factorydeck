@@ -135,6 +135,31 @@ export const unlaunchedDetail: SkillDetail = {
   sessions: [],
 };
 
+const WEEK = [2, 0, 5, 1, 3, 0, 4];
+
+export const weekDetail: SkillDetail = {
+  ...writeSpecDetail,
+  launches: 15,
+  tokens: 6_000_000,
+  tokenCounts: splitTokens(6_000_000),
+  costUsd: 8.4,
+  averageCostUsd: 0.56,
+  series: WEEK.map((launches, index) => ({
+    day: `2026-01-0${String(index + 1)}`,
+    launches,
+  })),
+};
+
+const HOURS = [0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 1];
+
+export const todayDetail: SkillDetail = {
+  ...writeSpecDetail,
+  series: HOURS.map((launches, hour) => ({
+    day: `2026-01-07T${String(hour).padStart(2, '0')}:00`,
+    launches,
+  })),
+};
+
 export function skillResponse(skill: SkillDetail): SkillResponse {
   return {
     status: 'ok',

@@ -9,12 +9,16 @@ import { usageOverview } from '../overview/query.ts';
 import { loadWorkflowConfig } from '../roles/config.ts';
 import { listRoles } from '../roles/query.ts';
 import { sessionDetail } from '../sessions/query.ts';
+import { listSkills, skillDetail } from '../skills/query.ts';
 import { createTestDatabase } from '../test/postgres.ts';
 import { sessionsFolder } from '../test/session-logs.ts';
 import {
+  BUILD_SKILL,
   EXAMPLE_API,
   EXAMPLE_APP,
   EXAMPLE_APP_NAME,
+  REVIEW_SKILL,
+  SPEC_SKILL,
   demoProjectRoot,
   writeDemoConfig,
   writeDemoSessions,
@@ -205,6 +209,29 @@ describe('demo sessions', () => {
       report: { score: 64, threshold: 80, rounds: 3 },
       reworked: false,
     });
+  });
+});
+
+describe('demo sessions on the skills pages', () => {
+  it('cover several skills, No skill, and launches today', async () => {
+    const week = { period: '7d' as const, timeZone: 'UTC', now: NOW };
+    const { skills, launches } = await listSkills(db, week);
+    expect(skills.map((row) => row.skill)).toEqual(
+      expect.arrayContaining([BUILD_SKILL, REVIEW_SKILL, SPEC_SKILL, null]),
+    );
+    expect(skills).toHaveLength(4);
+    expect(launches).toBeGreaterThan(5);
+    const build = await skillDetail(db, BUILD_SKILL, week);
+    expect(build.series).toHaveLength(7);
+    expect(
+      build.series.filter((point) => point.launches > 0).length,
+    ).toBeGreaterThanOrEqual(5);
+    const today = await skillDetail(db, REVIEW_SKILL, {
+      ...week,
+      period: 'today',
+    });
+    expect(today.series).toHaveLength(16);
+    expect(today.launches).toBe(2);
   });
 });
 

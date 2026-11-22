@@ -27,7 +27,10 @@ export const WithSkills: Story = {
       canvas.getByRole('link', { name: 'kit:write-spec' }),
     ).toHaveAttribute('href', '/skills/kit%3Awrite-spec?period=all');
     await expect(canvas.getByText('No skill')).toBeVisible();
-    await expect(canvas.getByText('~$0.80')).toBeVisible();
+    await expect(canvas.getByText('600.0K')).toBeVisible();
+    await expect(canvas.getAllByRole('rowheader').at(-1)).toHaveTextContent(
+      'No skill',
+    );
   },
 };
 
@@ -36,6 +39,8 @@ export const OnlyNoSkill: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getAllByRole('row')).toHaveLength(2);
-    await expect(canvas.queryByRole('link')).toBeNull();
+    await expect(
+      canvas.getByRole('table', { name: 'Skills' }).querySelector('a'),
+    ).toBeNull();
   },
 };

@@ -20,6 +20,7 @@ export interface DayBarsProps {
   buckets: readonly DayBucket[];
   color: string;
   height: number;
+  showValues?: boolean;
 }
 
 const COLUMN_GAP = '6px';
@@ -35,7 +36,21 @@ const column: CSSProperties = {
   minWidth: 0,
   height: '100%',
   display: 'flex',
-  alignItems: 'flex-end',
+  flexDirection: 'column',
+  justifyContent: 'flex-end',
+};
+
+const VALUE_ROW_PX = 18;
+
+const columnValue: CSSProperties = {
+  overflow: 'hidden',
+  marginBottom: '4px',
+  fontSize: '11px',
+  lineHeight: '14px',
+  color: 'var(--fd-ink-2)',
+  textAlign: 'center',
+  whiteSpace: 'nowrap',
+  fontVariantNumeric: 'tabular-nums',
 };
 
 const labelRow: CSSProperties = {
@@ -92,11 +107,46 @@ function Labels({
   );
 }
 
+function Column({
+  bucket,
+  height,
+  color,
+  showValue,
+}: {
+  bucket: DayBucket;
+  height: number;
+  color: string;
+  showValue: boolean;
+}): ReactElement {
+  return (
+    <div
+      title={`${formatBucket(bucket.label)} · ${bucketValue(bucket)}`}
+      style={column}
+    >
+      {showValue ? (
+        <span data-value="" style={columnValue}>
+          {formatCount(bucket.value)}
+        </span>
+      ) : null}
+      <div
+        data-column=""
+        style={{
+          width: '100%',
+          height: `${String(height)}px`,
+          borderRadius: '4px 4px 0 0',
+          background: color,
+        }}
+      />
+    </div>
+  );
+}
+
 export function DayBars({
   label,
   buckets,
   color,
   height,
+  showValues = false,
 }: DayBarsProps): ReactElement {
   const heights = columnHeights(
     buckets.map((bucket) => bucket.value),
@@ -105,23 +155,20 @@ export function DayBars({
   return (
     <div style={{ position: 'relative', minWidth: 0 }}>
       <div role="img" aria-label={label}>
-        <div style={{ ...columns, height: `${String(height)}px` }}>
+        <div
+          style={{
+            ...columns,
+            height: `${String(height + (showValues ? VALUE_ROW_PX : 0))}px`,
+          }}
+        >
           {buckets.map((bucket, index) => (
-            <div
+            <Column
               key={`${String(index)} ${bucket.label}`}
-              title={`${formatBucket(bucket.label)} · ${bucketValue(bucket)}`}
-              style={column}
-            >
-              <div
-                data-column=""
-                style={{
-                  width: '100%',
-                  height: `${String(heights[index] ?? 0)}px`,
-                  borderRadius: '4px 4px 0 0',
-                  background: color,
-                }}
-              />
-            </div>
+              bucket={bucket}
+              height={heights[index] ?? 0}
+              color={color}
+              showValue={showValues}
+            />
           ))}
         </div>
         <Labels buckets={buckets} />

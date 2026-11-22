@@ -185,10 +185,12 @@ export async function sessionSkills(
 function seriesQuery(
   scope: Scope,
   skill: string,
-  { timeZone, now = new Date() }: SkillQuery,
+  { period, timeZone, now = new Date() }: SkillQuery,
 ): SQL {
+  const unit = period === 'today' ? 'hour' : 'day';
+  const format = unit === 'hour' ? 'YYYY-MM-DD"T"HH24:00' : 'YYYY-MM-DD';
   return sql`with launches as (
-      select date_trunc('day', l.at at time zone ${timeZone}) as day
+      select date_trunc(${unit}, l.at at time zone ${timeZone}) as day
       from skill_launch l join session s on s.id = l.session_id
       where l.skill = ${skill}
         and (${scope.project}::text is null or s.project = ${scope.project}::text)
@@ -196,16 +198,16 @@ function seriesQuery(
     ),
     bounds as (
       select
-        date_trunc('day', coalesce(${scope.startAt}::timestamptz, min(l.at)) at time zone ${timeZone}) as first,
-        date_trunc('day', greatest(${now.toISOString()}::timestamptz, max(l.at)) at time zone ${timeZone}) as last
+        date_trunc(${unit}, coalesce(${scope.startAt}::timestamptz, min(l.at)) at time zone ${timeZone}) as first,
+        date_trunc(${unit}, greatest(${now.toISOString()}::timestamptz, max(l.at)) at time zone ${timeZone}) as last
       from skill_launch l join session s on s.id = l.session_id
       where l.skill = ${skill}
         and (${scope.project}::text is null or s.project = ${scope.project}::text)
         and ${callInScope(scope, sql`l.at`)}
     )
-    select to_char(step, 'YYYY-MM-DD') as day,
+    select to_char(step, ${format}) as day,
       (select count(*) from launches where launches.day = step) as launches
-    from bounds, generate_series(bounds.first, bounds.last, interval '1 day') as step
+    from bounds, generate_series(bounds.first, bounds.last, ('1 ' || ${unit})::interval) as step
     where bounds.first is not null
     order by step`;
 }

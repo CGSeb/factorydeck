@@ -137,3 +137,26 @@ export const LaunchesAsCounts: Story = {
     await expect(spokenRows(canvasElement)[1]).toBe('Nov 24');
   },
 };
+
+export const LaunchesWithCounts: Story = {
+  name: 'Launches with counts',
+  args: {
+    label: 'Launches per day',
+    buckets: launchDays(7),
+    color: 'var(--fd-accent)',
+    height: 80,
+    showValues: true,
+  },
+  play: async ({ canvasElement }) => {
+    const chartElement = chart(canvasElement, 'Launches per day');
+    const values = [...chartElement.querySelectorAll('[data-value]')].map(
+      (value) => value.textContent,
+    );
+    await expect(values).toEqual(
+      launchDays(7).map((bucket) => String(bucket.value)),
+    );
+    await expect(columns(canvasElement, 'Launches per day')[1]).toHaveStyle({
+      height: '80px',
+    });
+  },
+};

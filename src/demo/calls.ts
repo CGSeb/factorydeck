@@ -1,6 +1,11 @@
 export interface Call {
   model: string | undefined;
   tokens: [number, number, number, number];
+  skill?: string;
+}
+
+export function launching(call: Call, skill: string): Call {
+  return { ...call, skill };
 }
 
 export const opus: Call = {
@@ -40,4 +45,45 @@ export interface DemoSubAgent {
   agentType: string;
   description: string;
   calls: readonly Call[];
+}
+
+type Line = Record<string, unknown>;
+
+export function callLines(
+  calls: readonly Call[],
+  prefix: string,
+  context: (step: number) => Line,
+): Line[] {
+  return calls.map((call, index) => {
+    const [input, cacheWrite, cacheRead, output] = call.tokens;
+    const requestId = `${prefix}-req-${String(index)}`;
+    return {
+      type: 'assistant',
+      ...context(index + 1),
+      requestId,
+      message: {
+        id: `msg_${requestId}`,
+        role: 'assistant',
+        ...(call.model === undefined ? {} : { model: call.model }),
+        stop_reason: 'end_turn',
+        content:
+          call.skill === undefined
+            ? [{ type: 'text', text: 'Done.' }]
+            : [
+                {
+                  type: 'tool_use',
+                  id: `toolu_${requestId}`,
+                  name: 'Skill',
+                  input: { skill: call.skill },
+                },
+              ],
+        usage: {
+          input_tokens: input,
+          cache_creation_input_tokens: cacheWrite,
+          cache_read_input_tokens: cacheRead,
+          output_tokens: output,
+        },
+      },
+    };
+  });
 }
