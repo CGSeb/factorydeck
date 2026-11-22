@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
   type Call,
@@ -293,10 +293,8 @@ projects:
 }
 
 export async function writeDemoConfig(
-  examplePath: string,
   path: string,
   projects: string,
 ): Promise<void> {
-  const example = await readFile(examplePath, 'utf8');
-  await writeFile(path, `${example}${demoProjectOverride(projects)}`);
+  await writeFile(path, `version: 1\n${demoProjectOverride(projects)}`);
 }

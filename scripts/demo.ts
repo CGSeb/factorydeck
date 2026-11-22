@@ -54,7 +54,7 @@ await writeDemoSessions(folder, new Date(), projects, {
   factory: !values['no-factory'],
 });
 const config = join(folder, 'factorydeck.yml');
-await writeDemoConfig(join(ROOT, 'factorydeck.example.yml'), config, projects);
+await writeDemoConfig(config, projects);
 
 const { db, close } = createDatabase(demoUrl);
 try {

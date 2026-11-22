@@ -81,10 +81,6 @@ describe('loadWorkflowConfig', () => {
 });
 
 describe('parseWorkflowConfig', () => {
-  it('keeps the default work items when the file has no work_items key', () => {
-    expect(rulesOf('version: 1\n')).toEqual(DEFAULT_RULES);
-  });
-
   it('replaces the global lists with a project override, list by list', () => {
     const text = [
       'version: 1',

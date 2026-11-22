@@ -72,11 +72,7 @@ describe('demo sessions', () => {
 
   it('cover roles, work items, a project override and a branch rule with the demo configuration', async () => {
     const path = join(await sessionsFolder(), 'factorydeck.yml');
-    await writeDemoConfig(
-      join(import.meta.dirname, '..', '..', 'factorydeck.example.yml'),
-      path,
-      projects,
-    );
+    await writeDemoConfig(path, projects);
     const config = loadWorkflowConfig(path);
     const list = await listRoles(
       db,
@@ -207,11 +203,7 @@ describe('demo sessions on the features page', () => {
   it('cover an orchestration share across two issues', async () => {
     await collect(db, { hasFactory });
     const path = join(await sessionsFolder(), 'factorydeck.yml');
-    await writeDemoConfig(
-      join(import.meta.dirname, '..', '..', 'factorydeck.example.yml'),
-      path,
-      projects,
-    );
+    await writeDemoConfig(path, projects);
     const config = loadWorkflowConfig(path);
     const app = demoProjectRoot(projects, EXAMPLE_APP);
     const query = { period: 'all' as const, timeZone: 'UTC', now: NOW };

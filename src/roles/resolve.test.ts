@@ -117,6 +117,26 @@ describe('roleOf', () => {
   });
 });
 
+describe('roleOf with the default role rules', () => {
+  const role = (description: string, agentType = 'general-purpose'): string =>
+    roleOf(DEFAULT_RULES, { agentType, description });
+
+  it('gives each build-feature sub-agent its role', () => {
+    expect(role('Worker for #31')).toBe('builder');
+    expect(role('Review #31')).toBe('reviewer');
+    expect(role('Ship #31')).toBe('shipper');
+    expect(role('Rebase feat/31-x')).toBe('reworker');
+    expect(role('check-spec #31')).toBe('spec-checker');
+    expect(role('worker FOR #31')).toBe('builder');
+  });
+
+  it('keeps the type, or unassigned, when no default rule matches', () => {
+    expect(role('Find the role routes', 'Explore')).toBe('Explore');
+    expect(role('Fix the build')).toBe('general-purpose');
+    expect(role('Fix the build', '')).toBe('unassigned');
+  });
+});
+
 describe('workItemOf', () => {
   it('reads the description first, then the title, by default', () => {
     expect(
@@ -191,5 +211,6 @@ describe('factorydeck.example.yml', () => {
     expect(role('Rebase #23')).toBe('reworker');
     expect(role('Run check-spec on 006')).toBe('spec-checker');
     expect(config.rules.workItems).toEqual(DEFAULT_RULES.workItems);
+    expect(config.rules.roles).toEqual(DEFAULT_RULES.roles);
   });
 });

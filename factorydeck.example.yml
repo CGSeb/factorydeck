@@ -2,7 +2,7 @@
 #
 # Copy this file to factorydeck.yml at the repository root (ignored by git), or point
 # FACTORYDECK_CONFIG in .env at another path. FactoryDeck reads it once at start-up and never
-# writes it; restart the server after a change. Without a file, sub-agents are grouped by type.
+# writes it; restart the server after a change. Without a file, the defaults below apply.
 # Never put secrets in it.
 #
 # Patterns are JavaScript regular expressions, matched case-insensitively, anywhere in the text
@@ -21,7 +21,8 @@ version: 1
 # A sub-agent no rule matches takes its type as role, or `unassigned` when it has none. A
 # session's main thread is always `main`.
 #
-# These rules fit the build-feature workflow of factorydeck-skills.
+# These are the default rules: they fit the build-feature workflow of factorydeck-skills.
+# Removing the key keeps them; `roles: []` groups sub-agents by type.
 roles:
   - name: builder
     description: '^(Build|Worker for) '

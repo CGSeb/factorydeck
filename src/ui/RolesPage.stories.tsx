@@ -66,7 +66,7 @@ export const WithoutConfigFile: Story = {
   args: { loadRoles: rolesLoader(someRoles, NO_CONFIG_FILE) },
   play: async ({ canvasElement }) => {
     await within(canvasElement).findByText(
-      'No configuration file at /home/dev/factorydeck/factorydeck.yml: sub-agents are grouped by type.',
+      'No configuration file at /home/dev/factorydeck/factorydeck.yml: default roles of the build-feature workflow.',
     );
   },
 };
