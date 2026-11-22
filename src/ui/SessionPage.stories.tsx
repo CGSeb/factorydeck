@@ -143,6 +143,11 @@ export const WithoutSubAgents: Story = {
     await expect(canvas.getByText('Waiting for you')).toBeVisible();
     await expect(canvas.getByText('No sub-agents.')).toBeVisible();
     await expect(
+      canvas.getByText('—', {
+        selector: '.fd-session-line > .fd-session-mono',
+      }),
+    ).toBeVisible();
+    await expect(
       canvas.getByRole('heading', { name: 'Sub-agents 0' }),
     ).toBeVisible();
     await expect(canvas.queryByRole('heading', { name: 'Skills' })).toBeNull();

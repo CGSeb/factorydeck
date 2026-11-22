@@ -200,9 +200,9 @@ function SessionLine({
         name={session.projectName}
         color={colors.get(session.project) ?? 'var(--fd-muted)'}
       />
-      {session.gitBranch !== '' && (
-        <span className="fd-session-mono">{session.gitBranch}</span>
-      )}
+      <span className="fd-session-mono">
+        {session.gitBranch === '' ? MISSING : session.gitBranch}
+      </span>
       {session.workItem !== null && (
         <span>
           Work item{' '}
