@@ -138,6 +138,27 @@
   align-items: center;
 }
 
+.fd-sidebar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--fd-space-2);
+}
+
+.fd-sidebar[data-folded='true'] .fd-sidebar-actions {
+  flex-direction: column;
+}
+
+.fd-sidebar[data-folded='false'] .fd-sidebar-theme {
+  flex: 1 1 auto;
+  gap: var(--fd-space-3);
+  justify-content: flex-start;
+  width: auto;
+  min-width: 0;
+  padding: 0 var(--fd-space-3);
+  font-family: var(--fd-font-body);
+  font-size: var(--fd-text-md);
+}
+
 .fd-sidebar-refresh {
   min-width: 0;
 }

@@ -49,6 +49,7 @@ const EXPECTED: Record<string, string> = {
   '--fd-kind-cache-write': '#5fb3a6',
   '--fd-kind-input': '#b9d8d2',
   '--fd-kind-output': '#17201f',
+  '--fd-chart-bar': '#17201f',
   '--fd-tooltip-bg': '#17201f',
   '--fd-tooltip-ink': '#ffffff',
   '--fd-tooltip-muted': '#b9c4c1',
@@ -121,7 +122,7 @@ describe('design tokens', () => {
     expect(names).toContain('--fd-overlay');
     expect(names).toContain('--fd-tooltip-line');
     expect(names).not.toContain('--fd-font-body');
-    expect(names).toHaveLength(41);
+    expect(names).toHaveLength(42);
   });
 
   it.each(PAIRS)('%s on %s reaches 4.5:1', (text, background) => {

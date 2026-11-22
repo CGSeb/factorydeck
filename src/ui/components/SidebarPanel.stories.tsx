@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, within } from 'storybook/test';
+import { expect, fn, within } from 'storybook/test';
 import { NO_TIP, SidebarPanel } from './SidebarPanel.tsx';
 
 const meta = {
@@ -10,6 +10,7 @@ const meta = {
       { label: 'Roles', icon: 'roles', href: '#roles', current: false },
     ],
     folded: false,
+    themeControl: { theme: 'system', onCycle: fn() },
     tipFor: NO_TIP,
     projectSlot: null,
   },
@@ -31,6 +32,15 @@ export const Expanded: Story = {
     await expect(
       within(canvasElement).getByRole('link', { name: 'Overview' }),
     ).toHaveAttribute('aria-current', 'page');
+  },
+};
+
+export const ExpandedDarkTheme: Story = {
+  args: { themeControl: { theme: 'dark', onCycle: fn() } },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByRole('button', { name: 'Theme: Dark' }),
+    ).toHaveTextContent('Dark');
   },
 };
 

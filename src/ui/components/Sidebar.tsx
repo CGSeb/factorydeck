@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useTheme } from '../design/theme.ts';
 import { useDialogFocus } from './dialog-focus.ts';
 import { Icon } from './Icon.tsx';
 import {
@@ -23,8 +24,11 @@ import {
   type SidebarProject,
   type SidebarProps,
   SidebarTip,
+  type ThemeControl,
   type TipFor,
 } from './SidebarPanel.tsx';
+
+type ThemedProps = SidebarProps & { themeControl: ThemeControl };
 
 export type {
   ProjectSlotControl,
@@ -106,7 +110,7 @@ function FoldButton({
   );
 }
 
-function WideSidebar(props: SidebarProps): ReactElement {
+function WideSidebar(props: ThemedProps): ReactElement {
   const id = useId();
   const [folded, toggle] = useFold();
   const [peeking, setPeeking] = useState(false);
@@ -177,7 +181,7 @@ function Drawer({
   id,
   onClose,
   ...props
-}: SidebarProps & { id: string; onClose: () => void }): ReactElement {
+}: ThemedProps & { id: string; onClose: () => void }): ReactElement {
   const dialog = useRef<HTMLDivElement>(null);
   const close = useDialogFocus(onClose, dialog, true);
   useScrollLock();
@@ -226,7 +230,7 @@ function Drawer({
   );
 }
 
-function NarrowNavigation(props: SidebarProps): ReactElement {
+function NarrowNavigation(props: ThemedProps): ReactElement {
   const id = useId();
   const [open, setOpen] = useState(false);
   const menu = useRef<HTMLButtonElement>(null);
@@ -263,9 +267,11 @@ function NarrowNavigation(props: SidebarProps): ReactElement {
 }
 
 export function Sidebar(props: SidebarProps): ReactElement {
+  const [theme, onCycle] = useTheme();
+  const themed = { ...props, themeControl: { theme, onCycle } };
   return useNarrow() ? (
-    <NarrowNavigation {...props} />
+    <NarrowNavigation {...themed} />
   ) : (
-    <WideSidebar {...props} />
+    <WideSidebar {...themed} />
   );
 }
