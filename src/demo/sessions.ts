@@ -1,5 +1,15 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import {
+  type Call,
+  type DemoSession,
+  type DemoSubAgent,
+  haiku,
+  noModel,
+  opus,
+  sonnet,
+  unknownPrice,
+} from './calls.ts';
 import { installFakeGitHost } from './fake-git-host.ts';
 import { demoGitHub, demoGitLab } from './git-host.ts';
 
@@ -8,49 +18,8 @@ const DAY = 24 * HOUR;
 
 type Line = Record<string, unknown>;
 
-interface Call {
-  model: string | undefined;
-  tokens: [number, number, number, number];
-}
-
-interface DemoSession {
-  id: string;
-  folder: string;
-  project: string | undefined;
-  gitBranch: string;
-  startsAgo: number;
-  prompt: string;
-  calls: readonly Call[];
-  subAgents?: readonly DemoSubAgent[];
-}
-
-interface DemoSubAgent {
-  id: string;
-  agentType: string;
-  description: string;
-  calls: readonly Call[];
-}
-
-const opus: Call = {
-  model: 'claude-opus-demo',
-  tokens: [800, 12_000, 90_000, 2_500],
-};
-const sonnet: Call = {
-  model: 'claude-sonnet-demo',
-  tokens: [600, 8_000, 60_000, 1_800],
-};
-const haiku: Call = {
-  model: 'claude-haiku-demo',
-  tokens: [400, 3_000, 20_000, 900],
-};
-const unknownPrice: Call = {
-  model: 'example-model-x',
-  tokens: [300, 2_000, 10_000, 700],
-};
 export const EXAMPLE_APP = 'example-app';
 export const EXAMPLE_API = 'example-api';
-
-const noModel: Call = { model: undefined, tokens: [200, 1_000, 5_000, 300] };
 
 export const DEMO_SESSIONS: readonly DemoSession[] = [
   ...[9, 6, 4, 3, 2, 1].map((days, index) => ({
@@ -88,6 +57,29 @@ export const DEMO_SESSIONS: readonly DemoSession[] = [
       },
     ],
   })),
+  {
+    id: 'demo-app-queue',
+    folder: '-demo-example-app',
+    project: EXAMPLE_APP,
+    gitBranch: 'main',
+    startsAgo: DAY + 5 * HOUR,
+    prompt: 'Work through the queue',
+    calls: [opus, sonnet],
+    subAgents: [
+      {
+        id: 'worker',
+        agentType: 'general-purpose',
+        description: 'Worker for #13',
+        calls: [sonnet, sonnet],
+      },
+      {
+        id: 'review',
+        agentType: 'general-purpose',
+        description: 'Review #14',
+        calls: [opus],
+      },
+    ],
+  },
   {
     id: 'demo-app-web',
     folder: '-demo-example-app',

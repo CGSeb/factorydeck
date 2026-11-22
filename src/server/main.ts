@@ -6,6 +6,7 @@ import {
   workflowConfigPath,
 } from '../config/env.ts';
 import { type Database, createDatabase } from '../db/client.ts';
+import { featureDetail, listFeatures } from '../features/query.ts';
 import { collect } from '../git-host/collect.ts';
 import { collectionStatus } from '../git-host/query.ts';
 import { hasFactory } from '../ingest/factory.ts';
@@ -101,6 +102,11 @@ async function main(): Promise<void> {
     roles: {
       list: (query) => listRoles(db, query, config),
       config: { path: config.path, exists: config.exists },
+    },
+    features: {
+      list: (query) => listFeatures(db, query, config),
+      detail: (key, query) =>
+        featureDetail(db, key, query, { config, state: stateOptions }),
     },
     projects: {
       factoryStatus: () => factoryStatus(db, hasFactory),

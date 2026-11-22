@@ -1,6 +1,9 @@
 import type { ReactElement } from 'react';
 import { Route, Routes } from 'react-router';
 import type { DeleteProject, LoadFactory } from './factory-api.ts';
+import { FeaturePage } from './FeaturePage.tsx';
+import type { LoadFeature, LoadFeatures } from './features-api.ts';
+import { FeaturesPage } from './FeaturesPage.tsx';
 import type { LoadCollection, RefreshCollection } from './git-host-api.ts';
 import { Layout } from './Layout.tsx';
 import type { LoadOverview } from './overview-api.ts';
@@ -21,6 +24,8 @@ export interface AppProps {
   loadSkills: LoadSkills;
   loadSkill: LoadSkill;
   loadRoles: LoadRoles;
+  loadFeatures: LoadFeatures;
+  loadFeature: LoadFeature;
   loadFactory: LoadFactory;
   deleteProject: DeleteProject;
   loadCollection: LoadCollection;
@@ -34,6 +39,8 @@ export function App({
   loadSkills,
   loadSkill,
   loadRoles,
+  loadFeatures,
+  loadFeature,
   loadFactory,
   deleteProject,
   loadCollection,
@@ -52,6 +59,14 @@ export function App({
         }
       >
         <Route index element={<OverviewPage loadOverview={loadOverview} />} />
+        <Route
+          path="features"
+          element={<FeaturesPage loadFeatures={loadFeatures} />}
+        />
+        <Route
+          path="features/:number"
+          element={<FeaturePage loadFeature={loadFeature} />}
+        />
         <Route
           path="sessions"
           element={<SessionsPage loadSessions={loadSessions} />}

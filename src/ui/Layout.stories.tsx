@@ -69,6 +69,7 @@ export const RolesActive: Story = {
     const links = canvas.getAllByRole('link');
     await expect(links.map((link) => link.textContent)).toEqual([
       'Overview',
+      'Features',
       'Sessions',
       'Skills',
       'Roles',

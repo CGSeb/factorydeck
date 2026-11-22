@@ -13,6 +13,7 @@ import {
   unusedSkills,
   unusedProjects,
   unusedGitHost,
+  unusedFeatures,
 } from '../test/skill-source.ts';
 import { databaseCheck } from './health.ts';
 
@@ -67,6 +68,7 @@ describe('GET /api/health', () => {
       sessions: sessionSource,
       skills: unusedSkills,
       roles: unusedRoles,
+      features: unusedFeatures,
       projects: unusedProjects,
       gitHost: unusedGitHost,
     }).request('/api/health');
@@ -82,6 +84,7 @@ describe('GET /api/health', () => {
       sessions: sessionSource,
       skills: unusedSkills,
       roles: unusedRoles,
+      features: unusedFeatures,
       projects: unusedProjects,
       gitHost: unusedGitHost,
     }).request('/api/health');
@@ -104,6 +107,7 @@ describe('other API paths', () => {
         sessions: sessionSource,
         skills: unusedSkills,
         roles: unusedRoles,
+        features: unusedFeatures,
         projects: unusedProjects,
         gitHost: unusedGitHost,
       }).request(path);
@@ -120,6 +124,7 @@ describe('other API paths', () => {
       sessions: sessionSource,
       skills: unusedSkills,
       roles: unusedRoles,
+      features: unusedFeatures,
       projects: unusedProjects,
       gitHost: unusedGitHost,
     }).request('/api/nope');
@@ -136,6 +141,7 @@ describe('UI', () => {
     sessions: sessionSource,
     skills: unusedSkills,
     roles: unusedRoles,
+    features: unusedFeatures,
     projects: unusedProjects,
     gitHost: unusedGitHost,
   });
@@ -167,6 +173,7 @@ describe('UI', () => {
       sessions: sessionSource,
       skills: unusedSkills,
       roles: unusedRoles,
+      features: unusedFeatures,
       projects: unusedProjects,
       gitHost: unusedGitHost,
     }).request('/');
@@ -184,6 +191,7 @@ describe('GET /api/overview', () => {
       sessions: sessionSource,
       skills: unusedSkills,
       roles: unusedRoles,
+      features: unusedFeatures,
       projects: unusedProjects,
       gitHost: unusedGitHost,
     }).request('/api/overview?period=30d&tz=Europe/Paris');
@@ -206,6 +214,7 @@ describe('GET /api/overview', () => {
       sessions: sessionSource,
       skills: unusedSkills,
       roles: unusedRoles,
+      features: unusedFeatures,
       projects: unusedProjects,
       gitHost: unusedGitHost,
     });
@@ -227,6 +236,7 @@ describe('GET /api/overview', () => {
       sessions: sessionSource,
       skills: unusedSkills,
       roles: unusedRoles,
+      features: unusedFeatures,
       projects: unusedProjects,
       gitHost: unusedGitHost,
     }).request('/api/overview?period=7d&tz=UTC');
@@ -255,6 +265,7 @@ describe('GET /api/overview', () => {
       sessions: sessionSource,
       skills: unusedSkills,
       roles: unusedRoles,
+      features: unusedFeatures,
       projects: unusedProjects,
       gitHost: unusedGitHost,
     });

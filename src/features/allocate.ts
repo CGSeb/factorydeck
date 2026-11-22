@@ -1,0 +1,303 @@
+import type { TokenCounts } from '../overview/types.ts';
+import { costOf } from '../pricing.ts';
+import {
+  MAIN_ROLE,
+  type WorkflowConfig,
+  roleOf,
+  rulesFor,
+  workItemOf,
+} from '../roles/config.ts';
+import { type FeatureTotals, ORCHESTRATION_ROLE } from './types.ts';
+
+export type Row = Record<string, unknown>;
+
+interface CallGroup {
+  sessionId: string;
+  project: string;
+  subAgent: string;
+  role: string;
+  workItem: number | null;
+  calls: number;
+  tokens: number;
+  costUsd: number | undefined;
+}
+
+export interface RoleAccumulator {
+  role: string;
+  threads: Set<string>;
+  apiCalls: number;
+  tokens: number;
+  costUsd: number | null;
+}
+
+export interface SessionUsage {
+  tokens: number;
+  costUsd: number | null;
+}
+
+export interface IssueAccumulator {
+  project: string;
+  number: number;
+  apiCalls: number;
+  tokens: number;
+  costUsd: number | null;
+  orchestrationCostUsd: number | null;
+  unknownPriceCalls: number;
+  sessions: Map<string, SessionUsage>;
+  roles: Map<string, RoleAccumulator>;
+  orchestration: RoleAccumulator | null;
+}
+
+export interface Pool {
+  unknownPriceCalls: number;
+  keys: string[];
+}
+
+export interface Allocation {
+  issues: Map<string, IssueAccumulator>;
+  noWorkItem: IssueAccumulator | null;
+  pools: Pool[];
+  totals: FeatureTotals;
+}
+
+interface Share {
+  cost: number | undefined;
+  tokens: number;
+}
+
+export function text(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
+
+export function addCost(
+  total: number | null,
+  cost: number | undefined,
+): number | null {
+  return cost === undefined ? total : (total ?? 0) + cost;
+}
+
+export function issueKey(project: string, number: number): string {
+  return `${String(number)} ${project}`;
+}
+
+function groupOf(config: WorkflowConfig, row: Row): CallGroup {
+  const project = text(row['project']);
+  const rules = rulesFor(config, project);
+  const title = text(row['title']);
+  const sessionWorkItem = workItemOf(rules, {
+    branch: text(row['session_branch']),
+    title,
+  });
+  const subAgent = text(row['sub_agent']);
+  const description = text(row['description']);
+  const counts: TokenCounts = {
+    input: Number(row['input']),
+    cacheWrite: Number(row['cache_write']),
+    cacheRead: Number(row['cache_read']),
+    output: Number(row['output']),
+  };
+  const main = subAgent === '';
+  return {
+    sessionId: text(row['session_id']),
+    project,
+    subAgent,
+    role: main
+      ? MAIN_ROLE
+      : roleOf(rules, { agentType: text(row['agent_type']), description }),
+    workItem: main
+      ? sessionWorkItem
+      : (workItemOf(rules, {
+          description,
+          branch: text(row['agent_branch']),
+          title,
+        }) ?? sessionWorkItem),
+    calls: Number(row['calls']),
+    tokens: counts.input + counts.cacheWrite + counts.cacheRead + counts.output,
+    costUsd: costOf(text(row['model']), counts),
+  };
+}
+
+function emptyAccumulator(project: string, number: number): IssueAccumulator {
+  return {
+    project,
+    number,
+    apiCalls: 0,
+    tokens: 0,
+    costUsd: null,
+    orchestrationCostUsd: null,
+    unknownPriceCalls: 0,
+    sessions: new Map(),
+    roles: new Map(),
+    orchestration: null,
+  };
+}
+
+function emptyRole(role: string): RoleAccumulator {
+  return { role, threads: new Set(), apiCalls: 0, tokens: 0, costUsd: null };
+}
+
+function addToSession(
+  issue: IssueAccumulator,
+  sessionId: string,
+  share: Share,
+): void {
+  const session = issue.sessions.get(sessionId) ?? {
+    tokens: 0,
+    costUsd: null,
+  };
+  session.tokens += share.tokens;
+  session.costUsd = addCost(session.costUsd, share.cost);
+  issue.sessions.set(sessionId, session);
+}
+
+function roleFor(
+  issue: IssueAccumulator,
+  group: CallGroup,
+  orchestration: boolean,
+): RoleAccumulator {
+  if (orchestration) {
+    issue.orchestration ??= emptyRole(ORCHESTRATION_ROLE);
+    return issue.orchestration;
+  }
+  const role = issue.roles.get(group.role) ?? emptyRole(group.role);
+  issue.roles.set(group.role, role);
+  return role;
+}
+
+function addToRole(
+  role: RoleAccumulator,
+  group: CallGroup,
+  share: Share,
+): void {
+  role.threads.add(`${group.sessionId}/${group.subAgent}`);
+  role.apiCalls += group.calls;
+  role.tokens += share.tokens;
+  role.costUsd = addCost(role.costUsd, share.cost);
+}
+
+function addGroup(
+  issue: IssueAccumulator,
+  group: CallGroup,
+  weight: number,
+  orchestration: boolean,
+): void {
+  const share: Share = {
+    tokens: group.tokens * weight,
+    cost: group.costUsd === undefined ? undefined : group.costUsd * weight,
+  };
+  issue.apiCalls += group.calls;
+  issue.tokens += share.tokens;
+  issue.costUsd = addCost(issue.costUsd, share.cost);
+  if (group.costUsd === undefined && !orchestration) {
+    issue.unknownPriceCalls += group.calls;
+  }
+  if (orchestration) {
+    issue.orchestrationCostUsd = addCost(
+      issue.orchestrationCostUsd,
+      share.cost,
+    );
+  }
+  addToSession(issue, group.sessionId, share);
+  addToRole(roleFor(issue, group, orchestration), group, share);
+}
+
+function groupsBySession(groups: CallGroup[]): CallGroup[][] {
+  const sessions = new Map<string, CallGroup[]>();
+  for (const group of groups) {
+    const list = sessions.get(group.sessionId) ?? [];
+    list.push(group);
+    sessions.set(group.sessionId, list);
+  }
+  return [...sessions.values()];
+}
+
+function totalsOf(groups: CallGroup[]): FeatureTotals {
+  const totals = { apiCalls: 0, tokens: 0, costUsd: 0, unknownPriceCalls: 0 };
+  for (const group of groups) {
+    totals.apiCalls += group.calls;
+    totals.tokens += group.tokens;
+    if (group.costUsd === undefined) totals.unknownPriceCalls += group.calls;
+    else totals.costUsd += group.costUsd;
+  }
+  return totals;
+}
+
+class Allocator {
+  readonly allocation: Allocation;
+
+  constructor(totals: FeatureTotals) {
+    this.allocation = {
+      issues: new Map(),
+      noWorkItem: null,
+      pools: [],
+      totals,
+    };
+  }
+
+  issue(project: string, number: number): IssueAccumulator {
+    const key = issueKey(project, number);
+    const issue =
+      this.allocation.issues.get(key) ?? emptyAccumulator(project, number);
+    this.allocation.issues.set(key, issue);
+    return issue;
+  }
+
+  noWorkItem(group: CallGroup): void {
+    this.allocation.noWorkItem ??= emptyAccumulator('', 0);
+    addGroup(this.allocation.noWorkItem, group, 1, false);
+  }
+
+  session(groups: CallGroup[]): void {
+    const weights = new Map<number, number>();
+    const pool: CallGroup[] = [];
+    for (const group of groups) {
+      if (group.workItem === null) {
+        if (group.subAgent === '') pool.push(group);
+        else this.noWorkItem(group);
+        continue;
+      }
+      addGroup(this.issue(group.project, group.workItem), group, 1, false);
+      if (group.subAgent !== '') {
+        weights.set(
+          group.workItem,
+          (weights.get(group.workItem) ?? 0) + group.tokens,
+        );
+      }
+    }
+    this.share(pool, weights);
+  }
+
+  share(pool: CallGroup[], weights: Map<number, number>): void {
+    const total = [...weights.values()].reduce((sum, value) => sum + value, 0);
+    const shared = [...weights].filter(([, weight]) => weight > 0);
+    if (total === 0) {
+      for (const group of pool) this.noWorkItem(group);
+      return;
+    }
+    const [first] = pool;
+    if (first === undefined) return;
+    for (const group of pool) {
+      for (const [number, weight] of shared) {
+        addGroup(
+          this.issue(group.project, number),
+          group,
+          weight / total,
+          true,
+        );
+      }
+    }
+    this.allocation.pools.push({
+      unknownPriceCalls: pool
+        .filter((group) => group.costUsd === undefined)
+        .reduce((sum, group) => sum + group.calls, 0),
+      keys: shared.map(([number]) => issueKey(first.project, number)),
+    });
+  }
+}
+
+export function allocate(config: WorkflowConfig, rows: Row[]): Allocation {
+  const groups = rows.map((row) => groupOf(config, row));
+  const allocator = new Allocator(totalsOf(groups));
+  for (const session of groupsBySession(groups)) allocator.session(session);
+  return allocator.allocation;
+}
