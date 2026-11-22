@@ -8,6 +8,7 @@ import {
   unusedProjects,
   unusedGitHost,
   unusedFeatures,
+  unusedStats,
 } from '../test/skill-source.ts';
 
 const builtUi = '/nonexistent/factorydeck-ui';
@@ -70,6 +71,7 @@ describe('GET /api/sessions', () => {
     features: unusedFeatures,
     projects: unusedProjects,
     gitHost: unusedGitHost,
+    stats: unusedStats,
   });
 
   it('answers the filtered list with the ingestion facts', async () => {
@@ -134,6 +136,7 @@ describe('GET /api/sessions', () => {
       features: unusedFeatures,
       projects: unusedProjects,
       gitHost: unusedGitHost,
+      stats: unusedStats,
     }).request('/api/sessions?period=7d&tz=UTC');
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({
@@ -154,6 +157,7 @@ describe('GET /api/sessions/:id', () => {
     features: unusedFeatures,
     projects: unusedProjects,
     gitHost: unusedGitHost,
+    stats: unusedStats,
   });
 
   it('answers the session', async () => {

@@ -18,6 +18,7 @@ import { deleteProject, factoryStatus } from '../projects/remove.ts';
 import { listRoles } from '../roles/query.ts';
 import { listSessions, sessionDetail } from '../sessions/query.ts';
 import { listSkills, skillDetail } from '../skills/query.ts';
+import { autonomyStats } from '../stats/autonomy.ts';
 import { createApp } from './app.ts';
 import { type CollectLoop, startCollectLoop } from './collect-loop.ts';
 import { databaseCheck } from './health.ts';
@@ -118,6 +119,9 @@ async function main(): Promise<void> {
     gitHost: {
       status: () => collectionStatus(db, hasFactory),
       refresh: () => collectionLoop().refresh(),
+    },
+    stats: {
+      autonomy: (query) => autonomyStats(db, query, hasFactory),
     },
   });
   await listen(app, env.FACTORYDECK_PORT);

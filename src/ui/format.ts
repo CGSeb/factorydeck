@@ -79,10 +79,13 @@ export function formatDuration(
   lastAt: string | null,
 ): string {
   if (firstAt === null || lastAt === null) return MISSING;
-  const elapsed = Math.max(
-    0,
+  return formatElapsed(
     new Date(lastAt).getTime() - new Date(firstAt).getTime(),
   );
+}
+
+export function formatElapsed(ms: number): string {
+  const elapsed = Math.max(0, ms);
   if (elapsed < MINUTE_MS) return `${Math.floor(elapsed / 1000)} s`;
   if (elapsed < HOUR_MS) return `${Math.floor(elapsed / MINUTE_MS)} min`;
   if (elapsed < DAY_MS) {

@@ -16,6 +16,13 @@ const SHAPES = {
       <path d="m2 17 10 5 10-5" />
     </>
   ),
+  stats: (
+    <>
+      <path d="M6 20v-5" />
+      <path d="M12 20v-10" />
+      <path d="M18 20V4" />
+    </>
+  ),
   sessions: (
     <>
       <rect x="2" y="4" width="20" height="16" rx="2" />

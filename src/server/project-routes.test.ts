@@ -5,6 +5,7 @@ import {
   unusedSkills,
   unusedGitHost,
   unusedFeatures,
+  unusedStats,
 } from '../test/skill-source.ts';
 import { type OverviewSource, createApp } from './app.ts';
 import type { ProjectSource } from './project-routes.ts';
@@ -59,6 +60,7 @@ function app(result: DeleteResult, checkDatabase = up) {
       features: unusedFeatures,
       projects,
       gitHost: unusedGitHost,
+      stats: unusedStats,
     }),
   };
 }
