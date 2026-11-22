@@ -70,32 +70,22 @@ export function useSessionList(
     key: string;
     response: SessionListResponse;
   }>();
-  const filterKey = JSON.stringify({ period, project, state });
-  const [last, setLast] = useState<{
-    filterKey: string;
-    response: SessionListResponse;
-  }>();
-  const scopeKey = JSON.stringify({ period, project });
-  const [counts, setCounts] = useState<{
-    scopeKey: string;
-    counts: StateCounts;
-  }>();
+  const [last, setLast] = useState<SessionListResponse>();
+  const [counts, setCounts] = useState<StateCounts>();
 
   useEffect(() => {
     let active = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const current: SessionFilters = { period, project, state };
-    const currentFilterKey = JSON.stringify(current);
     const currentKey = JSON.stringify({ ...current, limit });
-    const currentScopeKey = JSON.stringify({ period, project });
     async function refresh(): Promise<void> {
       const next = await loadSessions(current, limit);
       if (!active) return;
       if (next !== undefined) {
         setLoaded({ key: currentKey, response: next });
-        setLast({ filterKey: currentFilterKey, response: next });
+        setLast(next);
         if (next.status === 'ok') {
-          setCounts({ scopeKey: currentScopeKey, counts: next.list.counts });
+          setCounts(next.list.counts);
         }
       }
       timer = setTimeout(
@@ -110,14 +100,9 @@ export function useSessionList(
     };
   }, [loadSessions, period, project, state, limit]);
 
-  const response =
-    loaded?.key === key
-      ? loaded.response
-      : last?.filterKey === filterKey
-        ? last.response
-        : undefined;
+  const response = loaded?.key === key ? loaded.response : last;
   return {
     response,
-    counts: counts?.scopeKey === scopeKey ? counts.counts : undefined,
+    counts,
   };
 }

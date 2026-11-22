@@ -211,11 +211,21 @@ export function OverviewPage({
 }: OverviewPageProps): ReactElement {
   const [filters, setFilters] = useSkillFilters();
   const key = JSON.stringify(filters);
-  const overviewResponse = useRefreshing(key, () =>
-    loadOverview(filters.period, filters.project),
+  const overviewResponse = useRefreshing(
+    key,
+    () => loadOverview(filters.period, filters.project),
+    'overview',
   );
-  const featuresResponse = useRefreshing(key, () => loadFeatures(filters));
-  const rolesResponse = useRefreshing(key, () => loadRoles(filters));
+  const featuresResponse = useRefreshing(
+    key,
+    () => loadFeatures(filters),
+    'overview',
+  );
+  const rolesResponse = useRefreshing(
+    key,
+    () => loadRoles(filters),
+    'overview',
+  );
   const overview = blockOf(
     overviewResponse,
     overviewResponse?.status === 'ok' ? overviewResponse.overview : undefined,

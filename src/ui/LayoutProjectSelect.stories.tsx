@@ -2,6 +2,12 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { type ReactElement, useState } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
+import {
+  chooseOption,
+  expectValue,
+  optionTexts,
+  waitForOption,
+} from './components/select-test.ts';
 import type { DeleteProject, LoadFactory } from './factory-api.ts';
 import {
   archivedLib,
@@ -123,12 +129,6 @@ function sectionHrefs(canvasElement: HTMLElement): (string | null)[] {
     .map((link) => link.getAttribute('href'));
 }
 
-function optionTexts(canvasElement: HTMLElement): (string | null)[] {
-  return within(projectSelect(canvasElement))
-    .getAllByRole('option')
-    .map((option) => option.textContent);
-}
-
 const SECTION_PATHS = ['/', '/features', '/sessions', '/skills', '/roles'];
 
 export const ProjectSelectAllProjects: Story = {
@@ -138,17 +138,17 @@ export const ProjectSelectAllProjects: Story = {
   decorators: [at('/sessions?period=30d&state=waiting')],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByRole('option', { name: 'Example App' });
+    await waitForOption(() => projectSelect(canvasElement), 'Example App');
     const select = projectSelect(canvasElement);
-    await expect(select).toHaveValue('');
+    await expect(select).toHaveAttribute('data-value', '');
     await expect(select).toHaveAttribute('title', 'All projects');
-    await expect(optionTexts(canvasElement)).toEqual([
+    await expect(await optionTexts(projectSelect(canvasElement))).toEqual([
       'All projects',
       'Example App',
       'example-lib',
     ]);
     await expect(sectionHrefs(canvasElement)).toEqual(SECTION_PATHS);
-    await userEvent.selectOptions(select, APP);
+    await chooseOption(select, APP);
     await expect(address(canvasElement)).toHaveTextContent(
       `/sessions?period=30d&state=waiting&project=${ENCODED_APP}`,
     );
@@ -163,8 +163,8 @@ export const ProjectSelectAllProjects: Story = {
     await expect(address(canvasElement)).toHaveTextContent(
       `/features?project=${ENCODED_APP}`,
     );
-    await expect(projectSelect(canvasElement)).toHaveValue(APP);
-    await userEvent.selectOptions(projectSelect(canvasElement), '');
+    await expectValue(projectSelect(canvasElement), APP);
+    await chooseOption(projectSelect(canvasElement), '');
     await expect(address(canvasElement)).toHaveTextContent(/^\/features$/);
     await expect(sectionHrefs(canvasElement)).toEqual(SECTION_PATHS);
   },
@@ -177,8 +177,8 @@ export const ProjectSelectOneProject: Story = {
   decorators: [at(`/roles?period=all&project=${ENCODED_LIB}`)],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByRole('option', { name: 'example-lib' });
-    await expect(projectSelect(canvasElement)).toHaveValue(LIB);
+    await waitForOption(() => projectSelect(canvasElement), 'example-lib');
+    await expectValue(projectSelect(canvasElement), LIB);
     await expect(sectionHrefs(canvasElement)).toEqual(
       SECTION_PATHS.map((path) => `${path}?project=${ENCODED_LIB}`),
     );
@@ -186,7 +186,7 @@ export const ProjectSelectOneProject: Story = {
       'aria-current',
       'page',
     );
-    await userEvent.selectOptions(projectSelect(canvasElement), APP);
+    await chooseOption(projectSelect(canvasElement), APP);
     await expect(address(canvasElement)).toHaveTextContent(
       `/roles?period=all&project=${ENCODED_APP}`,
     );
@@ -199,10 +199,9 @@ export const ProjectSelectUnknownProject: Story = {
   },
   decorators: [at(`/?project=${encodeURIComponent(`${APP}/`)}`)],
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await canvas.findByRole('option', { name: 'Example App' });
-    await expect(projectSelect(canvasElement)).toHaveValue(`${APP}/`);
-    await expect(optionTexts(canvasElement)).toEqual([
+    await waitForOption(() => projectSelect(canvasElement), 'Example App');
+    await expectValue(projectSelect(canvasElement), `${APP}/`);
+    await expect(await optionTexts(projectSelect(canvasElement))).toEqual([
       'All projects',
       'Example App',
       'example-lib',
@@ -220,8 +219,8 @@ export const ProjectSelectEmptyParameter: Story = {
   },
   decorators: [at('/?project=')],
   play: async ({ canvasElement }) => {
-    await within(canvasElement).findByRole('option', { name: 'Example App' });
-    await expect(projectSelect(canvasElement)).toHaveValue('');
+    await waitForOption(() => projectSelect(canvasElement), 'Example App');
+    await expectValue(projectSelect(canvasElement), '');
     await expect(sectionHrefs(canvasElement)).toEqual(SECTION_PATHS);
   },
 };
@@ -237,12 +236,11 @@ export const ProjectSelectSameNames: Story = {
   },
   decorators: [at('/')],
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await canvas.findByRole('option', { name: 'Shop (/home/dev/web)' });
-    await userEvent.selectOptions(
-      projectSelect(canvasElement),
+    await waitForOption(
+      () => projectSelect(canvasElement),
       'Shop (/home/dev/web)',
     );
+    await chooseOption(projectSelect(canvasElement), 'Shop (/home/dev/web)');
     await expect(address(canvasElement)).toHaveTextContent(
       '/?project=%2Fhome%2Fdev%2Fweb',
     );
@@ -260,9 +258,9 @@ export const ProjectSelectOnSessionPage: Story = {
   decorators: [at('/sessions/7f3a9c21?period=30d')],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByRole('option', { name: 'Example App' });
-    await expect(projectSelect(canvasElement)).toHaveValue('');
-    await userEvent.selectOptions(projectSelect(canvasElement), APP);
+    await waitForOption(() => projectSelect(canvasElement), 'Example App');
+    await expectValue(projectSelect(canvasElement), '');
+    await chooseOption(projectSelect(canvasElement), APP);
     await canvas.findByText('Session list');
     await expect(address(canvasElement)).toHaveTextContent(
       `/sessions?period=30d&project=${ENCODED_APP}`,
@@ -277,9 +275,9 @@ export const ProjectSelectOnIssuePage: Story = {
   decorators: [at(`/features/52?project=${ENCODED_APP}&period=all`)],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByRole('option', { name: 'Example App' });
-    await expect(projectSelect(canvasElement)).toHaveValue(APP);
-    await userEvent.selectOptions(projectSelect(canvasElement), '');
+    await waitForOption(() => projectSelect(canvasElement), 'Example App');
+    await expectValue(projectSelect(canvasElement), APP);
+    await chooseOption(projectSelect(canvasElement), '');
     await canvas.findByText('Feature list');
     await expect(address(canvasElement)).toHaveTextContent(
       /^\/features\?period=all$/,
@@ -291,8 +289,8 @@ export const DeletingTheSelectedProject: Story = {
   render: () => <DeletionHarness />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByRole('option', { name: 'Old App' });
-    await expect(projectSelect(canvasElement)).toHaveValue(oldApp.project);
+    await waitForOption(() => projectSelect(canvasElement), 'Old App');
+    await expectValue(projectSelect(canvasElement), oldApp.project);
     const [, oldAppLine] = await canvas.findAllByRole('button', {
       name: 'Delete project',
     });
@@ -303,11 +301,11 @@ export const DeletingTheSelectedProject: Story = {
       dialog.getByRole('button', { name: 'Delete project' }),
     );
     await waitFor(() =>
-      expect(canvas.queryByRole('option', { name: 'Old App' })).toBeNull(),
+      expect(projectSelect(canvasElement)).toHaveAttribute('data-value', ''),
     );
-    await expect(projectSelect(canvasElement)).toHaveValue('');
+    await expectValue(projectSelect(canvasElement), '');
     await expect(address(canvasElement)).toHaveTextContent(/^\/$/);
-    await expect(optionTexts(canvasElement)).toEqual([
+    await expect(await optionTexts(projectSelect(canvasElement))).toEqual([
       'All projects',
       'archived-lib',
     ]);

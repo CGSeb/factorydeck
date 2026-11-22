@@ -13,7 +13,8 @@ import { formatTokens } from '../format.ts';
 import {
   type TokenCounts,
   type TooltipLine,
-  shiftIntoView,
+  type TooltipPosition,
+  placeTooltip,
   tooltipLines,
   totalTokens,
 } from './token-amount.ts';
@@ -53,14 +54,14 @@ const number: CSSProperties = {
   cursor: 'default',
 };
 
-const PLACEMENT_STYLES: Record<TokenAmountPlacement, CSSProperties> = {
-  above: { bottom: '100%', right: 0, paddingBottom: 'var(--fd-space-1)' },
-  below: { top: '100%', left: 0, paddingTop: 'var(--fd-space-1)' },
+const SIDE_STYLES: Record<TokenAmountPlacement, CSSProperties> = {
+  above: { paddingBottom: 'var(--fd-space-1)' },
+  below: { paddingTop: 'var(--fd-space-1)' },
 };
 
 const tooltipFrame: CSSProperties = {
-  position: 'absolute',
-  zIndex: 1,
+  position: 'fixed',
+  zIndex: 20,
   fontFamily: 'var(--fd-font-body)',
   fontSize: 'var(--fd-text-sm)',
   fontWeight: 400,
@@ -185,49 +186,54 @@ function useHoverFocusDisclosure() {
   };
 }
 
-function useShiftIntoView(
+function anchorOf(tooltip: HTMLElement): HTMLElement | null {
+  return tooltip.parentElement;
+}
+
+/**
+ * The tooltip is `position: fixed` so a scrolling or clipping ancestor (a
+ * table wrapper with `overflow-x: auto`, a card) never cuts it off.
+ */
+function useFixedPosition(
   ref: RefObject<HTMLSpanElement | null>,
   open: boolean,
+  placement: TokenAmountPlacement,
   layoutKey: string,
-): number {
-  const [shift, setShift] = useState(0);
-  const applied = useRef(0);
-  applied.current = shift;
+): TooltipPosition | undefined {
+  const [position, setPosition] = useState<TooltipPosition>();
 
   useLayoutEffect(() => {
     const tooltip = ref.current;
-    if (!open || tooltip === null) {
-      setShift(0);
+    const anchor = tooltip === null ? null : anchorOf(tooltip);
+    if (!open || tooltip === null || anchor === null) {
+      setPosition(undefined);
       return undefined;
     }
     function measure(): void {
-      if (tooltip === null) return;
-      const box = tooltip.getBoundingClientRect();
-      setShift(
-        shiftIntoView(
-          {
-            left: box.left - applied.current,
-            right: box.right - applied.current,
+      if (tooltip === null || anchor === null) return;
+      setPosition(
+        placeTooltip({
+          anchor: anchor.getBoundingClientRect(),
+          size: { width: tooltip.offsetWidth, height: tooltip.offsetHeight },
+          viewport: {
+            width: document.documentElement.clientWidth,
+            height: document.documentElement.clientHeight,
           },
-          document.documentElement.clientWidth,
-          edgeMargin(),
-        ),
+          preferred: placement,
+          margin: edgeMargin(),
+        }),
       );
     }
     measure();
-    const observer =
-      typeof ResizeObserver === 'undefined'
-        ? null
-        : new ResizeObserver(measure);
-    observer?.observe(tooltip);
     window.addEventListener('resize', measure);
+    window.addEventListener('scroll', measure, true);
     return () => {
-      observer?.disconnect();
       window.removeEventListener('resize', measure);
+      window.removeEventListener('scroll', measure, true);
     };
-  }, [ref, open, layoutKey]);
+  }, [ref, open, placement, layoutKey]);
 
-  return shift;
+  return position;
 }
 
 function Tooltip({
@@ -242,11 +248,13 @@ function Tooltip({
   lines: TooltipLine[];
 }): ReactElement {
   const ref = useRef<HTMLSpanElement>(null);
-  const shift = useShiftIntoView(
+  const position = useFixedPosition(
     ref,
     open,
-    `${placement} ${JSON.stringify(lines)}`,
+    placement,
+    JSON.stringify(lines),
   );
+  const side = position?.side ?? placement;
 
   return (
     <span
@@ -254,10 +262,13 @@ function Tooltip({
       id={id}
       role="tooltip"
       hidden={!open}
+      data-side={side}
       style={{
         ...tooltipFrame,
-        ...PLACEMENT_STYLES[placement],
-        ...(shift === 0 ? {} : { transform: `translateX(${String(shift)}px)` }),
+        ...SIDE_STYLES[side],
+        top: position?.top ?? 0,
+        left: position?.left ?? 0,
+        ...(position === undefined ? { visibility: 'hidden' } : {}),
       }}
     >
       <TooltipContent lines={lines} />

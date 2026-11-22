@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, within } from 'storybook/test';
+import { chooseOption } from './select-test.ts';
 import { ProjectPill } from './ProjectPill.tsx';
 
 const meta = {
@@ -25,9 +26,9 @@ function projectSelect(canvasElement: HTMLElement): HTMLElement {
 export const AllProjects: Story = {
   play: async ({ canvasElement, args }) => {
     const select = projectSelect(canvasElement);
-    await expect(select).toHaveValue('');
+    await expect(select).toHaveAttribute('data-value', '');
     await expect(select).toHaveAttribute('title', 'All projects');
-    await userEvent.selectOptions(select, 'example-lib');
+    await chooseOption(select, 'example-lib');
     await expect(args.onChange).toHaveBeenCalledWith('/home/dev/example-lib');
   },
 };
@@ -39,9 +40,7 @@ export const LongNameCut: Story = {
   },
   play: async ({ canvasElement }) => {
     const select = projectSelect(canvasElement);
-    await expect(
-      within(select).getByRole('option', { selected: true }),
-    ).toHaveTextContent(`${'L'.repeat(60)}…`);
+    await expect(select).toHaveTextContent(`${'L'.repeat(60)}…`);
     await expect(select).toHaveAttribute(
       'title',
       `${'L'.repeat(70)}\n/home/dev/long`,
@@ -53,9 +52,7 @@ export const UnknownProject: Story = {
   args: { value: '/home/dev/gone' },
   play: async ({ canvasElement }) => {
     const select = projectSelect(canvasElement);
-    await expect(select).toHaveValue('/home/dev/gone');
-    await expect(
-      within(select).getByRole('option', { selected: true }),
-    ).toHaveTextContent('gone');
+    await expect(select).toHaveAttribute('data-value', '/home/dev/gone');
+    await expect(select).toHaveTextContent('gone');
   },
 };

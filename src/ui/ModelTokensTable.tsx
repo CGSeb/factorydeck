@@ -17,7 +17,7 @@ export function ModelTokensTable({
   models: ModelUsage[];
 }): ReactElement {
   const titleId = useId();
-  const largest = models.reduce((max, row) => Math.max(max, row.tokens), 0);
+  const total = models.reduce((sum, row) => sum + row.tokens, 0);
   return (
     <div>
       <h2 id={titleId} className={TABLE_HEADING} style={headingSpace}>
@@ -45,9 +45,10 @@ export function ModelTokensTable({
                 <td className={NUMERIC_CELL}>{formatCount(row.apiCalls)}</td>
                 <td>
                   <BarCell
+                    label={row.model === '' ? MISSING : row.model}
                     counts={row.tokenCounts}
                     costUsd={row.costUsd}
-                    largest={largest}
+                    total={total}
                     color="var(--fd-accent)"
                   />
                 </td>

@@ -45,8 +45,10 @@ function SkillsContent({
 
 export function SkillsPage({ loadSkills }: SkillsPageProps): ReactElement {
   const [filters, setFilters, search] = useSkillFilters();
-  const response = useRefreshing(JSON.stringify(filters), () =>
-    loadSkills(filters),
+  const response = useRefreshing(
+    JSON.stringify(filters),
+    () => loadSkills(filters),
+    'skills',
   );
   return (
     <div className="fd-skills">
@@ -57,6 +59,7 @@ export function SkillsPage({ loadSkills }: SkillsPageProps): ReactElement {
             ? skillsSummary(response.list.skills)
             : undefined
         }
+        pending={response === undefined}
         slot={
           <PeriodPills
             value={filters.period}

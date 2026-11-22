@@ -123,7 +123,7 @@
 .fd-page-header {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--fd-space-4) var(--fd-space-6);
   font-family: var(--fd-font-body);

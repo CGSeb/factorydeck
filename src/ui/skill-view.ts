@@ -38,6 +38,6 @@ export function tokensPerLaunch(tokens: number, launches: number): string {
   return launches > 0 ? formatTokens(Math.round(tokens / launches)) : MISSING;
 }
 
-export function largestTokens(rows: readonly { tokens: number }[]): number {
-  return rows.reduce((largest, row) => Math.max(largest, row.tokens), 0);
+export function tokenTotal(rows: readonly { tokens: number }[]): number {
+  return rows.reduce((sum, row) => sum + row.tokens, 0);
 }

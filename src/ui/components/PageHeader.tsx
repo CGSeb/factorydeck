@@ -13,6 +13,8 @@ export interface PageHeaderProps {
   summary?: ReactNode;
   slot?: ReactNode;
   variant?: 'plain' | 'headline';
+  /** Keeps the summary line's height while the summary is still loading. */
+  pending?: boolean;
   renderLink?: RenderLink;
 }
 
@@ -22,6 +24,7 @@ export function PageHeader({
   summary,
   slot,
   variant = 'plain',
+  pending = false,
   renderLink = renderAnchor,
 }: PageHeaderProps): ReactElement {
   return (
@@ -34,7 +37,15 @@ export function PageHeader({
             children: `← ${back.label}`,
           })}
         <h1 className="fd-page-title">{title}</h1>
-        {summary !== undefined && <p className="fd-page-summary">{summary}</p>}
+        {summary !== undefined ? (
+          <p className="fd-page-summary">{summary}</p>
+        ) : (
+          pending && (
+            <p className="fd-page-summary" aria-hidden="true">
+              {'\u00a0'}
+            </p>
+          )
+        )}
       </div>
       {slot !== undefined && <div className="fd-page-header-slot">{slot}</div>}
     </div>

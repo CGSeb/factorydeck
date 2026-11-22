@@ -122,7 +122,8 @@ export const OneStateSelected: Story = {
     await userEvent.click(
       canvas.getByRole('button', { name: 'Waiting for you 1' }),
     );
-    await canvas.findByText('Loading…');
+    await expect(canvas.getByText('3 sessions')).toBeInTheDocument();
+    await expect(canvas.queryByText('Loading…')).toBeNull();
     const pressed = canvas.getByRole('button', {
       name: 'Waiting for you 1',
       pressed: true,

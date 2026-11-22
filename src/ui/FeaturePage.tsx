@@ -196,6 +196,7 @@ function FeatureLoader({
   const response = useRefreshing(
     JSON.stringify({ project, number, period }),
     () => loadFeature({ project, number }, { period, project }),
+    JSON.stringify({ project, number }),
   );
   return <Loaded response={response} period={period} onPeriod={onPeriod} />;
 }

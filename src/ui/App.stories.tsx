@@ -6,6 +6,7 @@ import {
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { MemoryRouter } from 'react-router';
 import { expect, userEvent, within } from 'storybook/test';
+import { chooseOption } from './components/select-test.ts';
 import { App } from './App.tsx';
 import {
   deleterOf,
@@ -212,15 +213,15 @@ export const OneProjectAcrossPages: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByText('~$48.27');
-    await userEvent.selectOptions(
+    await chooseOption(
       await canvas.findByRole('combobox', { name: 'Project' }),
       '/home/dev/example-app',
     );
     await userEvent.click(canvas.getByRole('link', { name: 'Sessions' }));
     await canvas.findByText('1 session');
-    await expect(canvas.getByRole('combobox', { name: 'Project' })).toHaveValue(
-      '/home/dev/example-app',
-    );
+    await expect(
+      canvas.getByRole('combobox', { name: 'Project' }),
+    ).toHaveAttribute('data-value', '/home/dev/example-app');
     await expect(
       canvas.getByRole('link', { name: 'Add the export button' }),
     ).toHaveAttribute(
@@ -234,8 +235,8 @@ export const OneProjectAcrossPages: Story = {
     await expect(
       canvas.queryByRole('columnheader', { name: 'Project' }),
     ).toBeNull();
-    await expect(canvas.getByRole('combobox', { name: 'Project' })).toHaveValue(
-      '/home/dev/example-app',
-    );
+    await expect(
+      canvas.getByRole('combobox', { name: 'Project' }),
+    ).toHaveAttribute('data-value', '/home/dev/example-app');
   },
 };

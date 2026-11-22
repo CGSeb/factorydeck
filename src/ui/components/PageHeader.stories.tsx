@@ -90,3 +90,12 @@ export const Narrow: Story = {
     ),
   ],
 };
+
+export const PendingSummary: Story = {
+  args: { pending: true, slot: pills },
+  play: async ({ canvasElement }) => {
+    const summary = canvasElement.querySelector('.fd-page-summary');
+    await expect(summary).toHaveAttribute('aria-hidden', 'true');
+    await expect(summary?.textContent).toBe(' ');
+  },
+};

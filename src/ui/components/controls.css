@@ -33,6 +33,15 @@
   background: var(--fd-surface);
   border: 1px solid var(--fd-field-border);
   border-radius: var(--fd-radius-pill);
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.fd-pill:hover:not([aria-pressed='true']) {
+  color: var(--fd-ink);
+  background: var(--fd-surface-2);
+  border-color: var(--fd-muted);
 }
 
 .fd-pill[aria-pressed='true'] {
@@ -64,14 +73,117 @@
   color: var(--fd-muted);
 }
 
-.fd-sort select {
+.fd-select {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.fd-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fd-space-3);
+  max-width: 100%;
   height: 36px;
-  padding: 0 10px;
-  font: inherit;
+  padding: 0 var(--fd-space-3) 0 14px;
+  font-size: var(--fd-text-sm);
+  font-weight: 500;
   color: var(--fd-ink);
+  text-align: left;
   background: var(--fd-surface);
   border: 1px solid var(--fd-field-border);
-  border-radius: 8px;
+  border-radius: var(--fd-radius-card);
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.fd-select-trigger:hover,
+.fd-select-trigger[aria-expanded='true'] {
+  border-color: var(--fd-muted);
+}
+
+.fd-select-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fd-select-chevron {
+  flex: none;
+  color: var(--fd-muted);
+  transition: transform 120ms ease;
+}
+
+.fd-select-trigger[aria-expanded='true'] .fd-select-chevron {
+  transform: rotate(180deg);
+}
+
+.fd-select-list {
+  position: absolute;
+  top: calc(100% + var(--fd-space-1));
+  left: 0;
+  z-index: 10;
+  box-sizing: border-box;
+  min-width: 100%;
+  max-width: min(24em, calc(100vw - 2 * var(--fd-space-4)));
+  max-height: 320px;
+  margin: 0;
+  padding: var(--fd-space-1);
+  overflow-y: auto;
+  font-family: var(--fd-font-body);
+  font-size: var(--fd-text-sm);
+  list-style: none;
+  background: var(--fd-surface);
+  border: 1px solid var(--fd-border);
+  border-radius: var(--fd-radius-card);
+  box-shadow: var(--fd-shadow-pop);
+}
+
+.fd-select[data-align='end'] .fd-select-list {
+  right: 0;
+  left: auto;
+}
+
+.fd-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fd-space-4);
+  min-height: 36px;
+  padding: 0 var(--fd-space-3);
+  color: var(--fd-ink-2);
+  white-space: nowrap;
+  border-radius: var(--fd-radius-sm);
+  cursor: pointer;
+}
+
+.fd-select-option-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fd-select-option[data-active='true'] {
+  color: var(--fd-ink);
+  background: var(--fd-surface-2);
+}
+
+.fd-select-option[aria-selected='true'] {
+  font-weight: 600;
+  color: var(--fd-accent-ink);
+}
+
+.fd-select-check {
+  flex: none;
+  color: var(--fd-accent);
+  visibility: hidden;
+}
+
+.fd-select-option[aria-selected='true'] .fd-select-check {
+  visibility: visible;
 }
 
 .fd-show-more {
@@ -126,6 +238,12 @@
   border-radius: var(--fd-radius-pill);
 }
 
+.fd-show-more button:hover,
+.fd-refresh-button:hover {
+  background: var(--fd-surface-2);
+  border-color: var(--fd-muted);
+}
+
 .fd-refresh-button[aria-busy='true'] svg {
   animation: fd-turn 1s linear infinite;
 }
@@ -171,16 +289,9 @@
 .fd-project-pill {
   max-width: 16em;
   height: 40px;
-  padding: 0 var(--fd-space-3);
-  overflow: hidden;
-  font-family: var(--fd-font-body);
   font-size: var(--fd-text-md);
   font-weight: 600;
-  color: var(--fd-ink);
-  text-overflow: ellipsis;
-  white-space: nowrap;
   background: var(--fd-page);
-  border: 1px solid var(--fd-field-border);
   border-radius: var(--fd-radius-pill);
 }
 
@@ -205,12 +316,27 @@
   background: var(--fd-page);
 }
 
+.fd-stage-cell {
+  transition:
+    box-shadow 120ms ease,
+    background-color 120ms ease;
+}
+
+.fd-stage-cell:has(.fd-stage-button:hover) {
+  background: var(--fd-surface);
+  box-shadow: inset 0 0 0 1px var(--fd-field-border);
+}
+
 .fd-stage-cell[data-selected='true'] {
   background: var(--fd-accent-soft);
 }
 
 .fd-stage-cell[data-selected='true'][data-group='merged'] {
   background: var(--fd-success-bg);
+}
+
+.fd-stage-cell[data-selected='true']:has(.fd-stage-button:hover) {
+  box-shadow: inset 0 0 0 1px var(--fd-muted);
 }
 
 .fd-stage-cell:first-child {

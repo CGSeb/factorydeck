@@ -4,7 +4,7 @@ import { NO_SKILL_LABEL, type SkillUsage } from '../skills/types.ts';
 import { BarCell } from './components/BarCell.tsx';
 import { DataTable, NUMERIC_CELL } from './components/DataTable.tsx';
 import { MISSING, formatCount } from './format.ts';
-import { largestTokens, sortedSkills, tokensPerLaunch } from './skill-view.ts';
+import { sortedSkills, tokenTotal, tokensPerLaunch } from './skill-view.ts';
 import { skillPath } from './skills-api.ts';
 import './skills.css';
 
@@ -15,11 +15,11 @@ export interface SkillTableProps {
 
 function SkillRow({
   row,
-  largest,
+  total,
   search,
 }: {
   row: SkillUsage;
-  largest: number;
+  total: number;
   search: string;
 }): ReactElement {
   const named = row.skill !== null;
@@ -45,9 +45,10 @@ function SkillRow({
       </td>
       <td className="fd-skill-bar">
         <BarCell
+          label={row.skill ?? NO_SKILL_LABEL}
           counts={row.tokenCounts}
           costUsd={row.costUsd}
-          largest={largest}
+          total={total}
           color={named ? 'var(--fd-accent)' : 'var(--fd-stage-ready)'}
         />
       </td>
@@ -57,7 +58,7 @@ function SkillRow({
 
 export function SkillTable({ skills, search }: SkillTableProps): ReactElement {
   const rows = sortedSkills(skills);
-  const largest = largestTokens(rows);
+  const total = tokenTotal(rows);
   return (
     <DataTable label="Skills">
       <table className="fd-skill-table" aria-label="Skills">
@@ -83,7 +84,7 @@ export function SkillTable({ skills, search }: SkillTableProps): ReactElement {
             <SkillRow
               key={row.skill ?? ''}
               row={row}
-              largest={largest}
+              total={total}
               search={search}
             />
           ))}

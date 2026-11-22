@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { shiftIntoView, tooltipLines, totalTokens } from './token-amount.ts';
+import { placeTooltip, tooltipLines, totalTokens } from './token-amount.ts';
 
 const COUNTS = {
   input: 1_200,
@@ -81,20 +81,103 @@ describe('tooltipLines', () => {
   });
 });
 
-describe('shiftIntoView', () => {
-  it('leaves a box inside the viewport in place', () => {
-    expect(shiftIntoView({ left: 20, right: 220 }, 360, 8)).toBe(0);
+describe('placeTooltip', () => {
+  const size = { width: 200, height: 120 };
+  const viewport = { width: 360, height: 640 };
+  const anchor = (top: number, left: number) => ({
+    top,
+    bottom: top + 20,
+    left,
+    right: left + 40,
   });
 
-  it('shifts a box past the right edge to the left', () => {
-    expect(shiftIntoView({ left: 300, right: 500 }, 360, 8)).toBe(-148);
+  it('puts an "above" tooltip over the anchor, on its right edge', () => {
+    expect(
+      placeTooltip({
+        anchor: anchor(300, 200),
+        size: size,
+        viewport,
+        preferred: 'above',
+        margin: 8,
+      }),
+    ).toEqual({
+      side: 'above',
+      top: 180,
+      left: 40,
+    });
   });
 
-  it('shifts a box past the left edge to the right', () => {
-    expect(shiftIntoView({ left: -40, right: 160 }, 360, 8)).toBe(48);
+  it('puts a "below" tooltip under the anchor, on its left edge', () => {
+    expect(
+      placeTooltip({
+        anchor: anchor(300, 20),
+        size: size,
+        viewport,
+        preferred: 'below',
+        margin: 8,
+      }),
+    ).toEqual({
+      side: 'below',
+      top: 320,
+      left: 20,
+    });
   });
 
-  it('keeps the left edge visible when the box is wider than the viewport', () => {
-    expect(shiftIntoView({ left: 100, right: 500 }, 360, 8)).toBe(-92);
+  it('flips below when there is no room above', () => {
+    expect(
+      placeTooltip({
+        anchor: anchor(60, 200),
+        size: size,
+        viewport,
+        preferred: 'above',
+        margin: 8,
+      }).side,
+    ).toBe('below');
+  });
+
+  it('flips above when there is no room below', () => {
+    expect(
+      placeTooltip({
+        anchor: anchor(560, 20),
+        size: size,
+        viewport,
+        preferred: 'below',
+        margin: 8,
+      }).side,
+    ).toBe('above');
+  });
+
+  it('keeps its side when neither side fits', () => {
+    const tall = { width: 200, height: 700 };
+    expect(
+      placeTooltip({
+        anchor: anchor(300, 20),
+        size: tall,
+        viewport,
+        preferred: 'above',
+        margin: 8,
+      }).side,
+    ).toBe('above');
+  });
+
+  it('keeps the tooltip inside the viewport horizontally', () => {
+    expect(
+      placeTooltip({
+        anchor: anchor(300, 300),
+        size: size,
+        viewport,
+        preferred: 'below',
+        margin: 8,
+      }).left,
+    ).toBe(152);
+    expect(
+      placeTooltip({
+        anchor: anchor(300, 0),
+        size: size,
+        viewport,
+        preferred: 'above',
+        margin: 8,
+      }).left,
+    ).toBe(8);
   });
 });
