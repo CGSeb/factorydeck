@@ -40,6 +40,7 @@ export const NoMergedIssue: Story = {
     merged: {
       issues: 0,
       costPerIssueUsd: null,
+      tokensPerIssue: null,
       withoutPerson: null,
       unknownPriceCalls: 0,
     },

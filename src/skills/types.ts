@@ -1,5 +1,5 @@
 import type { ProjectOption } from '../projects/label.ts';
-import type { Period } from '../overview/types.ts';
+import type { Period, TokenCounts } from '../overview/types.ts';
 
 export const NO_SKILL_LABEL = 'No skill';
 
@@ -9,6 +9,7 @@ export interface SkillUsage {
   sessions: number;
   apiCalls: number;
   tokens: number;
+  tokenCounts: TokenCounts;
   costUsd: number | null;
   averageCostUsd: number | null;
 }
@@ -38,6 +39,7 @@ export interface SkillSession {
   projectName: string;
   launches: number;
   tokens: number;
+  tokenCounts: TokenCounts;
   costUsd: number | null;
 }
 
@@ -45,6 +47,7 @@ export interface SkillDetail {
   skill: string;
   launches: number;
   tokens: number;
+  tokenCounts: TokenCounts;
   costUsd: number | null;
   averageCostUsd: number | null;
   series: LaunchPoint[];

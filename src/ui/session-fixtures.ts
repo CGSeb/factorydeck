@@ -13,6 +13,7 @@ import type {
   SessionFilters,
 } from './sessions-api.ts';
 import { nameOf, optionsOf } from './project-fixtures.ts';
+import { splitTokens } from './token-fixtures.ts';
 
 const MINUTE = 60_000;
 
@@ -36,6 +37,7 @@ export const workingSession: SessionSummary = {
   firstAt: minutesAgo(125),
   lastAt: minutesAgo(3),
   tokens: 4_210_000,
+  tokenCounts: splitTokens(4_210_000),
   costUsd: 6.42,
 };
 
@@ -51,6 +53,7 @@ export const waitingSession: SessionSummary = {
   firstAt: minutesAgo(40),
   lastAt: minutesAgo(12),
   tokens: 182_400,
+  tokenCounts: splitTokens(182_400),
   costUsd: null,
 };
 
@@ -66,6 +69,7 @@ export const inactiveSession: SessionSummary = {
   firstAt: minutesAgo(60 * 26),
   lastAt: minutesAgo(60 * 25),
   tokens: 950,
+  tokenCounts: splitTokens(950),
   costUsd: 0.004,
 };
 
@@ -149,6 +153,7 @@ export const sessionWithSubAgents: SessionDetail = {
       sessions: 1,
       apiCalls: 30,
       tokens: 2_900_000,
+      tokenCounts: splitTokens(2_900_000),
       costUsd: 4.1,
       averageCostUsd: 2.05,
     },
@@ -158,6 +163,7 @@ export const sessionWithSubAgents: SessionDetail = {
       sessions: 0,
       apiCalls: 12,
       tokens: 1_310_000,
+      tokenCounts: splitTokens(1_310_000),
       costUsd: 2.32,
       averageCostUsd: null,
     },
@@ -178,6 +184,7 @@ export const sessionWithSubAgents: SessionDetail = {
       firstAt: minutesAgo(120),
       lastAt: minutesAgo(118),
       tokens: 310_000,
+      tokenCounts: splitTokens(310_000),
       costUsd: 0.12,
     },
     {
@@ -191,6 +198,7 @@ export const sessionWithSubAgents: SessionDetail = {
       firstAt: minutesAgo(100),
       lastAt: minutesAgo(70),
       tokens: 1_200_000,
+      tokenCounts: splitTokens(1_200_000),
       costUsd: 1.84,
     },
     {
@@ -208,6 +216,7 @@ export const sessionWithSubAgents: SessionDetail = {
       firstAt: minutesAgo(60),
       lastAt: minutesAgo(15),
       tokens: 12_000,
+      tokenCounts: splitTokens(12_000),
       costUsd: null,
     },
   ],
@@ -225,6 +234,7 @@ export const sessionWithoutSubAgents: SessionDetail = {
       sessions: 0,
       apiCalls: 4,
       tokens: 182_400,
+      tokenCounts: splitTokens(182_400),
       costUsd: null,
       averageCostUsd: null,
     },

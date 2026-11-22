@@ -4,7 +4,7 @@ import type {
   IssueOutcome,
   WorkItemIssue,
 } from '../git-host/types.ts';
-import type { Period } from '../overview/types.ts';
+import type { Period, TokenCounts } from '../overview/types.ts';
 import type { SessionState } from '../sessions/types.ts';
 
 export const ORCHESTRATION_ROLE = 'Orchestration';
@@ -19,6 +19,7 @@ export interface FeatureUsage {
   sessions: number;
   apiCalls: number;
   tokens: number;
+  tokenCounts: TokenCounts;
   costUsd: number | null;
   orchestrationCostUsd: number | null;
 }
@@ -29,11 +30,13 @@ export interface FeatureRow extends FeatureUsage {
   number: number;
   issue: WorkItemIssue;
   outcome: IssueOutcome | null;
+  lastAt: string | null;
 }
 
 export interface FeatureTotals {
   apiCalls: number;
   tokens: number;
+  tokenCounts: TokenCounts;
   costUsd: number;
   unknownPriceCalls: number;
 }
@@ -41,6 +44,7 @@ export interface FeatureTotals {
 export interface MergedSummary {
   issues: number;
   costPerIssueUsd: number | null;
+  tokensPerIssue: number | null;
   withoutPerson: number | null;
   unknownPriceCalls: number;
 }
@@ -65,6 +69,7 @@ export interface FeatureRole {
   threads: number;
   apiCalls: number;
   tokens: number;
+  tokenCounts: TokenCounts;
   costUsd: number | null;
 }
 
@@ -74,6 +79,7 @@ export interface FeatureSession {
   state: SessionState;
   lastAt: string | null;
   tokens: number;
+  tokenCounts: TokenCounts;
   costUsd: number | null;
 }
 

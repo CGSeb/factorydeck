@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import { issueDetail, lookupOutcomes } from '../git-host/query.ts';
 import { byCostDescending, periodStart, select } from '../overview/query.ts';
+import { emptyCounts, withTokenCounts } from '../overview/tokens.ts';
 import { projectNames } from '../projects/names.ts';
 import type { WorkflowConfig } from '../roles/config.ts';
 import { type StateOptions, statedSessions } from '../sessions/query.ts';
@@ -13,9 +14,8 @@ import {
   type Row,
   type SessionUsage,
   allocate,
-  issueKey,
-  text,
 } from './allocate.ts';
+import { issueKey, text, timestamp } from './values.ts';
 import type {
   FeatureDetail,
   FeatureList,
@@ -38,13 +38,16 @@ const MERGED_STAGES: ReadonlySet<string> = new Set([
 ]);
 
 function usageOf(issue: IssueAccumulator): FeatureUsage {
-  return {
-    sessions: issue.sessions.size,
-    apiCalls: issue.apiCalls,
-    tokens: issue.tokens,
-    costUsd: issue.costUsd,
-    orchestrationCostUsd: issue.orchestrationCostUsd,
-  };
+  return withTokenCounts(
+    {
+      sessions: issue.sessions.size,
+      apiCalls: issue.apiCalls,
+      tokens: issue.tokens,
+      costUsd: issue.costUsd,
+      orchestrationCostUsd: issue.orchestrationCostUsd,
+    },
+    issue.tokenCounts,
+  );
 }
 
 function mergedUnknownPriceCalls(
@@ -74,17 +77,20 @@ function mergedSummary(
     return {
       issues: 0,
       costPerIssueUsd: null,
+      tokensPerIssue: null,
       withoutPerson: null,
       unknownPriceCalls,
     };
   }
   const cost = merged.reduce((sum, row) => sum + (row.costUsd ?? 0), 0);
+  const tokens = merged.reduce((sum, row) => sum + row.tokens, 0);
   const withoutPerson = merged.filter(
     (row) => row.outcome?.stage === 'merged',
   ).length;
   return {
     issues: merged.length,
     costPerIssueUsd: cost / merged.length,
+    tokensPerIssue: Math.round(tokens / merged.length),
     withoutPerson: withoutPerson / merged.length,
     unknownPriceCalls,
   };
@@ -99,6 +105,7 @@ async function usageRows(db: Database, query: FeatureQuery): Promise<Row[]> {
         coalesce(a.sub_agent_id, '') as sub_agent,
         sa.agent_type, sa.description, sa.git_branch as agent_branch, a.model,
         count(*) as calls,
+        max(a.at) as last_at,
         sum(a.input_tokens) as input,
         sum(a.cache_write_tokens) as cache_write,
         sum(a.cache_read_tokens) as cache_read,
@@ -132,6 +139,7 @@ export async function listFeatures(
       number: issue.number,
       ...outcomeOf(issue),
       ...usageOf(issue),
+      lastAt: issue.lastAt,
     }))
     .sort(
       byCostDescending(
@@ -153,15 +161,13 @@ function roleOfAccumulator({
   threads,
   apiCalls,
   tokens,
+  tokenCounts,
   costUsd,
 }: RoleAccumulator): FeatureRole {
-  return { role, threads: threads.size, apiCalls, tokens, costUsd };
-}
-
-function timestamp(value: unknown): string | null {
-  if (value instanceof Date) return value.toISOString();
-  if (typeof value === 'string') return new Date(value).toISOString();
-  return null;
+  return withTokenCounts(
+    { role, threads: threads.size, apiCalls, tokens, costUsd },
+    tokenCounts,
+  );
 }
 
 async function featureSessions(
@@ -182,14 +188,18 @@ async function featureSessions(
   return rows.map((row) => {
     const id = text(row['id']);
     const state = row['state'];
-    return {
-      id,
-      title: text(row['title']),
-      state: isSessionState(state) ? state : 'inactive',
-      lastAt: timestamp(row['last_at']),
-      tokens: usage.get(id)?.tokens ?? 0,
-      costUsd: usage.get(id)?.costUsd ?? null,
-    };
+    const session = usage.get(id);
+    return withTokenCounts(
+      {
+        id,
+        title: text(row['title']),
+        state: isSessionState(state) ? state : 'inactive',
+        lastAt: timestamp(row['last_at']),
+        tokens: session?.tokens ?? 0,
+        costUsd: session?.costUsd ?? null,
+      },
+      session?.tokenCounts ?? emptyCounts(),
+    );
   });
 }
 

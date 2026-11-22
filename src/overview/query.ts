@@ -2,6 +2,7 @@ import { type SQL, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import { costOf, modelFamily } from '../pricing.ts';
 import { type ProjectNames, projectNames } from '../projects/names.ts';
+import { addCounts, emptyCounts, totalTokens } from './tokens.ts';
 import {
   FAMILIES,
   type Family,
@@ -74,10 +75,6 @@ function usageOf(row: Row): UsageRow {
     cacheRead: Number(row['cache_read']),
     output: Number(row['output']),
   };
-}
-
-function totalTokens(counts: TokenCounts): number {
-  return counts.input + counts.cacheWrite + counts.cacheRead + counts.output;
 }
 
 function addCost(
@@ -165,7 +162,7 @@ function emptyTotals(): UsageOverview['totals'] {
   return {
     costUsd: 0,
     unknownPriceCalls: 0,
-    tokens: { input: 0, cacheWrite: 0, cacheRead: 0, output: 0 },
+    tokens: emptyCounts(),
     sessions: 0,
     apiCalls: 0,
   };
@@ -176,10 +173,7 @@ function addToTotals(
   usage: UsageRow,
   cost: number | undefined,
 ): void {
-  totals.tokens.input += usage.input;
-  totals.tokens.cacheWrite += usage.cacheWrite;
-  totals.tokens.cacheRead += usage.cacheRead;
-  totals.tokens.output += usage.output;
+  addCounts(totals.tokens, usage);
   totals.apiCalls += usage.calls;
   if (cost === undefined) totals.unknownPriceCalls += usage.calls;
   else totals.costUsd += cost;
@@ -188,6 +182,7 @@ function addToTotals(
 interface Usage {
   apiCalls: number;
   tokens: number;
+  tokenCounts: TokenCounts;
   costUsd: number | null;
 }
 
@@ -198,11 +193,14 @@ function addTo<T extends Usage>(
 ): T {
   row.apiCalls += usage.calls;
   row.tokens += totalTokens(usage);
+  addCounts(row.tokenCounts, usage);
   row.costUsd = addCost(row.costUsd, cost);
   return row;
 }
 
-const NO_USAGE: Usage = { apiCalls: 0, tokens: 0, costUsd: null };
+function noUsage(): Usage {
+  return { apiCalls: 0, tokens: 0, tokenCounts: emptyCounts(), costUsd: null };
+}
 
 function summarize(
   projectRows: Row[],
@@ -219,14 +217,14 @@ function summarize(
     addToTotals(totals, usage, cost);
     const model = models.get(usage.model) ?? {
       model: usage.model,
-      ...NO_USAGE,
+      ...noUsage(),
     };
     models.set(usage.model, addTo(model, usage, cost));
     const row = projects.get(project) ?? {
       project,
       projectName: names.label(project),
       sessions: 0,
-      ...NO_USAGE,
+      ...noUsage(),
     };
     projects.set(project, addTo(row, usage, cost));
   }
@@ -253,13 +251,25 @@ function buildSeries(bucketRows: Row[], usageRows: Row[]): SeriesPoint[] {
   const points = new Map<string, SeriesPoint>(
     bucketRows.map((raw) => {
       const bucket = text(raw['bucket']);
-      return [bucket, { bucket, opus: 0, sonnet: 0, haiku: 0, other: 0 }];
+      return [
+        bucket,
+        {
+          bucket,
+          tokens: emptyCounts(),
+          opus: 0,
+          sonnet: 0,
+          haiku: 0,
+          other: 0,
+        },
+      ];
     }),
   );
   for (const raw of usageRows) {
     const usage = usageOf(raw);
     const point = points.get(text(raw['bucket']));
-    if (point) point[familyOf(usage.model)] += costOf(usage.model, usage) ?? 0;
+    if (point === undefined) continue;
+    point[familyOf(usage.model)] += costOf(usage.model, usage) ?? 0;
+    addCounts(point.tokens, usage);
   }
   return [...points.values()];
 }

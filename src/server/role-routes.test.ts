@@ -9,6 +9,7 @@ import {
 import { type OverviewSource, createApp } from './app.ts';
 import type { RoleSource } from './role-routes.ts';
 import type { SessionSource } from './session-routes.ts';
+import { splitTokens } from '../ui/token-fixtures.ts';
 
 const up = (): Promise<boolean> => Promise.resolve(true);
 const down = (): Promise<boolean> => Promise.resolve(false);
@@ -26,7 +27,16 @@ const sessions: SessionSource = {
 };
 
 const list: RoleList = {
-  roles: [{ role: 'main', threads: 1, apiCalls: 3, tokens: 300, costUsd: 0.5 }],
+  roles: [
+    {
+      role: 'main',
+      threads: 1,
+      apiCalls: 3,
+      tokens: 300,
+      tokenCounts: splitTokens(300),
+      costUsd: 0.5,
+    },
+  ],
   apiCalls: 3,
   projects: [{ project: '/work/app', name: 'app' }],
 };

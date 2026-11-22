@@ -9,6 +9,7 @@ import {
   sortFeatures,
   sortOf,
 } from './features-api.ts';
+import { splitTokens } from './token-fixtures.ts';
 
 function recorder(urls: string[], body: unknown): typeof fetch {
   return (input) => {
@@ -39,8 +40,10 @@ function row(
     sessions: 1,
     apiCalls: 1,
     tokens: 100,
+    tokenCounts: splitTokens(100),
     costUsd,
     orchestrationCostUsd: null,
+    lastAt: '2026-01-05T09:00:00.000Z',
   };
 }
 

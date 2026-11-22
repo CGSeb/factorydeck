@@ -6,6 +6,7 @@ import type {
 } from '../roles/types.ts';
 import type { LoadRoles } from './roles-api.ts';
 import { optionsOf } from './project-fixtures.ts';
+import { splitTokens } from './token-fixtures.ts';
 
 const PROJECTS = ['/home/dev/example-app', '/home/dev/example-lib'];
 
@@ -17,12 +18,20 @@ export const CONFIG_FILE: RoleSourceFile = {
 export const NO_CONFIG_FILE: RoleSourceFile = { ...CONFIG_FILE, exists: false };
 
 export const someRoles: RoleUsage[] = [
-  { role: 'main', threads: 4, apiCalls: 210, tokens: 8_400_000, costUsd: 12.4 },
+  {
+    role: 'main',
+    threads: 4,
+    apiCalls: 210,
+    tokens: 8_400_000,
+    tokenCounts: splitTokens(8_400_000),
+    costUsd: 12.4,
+  },
   {
     role: 'builder',
     threads: 6,
     apiCalls: 320,
     tokens: 9_100_000,
+    tokenCounts: splitTokens(9_100_000),
     costUsd: 9.75,
   },
   {
@@ -30,14 +39,36 @@ export const someRoles: RoleUsage[] = [
     threads: 5,
     apiCalls: 90,
     tokens: 2_300_000,
+    tokenCounts: splitTokens(2_300_000),
     costUsd: 3.1,
   },
-  { role: 'Explore', threads: 3, apiCalls: 40, tokens: 610_000, costUsd: 0.42 },
-  { role: 'unassigned', threads: 1, apiCalls: 2, tokens: 3_000, costUsd: null },
+  {
+    role: 'Explore',
+    threads: 3,
+    apiCalls: 40,
+    tokens: 610_000,
+    tokenCounts: splitTokens(610_000),
+    costUsd: 0.42,
+  },
+  {
+    role: 'unassigned',
+    threads: 1,
+    apiCalls: 2,
+    tokens: 3_000,
+    tokenCounts: splitTokens(3_000),
+    costUsd: null,
+  },
 ];
 
 export const libRoles: RoleUsage[] = [
-  { role: 'main', threads: 1, apiCalls: 12, tokens: 300_000, costUsd: 0.6 },
+  {
+    role: 'main',
+    threads: 1,
+    apiCalls: 12,
+    tokens: 300_000,
+    tokenCounts: splitTokens(300_000),
+    costUsd: 0.6,
+  },
 ];
 
 export function roleList(roles: RoleUsage[]): RoleList {

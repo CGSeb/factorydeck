@@ -44,6 +44,12 @@ describe('featureDetail', () => {
         threads: 2,
         apiCalls: 2,
         tokens: 3_200_000,
+        tokenCounts: {
+          input: 3_200_000,
+          cacheWrite: 0,
+          cacheRead: 0,
+          output: 0,
+        },
         costUsd: near(6.4),
       },
     ]);
@@ -51,7 +57,8 @@ describe('featureDetail', () => {
       role: 'Orchestration',
       threads: 1,
       apiCalls: 2,
-      tokens: near(825_000),
+      tokens: 825_000,
+      tokenCounts: { input: 825_000, cacheWrite: 0, cacheRead: 0, output: 0 },
       costUsd: near(1.5),
     });
     expect(detail?.sessions).toEqual([
@@ -60,7 +67,13 @@ describe('featureDetail', () => {
         title: 'Build queue',
         state: 'inactive',
         lastAt: RECENT.toISOString(),
-        tokens: near(3_825_000),
+        tokens: 3_825_000,
+        tokenCounts: {
+          input: 3_825_000,
+          cacheWrite: 0,
+          cacheRead: 0,
+          output: 0,
+        },
         costUsd: near(7.5),
       },
       expect.objectContaining({

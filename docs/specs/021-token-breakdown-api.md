@@ -1,6 +1,6 @@
 # 021 · Token breakdown in the APIs
 
-Status: ready
+Status: done
 Depends on: 010
 Checked: 2026-11-22
 
@@ -10,19 +10,19 @@ A developer hovering any token amount in the redesigned FactoryDeck sees its cos
 
 ## Acceptance criteria
 
-- [ ] Every object of the API responses below that has `tokens` (a number) and `costUsd` also has `tokenCounts: { input, output, cacheRead, cacheWrite }` (the `TokenCounts` type of `src/overview/types.ts`), whose four values add up to its `tokens`:
+- [x] Every object of the API responses below that has `tokens` (a number) and `costUsd` also has `tokenCounts: { input, output, cacheRead, cacheWrite }` (the `TokenCounts` type of `src/overview/types.ts`), whose four values add up to its `tokens`:
   - `GET /api/overview`: each `projects` and `models` row;
   - `GET /api/sessions`: each session row; `GET /api/sessions/<id>`: each sub-agent and each skill row;
   - `GET /api/skills`: each skill row; `GET /api/skills/<name>`: the skill itself and each session row;
   - `GET /api/roles`: each role row;
   - `GET /api/features`: each issue row, the `noWorkItem` row and the totals; `GET /api/features/<n>`: each role row, the orchestration row and each session row.
-- [ ] Objects whose `tokens` is already a `TokenCounts` (the overview totals, the session detail) are unchanged.
-- [ ] Each point of the overview `series` gets `tokens`, the `TokenCounts` of its bucket (all families together), next to its cost per family, so a chart can show tokens per day or per hour.
-- [ ] The `merged` summary of `GET /api/features` gets `tokensPerIssue`: the total tokens of the merged issues in the period, orchestration share included, divided by their number, rounded to a whole number; `null` with no merged issue.
-- [ ] Each issue row of `GET /api/features` gets `lastAt`: the time of its latest call in the period (orchestration share left out), as an ISO date.
-- [ ] Where an issue's or a role's tokens include the orchestration share of spec 010, each of its four counts includes that share too, split with the same weights; counts are summed before rounding and rounded to whole numbers for the response only, so `tokens` stays the sum of the rounded counts (the rounding difference goes to the largest count).
-- [ ] For the same period and project, the four counts of the `features` totals equal those of the overview totals, and each list's counts add up to its totals.
-- [ ] No existing field changes name, type or meaning; the current UI keeps working unchanged.
+- [x] Objects whose `tokens` is already a `TokenCounts` (the overview totals, the session detail) are unchanged.
+- [x] Each point of the overview `series` gets `tokens`, the `TokenCounts` of its bucket (all families together), next to its cost per family, so a chart can show tokens per day or per hour.
+- [x] The `merged` summary of `GET /api/features` gets `tokensPerIssue`: the total tokens of the merged issues in the period, orchestration share included, divided by their number, rounded to a whole number; `null` with no merged issue.
+- [x] Each issue row of `GET /api/features` gets `lastAt`: the time of its latest call in the period (orchestration share left out), as an ISO date.
+- [x] Where an issue's or a role's tokens include the orchestration share of spec 010, each of its four counts includes that share too, split with the same weights; counts are summed before rounding and rounded to whole numbers for the response only, so `tokens` stays the sum of the rounded counts (the rounding difference goes to the largest count).
+- [x] For the same period and project, the four counts of the `features` totals equal those of the overview totals, and each list's counts add up to its totals.
+- [x] No existing field changes name, type or meaning; the current UI keeps working unchanged.
 
 ## Rules
 

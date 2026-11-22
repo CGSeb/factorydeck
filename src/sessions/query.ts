@@ -2,6 +2,12 @@ import { type SQL, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import { issueDetail, withIssues } from '../git-host/query.ts';
 import { periodStart, select } from '../overview/query.ts';
+import {
+  addCounts,
+  countsOf,
+  emptyCounts,
+  totalTokens,
+} from '../overview/tokens.ts';
 import type { TokenCounts } from '../overview/types.ts';
 import { costOf } from '../pricing.ts';
 import { type ProjectNames, projectNames } from '../projects/names.ts';
@@ -73,10 +79,7 @@ export function statedSessions({
 }
 
 function emptyUsage(costUsd: number | null): Usage {
-  return {
-    tokens: { input: 0, cacheWrite: 0, cacheRead: 0, output: 0 },
-    costUsd,
-  };
+  return { tokens: emptyCounts(), costUsd };
 }
 
 function usageBy(rows: Row[], key: string): Map<string, Usage> {
@@ -84,30 +87,13 @@ function usageBy(rows: Row[], key: string): Map<string, Usage> {
   for (const row of rows) {
     const id = text(row[key]);
     const usage = usages.get(id) ?? emptyUsage(null);
-    const counts: TokenCounts = {
-      input: Number(row['input']),
-      cacheWrite: Number(row['cache_write']),
-      cacheRead: Number(row['cache_read']),
-      output: Number(row['output']),
-    };
-    usage.tokens.input += counts.input;
-    usage.tokens.cacheWrite += counts.cacheWrite;
-    usage.tokens.cacheRead += counts.cacheRead;
-    usage.tokens.output += counts.output;
+    const counts = countsOf(row);
+    addCounts(usage.tokens, counts);
     const cost = costOf(text(row['model']), counts);
     if (cost !== undefined) usage.costUsd = (usage.costUsd ?? 0) + cost;
     usages.set(id, usage);
   }
   return usages;
-}
-
-function totalTokens({
-  input,
-  cacheWrite,
-  cacheRead,
-  output,
-}: TokenCounts): number {
-  return input + cacheWrite + cacheRead + output;
 }
 
 const USAGE_SUMS = sql`a.model,
@@ -121,7 +107,9 @@ function summaryOf(
   usage: Usage,
   config: WorkflowConfig,
   names: ProjectNames,
-): Omit<SessionSummary, 'tokens' | 'issue'> & { usage: Usage } {
+): Omit<SessionSummary, 'tokens' | 'tokenCounts' | 'issue'> & {
+  usage: Usage;
+} {
   const project = text(row['project']);
   const title = text(row['title']);
   const gitBranch = text(row['git_branch']);
@@ -184,6 +172,7 @@ async function pageSummaries(
   return summaries.map(({ usage, ...summary }) => ({
     ...summary,
     tokens: totalTokens(usage.tokens),
+    tokenCounts: usage.tokens,
   }));
 }
 
@@ -259,6 +248,7 @@ function subAgentsOf(
       firstAt: timestamp(agent['first_at']),
       lastAt: timestamp(agent['last_at']),
       tokens: totalTokens(agentUsage.tokens),
+      tokenCounts: agentUsage.tokens,
       costUsd: agentUsage.costUsd,
     };
   });

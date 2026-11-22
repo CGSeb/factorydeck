@@ -9,6 +9,7 @@ import {
   unusedFeatures,
 } from '../test/skill-source.ts';
 import type { SkillSource } from './skill-routes.ts';
+import { splitTokens } from '../ui/token-fixtures.ts';
 
 const up = (): Promise<boolean> => Promise.resolve(true);
 const down = (): Promise<boolean> => Promise.resolve(false);
@@ -33,6 +34,7 @@ const list: SkillList = {
       sessions: 1,
       apiCalls: 3,
       tokens: 300,
+      tokenCounts: splitTokens(300),
       costUsd: 0.5,
       averageCostUsd: 0.25,
     },
@@ -53,6 +55,7 @@ const skills: SkillSource = {
       skill,
       launches: 0,
       tokens: 0,
+      tokenCounts: splitTokens(0),
       costUsd: 0,
       averageCostUsd: null,
       series: [],

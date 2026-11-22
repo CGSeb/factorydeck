@@ -7,6 +7,7 @@ import type {
 } from '../skills/types.ts';
 import type { LoadSkill, LoadSkills } from './skills-api.ts';
 import { nameOf, optionsOf } from './project-fixtures.ts';
+import { splitTokens } from './token-fixtures.ts';
 
 const PROJECTS = ['/home/dev/example-app', '/home/dev/example-lib'];
 
@@ -16,6 +17,7 @@ export const writeSpecUsage: SkillUsage = {
   sessions: 3,
   apiCalls: 120,
   tokens: 2_400_000,
+  tokenCounts: splitTokens(2_400_000),
   costUsd: 3.2,
   averageCostUsd: 0.8,
 };
@@ -26,6 +28,7 @@ export const reviewUsage: SkillUsage = {
   sessions: 2,
   apiCalls: 40,
   tokens: 610_000,
+  tokenCounts: splitTokens(610_000),
   costUsd: 0.9,
   averageCostUsd: 0.45,
 };
@@ -36,6 +39,7 @@ export const unpricedUsage: SkillUsage = {
   sessions: 1,
   apiCalls: 3,
   tokens: 4_000,
+  tokenCounts: splitTokens(4_000),
   costUsd: null,
   averageCostUsd: null,
 };
@@ -46,6 +50,7 @@ export const noSkillUsage: SkillUsage = {
   sessions: 0,
   apiCalls: 300,
   tokens: 5_100_000,
+  tokenCounts: splitTokens(5_100_000),
   costUsd: 6.1,
   averageCostUsd: null,
 };
@@ -86,6 +91,7 @@ export const writeSpecDetail: SkillDetail = {
   skill: 'kit:write-spec',
   launches: 4,
   tokens: 2_400_000,
+  tokenCounts: splitTokens(2_400_000),
   costUsd: 3.2,
   averageCostUsd: 0.8,
   series: [
@@ -101,6 +107,7 @@ export const writeSpecDetail: SkillDetail = {
       projectName: nameOf('/home/dev/example-app'),
       launches: 2,
       tokens: 1_900_000,
+      tokenCounts: splitTokens(1_900_000),
       costUsd: 2.5,
     },
     {
@@ -110,6 +117,7 @@ export const writeSpecDetail: SkillDetail = {
       projectName: nameOf('/home/dev/example-lib'),
       launches: 2,
       tokens: 500_000,
+      tokenCounts: splitTokens(500_000),
       costUsd: 0.7,
     },
   ],
@@ -120,6 +128,7 @@ export const unlaunchedDetail: SkillDetail = {
   ...writeSpecDetail,
   launches: 0,
   tokens: 0,
+  tokenCounts: splitTokens(0),
   costUsd: 0,
   averageCostUsd: null,
   series: [{ day: '2026-01-07', launches: 0 }],

@@ -27,6 +27,7 @@ export interface SessionSummary {
   firstAt: string | null;
   lastAt: string | null;
   tokens: number;
+  tokenCounts: TokenCounts;
   costUsd: number | null;
 }
 
@@ -58,10 +59,14 @@ export interface SubAgentSummary {
   firstAt: string | null;
   lastAt: string | null;
   tokens: number;
+  tokenCounts: TokenCounts;
   costUsd: number | null;
 }
 
-export interface SessionDetail extends Omit<SessionSummary, 'tokens'> {
+export interface SessionDetail extends Omit<
+  SessionSummary,
+  'tokens' | 'tokenCounts'
+> {
   cwd: string | null;
   tokens: TokenCounts;
   issueDetail: IssueDetail | null;
