@@ -30,3 +30,23 @@ export const BelowThreshold: Story = {
     ).toHaveAttribute('data-tone', 'warning');
   },
 };
+
+export const PathAboveThreshold: Story = {
+  name: 'Path above threshold',
+  args: { report: { score: 88, threshold: 80, firstScore: 64 } },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByText('serenity 64 → 88'),
+    ).toHaveAttribute('data-tone', 'success');
+  },
+};
+
+export const PathBelowThreshold: Story = {
+  name: 'Path below threshold',
+  args: { report: { score: 72, threshold: 80, firstScore: 85 } },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByText('serenity 85 → 72 · below threshold'),
+    ).toHaveAttribute('data-tone', 'warning');
+  },
+};

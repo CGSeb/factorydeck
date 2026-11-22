@@ -222,9 +222,35 @@ export const afterPersonFeature: FeatureDetail = {
     url: 'https://github.com/example-org/example-app/issues/62',
     outcome: {
       stage: 'merged-after-person',
-      report: { score: 88, threshold: 80, rounds: 2 },
+      report: { score: 88, threshold: 80, rounds: 2, firstScore: 64 },
       reworked: false,
     },
+    milestones: [
+      {
+        kind: 'report',
+        at: new Date(Date.UTC(2026, 10, 20, 13)).toISOString(),
+        request: {
+          number: 58,
+          url: 'https://github.com/example-org/example-app/pull/58',
+        },
+        score: 64,
+        threshold: 80,
+        refused: true,
+        reasons: ['below-threshold'],
+      },
+      {
+        kind: 'report',
+        at: new Date(Date.UTC(2026, 10, 22, 13)).toISOString(),
+        request: {
+          number: 58,
+          url: 'https://github.com/example-org/example-app/pull/58',
+        },
+        score: 88,
+        threshold: 80,
+        refused: false,
+        reasons: [],
+      },
+    ],
   },
 };
 

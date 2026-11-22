@@ -1,6 +1,6 @@
 # 035 · Serenity timeline
 
-Status: ready
+Status: done
 Depends on: 034
 Checked: 2026-11-22
 
@@ -10,14 +10,14 @@ A developer opening an issue sees, in the order they happened, each serenity sco
 
 ## Acceptance criteria
 
-- [ ] The issue API of spec 022 returns the issue's milestones: every serenity report (spec 034) of every pull or merge request that closes the issue, and every needs-spec episode (spec 034), each with its time; a report also gives its request number and link, its score, threshold, and whether it refused the merge and why.
-- [ ] On the issue page (spec 026), `IssueTimeline` shows the milestones between its steps. A milestone goes after the last step whose first thread starts at or before the milestone's time, or before the first step when it is earlier than all of them; several milestones after the same step keep their time order. The `Orchestration` step stays last.
-- [ ] A report milestone reads `Serenity <score>/100 (threshold <threshold>)`, then ` · merge refused: <reasons>` or ` · merge allowed`, where reasons are `below threshold`, `gates failed`, `auto-merge off`, joined by `, `. Its detail line is the local date and time (`22 Nov, 17:33`) and `#<n>`, linked to the request on the git host. A refused report uses the warning tone, an allowed one the success tone; the text always says which.
-- [ ] A needs-spec milestone reads `Needs spec`, with the detail `waiting for a person` while the label is still on the issue, or `answered <date and time>` (the time the label was removed); its time is when the label was added. It uses the warning tone.
-- [ ] A milestone's marker is smaller than a step's and is not a role colour; it carries no token amount and no thread rows. Milestones are items of the timeline's list, so a screen reader reads them in order with the steps.
-- [ ] Milestones follow the page's period like the threads: only those whose time is inside the period are shown. An issue with milestones but no thread in the period still shows `No activity in this period.`
-- [ ] When the request whose report counts (spec 009) has two or more reports and its first score differs from its last, the score is shown as a path: `Serenity <first> → <last>/100 (threshold <t>)` in the session header outcome (spec 009, 027), `serenity <first> → <last>` in `SerenityBadge` (spec 016; warning tone and `below threshold` after it when the last is under its threshold), and in `IssueSummary` (spec 020) the last score as today's figure with a line `from <first>` under it in `--fd-muted`. With one report, or equal first and last scores, nothing changes.
-- [ ] The `Serenity` column and sort of `/features` (spec 025) keep the last score only.
+- [x] The issue API of spec 022 returns the issue's milestones: every serenity report (spec 034) of every pull or merge request that closes the issue, and every needs-spec episode (spec 034), each with its time; a report also gives its request number and link, its score, threshold, and whether it refused the merge and why.
+- [x] On the issue page (spec 026), `IssueTimeline` shows the milestones between its steps. A milestone goes after the last step whose first thread starts at or before the milestone's time, or before the first step when it is earlier than all of them; several milestones after the same step keep their time order. The `Orchestration` step stays last.
+- [x] A report milestone reads `Serenity <score>/100 (threshold <threshold>)`, then ` · merge refused: <reasons>` or ` · merge allowed`, where reasons are `below threshold`, `gates failed`, `auto-merge off`, joined by `, `. Its detail line is the local date and time (`22 Nov, 17:33`) and `#<n>`, linked to the request on the git host. A refused report uses the warning tone, an allowed one the success tone; the text always says which.
+- [x] A needs-spec milestone reads `Needs spec`, with the detail `waiting for a person` while the label is still on the issue, or `answered <date and time>` (the time the label was removed); its time is when the label was added. It uses the warning tone.
+- [x] A milestone's marker is smaller than a step's and is not a role colour; it carries no token amount and no thread rows. Milestones are items of the timeline's list, so a screen reader reads them in order with the steps.
+- [x] Milestones follow the page's period like the threads: only those whose time is inside the period are shown. An issue with milestones but no thread in the period still shows `No activity in this period.`
+- [x] When the request whose report counts (spec 009) has two or more reports and its first score differs from its last, the score is shown as a path: `Serenity <first> → <last>/100 (threshold <t>)` in the session header outcome (spec 009, 027), `serenity <first> → <last>` in `SerenityBadge` (spec 016; warning tone and `below threshold` after it when the last is under its threshold), and in `IssueSummary` (spec 020) the last score as today's figure with a line `from <first>` under it in `--fd-muted`. With one report, or equal first and last scores, nothing changes.
+- [x] The `Serenity` column and sort of `/features` (spec 025) keep the last score only.
 
 ## Rules
 

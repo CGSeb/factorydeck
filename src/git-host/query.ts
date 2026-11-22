@@ -3,6 +3,7 @@ import type { Database } from '../db/client.ts';
 import { gitHostIssue, gitHostProject, gitHostRequest } from '../db/schema.ts';
 import type { FactoryCheck } from '../ingest/factory.ts';
 import { projectNames } from '../projects/names.ts';
+import { issueMilestones } from './milestones.ts';
 import { type StageLabels, issueOutcome } from './outcome.ts';
 import { runFinishedAt } from './store.ts';
 import type {
@@ -273,6 +274,7 @@ export async function issueDetail(
     labels: sortedLabels(issue.labels),
     requests: requests.map(closingRequest),
     outcome: outcomeOf(issue, requests, state),
+    milestones: issueMilestones(requests, issue.needsSpec, state.autoMerge),
   };
 }
 

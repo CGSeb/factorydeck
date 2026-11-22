@@ -99,6 +99,7 @@ describe('collect', () => {
         }),
       ],
       outcome: { stage: 'merged', report: null, reworked: true },
+      milestones: [],
     });
     const [request] = await db
       .select()

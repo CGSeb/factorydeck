@@ -205,6 +205,29 @@ describe('cardBadge', () => {
     ]);
   });
 
+  it('gives the card the score path of the request that counts', () => {
+    const merged = outcome('merged-after-person', 88, 2);
+    expect(
+      cardBadge(
+        row(1, 'merged-after-person', at, {
+          outcome: {
+            ...merged,
+            report:
+              merged.report === null
+                ? null
+                : { ...merged.report, firstScore: 64 },
+          },
+        }),
+      ),
+    ).toEqual([
+      {
+        kind: 'serenity',
+        report: { score: 88, threshold: 80, firstScore: 64 },
+      },
+      { kind: 'text', text: 'after a person' },
+    ]);
+  });
+
   it('adds after a person to a merge a person helped', () => {
     expect(
       cardBadge(

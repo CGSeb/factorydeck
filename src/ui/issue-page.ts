@@ -4,13 +4,19 @@ import {
   type FeatureThread,
   ORCHESTRATION_ROLE,
 } from '../features/types.ts';
-import type { ClosingRequest, IssueDetail } from '../git-host/types.ts';
+import type {
+  ClosingRequest,
+  IssueDetail,
+  IssueMilestone,
+  RefusalReason,
+} from '../git-host/types.ts';
 import type { ChartSegment } from './components/chart-math.ts';
 import type {
   SummaryAmount,
   SummaryPullRequest,
 } from './components/IssueSummary.tsx';
 import type {
+  TimelineMilestone,
   TimelineStep,
   TimelineThread,
 } from './components/IssueTimeline.tsx';
@@ -232,4 +238,58 @@ export function summaryPullRequest(
         state: request.state,
         draft: request.draft,
       };
+}
+
+const REASON_TEXT: Record<RefusalReason, string> = {
+  'below-threshold': 'below threshold',
+  'gates-failed': 'gates failed',
+  'auto-merge-off': 'auto-merge off',
+};
+
+export function milestoneText(
+  milestone: IssueMilestone,
+): Omit<TimelineMilestone, 'id' | 'afterStep'> {
+  if (milestone.kind === 'needs-spec') {
+    return {
+      tone: 'warning',
+      title: 'Needs spec',
+      detail:
+        milestone.removedAt === null
+          ? 'waiting for a person'
+          : `answered ${formatDateTime(milestone.removedAt)}`,
+    };
+  }
+  const verdict = milestone.refused
+    ? `merge refused: ${milestone.reasons.map((reason) => REASON_TEXT[reason]).join(', ')}`
+    : 'merge allowed';
+  return {
+    tone: milestone.refused ? 'warning' : 'success',
+    title: `Serenity ${String(milestone.score)}/100 (threshold ${String(milestone.threshold)}) · ${verdict}`,
+    detail: formatDateTime(milestone.at),
+    link: {
+      href: milestone.request.url,
+      text: `#${String(milestone.request.number)}`,
+    },
+  };
+}
+
+export function issueMilestones(feature: FeatureDetail): TimelineMilestone[] {
+  const starts = groupThreads(feature.threads).map((threads, index) => ({
+    id: `step-${String(index)}`,
+    at: threads[0]?.firstAt ?? null,
+  }));
+  return (feature.detail?.milestones ?? []).map((milestone, index) => {
+    const time = Date.parse(milestone.at);
+    let afterStep: string | null = null;
+    for (const start of starts) {
+      if (start.at !== null && Date.parse(start.at) <= time) {
+        afterStep = start.id;
+      }
+    }
+    return {
+      id: `milestone-${String(index)}`,
+      afterStep,
+      ...milestoneText(milestone),
+    };
+  });
 }

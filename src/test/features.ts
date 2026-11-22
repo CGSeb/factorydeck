@@ -139,6 +139,10 @@ export async function seedFeatures(db: Database): Promise<void> {
       call('s4', 600_000, { subAgentId: 'd1' }),
       call('s4', 100_000, { subAgentId: 'd2', at: OLD }),
     ]);
+  await seedGitHost(db);
+}
+
+async function seedGitHost(db: Database): Promise<void> {
   await db.insert(gitHostProject).values({
     project: APP,
     gitHost: 'github',
@@ -146,15 +150,23 @@ export async function seedFeatures(db: Database): Promise<void> {
     syncedFrom: OLD,
     autoMerge: true,
   });
-  await db
-    .insert(gitHostIssue)
-    .values([
-      issue(7, 'closed'),
-      issue(8, 'closed'),
-      issue(9, 'open'),
-      issue(10, 'open'),
-    ]);
-  await db
-    .insert(gitHostRequest)
-    .values([mergedRequest(101, 7, 90), mergedRequest(102, 8, 60)]);
+  await db.insert(gitHostIssue).values([
+    issue(7, 'closed'),
+    {
+      ...issue(8, 'closed'),
+      needsSpec: [
+        { added: true, at: OLD.toISOString() },
+        { added: false, at: RECENT.toISOString() },
+      ],
+    },
+    issue(9, 'open'),
+    issue(10, 'open'),
+  ]);
+  await db.insert(gitHostRequest).values([
+    mergedRequest(101, 7, 90),
+    {
+      ...mergedRequest(102, 8, 60),
+      reports: [{ ...report(60), at: OLD.toISOString() }, report(60)],
+    },
+  ]);
 }

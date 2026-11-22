@@ -144,3 +144,15 @@ export const NoOrchestrationShare: Story = {
     );
   },
 };
+
+export const WithScorePath: Story = {
+  name: 'With a score path',
+  args: { serenity: { score: 88, threshold: 80, firstScore: 64 } },
+  play: async ({ canvasElement }) => {
+    const from = within(canvasElement).getByText('from 64');
+    await expect(from).toHaveClass('fd-summary-from');
+    await expect(from.closest('.fd-summary-figure')).toHaveTextContent(
+      '88 from 64',
+    );
+  },
+};

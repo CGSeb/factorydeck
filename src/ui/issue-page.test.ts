@@ -276,6 +276,7 @@ describe('issuePullRequest', () => {
         labels: [],
         requests: [request(5, 'open', local(20)), merged],
         outcome: { stage: 'merged', report: null, reworked: false },
+        milestones: [],
       }),
     ).toBe(merged);
   });
@@ -292,6 +293,7 @@ describe('issuePullRequest', () => {
         labels: [],
         requests: [request(4, 'closed', local(18)), latest],
         outcome: { stage: 'in-review', report: null, reworked: false },
+        milestones: [],
       }),
     ).toBe(latest);
     expect(issuePullRequest(null)).toBeNull();

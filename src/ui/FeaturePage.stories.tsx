@@ -117,6 +117,49 @@ export const MergedAfterPerson: Story = {
   },
 };
 
+export const MergedAfterRefusedReportAt1024: Story = {
+  name: 'Merged after a refused report at 1024 px',
+  parameters: {
+    entry: '/features/62?project=%2Fhome%2Fdev%2Fexample-app&period=all',
+  },
+  decorators: [
+    (Story) => (
+      <div style={{ maxWidth: 1024 }}>
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole('heading', { name: '#62 Saved filters' });
+    const items = [...canvasElement.querySelectorAll('.fd-timeline > li')].map(
+      (item) =>
+        item.classList.contains('fd-timeline-milestone')
+          ? (item.querySelector('.fd-timeline-milestone-title')?.textContent ??
+            '')
+          : item.getAttribute('data-role'),
+    );
+    await expect(items).toEqual([
+      'builder',
+      'reviewer',
+      'Serenity 64/100 (threshold 80) · merge refused: below threshold',
+      'builder',
+      'reviewer',
+      'Serenity 88/100 (threshold 80) · merge allowed',
+      'Orchestration',
+    ]);
+    await expect(
+      canvas.getAllByRole('link', { name: '#58' })[0],
+    ).toHaveAttribute(
+      'href',
+      'https://github.com/example-org/example-app/pull/58',
+    );
+    const serenity = canvas.getByText('Serenity').closest('div');
+    if (serenity === null) throw new Error('No serenity figure');
+    await expect(serenity).toHaveTextContent('Serenity88 from 64');
+  },
+};
+
 export const ChangePeriod: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

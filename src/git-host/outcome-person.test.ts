@@ -92,7 +92,7 @@ describe('merged after a person', () => {
     ]);
     expect(await outcomeOf(root, 1)).toEqual({
       stage: 'merged-after-person',
-      report: { score: 88, threshold: 80, rounds: 2 },
+      report: { score: 88, threshold: 80, rounds: 2, firstScore: 60 },
       reworked: false,
     });
   });

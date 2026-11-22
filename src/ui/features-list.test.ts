@@ -180,6 +180,26 @@ describe('sortRows', () => {
     ]);
   });
 
+  it('sorts serenity by the last score, not the first of a path', () => {
+    const withPath = merged.map((row) =>
+      row.outcome?.report == null
+        ? row
+        : {
+            ...row,
+            outcome: {
+              ...row.outcome,
+              report: {
+                ...row.outcome.report,
+                firstScore: 200 - row.outcome.report.score,
+              },
+            },
+          },
+    );
+    expect(labels(sortRows(withPath, 'score'))).toEqual(
+      labels(sortRows(merged, 'score')),
+    );
+  });
+
   it('breaks ties by last activity, then issue number', () => {
     const base = at(52);
     const rows = [

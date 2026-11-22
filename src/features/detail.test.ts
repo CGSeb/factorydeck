@@ -84,6 +84,29 @@ describe('featureDetail', () => {
     ]);
   });
 
+  it('gives the milestones inside the period only', async () => {
+    const context = { config: DEFAULT_CONFIG, state };
+    const key = { project: APP, number: 8 };
+    const recent = await featureDetail(db, key, week, context);
+    expect(recent?.detail?.milestones).toEqual([
+      {
+        kind: 'report',
+        at: '2026-03-12T10:00:00.000Z',
+        request: { number: 102, url: 'https://git.example/app/pull/102' },
+        score: 60,
+        threshold: 80,
+        refused: true,
+        reasons: ['below-threshold'],
+      },
+    ]);
+    const all = await featureDetail(db, key, allTime, context);
+    expect(all?.detail?.milestones.map((milestone) => milestone.kind)).toEqual([
+      'report',
+      'needs-spec',
+      'report',
+    ]);
+  });
+
   it('keeps the calls of a main thread with a work item on it', async () => {
     const detail = await featureDetail(db, { project: APP, number: 9 }, week, {
       config: DEFAULT_CONFIG,

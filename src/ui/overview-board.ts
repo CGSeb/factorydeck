@@ -9,6 +9,7 @@ import type {
   StageColumnCard,
   StageColumnProps,
 } from './components/StageColumn.tsx';
+import { serenityScore } from './components/SerenityBadge.tsx';
 import { STAGE_GROUPS, type StageGroup } from './components/StageDot.tsx';
 import { totalTokens } from './components/token-amount.ts';
 import { projectColors } from './design/palette.ts';
@@ -54,7 +55,7 @@ const BADGES: Record<
     if (report !== null) {
       badges.push({
         kind: 'serenity',
-        report: { score: report.score, threshold: report.threshold },
+        report: serenityScore(report),
       });
     }
     const stage = row.outcome?.stage;

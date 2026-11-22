@@ -3,6 +3,7 @@ import type {
   IssueStage,
   IssueState,
   LabelChange,
+  RefusalReason,
   RequestState,
   SerenityReport,
 } from './types.ts';
@@ -58,15 +59,34 @@ function latest(
   return found;
 }
 
+export function refusalReasons(
+  report: SerenityReport,
+  autoMerge: boolean | null,
+): RefusalReason[] {
+  const reasons: RefusalReason[] = [];
+  if (report.score < report.threshold) reasons.push('below-threshold');
+  if (!report.gatesPassed) reasons.push('gates-failed');
+  if (autoMerge === false) reasons.push('auto-merge-off');
+  return reasons;
+}
+
 export function mergeRefused(
   report: SerenityReport,
   autoMerge: boolean | null,
 ): boolean {
-  return (
-    report.score < report.threshold ||
-    !report.gatesPassed ||
-    autoMerge === false
-  );
+  return refusalReasons(report, autoMerge).length > 0;
+}
+
+export function firstScore(
+  request: Pick<OutcomeRequest, 'report' | 'reports'>,
+): number | undefined {
+  if (request.report === null || request.reports.length < 2) return undefined;
+  const first = [...request.reports].sort((a, b) =>
+    a.at < b.at ? -1 : a.at > b.at ? 1 : 0,
+  )[0];
+  return first === undefined || first.score === request.report.score
+    ? undefined
+    : first.score;
 }
 
 function scoreOrGatesRefused(report: SerenityReport): boolean {
@@ -131,6 +151,7 @@ export function issueOutcome(
       (request) => request.updatedAt,
     );
   const report = counted?.report ?? null;
+  const first = counted === undefined ? undefined : firstScore(counted);
   let stage: IssueStage;
   if (merged !== undefined) {
     stage = mergedStage(issue, requests, merged, settings.autoMerge);
@@ -148,6 +169,7 @@ export function issueOutcome(
             score: report.score,
             threshold: report.threshold,
             rounds: report.rounds,
+            ...(first === undefined ? {} : { firstScore: first }),
           },
     reworked: requests.length > 1 || issue.reopened,
   };
