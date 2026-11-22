@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import { EmptyState, type EmptyStateStep } from './components/EmptyState.tsx';
-import './shell.css';
+import './WelcomePanel.css';
 
 const STEPS: readonly EmptyStateStep[] = [
   {

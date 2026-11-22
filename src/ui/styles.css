@@ -170,13 +170,18 @@ thead th:first-child {
   }
 }
 
-.panel {
-  overflow-x: auto;
-}
-
 @media (max-width: 479.98px) {
   .breakdown {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .breakdown div {
+    flex-wrap: wrap;
+    column-gap: 0.5rem;
+  }
+
+  .breakdown dd {
+    margin-left: auto;
   }
 }
 
@@ -305,50 +310,6 @@ th.left {
 .session-title h1 {
   margin: 0;
   font-size: 1.5rem;
-}
-
-.project-select {
-  box-sizing: border-box;
-  max-width: 16em;
-  margin-left: auto;
-  padding: 0.35rem 0.5rem;
-  overflow: hidden;
-  font: inherit;
-  font-size: 0.9rem;
-  color: var(--text);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-}
-
-.project-select + .collection {
-  margin-left: 0;
-}
-
-.collection {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-left: auto;
-  font-size: 0.9rem;
-  color: var(--muted);
-}
-
-.collection button {
-  padding: 0.35rem 0.75rem;
-  font: inherit;
-  color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.collection button:disabled {
-  color: var(--muted);
-  cursor: progress;
 }
 
 .work-item,

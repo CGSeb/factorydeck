@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import { projectText } from '../projects/label.ts';
 import { Dialog } from './components/Dialog.tsx';
-import './shell.css';
+import './DeleteProjectDialog.css';
 
 export type DeleteDialogState =
   'idle' | 'deleting' | 'failed' | 'has-factory' | 'not-found';

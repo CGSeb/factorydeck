@@ -8,34 +8,36 @@ export function RoleTable({ roles }: { roles: RoleUsage[] }): ReactElement {
   return (
     <section className="panel" aria-labelledby={titleId}>
       <h2 id={titleId}>By role</h2>
-      <table aria-labelledby={titleId}>
-        <thead>
-          <tr>
-            <th scope="col" className="left">
-              Role
-            </th>
-            <th scope="col">Threads</th>
-            <th scope="col">API calls</th>
-            <th scope="col">Tokens</th>
-            <th scope="col">Cost</th>
-          </tr>
-        </thead>
-        <tbody>
-          {roles.map((row) => (
-            <tr key={row.role}>
-              <th scope="row" className="left">
-                {row.role}
+      <div className="table-scroll">
+        <table aria-labelledby={titleId}>
+          <thead>
+            <tr>
+              <th scope="col" className="left">
+                Role
               </th>
-              <td>{formatCount(row.threads)}</td>
-              <td>{formatCount(row.apiCalls)}</td>
-              <td>
-                <TokenCount value={Math.round(row.tokens)} />
-              </td>
-              <td>{formatCost(row.costUsd)}</td>
+              <th scope="col">Threads</th>
+              <th scope="col">API calls</th>
+              <th scope="col">Tokens</th>
+              <th scope="col">Cost</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {roles.map((row) => (
+              <tr key={row.role}>
+                <th scope="row" className="left">
+                  {row.role}
+                </th>
+                <td>{formatCount(row.threads)}</td>
+                <td>{formatCount(row.apiCalls)}</td>
+                <td>
+                  <TokenCount value={Math.round(row.tokens)} />
+                </td>
+                <td>{formatCost(row.costUsd)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }
