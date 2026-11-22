@@ -1,7 +1,7 @@
 # 017 · Controls
 
 Status: done
-Depends on: 014, 015, 016
+Depends on: 015, 016
 Checked: 2026-11-22
 
 ## User goal
