@@ -1,0 +1,141 @@
+.fd-sessions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fd-space-5);
+}
+
+.fd-sessions .fd-table-scroll th,
+.fd-sessions .fd-table-scroll td {
+  border-bottom: 0;
+  font-variant-numeric: normal;
+  overflow-wrap: normal;
+}
+
+.fd-sessions .fd-table-scroll .fd-num {
+  font-variant-numeric: tabular-nums;
+}
+
+.fd-sessions .fd-table-scroll tbody th {
+  font-weight: 600;
+}
+
+.fd-sessions .fd-table-scroll .fd-session-list-table {
+  min-width: 900px;
+}
+
+.fd-sessions .fd-table-scroll .fd-sub-agent-table {
+  min-width: 640px;
+}
+
+.fd-sessions .fd-table-scroll .fd-skill-table {
+  min-width: 420px;
+}
+
+.fd-sessions a {
+  color: var(--fd-link);
+}
+
+.fd-sessions a:hover {
+  color: var(--fd-link-hover);
+}
+
+.fd-sessions .fd-table-scroll tbody th a {
+  color: var(--fd-ink);
+  text-decoration: none;
+}
+
+.fd-sessions .fd-table-scroll tbody th a:hover {
+  color: var(--fd-link-hover);
+  text-decoration: underline;
+}
+
+.fd-mono {
+  font-family: var(--fd-font-mono);
+  font-size: var(--fd-text-xs);
+}
+
+.fd-session-card {
+  box-sizing: border-box;
+  padding: var(--fd-space-6);
+  background: var(--fd-surface);
+  border-radius: var(--fd-radius-panel);
+}
+
+.fd-session-main {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.fd-session-main .fd-page-header {
+  margin: 0;
+}
+
+.fd-session-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fd-space-2) 14px;
+  font-size: var(--fd-text-sm);
+  color: var(--fd-ink-2);
+}
+
+.fd-session-section > h2 {
+  margin: 0 0 var(--fd-space-2);
+  font-family: var(--fd-font-display);
+  font-size: var(--fd-title-sm);
+  font-weight: 600;
+}
+
+.fd-session-count {
+  margin-left: 6px;
+  font-size: var(--fd-text-lg);
+  font-weight: 500;
+  color: var(--fd-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.fd-session-empty {
+  margin: 0;
+  font-size: var(--fd-text-md);
+  color: var(--fd-muted);
+}
+
+.fd-aside-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fd-space-2);
+}
+
+.fd-aside-label {
+  font-size: var(--fd-text-sm);
+  color: var(--fd-muted);
+}
+
+.fd-aside-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fd-space-2);
+}
+
+.fd-session-facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fd-space-3);
+  margin: 0;
+}
+
+.fd-session-facts dt {
+  font-size: var(--fd-text-sm);
+  color: var(--fd-muted);
+}
+
+.fd-session-facts dd {
+  margin: 2px 0 0;
+  font-size: var(--fd-text-md);
+  font-variant-numeric: tabular-nums;
+}
+
+.fd-anywhere {
+  overflow-wrap: anywhere;
+}

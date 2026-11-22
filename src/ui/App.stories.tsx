@@ -84,11 +84,14 @@ export const Sessions: Story = {
     await expect(
       canvas.getByRole('link', { name: 'Sessions' }),
     ).toHaveAttribute('aria-current', 'page');
-    await canvas.findByText('1 working · 1 waiting for you · 1 inactive');
+    await canvas.findByText('3 sessions');
     await userEvent.click(
       canvas.getByRole('link', { name: 'Add the export button' }),
     );
-    await canvas.findByRole('heading', { name: 'Add the export button' });
+    await canvas.findByRole('heading', {
+      level: 1,
+      name: 'Add the export button',
+    });
     await expect(canvas.getByText('Find the export code')).toBeVisible();
   },
 };
@@ -188,7 +191,7 @@ export const FactoryNotFound: Story = {
     await expect(
       canvas.getByText(/Factory configuration not found for Old App/),
     ).toBeVisible();
-    await canvas.findByText('1 working · 1 waiting for you · 1 inactive');
+    await canvas.findByText('3 sessions');
   },
 };
 
@@ -211,7 +214,7 @@ export const OneProjectAcrossPages: Story = {
       '/home/dev/example-app',
     );
     await userEvent.click(canvas.getByRole('link', { name: 'Sessions' }));
-    await canvas.findByText('1 working · 0 waiting for you · 0 inactive');
+    await canvas.findByText('1 session');
     await expect(canvas.getByRole('combobox', { name: 'Project' })).toHaveValue(
       '/home/dev/example-app',
     );
@@ -219,7 +222,9 @@ export const OneProjectAcrossPages: Story = {
       canvas.getByRole('link', { name: 'Add the export button' }),
     ).toHaveAttribute(
       'href',
-      expect.stringMatching(/\?project=%2Fhome%2Fdev%2Fexample-app$/),
+      expect.stringMatching(
+        /\?project=%2Fhome%2Fdev%2Fexample-app&period=\w+$/,
+      ),
     );
     await userEvent.click(canvas.getByRole('link', { name: 'Features' }));
     await canvas.findByRole('rowheader', { name: '#52 Export button' });

@@ -45,6 +45,7 @@ const detail: SessionDetail = {
   costUsd: 0.5,
   subAgents: [],
   skills: [],
+  projects: [{ project: '/work/app', name: 'app' }],
 };
 
 const sessionQueries: unknown[] = [];

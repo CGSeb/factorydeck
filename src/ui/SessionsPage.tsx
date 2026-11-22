@@ -1,163 +1,196 @@
-import { type ReactElement, useEffect, useId, useState } from 'react';
-import { useSearchParams } from 'react-router';
-import { DEFAULT_PERIOD, type Period, isPeriod } from '../overview/types.ts';
+import { type ReactElement, useState } from 'react';
+import { Link } from 'react-router';
+import type { WorkItemIssue } from '../git-host/types.ts';
 import {
   SESSION_PAGE_SIZE,
-  SESSION_STATES,
-  type SessionListResponse,
-  type StateCounts,
-  isSessionState,
+  type SessionList,
+  type SessionSummary,
 } from '../sessions/types.ts';
-import { formatClock, formatCount } from './format.ts';
+import { DataTable, NUMERIC_CELL } from './components/DataTable.tsx';
+import { FilterPills } from './components/FilterPills.tsx';
+import { PageHeader } from './components/PageHeader.tsx';
+import { Panel } from './components/Panel.tsx';
+import { PeriodPills } from './components/PeriodPills.tsx';
+import { ProjectTag } from './components/ProjectTag.tsx';
+import { SessionStateBadge } from './components/SessionStateBadge.tsx';
+import { ShowMore } from './components/ShowMore.tsx';
+import { StatusLine } from './components/StatusLine.tsx';
+import { TokenAmount } from './components/TokenAmount.tsx';
+import { projectColors } from './design/palette.ts';
+import { MISSING, formatAgo, formatDuration } from './format.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
-import { PeriodSelector } from './PeriodSelector.tsx';
-import { projectOf } from './project-param.ts';
-import type { LoadSessions, SessionFilters } from './sessions-api.ts';
+import { type LinkScope, issueHref, sessionHref } from './session-links.ts';
+import {
+  ALL,
+  sessionCountText,
+  stateOptions,
+  useFilters,
+  useSessionList,
+} from './session-list.ts';
 import { canShowMore, nextLimit } from './session-paging.ts';
-import { STATE_LABELS } from './SessionStateLabel.tsx';
-import { SessionTable } from './SessionTable.tsx';
-
-const RETRY_SECONDS = 10;
+import type { LoadSessions, SessionFilters } from './sessions-api.ts';
+import { sessionTitle } from './SessionTable.tsx';
+import './sessions.css';
 
 export interface SessionsPageProps {
   loadSessions: LoadSessions;
 }
 
-function countsLine(counts: StateCounts): string {
-  return [
-    `${formatCount(counts.working)} working`,
-    `${formatCount(counts.waiting)} waiting for you`,
-    `${formatCount(counts.inactive)} inactive`,
-  ].join(' · ');
-}
-
-function useFilters(): [SessionFilters, (next: SessionFilters) => void] {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const period = searchParams.get('period');
-  const state = searchParams.get('state');
-  const filters: SessionFilters = {
-    period: isPeriod(period) ? period : DEFAULT_PERIOD,
-    project: projectOf(searchParams),
-    state: isSessionState(state) ? state : undefined,
-  };
-  const update = (next: SessionFilters): void => {
-    const params = new URLSearchParams({ period: next.period });
-    if (next.project !== undefined) params.set('project', next.project);
-    if (next.state !== undefined) params.set('state', next.state);
-    setSearchParams(params);
-  };
-  return [filters, update];
-}
-
-function SessionsContent({
-  response,
-  onMore,
+export function IssueNumberLink({
+  workItem,
+  issue,
+  project,
+  scope,
 }: {
-  response: SessionListResponse | undefined;
-  onMore: () => void;
+  workItem: number | null;
+  issue: WorkItemIssue | null;
+  project: string;
+  scope: Pick<LinkScope, 'period'>;
 }): ReactElement {
-  if (response === undefined) return <p className="status">Loading…</p>;
-  if (response.status === 'unreachable') {
-    return <p className="status">{UNREACHABLE_MESSAGE}</p>;
-  }
-  const { list } = response;
+  if (workItem === null) return <>{MISSING}</>;
   return (
-    <>
-      <p className="state-counts">{countsLine(list.counts)}</p>
-      {list.sessions.length === 0 ? (
-        <p className="status">No sessions match these filters.</p>
-      ) : (
-        <section className="panel">
-          <SessionTable sessions={list.sessions} now={new Date()} />
-        </section>
-      )}
-      {canShowMore(list.sessions.length, list.total) && (
-        <button type="button" className="show-more" onClick={onMore}>
-          Show more
-        </button>
-      )}
-    </>
+    <Link
+      to={issueHref(workItem, project, scope)}
+      title={issue?.status === 'found' ? issue.title : undefined}
+    >
+      #{workItem}
+    </Link>
   );
 }
 
-function useSessionList(
-  loadSessions: LoadSessions,
-  { period, project, state }: SessionFilters,
-  limit: number,
-): SessionListResponse | undefined {
-  const key = JSON.stringify({ period, project, state, limit });
-  const [loaded, setLoaded] = useState<{
-    key: string;
-    response: SessionListResponse;
-  }>();
-  const filterKey = JSON.stringify({ period, project, state });
-  const [last, setLast] = useState<{
-    filterKey: string;
-    response: SessionListResponse;
-  }>();
-
-  useEffect(() => {
-    let active = true;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const current: SessionFilters = { period, project, state };
-    const currentFilterKey = JSON.stringify(current);
-    const currentKey = JSON.stringify({ ...current, limit });
-    async function refresh(): Promise<void> {
-      const next = await loadSessions(current, limit);
-      if (!active) return;
-      if (next !== undefined) {
-        setLoaded({ key: currentKey, response: next });
-        setLast({ filterKey: currentFilterKey, response: next });
-      }
-      timer = setTimeout(
-        () => void refresh(),
-        (next?.refreshSeconds ?? RETRY_SECONDS) * 1000,
-      );
-    }
-    void refresh();
-    return () => {
-      active = false;
-      clearTimeout(timer);
-    };
-  }, [loadSessions, period, project, state, limit]);
-
-  if (loaded?.key === key) return loaded.response;
-  return last?.filterKey === filterKey ? last.response : undefined;
+interface RowContext {
+  filters: SessionFilters;
+  colors: Map<string, string>;
+  now: Date;
 }
 
-function FilterBar({
+function SessionRow({
+  row,
   filters,
-  onChange,
-}: {
-  filters: SessionFilters;
-  onChange: (next: SessionFilters) => void;
-}): ReactElement {
-  const stateId = useId();
-  const { state } = filters;
+  colors,
+  now,
+}: RowContext & { row: SessionSummary }): ReactElement {
+  const scope = { project: filters.project, period: filters.period };
   return (
-    <div className="filters">
-      <label htmlFor={stateId}>
-        State
-        <select
-          id={stateId}
-          value={state ?? ''}
-          onChange={(event) => {
-            const value = event.target.value;
-            onChange({
-              ...filters,
-              state: isSessionState(value) ? value : undefined,
-            });
-          }}
-        >
-          <option value="">All</option>
-          {SESSION_STATES.map((name) => (
-            <option key={name} value={name}>
-              {STATE_LABELS[name]}
-            </option>
+    <tr>
+      <td>
+        <SessionStateBadge state={row.state} />
+      </td>
+      <th scope="row">
+        <Link to={sessionHref(row.id, scope)}>{sessionTitle(row)}</Link>
+      </th>
+      {filters.project === undefined && (
+        <td>
+          <ProjectTag
+            project={row.project}
+            name={row.projectName}
+            color={colors.get(row.project) ?? 'var(--fd-muted)'}
+          />
+        </td>
+      )}
+      <td className="fd-mono">
+        {row.gitBranch === '' ? MISSING : row.gitBranch}
+      </td>
+      <td>
+        <IssueNumberLink
+          workItem={row.workItem}
+          issue={row.issue}
+          project={row.project}
+          scope={scope}
+        />
+      </td>
+      <td className={NUMERIC_CELL}>{formatAgo(row.lastAt, now)}</td>
+      <td className={NUMERIC_CELL}>
+        {formatDuration(row.firstAt, row.lastAt)}
+      </td>
+      <td className={NUMERIC_CELL}>
+        <TokenAmount counts={row.tokenCounts} costUsd={row.costUsd} />
+      </td>
+    </tr>
+  );
+}
+
+function SessionsTable({
+  sessions,
+  ...context
+}: RowContext & { sessions: SessionSummary[] }): ReactElement {
+  return (
+    <DataTable label="Sessions">
+      <table className="fd-session-list-table">
+        <thead>
+          <tr>
+            <th scope="col">State</th>
+            <th scope="col">Title</th>
+            {context.filters.project === undefined && (
+              <th scope="col">Project</th>
+            )}
+            <th scope="col">Branch</th>
+            <th scope="col">Work item</th>
+            <th scope="col" className={NUMERIC_CELL}>
+              Last activity
+            </th>
+            <th scope="col" className={NUMERIC_CELL}>
+              Duration
+            </th>
+            <th scope="col" className={NUMERIC_CELL}>
+              Tokens
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {sessions.map((row) => (
+            <SessionRow key={row.id} row={row} {...context} />
           ))}
-        </select>
-      </label>
-    </div>
+        </tbody>
+      </table>
+    </DataTable>
+  );
+}
+
+function SessionsBody({
+  list,
+  filters,
+  onFilters,
+  onMore,
+}: {
+  list: SessionList;
+  filters: SessionFilters;
+  onFilters: (next: SessionFilters) => void;
+  onMore: () => void;
+}): ReactElement {
+  return (
+    <>
+      <FilterPills
+        label="State"
+        options={stateOptions(list.counts)}
+        value={filters.state ?? ALL}
+        onChange={(choice) =>
+          onFilters({
+            ...filters,
+            state: choice === ALL ? undefined : choice,
+          })
+        }
+      />
+      {list.sessions.length === 0 ? (
+        <StatusLine>No sessions match these filters.</StatusLine>
+      ) : (
+        <Panel>
+          <SessionsTable
+            sessions={list.sessions}
+            filters={filters}
+            colors={projectColors(list.projects.map((row) => row.project))}
+            now={new Date()}
+          />
+        </Panel>
+      )}
+      {canShowMore(list.sessions.length, list.total) && (
+        <ShowMore
+          shown={list.sessions.length}
+          total={list.total}
+          onShowMore={onMore}
+        />
+      )}
+    </>
   );
 }
 
@@ -169,33 +202,32 @@ export function SessionsPage({
   const [shown, setShown] = useState({ filterKey, limit: SESSION_PAGE_SIZE });
   const limit = shown.filterKey === filterKey ? shown.limit : SESSION_PAGE_SIZE;
   const response = useSessionList(loadSessions, filters, limit);
-  const updatedAt =
-    response?.status === 'ok' && response.updatedAt !== null
-      ? formatClock(new Date(response.updatedAt))
-      : undefined;
+  const list = response?.status === 'ok' ? response.list : undefined;
 
   return (
-    <div className="sessions">
-      <div className="overview-header">
-        <h1>Sessions</h1>
-        {updatedAt !== undefined && (
-          <p className="updated">Updated {updatedAt}</p>
-        )}
-        <PeriodSelector
-          value={filters.period}
-          onChange={(period: Period) => setFilters({ ...filters, period })}
-        />
-      </div>
-      <FilterBar filters={filters} onChange={setFilters} />
-      <SessionsContent
-        response={response}
-        onMore={() =>
-          setShown({
-            filterKey,
-            limit: nextLimit(limit),
-          })
+    <div className="fd-sessions">
+      <PageHeader
+        title="Sessions"
+        summary={list === undefined ? undefined : sessionCountText(list.total)}
+        slot={
+          <PeriodPills
+            value={filters.period}
+            onChange={(period) => setFilters({ ...filters, period })}
+          />
         }
       />
+      {response === undefined && <StatusLine>Loading…</StatusLine>}
+      {response?.status === 'unreachable' && (
+        <StatusLine>{UNREACHABLE_MESSAGE}</StatusLine>
+      )}
+      {list !== undefined && (
+        <SessionsBody
+          list={list}
+          filters={filters}
+          onFilters={setFilters}
+          onMore={() => setShown({ filterKey, limit: nextLimit(limit) })}
+        />
+      )}
     </div>
   );
 }

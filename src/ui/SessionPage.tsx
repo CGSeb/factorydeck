@@ -1,178 +1,258 @@
-import { type ReactElement, type ReactNode, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router';
-import type { TokenCounts } from '../overview/types.ts';
-import type { SessionDetail, SessionResponse } from '../sessions/types.ts';
+import type { ReactElement } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router';
+import type { SessionDetail, SubAgentSummary } from '../sessions/types.ts';
+import { NO_SKILL_LABEL, type SkillUsage } from '../skills/types.ts';
+import { DataTable, NUMERIC_CELL } from './components/DataTable.tsx';
+import type { RenderLink } from './components/link.ts';
+import { PageHeader } from './components/PageHeader.tsx';
+import { ProjectTag } from './components/ProjectTag.tsx';
+import { RoleTag } from './components/RoleTag.tsx';
+import { SessionStateBadge } from './components/SessionStateBadge.tsx';
+import { SplitPage } from './components/SplitPage.tsx';
+import { StatusLine } from './components/StatusLine.tsx';
+import { TokenAmount } from './components/TokenAmount.tsx';
+import { projectColors, roleColors } from './design/palette.ts';
 import {
-  formatClock,
-  formatCost,
+  MISSING,
+  formatCount,
   formatDateTime,
-  orMissing,
+  formatDuration,
 } from './format.ts';
-import { ProjectName } from './ProjectName.tsx';
-import { IssuePanel } from './IssuePanel.tsx';
-import { useProject, withProject } from './project-param.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
+import { SessionAside } from './SessionAside.tsx';
+import { agentName, byStart, hasSkill, useSession } from './session-detail.ts';
+import {
+  type LinkScope,
+  issueHref,
+  scopeOf,
+  sessionsHref,
+  skillHref,
+} from './session-links.ts';
 import type { LoadSession } from './sessions-api.ts';
-import { SessionSkillTable } from './SessionSkillTable.tsx';
-import { SessionStateLabel } from './SessionStateLabel.tsx';
+import { IssueNumberLink } from './SessionsPage.tsx';
 import { sessionTitle } from './SessionTable.tsx';
-import { SubAgentTable } from './SubAgentTable.tsx';
-import { TokenCount } from './TokenCount.tsx';
-import { WorkItemLink } from './WorkItemLink.tsx';
-
-const RETRY_SECONDS = 10;
+import './sessions.css';
 
 export interface SessionPageProps {
   loadSession: LoadSession;
 }
 
-function TokenBreakdown({ tokens }: { tokens: TokenCounts }): ReactElement {
-  const kinds = [
-    { label: 'Input', value: tokens.input },
-    { label: 'Cache write', value: tokens.cacheWrite },
-    { label: 'Cache read', value: tokens.cacheRead },
-    { label: 'Output', value: tokens.output },
-  ];
+const renderRouterLink: RenderLink = ({ href, ...props }) => (
+  <Link to={href} {...props} />
+);
+
+function SubAgentRow({
+  agent,
+  color,
+  project,
+  scope,
+}: {
+  agent: SubAgentSummary;
+  color: string;
+  project: string;
+  scope: LinkScope;
+}): ReactElement {
   return (
-    <>
-      <TokenCount value={kinds.reduce((sum, { value }) => sum + value, 0)} />
-      <dl className="breakdown">
-        {kinds.map(({ label, value }) => (
-          <div key={label}>
-            <dt>{label}</dt>
-            <dd>
-              <TokenCount value={value} />
-            </dd>
-          </div>
-        ))}
-      </dl>
-    </>
+    <tr>
+      <th scope="row">{agentName(agent)}</th>
+      <td>
+        <RoleTag role={agent.role} color={color} />
+      </td>
+      <td>
+        <IssueNumberLink
+          workItem={agent.workItem}
+          issue={agent.issue}
+          project={project}
+          scope={scope}
+        />
+      </td>
+      <td className={NUMERIC_CELL}>{formatDateTime(agent.firstAt)}</td>
+      <td className={NUMERIC_CELL}>
+        {formatDuration(agent.firstAt, agent.lastAt)}
+      </td>
+      <td className={NUMERIC_CELL}>
+        <TokenAmount counts={agent.tokenCounts} costUsd={agent.costUsd} />
+      </td>
+    </tr>
   );
 }
 
-function SessionHeader({
+function SubAgents({
   session,
-  updatedAt,
+  scope,
 }: {
   session: SessionDetail;
-  updatedAt: string | null;
+  scope: LinkScope;
 }): ReactElement {
-  const { tokens } = session;
-  const facts: { label: string; value: ReactNode }[] = [
-    {
-      label: 'Project',
-      value: (
-        <ProjectName project={session.project} name={session.projectName} />
-      ),
-    },
-    { label: 'Working directory', value: orMissing(session.cwd ?? '') },
-    { label: 'Branch', value: orMissing(session.gitBranch) },
-    {
-      label: 'Work item',
-      value: <WorkItemLink workItem={session.workItem} issue={session.issue} />,
-    },
-    { label: 'First activity', value: formatDateTime(session.firstAt) },
-    { label: 'Last activity', value: formatDateTime(session.lastAt) },
-    { label: 'Cost', value: formatCost(session.costUsd) },
-  ];
+  const agents = byStart(session.subAgents);
+  const colors = roleColors(agents.map((agent) => agent.role));
   return (
-    <>
-      <div className="session-title">
-        <h1>{sessionTitle(session)}</h1>
-        <SessionStateLabel state={session.state} />
-        {updatedAt !== null && (
-          <p className="updated">Updated {formatClock(new Date(updatedAt))}</p>
-        )}
-      </div>
-      <section className="panel" aria-label="Session">
-        <dl className="session-facts">
-          {facts.map(({ label, value }) => (
-            <div key={label}>
-              <dt>{label}</dt>
-              <dd>{value}</dd>
-            </div>
-          ))}
-          <div>
-            <dt>Tokens</dt>
-            <dd>
-              <TokenBreakdown tokens={tokens} />
-            </dd>
-          </div>
-        </dl>
-      </section>
-      {session.issueDetail !== null && (
-        <IssuePanel issue={session.issueDetail} />
+    <section className="fd-session-section">
+      <h2>
+        Sub-agents
+        <span className="fd-session-count">{formatCount(agents.length)}</span>
+      </h2>
+      {agents.length === 0 ? (
+        <p className="fd-session-empty">No sub-agents.</p>
+      ) : (
+        <DataTable label="Sub-agents">
+          <table className="fd-sub-agent-table">
+            <thead>
+              <tr>
+                <th scope="col">Sub-agent</th>
+                <th scope="col">Role</th>
+                <th scope="col">Work item</th>
+                <th scope="col" className={NUMERIC_CELL}>
+                  Started
+                </th>
+                <th scope="col" className={NUMERIC_CELL}>
+                  Duration
+                </th>
+                <th scope="col" className={NUMERIC_CELL}>
+                  Tokens
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {agents.map((agent) => (
+                <SubAgentRow
+                  key={agent.id}
+                  agent={agent}
+                  color={colors.get(agent.role) ?? 'var(--fd-muted)'}
+                  project={session.project}
+                  scope={scope}
+                />
+              ))}
+            </tbody>
+          </table>
+        </DataTable>
       )}
-    </>
+    </section>
   );
 }
 
-function SessionNotFound(): ReactElement {
-  const project = useProject();
-  return (
-    <>
-      <p className="status">Session not found.</p>
-      <Link className="back-link" to={withProject('/sessions', project)}>
-        Back to sessions
-      </Link>
-    </>
-  );
-}
-
-function SessionContent({
-  response,
+function Skills({
+  skills,
+  scope,
 }: {
-  response: SessionResponse | undefined;
+  skills: SkillUsage[];
+  scope: LinkScope;
 }): ReactElement {
-  if (response === undefined) return <p className="status">Loading…</p>;
-  if (response.status === 'unreachable') {
-    return <p className="status">{UNREACHABLE_MESSAGE}</p>;
-  }
-  if (response.status === 'not-found') {
-    return <SessionNotFound />;
-  }
   return (
-    <>
-      <SessionHeader
-        session={response.session}
-        updatedAt={response.updatedAt}
+    <section className="fd-session-section">
+      <h2>Skills</h2>
+      <DataTable label="Skills">
+        <table className="fd-skill-table">
+          <thead>
+            <tr>
+              <th scope="col">Skill</th>
+              <th scope="col" className={NUMERIC_CELL}>
+                Launches
+              </th>
+              <th scope="col" className={NUMERIC_CELL}>
+                Tokens
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {skills.map((row) => (
+              <tr key={row.skill ?? ''}>
+                <th scope="row">
+                  {row.skill === null ? (
+                    NO_SKILL_LABEL
+                  ) : (
+                    <Link className="fd-mono" to={skillHref(row.skill, scope)}>
+                      {row.skill}
+                    </Link>
+                  )}
+                </th>
+                <td className={NUMERIC_CELL}>
+                  {row.skill === null ? MISSING : formatCount(row.launches)}
+                </td>
+                <td className={NUMERIC_CELL}>
+                  <TokenAmount counts={row.tokenCounts} costUsd={row.costUsd} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </DataTable>
+    </section>
+  );
+}
+
+function SessionLine({
+  session,
+  scope,
+}: {
+  session: SessionDetail;
+  scope: LinkScope;
+}): ReactElement {
+  const colors = projectColors(session.projects.map((row) => row.project));
+  return (
+    <span className="fd-session-line">
+      <SessionStateBadge state={session.state} />
+      <ProjectTag
+        project={session.project}
+        name={session.projectName}
+        color={colors.get(session.project) ?? 'var(--fd-muted)'}
       />
-      <SessionSkillTable skills={response.session.skills} />
-      <SubAgentTable subAgents={response.session.subAgents} />
-    </>
+      {session.gitBranch !== '' && (
+        <span className="fd-mono">{session.gitBranch}</span>
+      )}
+      {session.workItem !== null && (
+        <span>
+          Work item{' '}
+          <Link to={issueHref(session.workItem, session.project, scope)}>
+            #{session.workItem}
+          </Link>
+        </span>
+      )}
+    </span>
   );
 }
 
 export function SessionPage({ loadSession }: SessionPageProps): ReactElement {
   const { id = '' } = useParams();
-  const [loaded, setLoaded] = useState<{
-    id: string;
-    response: SessionResponse;
-  }>();
-  const response = loaded?.id === id ? loaded.response : undefined;
+  const [searchParams] = useSearchParams();
+  const scope = scopeOf(searchParams);
+  const response = useSession(loadSession, id);
+  const back = { label: 'Sessions', href: sessionsHref(scope) };
 
-  useEffect(() => {
-    let active = true;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    async function refresh(): Promise<void> {
-      const next = await loadSession(id);
-      if (!active) return;
-      if (next !== undefined) setLoaded({ id, response: next });
-      timer = setTimeout(
-        () => void refresh(),
-        (next?.refreshSeconds ?? RETRY_SECONDS) * 1000,
-      );
-    }
-    void refresh();
-    return () => {
-      active = false;
-      clearTimeout(timer);
-    };
-  }, [loadSession, id]);
+  if (response?.status !== 'ok') {
+    return (
+      <div className="fd-sessions">
+        <Link className="fd-back" to={back.href}>
+          ← {back.label}
+        </Link>
+        <StatusLine>
+          {response === undefined
+            ? 'Loading…'
+            : response.status === 'not-found'
+              ? 'Session not found.'
+              : UNREACHABLE_MESSAGE}
+        </StatusLine>
+      </div>
+    );
+  }
 
+  const { session } = response;
   return (
-    <div className="sessions">
-      <SessionContent response={response} />
+    <div className="fd-sessions fd-session-card">
+      <SplitPage aside={<SessionAside session={session} />}>
+        <div className="fd-session-main">
+          <PageHeader
+            title={sessionTitle(session)}
+            back={back}
+            summary={<SessionLine session={session} scope={scope} />}
+            renderLink={renderRouterLink}
+          />
+          <SubAgents session={session} scope={scope} />
+          {hasSkill(session.skills) && (
+            <Skills skills={session.skills} scope={scope} />
+          )}
+        </div>
+      </SplitPage>
     </div>
   );
 }

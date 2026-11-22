@@ -72,6 +72,7 @@ export interface SessionDetail extends Omit<
   issueDetail: IssueDetail | null;
   subAgents: SubAgentSummary[];
   skills: SkillUsage[];
+  projects: ProjectOption[];
 }
 
 interface Refresh {

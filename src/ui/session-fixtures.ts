@@ -139,6 +139,7 @@ export const manySessions = [
 export const sessionWithSubAgents: SessionDetail = {
   ...workingSession,
   issueDetail: githubIssue,
+  projects: optionsOf(PROJECTS),
   cwd: '/home/dev/example-app/packages/web',
   tokens: {
     input: 120_400,
@@ -225,6 +226,7 @@ export const sessionWithSubAgents: SessionDetail = {
 export const sessionWithoutSubAgents: SessionDetail = {
   ...waitingSession,
   issueDetail: null,
+  projects: optionsOf(PROJECTS),
   cwd: null,
   tokens: { input: 2_400, cacheWrite: 30_000, cacheRead: 150_000, output: 0 },
   skills: [
