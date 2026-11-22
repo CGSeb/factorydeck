@@ -11,6 +11,7 @@ export interface ProjectSelectProps {
   value: string | undefined;
   projects: ProjectOption[];
   onChange: (project: string | undefined) => void;
+  className?: string;
 }
 
 function projectOptions(
@@ -39,11 +40,12 @@ export function ProjectSelect({
   value,
   projects,
   onChange,
+  className = 'project-select',
 }: ProjectSelectProps): ReactElement {
   const options = projectOptions(value, projects);
   return (
     <select
-      className="project-select"
+      className={className}
       aria-label="Project"
       title={tooltipOf(value, options)}
       value={value ?? ''}
