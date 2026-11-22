@@ -1,7 +1,7 @@
 # 012 · Project names
 
 Status: ready
-Depends on: 003, 004, 005, 006, 007, 010
+Depends on: 010
 Checked: 2026-11-22
 
 ## User goal
