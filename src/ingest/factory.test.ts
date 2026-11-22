@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Database } from '../db/client.ts';
 import {
   apiCall,
+  ingestState,
   session,
   skillLaunch,
   sourceFile,
@@ -203,6 +204,9 @@ describe('factory projects only', () => {
         { id: 'old-plain', project: plain, cwd: plain },
         { id: 'old-unassigned' },
       ]);
+    await db
+      .insert(ingestState)
+      .values({ id: 'ingestion', branchesReadDone: true });
     await db.insert(sourceFile).values([
       { path: logPath('old-factory'), sizeBytes: 1, readOffset: 1 },
       { path: logPath('old-plain'), sizeBytes: 1, readOffset: 1 },

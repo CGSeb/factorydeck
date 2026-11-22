@@ -110,6 +110,7 @@ describe('ingest edge cases', () => {
       cwd: '/gone/first',
       cwdFromMain: false,
       gitBranch: 'feat/two',
+      gitBranches: ['feat/two'],
       project: '/gone/first',
     });
     await appendLog(join(agents, 'agent-b.jsonl'), [
@@ -128,6 +129,7 @@ describe('ingest edge cases', () => {
     expect((await db.select().from(session))[0]).toMatchObject({
       cwd: '/gone/first',
       gitBranch: 'feat/three',
+      gitBranches: ['feat/three'],
     });
   });
 

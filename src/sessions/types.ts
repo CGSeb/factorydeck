@@ -20,7 +20,8 @@ export interface SessionSummary {
   title: string;
   project: string;
   projectName: string;
-  gitBranch: string;
+  /** Every git branch of the main thread, in the order it first appeared. */
+  gitBranches: string[];
   workItem: number | null;
   issue: WorkItemIssue | null;
   state: SessionState;

@@ -139,6 +139,7 @@ describe('ingest', () => {
       project: cwd,
       cwd,
       gitBranch: 'feat/new',
+      gitBranches: ['feat/old', 'feat/new'],
       title: 'Final title',
       firstAt: new Date(minute(0)),
       lastAt: new Date(minute(7)),

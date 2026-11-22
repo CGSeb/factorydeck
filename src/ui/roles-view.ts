@@ -1,6 +1,6 @@
 import type { TokenCounts } from '../overview/types.ts';
 import type { RoleUsage } from '../roles/types.ts';
-import { roleColors } from './design/palette.ts';
+import { categoryColor, roleColors } from './design/palette.ts';
 import { MISSING, formatTokens } from './format.ts';
 
 export interface RoleTotals {
@@ -30,6 +30,15 @@ export function colorsOfRoles(
     .filter((role) => !configured.has(role))
     .sort((a, b) => a.localeCompare(b));
   return roleColors([...order, ...others]);
+}
+
+/** Colours models in the order given, most tokens first. */
+export function colorsOfModels(
+  models: readonly { model: string }[],
+): Map<string, string> {
+  return new Map(
+    models.map((row, index) => [row.model, categoryColor(index)] as const),
+  );
 }
 
 export function tokensPerThread({ tokens, threads }: RoleUsage): string {

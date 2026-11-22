@@ -14,6 +14,7 @@ import { isObject, parseLines } from './records.ts';
 import {
   type Run,
   forgetFileRows,
+  readMainLogsAgainOnce,
   insertThreadRows,
   loadSession,
   loadSubAgent,
@@ -84,6 +85,7 @@ export async function ingest(
       return { status: 'already-running' };
     }
     await forgetProjectsWithoutFactoryOnce(tx, check);
+    await readMainLogsAgainOnce(tx);
     const run = await startRun(tx);
     const selection = await selectFactorySessions(run, files, check);
     run.projects = selection.projects;

@@ -3,13 +3,16 @@ import type { OverviewResponse, Period } from '../overview/types.ts';
 import type { RoleListResponse, RoleSourceFile } from '../roles/types.ts';
 import { PageHeader } from './components/PageHeader.tsx';
 import { PeriodPills } from './components/PeriodPills.tsx';
-import { SplitBar } from './components/SplitBar.tsx';
 import { StatusLine } from './components/StatusLine.tsx';
 import { ModelTokensTable } from './ModelTokensTable.tsx';
 import { type LoadOverview, UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { RoleTokensTable } from './RoleTokensTable.tsx';
 import type { LoadRoles } from './roles-api.ts';
-import { byTokensDescending, colorsOfRoles } from './roles-view.ts';
+import {
+  byTokensDescending,
+  colorsOfModels,
+  colorsOfRoles,
+} from './roles-view.ts';
 import { useRefreshing, useSkillFilters } from './skills-api.ts';
 
 export interface RolesPageProps {
@@ -41,11 +44,11 @@ function ModelsContent({
   if (response.status === 'unreachable') {
     return <StatusLine>{UNREACHABLE_MESSAGE}</StatusLine>;
   }
-  return (
-    <ModelTokensTable
-      models={byTokensDescending(response.overview.models, (row) => row.model)}
-    />
+  const models = byTokensDescending(
+    response.overview.models,
+    (row) => row.model,
   );
+  return <ModelTokensTable models={models} colors={colorsOfModels(models)} />;
 }
 
 function RolesContent({
@@ -66,15 +69,6 @@ function RolesContent({
   const colors = colorsOfRoles(response.list.order, roles);
   return (
     <>
-      <SplitBar
-        label="Tokens by role"
-        height="tall"
-        segments={roles.map((row) => ({
-          label: row.role,
-          value: row.tokens,
-          color: colors.get(row.role) ?? 'var(--fd-muted)',
-        }))}
-      />
       <RoleTokensTable roles={roles} colors={colors} />
       <ModelsContent response={overview} />
     </>

@@ -4,12 +4,14 @@ import {
   UNASSIGNED_PROJECT,
   apiCall,
   closingLine,
+  ingestState,
   session,
   skillLaunch,
   sourceFile,
   subAgent,
   userPrompt,
 } from '../db/schema.ts';
+import { STATE_ID } from '../projects/remove.ts';
 import { resolveProjects } from './project.ts';
 import { turnEnded } from './records.ts';
 import type { SkillLaunchRow, ThreadRows } from './thread.ts';
@@ -99,6 +101,29 @@ export async function saveOffset(
   run.storedFiles.set(path, row);
 }
 
+/**
+ * Forgets the read offsets of the main session logs once, so the run reads them again from the
+ * start and fills the branches of sessions stored before `git_branches` existed.
+ */
+export async function readMainLogsAgainOnce(tx: Transaction): Promise<void> {
+  const [state] = await tx
+    .select()
+    .from(ingestState)
+    .where(eq(ingestState.id, STATE_ID));
+  if (state?.branchesReadDone === true) return;
+  await tx.execute(
+    sql`delete from ${sourceFile} f using ${session} s
+      where right(f.path, length(s.id) + 6) = s.id || '.jsonl'`,
+  );
+  await tx
+    .insert(ingestState)
+    .values({ id: STATE_ID, branchesReadDone: true })
+    .onConflictDoUpdate({
+      target: ingestState.id,
+      set: { branchesReadDone: true },
+    });
+}
+
 /** Deletes the rows read from a file, before it is read again from the start. */
 export async function forgetFileRows(run: Run, path: string): Promise<void> {
   await run.tx.delete(apiCall).where(eq(apiCall.sourcePath, path));
@@ -113,6 +138,7 @@ export function resetSession(row: SessionRow): void {
     cwd: null,
     cwdFromMain: false,
     gitBranch: '',
+    gitBranches: [],
     title: '',
     firstAt: null,
     lastAt: null,
@@ -226,6 +252,7 @@ async function useSubAgentCwds(run: Run, rows: SessionRow[]): Promise<void> {
       row.project = UNASSIGNED_PROJECT;
     }
     row.gitBranch = first?.gitBranch ?? '';
+    row.gitBranches = row.gitBranch === '' ? [] : [row.gitBranch];
   }
 }
 

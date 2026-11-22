@@ -93,9 +93,6 @@ function SessionRow({
           />
         </td>
       )}
-      <td className="fd-session-mono">
-        {row.gitBranch === '' ? MISSING : row.gitBranch}
-      </td>
       <td>
         <IssueNumberLink
           workItem={row.workItem}
@@ -129,7 +126,6 @@ function SessionsTable({
             {context.filters.project === undefined && (
               <th scope="col">Project</th>
             )}
-            <th scope="col">Branch</th>
             <th scope="col">Work item</th>
             <th scope="col" className={NUMERIC_CELL}>
               Last activity

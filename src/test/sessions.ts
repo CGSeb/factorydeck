@@ -38,6 +38,7 @@ const SESSIONS: (typeof session.$inferInsert)[] = [
     project: '/work/app',
     cwd: '/work/app',
     gitBranch: 'feat/x',
+    gitBranches: ['main', 'feat/x'],
     title: 'Build the thing',
     firstAt: ago(120),
     lastAt: ago(29.9),

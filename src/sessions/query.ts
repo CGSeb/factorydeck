@@ -41,6 +41,12 @@ function text(value: unknown): string {
   return typeof value === 'string' ? value : '';
 }
 
+function texts(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : [];
+}
+
 function timestamp(value: unknown): string | null {
   if (value instanceof Date) return value.toISOString();
   if (typeof value === 'string') return new Date(value).toISOString();
@@ -56,7 +62,7 @@ export function statedSessions({
   now = new Date(),
 }: StateOptions): SQL {
   return sql`(
-    select s.id, s.title, s.project, s.cwd, s.git_branch,
+    select s.id, s.title, s.project, s.cwd, s.git_branch, s.git_branches,
       least(s.first_at, sa.first_at) as first_at,
       greatest(s.last_at, sa.last_at) as last_at,
       case
@@ -95,7 +101,7 @@ function summaryOf(
     title,
     project,
     projectName: names.label(project),
-    gitBranch,
+    gitBranches: texts(row['git_branches']),
     workItem:
       lastMarker(markers, id)?.workItem ??
       workItemOf(rulesFor(config, project), {

@@ -69,7 +69,7 @@ describe('sessionDetail', () => {
     const detail = await sessionDetail(db, 'working-1', options);
     expect(detail).toMatchObject({
       cwd: '/work/app',
-      gitBranch: 'feat/x',
+      gitBranches: ['main', 'feat/x'],
       subAgents: [],
       costUsd: 4,
     });
