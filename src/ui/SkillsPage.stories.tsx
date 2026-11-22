@@ -41,16 +41,71 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
+function bodyRows(canvasElement: HTMLElement): HTMLElement[] {
+  return within(canvasElement)
+    .getAllByRole('row')
+    .slice(1)
+    .filter((row) => row.closest('tbody') !== null);
+}
+
 export const WithSkills: Story = {
   args: { loadSkills: skillsLoader(someSkills) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByRole('link', { name: 'kit:write-spec' });
-    await expect(canvas.getAllByRole('row')).toHaveLength(5);
+    await expect(
+      canvas.getByRole('heading', { level: 1, name: 'Skills' }),
+    ).toBeVisible();
+    await expect(
+      canvas.getByText(
+        '3 skills launched 7 times · 3.0M tokens in skill sessions',
+      ),
+    ).toBeVisible();
+    await expect(
+      canvas.getByRole('group', { name: 'Period' }),
+    ).toBeInTheDocument();
+    const table = canvas.getByRole('table', { name: 'Skills' });
+    await expect(
+      within(table)
+        .getAllByRole('columnheader')
+        .map((cell) => cell.textContent),
+    ).toEqual(['Skill', 'Launches', 'Sessions', 'Tokens per launch', 'Tokens']);
+    await expect(
+      bodyRows(canvasElement).map(
+        (row) => within(row).getByRole('rowheader').textContent,
+      ),
+    ).toEqual(['kit:write-spec', 'kit:review', 'deploy', 'No skill']);
+    const first = bodyRows(canvasElement)[0];
+    await expect(
+      within(first ?? canvasElement)
+        .getAllByRole('cell')
+        .map((cell) => cell.textContent)
+        .slice(0, 3),
+    ).toEqual(['4', '3', '600.0K']);
+    await expect(
+      within(first ?? canvasElement).getByText('2.4M'),
+    ).toBeVisible();
+    await expect(
+      canvas.getByRole('link', { name: 'kit:write-spec' }),
+    ).toHaveAttribute('href', '/skills/kit%3Awrite-spec?period=all');
+    const noSkill = bodyRows(canvasElement).at(-1) ?? canvasElement;
+    await expect(within(noSkill).queryByRole('link')).toBeNull();
+    await expect(
+      within(noSkill)
+        .getAllByRole('cell')
+        .map((cell) => cell.textContent)
+        .slice(0, 3),
+    ).toEqual(['—', '—', '—']);
+    await expect(within(noSkill).getByText('5.1M')).toBeVisible();
+    await expect(
+      noSkill.querySelector<HTMLElement>('[data-bar]')?.style.background,
+    ).toBe('var(--fd-stage-ready)');
+    await expect(
+      first?.querySelector<HTMLElement>('[data-bar]')?.style.background,
+    ).toBe('var(--fd-accent)');
     await expect(
       canvas.queryByText('No skills launched in this period.'),
     ).toBeNull();
-    await expect(canvas.queryByRole('combobox')).toBeNull();
   },
 };
 
@@ -62,8 +117,12 @@ export const OneProject: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByText('No skills launched in this period.');
-    await waitFor(() => expect(canvas.getAllByRole('row')).toHaveLength(2));
-    await expect(canvas.queryByRole('combobox')).toBeNull();
+    await expect(
+      canvas.getByText(
+        '0 skills launched 0 times · 0 tokens in skill sessions',
+      ),
+    ).toBeVisible();
+    await waitFor(() => expect(bodyRows(canvasElement)).toHaveLength(1));
     await userEvent.click(canvas.getByRole('button', { name: 'Last 30 days' }));
     await expect(
       canvas.getByRole('status', { name: 'Address' }),
@@ -71,13 +130,20 @@ export const OneProject: Story = {
   },
 };
 
-export const NoneLaunched: Story = {
+export const NoActivity: Story = {
   args: { loadSkills: skillsLoader([noSkillUsage]) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByText('No skills launched in this period.');
     await expect(canvas.getByText('No skill')).toBeVisible();
-    await expect(canvas.getByText('~$6.10')).toBeVisible();
+    await expect(canvas.getByText('5.1M')).toBeVisible();
+  },
+};
+
+export const Loading: Story = {
+  args: { loadSkills: () => new Promise(() => undefined) },
+  play: async ({ canvasElement }) => {
+    await within(canvasElement).findByText('Loading…');
   },
 };
 

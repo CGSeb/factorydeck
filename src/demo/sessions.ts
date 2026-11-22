@@ -1,10 +1,11 @@
 import { appendFile, mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
-  type Call,
   type DemoSession,
   type DemoSubAgent,
+  callLines,
   haiku,
+  launching,
   noModel,
   opus,
   sonnet,
@@ -22,6 +23,9 @@ type Line = Record<string, unknown>;
 export const EXAMPLE_APP = 'example-app';
 export const EXAMPLE_API = 'example-api';
 export const EXAMPLE_APP_NAME = 'Example App';
+export const BUILD_SKILL = 'kit:build-feature';
+export const REVIEW_SKILL = 'kit:code-review';
+export const SPEC_SKILL = 'kit:write-spec';
 
 export const DEMO_SESSIONS: readonly DemoSession[] = [
   ...[9, 6, 4, 3, 2, 1].map((days, index) => ({
@@ -31,7 +35,13 @@ export const DEMO_SESSIONS: readonly DemoSession[] = [
     gitBranch: `feat/00${String(index + 1)}-demo`,
     startsAgo: days * DAY + 2 * HOUR,
     prompt: `Build issue #${String(index + 11)}`,
-    calls: [opus, opus, sonnet, haiku, opus],
+    calls: [
+      launching(opus, BUILD_SKILL),
+      opus,
+      sonnet,
+      index % 2 === 1 ? launching(haiku, REVIEW_SKILL) : haiku,
+      opus,
+    ],
     subAgents: [
       {
         id: 'explore',
@@ -89,7 +99,7 @@ export const DEMO_SESSIONS: readonly DemoSession[] = [
     gitBranch: 'main',
     startsAgo: 8 * DAY,
     prompt: 'Fix the layout',
-    calls: [sonnet, sonnet, haiku],
+    calls: [launching(sonnet, SPEC_SKILL), sonnet, haiku],
   },
   ...[7, 2].map((days, index) => ({
     id: `demo-api-${String(index + 1)}`,
@@ -98,7 +108,13 @@ export const DEMO_SESSIONS: readonly DemoSession[] = [
     gitBranch: `fix/${String(index + 21)}-endpoint`,
     startsAgo: days * DAY + 4 * HOUR,
     prompt: 'Add an endpoint',
-    calls: [sonnet, unknownPrice, haiku, noModel, sonnet],
+    calls: [
+      launching(sonnet, SPEC_SKILL),
+      unknownPrice,
+      haiku,
+      noModel,
+      sonnet,
+    ],
     subAgents: [
       {
         id: 'endpoint',
@@ -124,38 +140,13 @@ export const DEMO_SESSIONS: readonly DemoSession[] = [
     gitBranch: 'feat/007-demo',
     startsAgo: 20 * 60_000,
     prompt: 'Review the branch',
-    calls: [opus, sonnet, opus],
+    calls: [
+      launching(opus, REVIEW_SKILL),
+      sonnet,
+      launching(opus, REVIEW_SKILL),
+    ],
   },
 ];
-
-function callLines(
-  calls: readonly Call[],
-  prefix: string,
-  context: (step: number) => Line,
-): Line[] {
-  return calls.map((call, index) => {
-    const [input, cacheWrite, cacheRead, output] = call.tokens;
-    const requestId = `${prefix}-req-${String(index)}`;
-    return {
-      type: 'assistant',
-      ...context(index + 1),
-      requestId,
-      message: {
-        id: `msg_${requestId}`,
-        role: 'assistant',
-        ...(call.model === undefined ? {} : { model: call.model }),
-        stop_reason: 'end_turn',
-        content: [{ type: 'text', text: 'Done.' }],
-        usage: {
-          input_tokens: input,
-          cache_creation_input_tokens: cacheWrite,
-          cache_read_input_tokens: cacheRead,
-          output_tokens: output,
-        },
-      },
-    };
-  });
-}
 
 interface Clock {
   now: number;

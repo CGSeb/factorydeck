@@ -1,0 +1,127 @@
+.fd-skills {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fd-space-5);
+}
+
+.fd-skills .fd-table-scroll th,
+.fd-skills .fd-table-scroll td {
+  border-bottom: 0;
+  overflow-wrap: normal;
+}
+
+.fd-skills .fd-table-scroll tbody th {
+  font-weight: 600;
+}
+
+.fd-skills .fd-table-scroll tbody th a {
+  color: var(--fd-ink);
+  text-decoration: none;
+}
+
+.fd-skills .fd-table-scroll tbody th a:hover {
+  color: var(--fd-link-hover);
+  text-decoration: underline;
+}
+
+.fd-skills .fd-table-scroll tbody th a:focus-visible {
+  outline: 2px solid var(--fd-accent);
+  outline-offset: 2px;
+}
+
+.fd-skills .fd-table-scroll .fd-skill-name {
+  font-family: var(--fd-font-mono);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.fd-skill-none {
+  font-weight: 500;
+  font-style: italic;
+  color: var(--fd-muted);
+}
+
+.fd-skills .fd-table-scroll .fd-skill-per-launch {
+  color: var(--fd-ink-2);
+}
+
+.fd-skills .fd-table-scroll .fd-skill-bar {
+  width: 32%;
+  padding-left: var(--fd-space-6);
+}
+
+.fd-skill-table {
+  min-width: 640px;
+}
+
+.fd-skill-session-table {
+  min-width: 480px;
+}
+
+.fd-skill-title {
+  font-family: var(--fd-font-mono);
+  font-size: 30px;
+  letter-spacing: -0.01em;
+}
+
+.fd-skill-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fd-space-4);
+}
+
+.fd-skill-figures {
+  display: grid;
+  flex: 1 1 400px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--fd-space-1);
+  min-width: 0;
+  margin: 0;
+}
+
+.fd-skill-figures > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: var(--fd-space-4) var(--fd-space-3);
+  background: var(--fd-page);
+}
+
+.fd-skill-figures > div:first-child {
+  border-radius: var(--fd-radius-panel) 0 0 var(--fd-radius-panel);
+}
+
+.fd-skill-figures > div:last-child {
+  border-radius: 0 var(--fd-radius-panel) var(--fd-radius-panel) 0;
+}
+
+.fd-skill-figures dt {
+  font-size: var(--fd-text-sm);
+  color: var(--fd-muted);
+}
+
+.fd-skill-figures dd {
+  margin: 0;
+  font-family: var(--fd-font-display);
+  font-size: 30px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.fd-skill-launches {
+  display: flex;
+  flex: 2 1 440px;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: var(--fd-space-4) 18px;
+  background: var(--fd-page);
+  border-radius: var(--fd-radius-panel);
+}
+
+.fd-skill-launches h2 {
+  margin: 0;
+  font-size: var(--fd-text-md);
+  font-weight: 600;
+}
