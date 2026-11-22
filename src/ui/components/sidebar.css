@@ -65,7 +65,8 @@
   max-width: none;
 }
 
-.fd-sidebar .fd-select-list {
+.fd-sidebar .fd-select .fd-select-list,
+.fd-sidebar .fd-select[data-align] .fd-select-list {
   right: 0;
   left: 0;
   min-width: 0;
