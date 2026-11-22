@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactElement } from 'react';
-import { WHITE } from '../colors.ts';
+import { labelTextColor } from '../colors.ts';
 import {
   type ChartSegment,
   MIN_SEGMENT_PX,
@@ -28,7 +28,6 @@ const SHARE_CLASS = 'fd-split-bar-share';
 const SHARE_CSS = `.${SHARE_CLASS}{display:none}@container (min-width: ${String(SHARE_MIN_WIDTH_PX)}px){.${SHARE_CLASS}{display:block}}`;
 
 const share: CSSProperties = {
-  color: WHITE,
   fontSize: '12px',
   fontWeight: 600,
   lineHeight: 1,
@@ -83,7 +82,10 @@ export function SplitBar({
             style={segmentStyle(part.weight, part.color)}
           >
             {height === 'tall' ? (
-              <span className={SHARE_CLASS} style={share}>
+              <span
+                className={SHARE_CLASS}
+                style={{ ...share, color: labelTextColor(part.color) }}
+              >
                 {part.share}%
               </span>
             ) : null}

@@ -126,18 +126,20 @@ export function DayBars({
         </div>
         <Labels buckets={buckets} />
       </div>
-      <div style={visuallyHidden}>
-        <table>
-          <tbody>
-            {buckets.map((bucket, index) => (
-              <tr key={`${String(index)} ${bucket.label}`}>
-                <th scope="row">{formatBucket(bucket.label)}</th>
-                <td>{bucketValue(bucket)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {buckets.length > 0 ? (
+        <div style={visuallyHidden}>
+          <table aria-label={label}>
+            <tbody>
+              {buckets.map((bucket, index) => (
+                <tr key={`${String(index)} ${bucket.label}`}>
+                  <th scope="row">{formatBucket(bucket.label)}</th>
+                  <td>{bucketValue(bucket)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
     </div>
   );
 }

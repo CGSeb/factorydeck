@@ -73,6 +73,9 @@ export const SevenDays: Story = {
       'Nov 7',
     ]);
     await expect(spokenRows(canvasElement)[0]).toBe('Nov 11.2M tokens');
+    await expect(
+      within(canvasElement).getByRole('table', { name: 'Tokens per day' }),
+    ).toBeInTheDocument();
   },
 };
 

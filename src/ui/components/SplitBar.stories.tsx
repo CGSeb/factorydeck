@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, within } from 'storybook/test';
-import { WHITE } from '../colors.ts';
+import { BLACK, WHITE } from '../colors.ts';
 import {
   ROLE_SEGMENTS,
   TINY_SEGMENTS,
@@ -94,7 +94,7 @@ export const TallWithShares: Story = {
       height: '40px',
       borderRadius: '20px',
     });
-    const [builder] = segments(canvasElement);
+    const [builder, reviewer] = segments(canvasElement);
     const share = builder?.querySelector('span');
     await expect(share).toHaveTextContent(/^45%$/);
     await expect(share).toHaveStyle({
@@ -102,6 +102,8 @@ export const TallWithShares: Story = {
       fontSize: '12px',
       fontWeight: '600',
     });
+    await expect(reviewer?.querySelector('span')).toHaveTextContent(/^30%$/);
+    await expect(reviewer?.querySelector('span')).toHaveStyle({ color: BLACK });
     await expect(builder).toHaveStyle({ containerType: 'inline-size' });
   },
 };
