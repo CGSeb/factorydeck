@@ -2,7 +2,7 @@ import { type RefObject, useEffect, useRef } from 'react';
 
 function keepFocusInside(event: KeyboardEvent, dialog: HTMLElement): void {
   const focusable = [
-    ...dialog.querySelectorAll<HTMLElement>('button:not(:disabled)'),
+    ...dialog.querySelectorAll<HTMLElement>('a[href], button:not(:disabled)'),
   ];
   const first = focusable.at(0);
   const last = focusable.at(-1);
@@ -38,7 +38,7 @@ export function useDialogFocus(
   }, []);
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent): void {
-      if (event.key === 'Escape') onCancel();
+      if (event.key === 'Escape' && !event.defaultPrevented) onCancel();
       if (event.key === 'Tab' && dialog.current !== null) {
         keepFocusInside(event, dialog.current);
       }

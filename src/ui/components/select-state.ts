@@ -91,11 +91,12 @@ export function useSelect<T extends string>(
   options: readonly SelectOption<T>[],
   value: T,
   onChange: (value: T) => void,
+  initiallyOpen = false,
 ): SelectState {
   const rootRef = useRef<HTMLDivElement>(null);
   const listId = useId();
   const optionIdPrefix = useId();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initiallyOpen);
   useCloseOnOutsidePointer(rootRef, open, () => {
     setOpen(false);
   });

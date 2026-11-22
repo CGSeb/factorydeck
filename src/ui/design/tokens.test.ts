@@ -82,6 +82,8 @@ const EXPECTED: Record<string, string> = {
   '--fd-page-max': '1360px',
   '--fd-gutter': '24px',
   '--fd-topbar-height': '60px',
+  '--fd-sidebar-width': '232px',
+  '--fd-sidebar-collapsed': '64px',
   '--fd-control-height': '40px',
 };
 

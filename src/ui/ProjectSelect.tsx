@@ -13,6 +13,8 @@ export interface ProjectSelectProps {
   projects: ProjectOption[];
   onChange: (project: string | undefined) => void;
   className?: string;
+  defaultOpen?: boolean | undefined;
+  onClose?: (() => void) | undefined;
 }
 
 function projectOptions(
@@ -37,11 +39,25 @@ function tooltipOf(
     : `${text}\n${title}`;
 }
 
+export function projectLabel(
+  value: string | undefined,
+  projects: ProjectOption[],
+): string {
+  const selected = projectOptions(value, projects).find(
+    (option) => option.project === value,
+  );
+  return selected === undefined
+    ? ALL_PROJECTS
+    : projectText(selected.project, selected.name).text;
+}
+
 export function ProjectSelect({
   value,
   projects,
   onChange,
   className = 'fd-control fd-select-trigger',
+  defaultOpen,
+  onClose,
 }: ProjectSelectProps): ReactElement {
   const options = projectOptions(value, projects);
   return (
@@ -51,6 +67,8 @@ export function ProjectSelect({
       title={tooltipOf(value, options)}
       value={value ?? ''}
       align="end"
+      defaultOpen={defaultOpen}
+      onClose={onClose}
       options={[
         { value: '', label: ALL_PROJECTS },
         ...options.map((option) => ({

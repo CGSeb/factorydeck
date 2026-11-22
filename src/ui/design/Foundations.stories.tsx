@@ -195,6 +195,7 @@ function SpacingAndRadiiSheet() {
             ...byPrefix('--fd-page-max'),
             ...byPrefix('--fd-gutter'),
             ...byPrefix('--fd-topbar-height'),
+            ...byPrefix('--fd-sidebar'),
             ...byPrefix('--fd-control-height'),
           ].map((token) => (
             <TokenRow key={token.name} token={token}>
