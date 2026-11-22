@@ -62,13 +62,13 @@ describe('listSessions', () => {
     expect(byId.get('working-1')).toMatchObject({
       title: 'Build the thing',
       project: '/work/app',
-      gitBranch: 'feat/x',
+      gitBranches: ['main', 'feat/x'],
       tokens: 1_000_020,
       costUsd: 4,
     });
     expect(byId.get('agent-busy')).toMatchObject({
       project: 'unassigned',
-      gitBranch: '',
+      gitBranches: [],
       tokens: 1_100_010,
     });
     expect(byId.get('agent-busy')?.costUsd).toBeCloseTo(1.1);

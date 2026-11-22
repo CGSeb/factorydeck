@@ -16,7 +16,7 @@ import { forgetProjectNames, projectNames } from './names.ts';
 import type { DeleteResult, FactoryStatus, MissingFactory } from './types.ts';
 
 const CHUNK = 1000;
-const STATE_ID = 'ingestion';
+export const STATE_ID = 'ingestion';
 
 async function inChunks<T>(
   values: readonly T[],

@@ -84,7 +84,7 @@ export const WithSubAgentsAndSkills: Story = {
       'title',
       '/home/dev/example-app',
     );
-    await expect(canvas.getByText('feat/export')).toBeVisible();
+    await expect(canvas.getByText('main, feat/export')).toBeVisible();
     const workItem = canvas.getByText(/^Work item/, { selector: 'span' });
     await expect(
       within(workItem).getByRole('link', { name: '#52' }),

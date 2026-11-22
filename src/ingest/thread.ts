@@ -37,6 +37,7 @@ export interface MainThread extends TurnState {
   cwd: string | null;
   cwdFromMain: boolean;
   gitBranch: string;
+  gitBranches: string[];
   title: string;
 }
 
@@ -219,4 +220,7 @@ function readContext(main: MainThread, record: LogRecord): void {
     main.cwdFromMain = true;
   }
   main.gitBranch = stringOf(record, 'gitBranch') ?? '';
+  if (main.gitBranch !== '' && !main.gitBranches.includes(main.gitBranch)) {
+    main.gitBranches = [...main.gitBranches, main.gitBranch];
+  }
 }

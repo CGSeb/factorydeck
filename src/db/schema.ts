@@ -37,6 +37,8 @@ export const session = pgTable('session', {
   /** Whether `cwd` comes from the main log; otherwise it comes from a sub-agent log, or is unknown. */
   cwdFromMain: boolean('cwd_from_main').notNull().default(false),
   gitBranch: text('git_branch').notNull().default(''),
+  /** Every git branch of the main thread, in the order it first appeared. */
+  gitBranches: text('git_branches').array().notNull().default([]),
   title: text().notNull().default(''),
   firstAt: timestamp('first_at', { withTimezone: true }),
   lastAt: timestamp('last_at', { withTimezone: true }),
@@ -180,6 +182,7 @@ export const skippedFile = pgTable(
 export const ingestState = pgTable('ingest_state', {
   id: text().primaryKey(),
   factoryCleanupDone: boolean('factory_cleanup_done').notNull().default(false),
+  branchesReadDone: boolean('branches_read_done').notNull().default(false),
 });
 
 export const gitHostIssue = pgTable(
