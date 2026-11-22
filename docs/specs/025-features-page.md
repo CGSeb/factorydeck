@@ -17,7 +17,7 @@ A developer lists every issue their factory worked on in the period, grouped by 
 - [ ] After the groups, a row `No work item` (spec 010) with its sessions and tokens, then a bold `Total` row with all sessions and the period's tokens, whatever the stage filter; with a stage selected, `No work item` and `Total` are left out.
 - [ ] The tiles of spec 010 are removed; the summary line replaces them.
 - [ ] With no call in the period, `No activity in this period.` replaces the strip and table; loading and unreachable states as spec 024.
-- [ ] At 360 px the strip stacks two by two and the table scrolls inside its box; nothing else scrolls horizontally. Figures refresh without a reload.
+- [ ] From 1024 px wide, the table scrolls inside its box when it is wider than the page; nothing else scrolls horizontally. Figures refresh without a reload.
 
 ## Rules
 
@@ -29,7 +29,7 @@ A developer lists every issue their factory worked on in the period, grouped by 
 
 - Storybook stories of the features page: `All projects`, one project, a stage selected (with a `play` that selects and unselects it and checks the URL), each sort, a `Closed` and an `Unknown` group, no activity. They pass the axe check of `src/ui/stories.test.tsx`.
 - Vitest tests of grouping, sorting inside groups and the `stage` parameter parsing.
-- On the real app, with `pnpm demo`: screenshots at 360 px and 1280 px, with and without a stage selected, attached to the pull request.
+- On the real app, with `pnpm demo`: screenshots at 1024 px, 1280 px and 2560 px, with and without a stage selected, attached to the pull request.
 
 ## Out of scope
 

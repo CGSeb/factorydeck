@@ -15,7 +15,7 @@ A developer sees which skills their agents launch, how often and with how many t
 - [ ] `/skills/<name>` shows a back link `← Skills` (keeping `project` and `period`), the skill name as `h1` in `--fd-font-mono` 30 px, and `PeriodPills`; then three figures side by side on `--fd-page` (`Launches`, `Tokens` as a `TokenAmount` with its tooltip, `Per launch`), next to a panel `Launches per day` (`Launches per hour` for `Today`) with `DayBars` (spec 018) of the skill's launches, 80 px high, each column labelled with its count.
 - [ ] Under them, `Sessions that launched it`: a `DataTable` with `Session` (row header, linked to the session page), `Project` (`ProjectTag`, only with `All projects`), `Launches`, `Tokens` (`TokenAmount`), sorted by tokens descending.
 - [ ] Today's empty and error texts stay (`No session launched this skill in this period.`, not found, loading, unreachable), shown with `StatusLine`.
-- [ ] At 360 px nothing scrolls horizontally; figures refresh without a reload.
+- [ ] From 1024 px wide, nothing scrolls horizontally; figures refresh without a reload.
 
 ## Rules
 
@@ -25,7 +25,7 @@ A developer sees which skills their agents launch, how often and with how many t
 ## Expected proof
 
 - Storybook stories of both pages (several skills with `No skill`, one project, no activity; a skill with 7 days of launches, `Today` by hour, no launch) pass the axe check of `src/ui/stories.test.tsx`.
-- On the real app, with `pnpm demo`: screenshots of both pages at 360 px and 1280 px, attached to the pull request.
+- On the real app, with `pnpm demo`: screenshots of both pages at 1024 px, 1280 px and 2560 px, attached to the pull request.
 
 ## Out of scope
 

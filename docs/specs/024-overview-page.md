@@ -23,20 +23,20 @@ A developer opening FactoryDeck sees first what their factory delivered in the p
 - [ ] The tiles, the cost chart and the `By project` and `By model` tables of spec 003 are removed from the overview; `By model` moves to `/roles` (spec 029).
 - [ ] With no call in the period, the page shows the header with `No issue merged · 0 tokens` and `No activity in this period.` instead of the board and panel; while loading, `Loading…`; when the API is unreachable, today's unreachable message (`StatusLine`, spec 019).
 - [ ] The overview, `/features` and `/roles` totals stay equal for the same period and project (spec 013).
-- [ ] Figures refresh with each re-ingestion and collection, without a reload (specs 003 and 008). At 360 px the columns stack, the header wraps and nothing scrolls horizontally.
+- [ ] Figures refresh with each re-ingestion and collection, without a reload (specs 003 and 008). From 1024 px wide, nothing scrolls horizontally.
 
 ## Rules
 
 - The page reads `/api/overview`, `/api/features` and `/api/roles` for the current period and project.
 - Ties in last activity are broken by issue number, highest first.
 - A column's `+ <k> more` counts the issues it does not show.
-- Mockups: `docs/design/b4/overview.html` and `docs/design/b4/phone.html`; when they differ from this spec, this spec wins.
+- Mockup: `docs/design/b4/overview.html`; when it differs from this spec, this spec wins. FactoryDeck targets computers: no layout is required below 1024 px.
 
 ## Expected proof
 
-- Storybook stories of the overview page: `All projects` with full columns and `+ n more`, one project selected (cards without project), no merged issue, no activity, loading, unreachable, at 360 px. They pass the axe check of `src/ui/stories.test.tsx`.
+- Storybook stories of the overview page: `All projects` with full columns and `+ n more`, one project selected (cards without project), no merged issue, no activity, loading, unreachable, at 1024 px. They pass the axe check of `src/ui/stories.test.tsx`.
 - Vitest tests of the grouping of stages into columns, the card limit and ordering, and the badge picked for each stage.
-- On the real app, with `pnpm demo`: screenshots at 360 px, 1280 px and 2560 px, with `All projects` and with one project, attached to the pull request.
+- On the real app, with `pnpm demo`: screenshots at 1024 px, 1280 px and 2560 px, with `All projects` and with one project, attached to the pull request.
 
 ## Out of scope
 

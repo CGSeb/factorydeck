@@ -17,7 +17,7 @@ A developer opening an issue sees how it got where it is: the role threads that 
 - [ ] The aside is an `IssueSummary` (spec 020) with the issue's tokens, orchestration share, split by role (`roles` of spec 022), serenity, review rounds, pull request, checks, labels and reworked (specs 008 and 009).
 - [ ] The tables `By role` and `Sessions` of spec 010 are removed; their data is in the summary and the timeline.
 - [ ] An unknown issue shows `Issue not found.` and the back link (`← Features`), as today; loading and unreachable states as spec 024.
-- [ ] At 360 px the aside goes under the timeline and nothing scrolls horizontally. Figures refresh without a reload.
+- [ ] From 1024 px wide, nothing scrolls horizontally. Figures refresh without a reload.
 
 ## Rules
 
@@ -29,8 +29,8 @@ A developer opening an issue sees how it got where it is: the role threads that 
 ## Expected proof
 
 - Vitest tests of the step grouping (consecutive roles, a single thread, orchestration only, no thread) and of the date range text.
-- Storybook stories of the issue page: merged by a person with five steps, in review, orchestration only, no activity, not found, at 360 px. They pass the axe check of `src/ui/stories.test.tsx`.
-- On the real app, with `pnpm demo`: screenshots of a merged demo issue at 360 px and 1280 px, attached to the pull request.
+- Storybook stories of the issue page: merged by a person with five steps, in review, orchestration only, no activity, not found, at 1024 px. They pass the axe check of `src/ui/stories.test.tsx`.
+- On the real app, with `pnpm demo`: screenshots of a merged demo issue at 1024 px, 1280 px and 2560 px, attached to the pull request.
 
 ## Out of scope
 
