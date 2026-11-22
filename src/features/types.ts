@@ -42,6 +42,7 @@ export interface FeatureRow extends FeatureUsage {
 }
 
 export interface FeatureTotals {
+  sessions: number;
   apiCalls: number;
   tokens: number;
   tokenCounts: TokenCounts;

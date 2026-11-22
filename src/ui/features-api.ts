@@ -1,11 +1,8 @@
-import { useSearchParams } from 'react-router';
-import { projectOf } from './project-param.ts';
 import type {
   FeatureListResponse,
   FeatureResponse,
   FeatureRow,
 } from '../features/types.ts';
-import { DEFAULT_PERIOD, isPeriod } from '../overview/types.ts';
 import {
   type SkillFilters,
   browserTimeZone,
@@ -100,17 +97,6 @@ export function featuresPath(filters: SkillFilters): string {
   return `/features?${params.toString()}`;
 }
 
-function isSortKey(value: unknown): value is SortKey {
-  return SORT_KEYS.some((key) => key === value);
-}
-
-export function sortOf(params: URLSearchParams): FeatureSort {
-  const key = params.get('sort');
-  const order = params.get('order');
-  if (!isSortKey(key)) return DEFAULT_SORT;
-  return { key, order: order === 'desc' ? 'desc' : 'asc' };
-}
-
 export function nextSort(current: FeatureSort, key: SortKey): FeatureSort {
   return current.key === key && current.order === 'asc'
     ? { key, order: 'desc' }
@@ -139,39 +125,4 @@ export function sortFeatures(
     }
     return (a - b) * sign;
   });
-}
-
-export function useFeatureParams(): {
-  filters: SkillFilters;
-  sort: FeatureSort;
-  setFilters: (next: SkillFilters) => void;
-  setSort: (next: FeatureSort) => void;
-} {
-  const [params, setParams] = useSearchParams();
-  const period = params.get('period');
-  const filters: SkillFilters = {
-    period: isPeriod(period) ? period : DEFAULT_PERIOD,
-    project: projectOf(params),
-  };
-  const sort = sortOf(params);
-  const write = (nextFilters: SkillFilters, nextSort: FeatureSort): void => {
-    const next = new URLSearchParams({ period: nextFilters.period });
-    if (nextFilters.project !== undefined) {
-      next.set('project', nextFilters.project);
-    }
-    if (
-      nextSort.key !== DEFAULT_SORT.key ||
-      nextSort.order !== DEFAULT_SORT.order
-    ) {
-      next.set('sort', nextSort.key);
-      next.set('order', nextSort.order);
-    }
-    setParams(next);
-  };
-  return {
-    filters,
-    sort,
-    setFilters: (next) => write(next, sort),
-    setSort: (next) => write(filters, next),
-  };
 }

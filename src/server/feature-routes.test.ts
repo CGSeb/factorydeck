@@ -34,6 +34,7 @@ const list: FeatureList = {
   rows: [],
   noWorkItem: null,
   totals: {
+    sessions: 0,
     apiCalls: 0,
     tokens: 0,
     tokenCounts: { input: 0, cacheWrite: 0, cacheRead: 0, output: 0 },

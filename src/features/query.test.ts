@@ -132,6 +132,7 @@ describe('listFeatures', () => {
       ]);
       const tokens = overview.totals.tokens;
       expect(list.totals).toEqual({
+        sessions: overview.totals.sessions,
         apiCalls: overview.totals.apiCalls,
         tokens:
           tokens.input + tokens.cacheWrite + tokens.cacheRead + tokens.output,
@@ -153,6 +154,7 @@ describe('listFeatures', () => {
         expect(scoped.totals.tokens).toBe(project.tokens);
         expect(scoped.totals.costUsd).toBeCloseTo(project.costUsd ?? 0);
         expect(scoped.totals.apiCalls).toBe(scopedOverview.totals.apiCalls);
+        expect(scoped.totals.sessions).toBe(scopedOverview.totals.sessions);
         expect(scoped.totals.costUsd).toBeCloseTo(
           scopedOverview.totals.costUsd,
         );
