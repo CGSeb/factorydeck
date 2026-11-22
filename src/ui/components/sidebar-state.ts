@@ -124,8 +124,32 @@ export function useTip(): {
   };
 }
 
+export const CLICK_FALLBACK_MS = 600;
+
+const UNTIL_CLICK = ['click', 'pointercancel'] as const;
+
+function waitForClick(action: () => void): () => void {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  function stop(): void {
+    clearTimeout(timer);
+    for (const type of UNTIL_CLICK) document.removeEventListener(type, finish);
+    document.removeEventListener('pointerup', fallback);
+  }
+  function finish(): void {
+    stop();
+    setTimeout(action, 0);
+  }
+  function fallback(): void {
+    timer = setTimeout(finish, CLICK_FALLBACK_MS);
+  }
+  for (const type of UNTIL_CLICK) document.addEventListener(type, finish);
+  document.addEventListener('pointerup', fallback);
+  return stop;
+}
+
 export function useAfterPointer(): (action: () => void) => void {
   const pressed = useRef(false);
+  const pending = useRef<() => void>(undefined);
   useEffect(() => {
     function down(): void {
       pressed.current = true;
@@ -140,20 +164,20 @@ export function useAfterPointer(): (action: () => void) => void {
       document.removeEventListener('pointerdown', down, true);
       document.removeEventListener('pointerup', up, true);
       document.removeEventListener('pointercancel', up, true);
+      pending.current?.();
     };
   }, []);
   return (action) => {
+    pending.current?.();
+    pending.current = undefined;
     if (!pressed.current) {
       action();
       return;
     }
-    function later(): void {
-      document.removeEventListener('pointerup', later);
-      document.removeEventListener('pointercancel', later);
-      setTimeout(action, 0);
-    }
-    document.addEventListener('pointerup', later);
-    document.addEventListener('pointercancel', later);
+    pending.current = waitForClick(() => {
+      pending.current = undefined;
+      action();
+    });
   };
 }
 

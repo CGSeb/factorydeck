@@ -1,6 +1,6 @@
 import type { Decorator } from '@storybook/react-vite';
 import { type ReactNode, createElement, useEffect, useState } from 'react';
-import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test';
 import { SIDEBAR_KEY } from './sidebar-state.ts';
 
 export function storedFold(): string | null {
@@ -137,4 +137,24 @@ export async function peek(canvasElement: HTMLElement): Promise<void> {
   await expect(
     canvas.getByRole('combobox', { name: 'Project' }),
   ).toHaveAttribute('aria-expanded', 'true');
+}
+
+function pause(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+export async function tapLabelWhilePeeked(
+  canvasElement: HTMLElement,
+  label: string,
+): Promise<void> {
+  const target = within(canvasElement).getByText(label);
+  await fireEvent.pointerDown(target);
+  await pause(50);
+  await expectFolded(canvasElement, false);
+  await fireEvent.pointerUp(target);
+  await pause(100);
+  await expectFolded(canvasElement, false);
+  await fireEvent.click(target);
 }

@@ -179,7 +179,7 @@ function Drawer({
   ...props
 }: SidebarProps & { id: string; onClose: () => void }): ReactElement {
   const dialog = useRef<HTMLDivElement>(null);
-  const close = useDialogFocus(onClose, dialog);
+  const close = useDialogFocus(onClose, dialog, true);
   useScrollLock();
   const { project } = props;
   return (

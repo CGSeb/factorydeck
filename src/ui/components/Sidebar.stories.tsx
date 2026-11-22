@@ -16,6 +16,7 @@ import {
   openDrawer,
   peek,
   storedFold,
+  tapLabelWhilePeeked,
   tabStaysInDrawer,
   withStoredFold,
 } from './sidebar-stories.ts';
@@ -305,7 +306,7 @@ export const FoldedPeekThenFollowLink: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await peek(canvasElement);
-    await userEvent.click(canvas.getByText('Sessions'));
+    await tapLabelWhilePeeked(canvasElement, 'Sessions');
     await expect(
       canvas.getByRole('status', { name: 'Followed link' }),
     ).toHaveTextContent('#sessions');

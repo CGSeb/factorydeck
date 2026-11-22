@@ -1,9 +1,14 @@
 import { type RefObject, useEffect, useRef } from 'react';
 
-function keepFocusInside(event: KeyboardEvent, dialog: HTMLElement): void {
-  const focusable = [
-    ...dialog.querySelectorAll<HTMLElement>('a[href], button:not(:disabled)'),
-  ];
+const BUTTONS = 'button:not(:disabled)';
+const LINKS_AND_BUTTONS = `a[href], ${BUTTONS}`;
+
+function keepFocusInside(
+  event: KeyboardEvent,
+  dialog: HTMLElement,
+  stops: string,
+): void {
+  const focusable = [...dialog.querySelectorAll<HTMLElement>(stops)];
   const first = focusable.at(0);
   const last = focusable.at(-1);
   if (first === undefined || last === undefined) {
@@ -24,6 +29,7 @@ function keepFocusInside(event: KeyboardEvent, dialog: HTMLElement): void {
 export function useDialogFocus(
   onCancel: () => void,
   dialog: RefObject<HTMLDivElement | null>,
+  withLinks = false,
 ): RefObject<HTMLButtonElement | null> {
   const cancel = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -40,11 +46,15 @@ export function useDialogFocus(
     function onKeyDown(event: KeyboardEvent): void {
       if (event.key === 'Escape' && !event.defaultPrevented) onCancel();
       if (event.key === 'Tab' && dialog.current !== null) {
-        keepFocusInside(event, dialog.current);
+        keepFocusInside(
+          event,
+          dialog.current,
+          withLinks ? LINKS_AND_BUTTONS : BUTTONS,
+        );
       }
     }
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [onCancel, dialog]);
+  }, [onCancel, dialog, withLinks]);
   return cancel;
 }
