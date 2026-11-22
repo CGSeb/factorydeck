@@ -124,14 +124,20 @@ function descending(a: number | null, b: number | null): number {
   return b - a;
 }
 
+function ascending(a: number | null, b: number | null): number {
+  if (a === null || b === null) return a === b ? 0 : a === null ? 1 : -1;
+  return a - b;
+}
+
 export function sortRows(
   rows: readonly FeatureRow[],
   key: FeatureSortKey,
 ): FeatureRow[] {
   const value = SORT_VALUES[key];
+  const compare = key === 'score' ? ascending : descending;
   return [...rows].sort(
     (left, right) =>
-      descending(value(left), value(right)) ||
+      compare(value(left), value(right)) ||
       descending(timeOf(left.lastAt), timeOf(right.lastAt)) ||
       right.number - left.number ||
       left.project.localeCompare(right.project),

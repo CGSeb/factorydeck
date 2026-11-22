@@ -152,10 +152,18 @@ describe('sortRows', () => {
     ['tokens', ['#48', '#52', '#45', '#60']],
     ['sessions', ['#48', '#52', '#60', '#45']],
     ['rounds', ['#48', '#52', '#45', '#60']],
-    ['score', ['#45', '#52', '#48', '#60']],
     ['number', ['#60', '#52', '#48', '#45']],
   ])('sorts by %s, highest first, missing values last', (key, expected) => {
     expect(labels(sortRows(merged, key))).toEqual(expected);
+  });
+
+  it('sorts serenity lowest first, missing reports last', () => {
+    expect(labels(sortRows([at(60), ...merged.slice(0, 3)], 'score'))).toEqual([
+      '#48',
+      '#52',
+      '#45',
+      '#60',
+    ]);
   });
 
   it('breaks ties by last activity, then issue number', () => {

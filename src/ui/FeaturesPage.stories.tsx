@@ -181,15 +181,20 @@ export const StageFromAddress: Story = {
   },
 };
 
-export const UnknownStageInAddress: Story = {
-  parameters: { entry: '/features?period=all&stage=Merged' },
+export const EmptyStageSelected: Story = {
+  args: {
+    loadFeatures: featuresLoaderOf(
+      boardFeatures.filter((row) => row.outcome?.stage !== 'working'),
+    ),
+  },
+  parameters: { entry: '/features?period=all&stage=working' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await ready(canvasElement);
+    await canvas.findByText('No issue in this stage.');
     await expect(
-      canvas.getByRole('button', { name: /^Merged/ }),
-    ).toHaveAttribute('aria-pressed', 'false');
-    await expect(groupHeaders(canvasElement)).toHaveLength(6);
+      canvas.getByRole('button', { name: /^Working/ }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    await expect(canvas.queryByRole('table')).toBeNull();
   },
 };
 
@@ -218,7 +223,7 @@ export const SortedBySessions = sorted('Sessions', BY_SIZE);
 
 export const SortedByReviewRounds = sorted('Review rounds', BY_SIZE);
 
-export const SortedBySerenity = sorted('Serenity', BY_SIZE.toReversed());
+export const SortedBySerenity = sorted('Serenity', BY_SIZE);
 
 export const SortedByIssueNumber = sorted('Issue number', [
   '#52 Export button',

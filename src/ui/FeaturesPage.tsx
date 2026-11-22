@@ -13,6 +13,7 @@ import {
   FEATURE_SORT_OPTIONS,
   type FeatureSortKey,
   featureSortOf,
+  groupOf,
   stageItems,
   stageOf,
   summaryText,
@@ -94,12 +95,17 @@ function FeaturesContent({
             onChange={setSort}
           />
         </div>
-        <IssueGroupsTable
-          list={list}
-          filters={view.filters}
-          sort={view.sort}
-          stage={view.stage}
-        />
+        {view.stage !== null &&
+        list.rows.every((row) => groupOf(row) !== view.stage) ? (
+          <StatusLine>No issue in this stage.</StatusLine>
+        ) : (
+          <IssueGroupsTable
+            list={list}
+            filters={view.filters}
+            sort={view.sort}
+            stage={view.stage}
+          />
+        )}
       </div>
     </>
   );
