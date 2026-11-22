@@ -1,6 +1,7 @@
 import type { ReactElement, ReactNode } from 'react';
 import { THEME_LABELS, type Theme } from '../design/theme.ts';
 import { Icon, type IconName } from './Icon.tsx';
+import { Logo } from './Logo.tsx';
 import { type RenderLink, renderAnchor } from './link.ts';
 import type { Tip, TipHandlers } from './sidebar-state.ts';
 import './controls.css';
@@ -53,13 +54,16 @@ export const NO_TIP: TipFor = () => undefined;
 
 export function Brand({ folded }: { folded: boolean }): ReactElement {
   return folded ? (
-    <span className="fd-brand fd-brand-mono">
-      <span aria-hidden="true">FD</span>
+    <span className="fd-brand">
+      <Logo />
       <span className="fd-visually-hidden">FactoryDeck</span>
     </span>
   ) : (
     <span className="fd-brand">
-      Factory<span className="fd-brand-accent">Deck</span>
+      <Logo />
+      <span>
+        Factory<span className="fd-brand-accent">Deck</span>
+      </span>
     </span>
   );
 }

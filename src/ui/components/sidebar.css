@@ -46,10 +46,6 @@
   padding-left: 0;
 }
 
-.fd-brand-mono {
-  color: var(--fd-accent);
-}
-
 .fd-sidebar-project {
   flex: none;
   min-width: 0;
