@@ -36,17 +36,39 @@ export interface OverviewPageProps {
   loadRoles: LoadRoles;
 }
 
-interface OverviewData {
-  overview: UsageOverview;
-  features: FeatureList;
-  roles: RoleList;
+type Block<T> = T | 'loading' | 'unreachable';
+
+function blockOf<T>(
+  response: { status: string } | undefined,
+  value: T | undefined,
+): Block<T> {
+  if (value !== undefined) return value;
+  return response === undefined ? 'loading' : 'unreachable';
 }
 
-function Headline({ data }: { data: OverviewData }): ReactElement {
-  const { totals } = data.overview;
+function BlockStatus({
+  block,
+}: {
+  block: 'loading' | 'unreachable';
+}): ReactElement {
+  return (
+    <StatusLine>
+      {block === 'loading' ? 'Loading…' : UNREACHABLE_MESSAGE}
+    </StatusLine>
+  );
+}
+
+function Headline({
+  overview,
+  merged,
+}: {
+  overview: UsageOverview;
+  merged: number;
+}): ReactElement {
+  const { totals } = overview;
   return (
     <>
-      {headlineCount(data.features.merged.issues)}
+      {headlineCount(merged)}
       <TokenAmount
         counts={totals.tokens}
         costUsd={totals.costUsd}
@@ -58,68 +80,127 @@ function Headline({ data }: { data: OverviewData }): ReactElement {
   );
 }
 
-function TokensPanel({
-  data,
+function Header({
+  overview,
+  features,
+  filters,
+  setFilters,
+}: {
+  overview: Block<UsageOverview>;
+  features: Block<FeatureList>;
+  filters: SkillFilters;
+  setFilters: (next: SkillFilters) => void;
+}): ReactElement {
+  const pills = (
+    <PeriodPills
+      value={filters.period}
+      onChange={(period) => setFilters({ ...filters, period })}
+    />
+  );
+  if (typeof overview === 'string' || typeof features === 'string') {
+    const block =
+      overview === 'unreachable' || features === 'unreachable'
+        ? 'unreachable'
+        : 'loading';
+    return (
+      <PageHeader
+        variant="headline"
+        title="Overview"
+        summary={block === 'loading' ? 'Loading…' : UNREACHABLE_MESSAGE}
+        slot={pills}
+      />
+    );
+  }
+  return (
+    <PageHeader
+      variant="headline"
+      title={<Headline overview={overview} merged={features.merged.issues} />}
+      summary={headlineSummary(features.merged, overview.totals.sessions)}
+      slot={pills}
+    />
+  );
+}
+
+function Board({
+  features,
   filters,
 }: {
-  data: OverviewData;
+  features: Block<FeatureList>;
   filters: SkillFilters;
 }): ReactElement {
-  const segments = roleSegments(data.roles);
-  const chartTitle =
-    data.overview.bucket === 'hour' ? 'Tokens per hour' : 'Tokens per day';
+  return (
+    <section aria-label="Board" className="fd-overview-board">
+      {typeof features === 'string' ? (
+        <BlockStatus block={features} />
+      ) : (
+        boardColumns(features, filters).map((column) => (
+          <StageColumn
+            key={column.group}
+            {...column}
+            renderLink={renderRouterLink}
+          />
+        ))
+      )}
+    </section>
+  );
+}
+
+function TokensPanel({
+  overview,
+  roles,
+  filters,
+}: {
+  overview: Block<UsageOverview>;
+  roles: Block<RoleList>;
+  filters: SkillFilters;
+}): ReactElement {
   return (
     <Panel
       heading="Where the tokens went"
       link={{ label: 'Roles', href: listPath('/roles', filters) }}
       renderLink={renderRouterLink}
     >
-      <div className="fd-overview-tokens">
-        <div className="fd-overview-roles">
-          <SplitBar
-            label="Tokens by role"
-            height="medium"
-            segments={segments}
-          />
-          <SplitLegend segments={segments} />
-        </div>
-        <div className="fd-overview-days">
-          <span className="fd-overview-days-title">{chartTitle}</span>
-          <DayBars
-            label={chartTitle}
-            buckets={tokenBuckets(data.overview.series)}
-            color="var(--fd-ink)"
-            height={56}
-          />
-        </div>
-      </div>
+      {typeof overview === 'string' || typeof roles === 'string' ? (
+        <BlockStatus
+          block={
+            overview === 'unreachable' || roles === 'unreachable'
+              ? 'unreachable'
+              : 'loading'
+          }
+        />
+      ) : (
+        <TokensSplit overview={overview} roles={roles} />
+      )}
     </Panel>
   );
 }
 
-function OverviewContent({
-  data,
-  filters,
+function TokensSplit({
+  overview,
+  roles,
 }: {
-  data: OverviewData;
-  filters: SkillFilters;
+  overview: UsageOverview;
+  roles: RoleList;
 }): ReactElement {
-  if (data.overview.totals.apiCalls === 0) {
-    return <StatusLine>No activity in this period.</StatusLine>;
-  }
+  const segments = roleSegments(roles);
+  const chartTitle =
+    overview.bucket === 'hour' ? 'Tokens per hour' : 'Tokens per day';
   return (
-    <>
-      <section aria-label="Board" className="fd-overview-board">
-        {boardColumns(data.features, filters).map((column) => (
-          <StageColumn
-            key={column.group}
-            {...column}
-            renderLink={renderRouterLink}
-          />
-        ))}
-      </section>
-      <TokensPanel data={data} filters={filters} />
-    </>
+    <div className="fd-overview-tokens">
+      <div className="fd-overview-roles">
+        <SplitBar label="Tokens by role" height="medium" segments={segments} />
+        <SplitLegend segments={segments} />
+      </div>
+      <div className="fd-overview-days">
+        <span className="fd-overview-days-title">{chartTitle}</span>
+        <DayBars
+          label={chartTitle}
+          buckets={tokenBuckets(overview.series)}
+          color="var(--fd-ink)"
+          height={56}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -130,51 +211,41 @@ export function OverviewPage({
 }: OverviewPageProps): ReactElement {
   const [filters, setFilters] = useSkillFilters();
   const key = JSON.stringify(filters);
-  const overview = useRefreshing(key, () =>
+  const overviewResponse = useRefreshing(key, () =>
     loadOverview(filters.period, filters.project),
   );
-  const features = useRefreshing(key, () => loadFeatures(filters));
-  const roles = useRefreshing(key, () => loadRoles(filters));
-  const unreachable = [overview, features, roles].some(
-    (response) => response?.status === 'unreachable',
+  const featuresResponse = useRefreshing(key, () => loadFeatures(filters));
+  const rolesResponse = useRefreshing(key, () => loadRoles(filters));
+  const overview = blockOf(
+    overviewResponse,
+    overviewResponse?.status === 'ok' ? overviewResponse.overview : undefined,
   );
-  const data: OverviewData | undefined =
-    overview?.status === 'ok' &&
-    features?.status === 'ok' &&
-    roles?.status === 'ok'
-      ? {
-          overview: overview.overview,
-          features: features.list,
-          roles: roles.list,
-        }
-      : undefined;
+  const features = blockOf(
+    featuresResponse,
+    featuresResponse?.status === 'ok' ? featuresResponse.list : undefined,
+  );
+  const roles = blockOf(
+    rolesResponse,
+    rolesResponse?.status === 'ok' ? rolesResponse.list : undefined,
+  );
+  const noActivity =
+    typeof overview !== 'string' && overview.totals.apiCalls === 0;
 
   return (
     <div className="fd-overview">
-      <PageHeader
-        variant="headline"
-        title={data === undefined ? 'Overview' : <Headline data={data} />}
-        {...(data === undefined
-          ? {}
-          : {
-              summary: headlineSummary(
-                data.features.merged,
-                data.overview.totals.sessions,
-              ),
-            })}
-        slot={
-          <PeriodPills
-            value={filters.period}
-            onChange={(period) => setFilters({ ...filters, period })}
-          />
-        }
+      <Header
+        overview={overview}
+        features={features}
+        filters={filters}
+        setFilters={setFilters}
       />
-      {data !== undefined ? (
-        <OverviewContent data={data} filters={filters} />
-      ) : unreachable ? (
-        <StatusLine>{UNREACHABLE_MESSAGE}</StatusLine>
+      {noActivity ? (
+        <StatusLine>No activity in this period.</StatusLine>
       ) : (
-        <StatusLine>Loading…</StatusLine>
+        <>
+          <Board features={features} filters={filters} />
+          <TokensPanel overview={overview} roles={roles} filters={filters} />
+        </>
       )}
     </div>
   );

@@ -103,6 +103,23 @@ export const TextBadge: Story = {
   },
 };
 
+export const TwoBadges: Story = {
+  name: 'Two badges',
+  args: {
+    badge: [
+      { kind: 'serenity', report: { score: 70, threshold: 80 } },
+      { kind: 'text', text: 'by a person' },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByText('serenity 70 · below threshold'),
+    ).toBeVisible();
+    await expect(canvas.getByText('by a person')).toBeVisible();
+  },
+};
+
 export const TitleNotFound: Story = {
   name: 'Title not found',
   args: {

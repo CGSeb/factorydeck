@@ -185,10 +185,10 @@ describe('cardBadge', () => {
     ).toBeUndefined();
   });
 
-  it('shows the serenity of a merge, and by a person for a merge by a person', () => {
+  it('shows the serenity of a merge, and adds by a person for a merge by a person', () => {
     expect(
       cardBadge(row(1, 'merged', at, { outcome: outcome('merged', 86, 1) })),
-    ).toEqual({ kind: 'serenity', report: { score: 86, threshold: 80 } });
+    ).toEqual([{ kind: 'serenity', report: { score: 86, threshold: 80 } }]);
     expect(cardBadge(row(1, 'merged', at))).toBeUndefined();
     expect(
       cardBadge(
@@ -196,7 +196,13 @@ describe('cardBadge', () => {
           outcome: outcome('merged-by-person', 70, 3),
         }),
       ),
-    ).toEqual({ kind: 'text', text: 'by a person' });
+    ).toEqual([
+      { kind: 'serenity', report: { score: 70, threshold: 80 } },
+      { kind: 'text', text: 'by a person' },
+    ]);
+    expect(cardBadge(row(1, 'merged-by-person', at))).toEqual([
+      { kind: 'text', text: 'by a person' },
+    ]);
   });
 });
 

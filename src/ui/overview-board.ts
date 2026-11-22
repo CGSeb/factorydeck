@@ -29,7 +29,7 @@ export function listPath(path: string, filters: SkillFilters): string {
 
 const BADGES: Record<
   StageGroup,
-  (row: FeatureRow) => IssueCardBadge | undefined
+  (row: FeatureRow) => IssueCardBadge | IssueCardBadge[] | undefined
 > = {
   ready: (row) => {
     const stage = row.outcome?.stage;
@@ -43,20 +43,24 @@ const BADGES: Record<
     return rounds > 0 ? { kind: 'rounds', rounds, inReview: true } : undefined;
   },
   merged: (row) => {
-    if (row.outcome?.stage === 'merged-by-person') {
-      return { kind: 'text', text: 'by a person' };
-    }
     const report = row.outcome?.report ?? null;
-    return report === null
-      ? undefined
-      : {
-          kind: 'serenity',
-          report: { score: report.score, threshold: report.threshold },
-        };
+    const badges: IssueCardBadge[] = [];
+    if (report !== null) {
+      badges.push({
+        kind: 'serenity',
+        report: { score: report.score, threshold: report.threshold },
+      });
+    }
+    if (row.outcome?.stage === 'merged-by-person') {
+      badges.push({ kind: 'text', text: 'by a person' });
+    }
+    return badges.length === 0 ? undefined : badges;
   },
 };
 
-export function cardBadge(row: FeatureRow): IssueCardBadge | undefined {
+export function cardBadge(
+  row: FeatureRow,
+): IssueCardBadge | IssueCardBadge[] | undefined {
   const group = groupOf(row);
   return group === 'closed' || group === 'unknown'
     ? undefined

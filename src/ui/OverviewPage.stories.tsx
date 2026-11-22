@@ -20,6 +20,8 @@ function Location(): ReactElement {
   return <output aria-label="Address">{`${pathname}${search}`}</output>;
 }
 
+const UNREACHABLE = { status: 'unreachable', refreshSeconds: 3600 } as const;
+
 const meta = {
   component: OverviewPage,
   args: {
@@ -67,6 +69,14 @@ function title(canvasElement: HTMLElement): Promise<HTMLElement> {
   return within(canvasElement).findByRole('heading', { level: 1 });
 }
 
+async function expectNoOldContent(canvasElement: HTMLElement): Promise<void> {
+  const canvas = within(canvasElement);
+  await expect(canvas.queryByRole('region', { name: 'Totals' })).toBeNull();
+  await expect(canvas.queryByText('Cost per day')).toBeNull();
+  await expect(canvas.queryByRole('table', { name: 'By project' })).toBeNull();
+  await expect(canvas.queryByRole('table', { name: 'By model' })).toBeNull();
+}
+
 export const AllProjects: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -93,6 +103,11 @@ export const AllProjects: Story = {
       within(column(canvasElement, 'In review')).getByText('round 2'),
     ).toBeVisible();
     await expect(canvas.queryByText('Old charts')).toBeNull();
+    await expectNoOldContent(canvasElement);
+    await expect(
+      within(merged).getByText('serenity 70 · below threshold'),
+    ).toBeVisible();
+    await expect(within(merged).getByText('by a person')).toBeVisible();
     await expect(canvas.getByRole('link', { name: 'Roles' })).toHaveAttribute(
       'href',
       '/roles?period=7d',
@@ -165,19 +180,97 @@ export const NoActivity: Story = {
 };
 
 export const Loading: Story = {
+  args: {
+    loadOverview: () => new Promise(() => undefined),
+    loadFeatures: () => new Promise(() => undefined),
+    loadRoles: () => new Promise(() => undefined),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getAllByText('Loading…')).toHaveLength(3);
+    await expect(
+      canvas.getByRole('heading', { level: 1, name: 'Overview' }),
+    ).toBeVisible();
+  },
+};
+
+export const FeaturesLoading: Story = {
   args: { loadFeatures: () => new Promise(() => undefined) },
   play: async ({ canvasElement }) => {
-    await within(canvasElement).findByText('Loading…');
+    const canvas = within(canvasElement);
+    await canvas.findByText('Tokens per day');
+    const board = canvas.getByRole('region', { name: 'Board' });
+    await expect(within(board).getByText('Loading…')).toBeVisible();
+    await expect(
+      canvas.getByRole('group', { name: 'Tokens by role' }),
+    ).toBeVisible();
   },
 };
 
 export const DatabaseUnreachable: Story = {
+  args: {
+    loadOverview: fixedLoader(() => unreachableResponse),
+    loadFeatures: () => Promise.resolve(UNREACHABLE),
+    loadRoles: () => Promise.resolve(UNREACHABLE),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await waitFor(() =>
+      expect(
+        canvas.getAllByText('Database unreachable. Start it with pnpm db:up.'),
+      ).toHaveLength(3),
+    );
+    await userEvent.click(canvas.getByRole('button', { name: 'All time' }));
+    await expect(address(canvasElement)).toHaveTextContent('/?period=all');
+  },
+};
+
+export const OverviewUnreachable: Story = {
   args: { loadOverview: fixedLoader(() => unreachableResponse) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('Database unreachable. Start it with pnpm db:up.');
-    await userEvent.click(canvas.getByRole('button', { name: 'All time' }));
-    await expect(address(canvasElement)).toHaveTextContent('/?period=all');
+    await canvas.findByRole('link', { name: '#61 Bulk import' });
+    await expect(
+      canvas.getByRole('heading', { level: 1, name: 'Overview' }),
+    ).toBeVisible();
+    await expect(
+      canvas.getAllByText('Database unreachable. Start it with pnpm db:up.'),
+    ).toHaveLength(2);
+    await expect(canvas.queryByText('Tokens per day')).toBeNull();
+  },
+};
+
+export const FeaturesUnreachable: Story = {
+  args: { loadFeatures: () => Promise.resolve(UNREACHABLE) },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Tokens per day');
+    const board = canvas.getByRole('region', { name: 'Board' });
+    await expect(
+      within(board).getByText(
+        'Database unreachable. Start it with pnpm db:up.',
+      ),
+    ).toBeVisible();
+    await expect(
+      canvas.getByRole('group', { name: 'Tokens by role' }),
+    ).toBeVisible();
+  },
+};
+
+export const RolesUnreachable: Story = {
+  args: { loadRoles: () => Promise.resolve(UNREACHABLE) },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await waitFor(async () =>
+      expect(await title(canvasElement)).toHaveTextContent(
+        /^7 issues merged for 12\.5MCost.* tokens$/,
+      ),
+    );
+    await canvas.findByRole('link', { name: '#61 Bulk import' });
+    await expect(
+      canvas.getAllByText('Database unreachable. Start it with pnpm db:up.'),
+    ).toHaveLength(1);
+    await expect(canvas.queryByText('Tokens per day')).toBeNull();
   },
 };
 

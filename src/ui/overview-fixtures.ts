@@ -30,8 +30,8 @@ export const fullBoardFeatures: FeatureRow[] = [
   ...boardFeatures,
   mergedRow(30, 'Search filters', 6),
   mergedRow(31, 'Keyboard shortcuts', 6),
-  mergedRow(32, 'CSV export', 5),
-  mergedRow(33, 'Empty states', 4),
+  mergedRow(32, 'CSV export', 2),
+  mergedRow(33, 'Empty states', 2),
 ];
 
 export const unmergedFeatures: FeatureRow[] = boardFeatures.filter(

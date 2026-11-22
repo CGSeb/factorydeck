@@ -32,7 +32,7 @@ export type IssueCardBadge =
 
 export interface IssueCardProps {
   issue: IssueCardIssue;
-  badge?: IssueCardBadge;
+  badge?: IssueCardBadge | readonly IssueCardBadge[];
   counts: TokenCounts;
   costUsd: number | null;
   unknownPriceCalls?: number;
@@ -44,6 +44,13 @@ export function issueTitleText(title: IssueTitle): string | null {
   if (title.status === 'found') return title.title;
   if (title.status === 'not-found') return '(not found)';
   return null;
+}
+
+function badgesOf(
+  badge: IssueCardBadge | readonly IssueCardBadge[] | undefined,
+): readonly IssueCardBadge[] {
+  if (badge === undefined) return [];
+  return 'kind' in badge ? [badge] : badge;
 }
 
 function Badge({ badge }: { badge: IssueCardBadge }): ReactElement | null {
@@ -98,7 +105,9 @@ export function IssueCard({
       })}
       <div className="fd-issue-card-foot">
         <span className="fd-issue-card-badges">
-          {badge === undefined ? null : <Badge badge={badge} />}
+          {badgesOf(badge).map((item, index) => (
+            <Badge key={`${String(index)} ${item.kind}`} badge={item} />
+          ))}
         </span>
         <TokenAmount
           counts={counts}
