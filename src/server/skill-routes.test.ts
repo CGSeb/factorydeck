@@ -6,6 +6,7 @@ import {
   unusedRoles,
   unusedProjects,
   unusedGitHost,
+  unusedFeatures,
 } from '../test/skill-source.ts';
 import type { SkillSource } from './skill-routes.ts';
 
@@ -70,6 +71,7 @@ function app(checkDatabase = up) {
     sessions,
     skills,
     roles: unusedRoles,
+    features: unusedFeatures,
     projects: unusedProjects,
     gitHost: unusedGitHost,
   });

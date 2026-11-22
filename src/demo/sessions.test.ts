@@ -1,6 +1,7 @@
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Database } from '../db/client.ts';
+import { featureDetail, listFeatures } from '../features/query.ts';
 import { collect } from '../git-host/collect.ts';
 import { hasFactory } from '../ingest/factory.ts';
 import { ingest } from '../ingest/ingest.ts';
@@ -199,5 +200,40 @@ describe('demo sessions', () => {
       report: { score: 64, threshold: 80, rounds: 3 },
       reworked: false,
     });
+  });
+});
+
+describe('demo sessions on the features page', () => {
+  it('cover an orchestration share across two issues', async () => {
+    await collect(db, { hasFactory });
+    const path = join(await sessionsFolder(), 'factorydeck.yml');
+    await writeDemoConfig(
+      join(import.meta.dirname, '..', '..', 'factorydeck.example.yml'),
+      path,
+      projects,
+    );
+    const config = loadWorkflowConfig(path);
+    const app = demoProjectRoot(projects, EXAMPLE_APP);
+    const query = { period: 'all' as const, timeZone: 'UTC', now: NOW };
+    const list = await listFeatures(db, query, config);
+    const shared = list.rows
+      .filter((row) => row.orchestrationCostUsd !== null)
+      .map((row) => [row.project, row.number]);
+    expect(shared).toEqual(
+      expect.arrayContaining([
+        [app, 13],
+        [app, 14],
+      ]),
+    );
+    expect(list.merged.issues).toBeGreaterThan(0);
+    expect(list.noWorkItem).not.toBeNull();
+    const detail = await featureDetail(
+      db,
+      { project: app, number: 13 },
+      query,
+      { config, state: { inactiveAfterMinutes: 30, now: NOW } },
+    );
+    expect(detail?.orchestration?.threads).toBe(1);
+    expect(detail?.sessions.map((row) => row.id)).toContain('demo-app-queue');
   });
 });

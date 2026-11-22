@@ -1,6 +1,6 @@
 # 010 · Cost per feature
 
-Status: ready
+Status: done
 Depends on: 003, 006, 008, 009
 Checked: 2026-11-21
 
@@ -10,18 +10,18 @@ A developer sees what each issue cost their agent factory, split by role, next t
 
 ## Acceptance criteria
 
-- [ ] The navigation bar has a `Features` entry, after `Overview`, at `/features`; `/features` and `/features/<issue number>?project=<project root>` (the `project` parameter of spec 004's filter, URL-encoded) are React Router routes that survive a reload.
-- [ ] `/features` shows four tiles for the period and project: `Cost` (all calls, as the overview's `Cost` tile), `Merged issues` (issues at stage `Merged` or `Merged by a person` with at least one call in the period), `Cost per merged issue`, and `Merged without a person` (share of merged issues at stage `Merged`, as a whole percentage such as `75%`, `—` with no merged issue).
-- [ ] A table lists one row per issue with at least one call in the period: `#<n>` and title (spec 008), project, stage (spec 009, coloured label with its text), serenity score, review rounds, sessions, tokens, orchestration cost, cost; sorted by cost descending. A last row `No work item` holds every call no issue receives; it is always last, whatever the sort.
-- [ ] The column totals (tokens, cost) equal the overview totals of spec 003 for the same period and project.
-- [ ] Column headers sort the table (cost, tokens, sessions, score, rounds, issue number), each ascending then descending on a second click; the sort is kept in the URL.
-- [ ] The period selector of spec 003 and the project filter of spec 004 apply and are kept in the URL; with `All projects`, the project column shows, else it is hidden.
-- [ ] An issue whose number was not found in the collected data (spec 008) shows `#<n> (not found)`, stage `—`; an issue of a project never collected shows `#<n>` and `—`.
-- [ ] Clicking a row opens `/features/<n>?project=<project root>` with: the issue header (number, title linked to the git host, state, labels, outcome line of spec 009, closing requests of spec 008), a table `By role` (role of spec 006, threads, API calls, tokens, cost, sorted by cost descending, with a last row `Orchestration` for the share of spec Rules), and a table `Sessions` (each session that worked on the issue, with its title, state, last activity, and the issue's tokens and cost in it, linking to the session page of spec 004). The period and project of the list apply.
-- [ ] An unknown issue page shows `Issue not found.` with a link back to `/features`.
-- [ ] With no call in the period, `/features` shows `No activity in this period.` instead of the tiles and table.
-- [ ] Figures refresh with each re-ingestion (spec 003) and collection (spec 008), without a reload.
-- [ ] The pages work from 1280 px wide down to 768 px, like spec 003.
+- [x] The navigation bar has a `Features` entry, after `Overview`, at `/features`; `/features` and `/features/<issue number>?project=<project root>` (the `project` parameter of spec 004's filter, URL-encoded) are React Router routes that survive a reload.
+- [x] `/features` shows four tiles for the period and project: `Cost` (all calls, as the overview's `Cost` tile), `Merged issues` (issues at stage `Merged` or `Merged by a person` with at least one call in the period), `Cost per merged issue`, and `Merged without a person` (share of merged issues at stage `Merged`, as a whole percentage such as `75%`, `—` with no merged issue).
+- [x] A table lists one row per issue with at least one call in the period: `#<n>` and title (spec 008), project, stage (spec 009, coloured label with its text), serenity score, review rounds, sessions, tokens, orchestration cost, cost; sorted by cost descending. A last row `No work item` holds every call no issue receives; it is always last, whatever the sort.
+- [x] The column totals (tokens, cost) equal the overview totals of spec 003 for the same period and project.
+- [x] Column headers sort the table (cost, tokens, sessions, score, rounds, issue number), each ascending then descending on a second click; the sort is kept in the URL.
+- [x] The period selector of spec 003 and the project filter of spec 004 apply and are kept in the URL; with `All projects`, the project column shows, else it is hidden.
+- [x] An issue whose number was not found in the collected data (spec 008) shows `#<n> (not found)`, stage `—`; an issue of a project never collected shows `#<n>` and `—`.
+- [x] Clicking a row opens `/features/<n>?project=<project root>` with: the issue header (number, title linked to the git host, state, labels, outcome line of spec 009, closing requests of spec 008), a table `By role` (role of spec 006, threads, API calls, tokens, cost, sorted by cost descending, with a last row `Orchestration` for the share of spec Rules), and a table `Sessions` (each session that worked on the issue, with its title, state, last activity, and the issue's tokens and cost in it, linking to the session page of spec 004). The period and project of the list apply.
+- [x] An unknown issue page shows `Issue not found.` with a link back to `/features`.
+- [x] With no call in the period, `/features` shows `No activity in this period.` instead of the tiles and table.
+- [x] Figures refresh with each re-ingestion (spec 003) and collection (spec 008), without a reload.
+- [x] The pages work from 1280 px wide down to 768 px, like spec 003.
 
 ## Rules
 

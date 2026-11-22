@@ -157,6 +157,71 @@ function sortedLabels(labels: IssueLabel[]): IssueLabel[] {
   );
 }
 
+export type OutcomeLookup = (key: { project: string; number: number }) => {
+  issue: WorkItemIssue;
+  outcome: IssueOutcome | null;
+};
+
+export async function lookupOutcomes(
+  db: Database,
+  keys: readonly { project: string; number: number }[],
+): Promise<OutcomeLookup> {
+  const projects = [...new Set(keys.map((key) => key.project))];
+  if (projects.length === 0) {
+    return () => ({ issue: { status: 'not-collected' }, outcome: null });
+  }
+  const [states, issues, requests] = await Promise.all([
+    db
+      .select({
+        project: gitHostProject.project,
+        stageLabels: gitHostProject.stageLabels,
+        autoMerge: gitHostProject.autoMerge,
+      })
+      .from(gitHostProject)
+      .where(
+        and(
+          inArray(gitHostProject.project, projects),
+          isNotNull(gitHostProject.syncedFrom),
+        ),
+      ),
+    db
+      .select()
+      .from(gitHostIssue)
+      .where(
+        sql`(${gitHostIssue.project}, ${gitHostIssue.number}) in (${sql.join(
+          keys.map((key) => sql`(${key.project}, ${key.number})`),
+          sql`, `,
+        )})`,
+      ),
+    db
+      .select()
+      .from(gitHostRequest)
+      .where(inArray(gitHostRequest.project, projects)),
+  ]);
+  const stateOf = new Map(states.map((row) => [row.project, row]));
+  const issueOf = new Map(
+    issues.map((row) => [`${String(row.number)} ${row.project}`, row]),
+  );
+  return ({ project, number }) => {
+    const state = stateOf.get(project);
+    if (state === undefined) {
+      return { issue: { status: 'not-collected' }, outcome: null };
+    }
+    const issue = issueOf.get(`${String(number)} ${project}`);
+    if (issue === undefined) {
+      return { issue: { status: 'not-found' }, outcome: null };
+    }
+    const closing = requests.filter(
+      (request) =>
+        request.project === project && request.closes.includes(number),
+    );
+    return {
+      issue: { status: 'found', title: issue.title, url: issue.url },
+      outcome: outcomeOf(issue, closing, state),
+    };
+  };
+}
+
 export async function issueDetail(
   db: Database,
   project: string,

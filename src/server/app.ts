@@ -9,6 +9,7 @@ import {
   isPeriod,
 } from '../overview/types.ts';
 import { apiContext, isTimeZone } from './api-context.ts';
+import { type FeatureSource, featureRoutes } from './feature-routes.ts';
 import { type GitHostSource, gitHostRoutes } from './git-host-routes.ts';
 import type { DatabaseCheck } from './health.ts';
 import { type ProjectSource, projectRoutes } from './project-routes.ts';
@@ -31,6 +32,7 @@ export interface AppOptions {
   sessions: SessionSource;
   skills: SkillSource;
   roles: RoleSource;
+  features: FeatureSource;
   projects: ProjectSource;
   gitHost: GitHostSource;
 }
@@ -43,6 +45,7 @@ export function createApp({
   sessions,
   skills,
   roles,
+  features,
   projects,
   gitHost,
 }: AppOptions): Hono {
@@ -80,6 +83,7 @@ export function createApp({
   app.route('/api/sessions', sessionRoutes(sessions, context));
   app.route('/api/skills', skillRoutes(skills, context));
   app.route('/api/roles', roleRoutes(roles, context));
+  app.route('/api/features', featureRoutes(features, context));
   app.route('/api/projects', projectRoutes(projects, context));
   app.route('/api/git-host', gitHostRoutes(gitHost, context));
   app.all('/api/*', (c) => c.json({ error: 'Not found' }, 404));

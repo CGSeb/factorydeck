@@ -4,6 +4,7 @@ import {
   unusedProjects,
   unusedRoles,
   unusedSkills,
+  unusedFeatures,
 } from '../test/skill-source.ts';
 import { type OverviewSource, createApp } from './app.ts';
 import type { GitHostSource } from './git-host-routes.ts';
@@ -29,6 +30,7 @@ function app(gitHost: GitHostSource, up = true) {
     sessions,
     skills: unusedSkills,
     roles: unusedRoles,
+    features: unusedFeatures,
     projects: unusedProjects,
     gitHost,
   });

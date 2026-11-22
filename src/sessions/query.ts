@@ -49,7 +49,7 @@ function stateOf(value: unknown): SessionState {
   return isSessionState(value) ? value : 'inactive';
 }
 
-function statedSessions({
+export function statedSessions({
   inactiveAfterMinutes,
   now = new Date(),
 }: StateOptions): SQL {

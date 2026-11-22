@@ -113,6 +113,32 @@ function okOrUndefined(
   return response?.status === 'ok' ? response : undefined;
 }
 
+function SectionNav(): ReactElement {
+  return (
+    <nav aria-label="Sections">
+      <ul>
+        <li>
+          <NavLink to="/" end>
+            Overview
+          </NavLink>
+        </li>
+        <li>
+          <NavLink to="/features">Features</NavLink>
+        </li>
+        <li>
+          <NavLink to="/sessions">Sessions</NavLink>
+        </li>
+        <li>
+          <NavLink to="/skills">Skills</NavLink>
+        </li>
+        <li>
+          <NavLink to="/roles">Roles</NavLink>
+        </li>
+      </ul>
+    </nav>
+  );
+}
+
 export function Layout({
   loadFactory,
   deleteProject,
@@ -129,24 +155,7 @@ export function Layout({
     <>
       <header className="topbar">
         <span className="brand">FactoryDeck</span>
-        <nav aria-label="Sections">
-          <ul>
-            <li>
-              <NavLink to="/" end>
-                Overview
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/sessions">Sessions</NavLink>
-            </li>
-            <li>
-              <NavLink to="/skills">Skills</NavLink>
-            </li>
-            <li>
-              <NavLink to="/roles">Roles</NavLink>
-            </li>
-          </ul>
-        </nav>
+        <SectionNav />
         <CollectionStatus
           collectedAt={collected?.collectedAt}
           now={new Date()}

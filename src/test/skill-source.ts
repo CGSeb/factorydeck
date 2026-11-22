@@ -1,3 +1,4 @@
+import type { FeatureSource } from '../server/feature-routes.ts';
 import type { GitHostSource } from '../server/git-host-routes.ts';
 import type { ProjectSource } from '../server/project-routes.ts';
 import type { RoleSource } from '../server/role-routes.ts';
@@ -21,4 +22,9 @@ export const unusedProjects: ProjectSource = {
 export const unusedGitHost: GitHostSource = {
   status: () => Promise.reject(new Error('Not used')),
   refresh: () => Promise.reject(new Error('Not used')),
+};
+
+export const unusedFeatures: FeatureSource = {
+  list: () => Promise.reject(new Error('Not used')),
+  detail: () => Promise.reject(new Error('Not used')),
 };

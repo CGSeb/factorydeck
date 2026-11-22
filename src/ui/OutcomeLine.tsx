@@ -1,19 +1,6 @@
 import type { ReactElement } from 'react';
-import type { IssueOutcome, IssueStage } from '../git-host/types.ts';
-
-type Tone = 'success' | 'danger' | 'warning' | 'neutral';
-
-const STAGES: Record<IssueStage, { text: string; tone: Tone }> = {
-  merged: { text: 'Merged', tone: 'success' },
-  'merged-by-person': { text: 'Merged by a person', tone: 'success' },
-  closed: { text: 'Closed without merge', tone: 'danger' },
-  blocked: { text: 'Blocked', tone: 'danger' },
-  'needs-spec': { text: 'Needs spec', tone: 'warning' },
-  'in-review': { text: 'In review', tone: 'neutral' },
-  working: { text: 'Working', tone: 'neutral' },
-  ready: { text: 'Ready', tone: 'neutral' },
-  open: { text: 'Open', tone: 'neutral' },
-};
+import type { IssueOutcome } from '../git-host/types.ts';
+import { StageLabel } from './StageLabel.tsx';
 
 const MISSING = '—';
 
@@ -30,13 +17,12 @@ export function OutcomeLine({
   outcome: IssueOutcome;
 }): ReactElement {
   const { report } = outcome;
-  const stage = STAGES[outcome.stage];
   const below = report !== null && report.score < report.threshold;
   return (
     <dl className="outcome">
       <dt>Outcome</dt>
       <dd>
-        <span className={`state stage-${stage.tone}`}>{stage.text}</span>
+        <StageLabel stage={outcome.stage} />
         <span className={below ? 'serenity serenity-below' : 'serenity'}>
           {report === null
             ? `Serenity ${MISSING}`

@@ -7,6 +7,7 @@ import {
   unusedSkills,
   unusedProjects,
   unusedGitHost,
+  unusedFeatures,
 } from '../test/skill-source.ts';
 
 const builtUi = '/nonexistent/factorydeck-ui';
@@ -62,6 +63,7 @@ describe('GET /api/sessions', () => {
     sessions: sessionSource,
     skills: unusedSkills,
     roles: unusedRoles,
+    features: unusedFeatures,
     projects: unusedProjects,
     gitHost: unusedGitHost,
   });
@@ -125,6 +127,7 @@ describe('GET /api/sessions', () => {
       sessions: sessionSource,
       skills: unusedSkills,
       roles: unusedRoles,
+      features: unusedFeatures,
       projects: unusedProjects,
       gitHost: unusedGitHost,
     }).request('/api/sessions?period=7d&tz=UTC');
@@ -144,6 +147,7 @@ describe('GET /api/sessions/:id', () => {
     sessions: sessionSource,
     skills: unusedSkills,
     roles: unusedRoles,
+    features: unusedFeatures,
     projects: unusedProjects,
     gitHost: unusedGitHost,
   });

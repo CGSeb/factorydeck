@@ -13,6 +13,11 @@ import {
   factoryResponse,
   oldApp,
 } from './factory-fixtures.ts';
+import {
+  featureLoaderOf,
+  featuresLoaderOf,
+  someFeatures,
+} from './feature-fixtures.ts';
 import { fixedLoader, okResponse, weekOverview } from './fixtures.ts';
 import { rolesLoader, someRoles } from './role-fixtures.ts';
 import {
@@ -51,6 +56,8 @@ const loaders = {
   loadSkills: skillsLoader(someSkills),
   loadSkill: skillLoader(writeSpecDetail),
   loadRoles: rolesLoader(someRoles),
+  loadFeatures: featuresLoaderOf(someFeatures),
+  loadFeature: featureLoaderOf(),
   loadFactory: factoryLoaderOf(factoryResponse()),
   deleteProject: deleterOf('deleted'),
   loadCollection: collectionLoaderOf(collectionResponse()),
@@ -121,6 +128,29 @@ export const Roles: Story = {
   },
 };
 
+export const Features: Story = {
+  args: loaders,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const links = canvas.getAllByRole('link').map((link) => link.textContent);
+    await expect(links.slice(0, 2)).toEqual(['Overview', 'Features']);
+    await userEvent.click(canvas.getByRole('link', { name: 'Features' }));
+    await expect(
+      canvas.getByRole('link', { name: 'Features' }),
+    ).toHaveAttribute('aria-current', 'page');
+    await userEvent.click(
+      await canvas.findByRole('link', { name: '#52 Export button' }),
+    );
+    await canvas.findByRole('heading', { name: 'Issue #52' });
+    await expect(
+      canvas.getByRole('link', { name: '#52 Export button' }),
+    ).toHaveAttribute(
+      'href',
+      'https://github.com/example-org/example-app/issues/52',
+    );
+  },
+};
+
 export const NoSessionYet: Story = {
   args: {
     ...loaders,
@@ -128,7 +158,13 @@ export const NoSessionYet: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    for (const section of ['Overview', 'Sessions', 'Skills', 'Roles']) {
+    for (const section of [
+      'Overview',
+      'Features',
+      'Sessions',
+      'Skills',
+      'Roles',
+    ]) {
       await userEvent.click(canvas.getByRole('link', { name: section }));
       await expect(
         await canvas.findByRole('heading', {
