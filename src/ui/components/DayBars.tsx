@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactElement } from 'react';
+import { type CSSProperties, type ReactElement, useState } from 'react';
 import { formatBucket, formatCount, formatTokens } from '../format.ts';
 import {
   EVERY_LABEL_MAX_BUCKETS,
@@ -32,6 +32,7 @@ const columns: CSSProperties = {
 };
 
 const column: CSSProperties = {
+  position: 'relative',
   flex: '1 1 0px',
   minWidth: 0,
   height: '100%',
@@ -52,6 +53,49 @@ const columnValue: CSSProperties = {
   whiteSpace: 'nowrap',
   fontVariantNumeric: 'tabular-nums',
 };
+
+const TOOLTIP_ALIGN: Record<TooltipAlign, CSSProperties> = {
+  start: { left: 0 },
+  center: { left: '50%', transform: 'translateX(-50%)' },
+  end: { right: 0 },
+};
+
+const tooltip: CSSProperties = {
+  position: 'absolute',
+  zIndex: 2,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '2px',
+  padding: 'var(--fd-space-2) var(--fd-space-3)',
+  fontFamily: 'var(--fd-font-body)',
+  fontSize: 'var(--fd-text-sm)',
+  lineHeight: 1.4,
+  whiteSpace: 'nowrap',
+  textAlign: 'left',
+  color: 'var(--fd-tooltip-ink)',
+  background: 'var(--fd-tooltip-bg)',
+  borderRadius: 'var(--fd-radius-card)',
+  boxShadow: 'var(--fd-shadow-tooltip)',
+  pointerEvents: 'none',
+};
+
+const tooltipLabel: CSSProperties = {
+  fontSize: 'var(--fd-text-xs)',
+  color: 'var(--fd-tooltip-muted)',
+};
+
+const tooltipValue: CSSProperties = {
+  fontWeight: 600,
+  fontVariantNumeric: 'tabular-nums',
+};
+
+type TooltipAlign = 'start' | 'center' | 'end';
+
+function tooltipAlign(index: number, length: number): TooltipAlign {
+  if (length > 2 && index === 0) return 'start';
+  if (length > 2 && index === length - 1) return 'end';
+  return 'center';
+}
 
 const labelRow: CSSProperties = {
   display: 'flex',
@@ -107,22 +151,67 @@ function Labels({
   );
 }
 
+function ColumnTooltip({
+  bucket,
+  bottom,
+  align,
+}: {
+  bucket: DayBucket;
+  bottom: number;
+  align: TooltipAlign;
+}): ReactElement {
+  return (
+    <span
+      data-tooltip=""
+      aria-hidden="true"
+      style={{
+        ...tooltip,
+        ...TOOLTIP_ALIGN[align],
+        bottom: `calc(${String(bottom)}px + var(--fd-space-2))`,
+      }}
+    >
+      <span style={tooltipLabel}>{formatBucket(bucket.label)}</span>
+      <span style={tooltipValue}>{bucketValue(bucket)}</span>
+    </span>
+  );
+}
+
 function Column({
   bucket,
   height,
   color,
   showValue,
+  hovered,
+  dimmed,
+  align,
+  onHover,
 }: {
   bucket: DayBucket;
   height: number;
   color: string;
   showValue: boolean;
+  hovered: boolean;
+  dimmed: boolean;
+  align: TooltipAlign;
+  onHover: (hovered: boolean) => void;
 }): ReactElement {
   return (
     <div
-      title={`${formatBucket(bucket.label)} · ${bucketValue(bucket)}`}
       style={column}
+      onPointerEnter={() => {
+        onHover(true);
+      }}
+      onPointerLeave={() => {
+        onHover(false);
+      }}
     >
+      {hovered ? (
+        <ColumnTooltip
+          bucket={bucket}
+          bottom={height + (showValue ? VALUE_ROW_PX : 0)}
+          align={align}
+        />
+      ) : null}
       {showValue ? (
         <span data-value="" style={columnValue}>
           {formatCount(bucket.value)}
@@ -135,6 +224,8 @@ function Column({
           height: `${String(height)}px`,
           borderRadius: '4px 4px 0 0',
           background: color,
+          opacity: dimmed ? 0.45 : 1,
+          transition: 'opacity 120ms ease',
         }}
       />
     </div>
@@ -148,6 +239,7 @@ export function DayBars({
   height,
   showValues = false,
 }: DayBarsProps): ReactElement {
+  const [hovered, setHovered] = useState<number | null>(null);
   const heights = columnHeights(
     buckets.map((bucket) => bucket.value),
     height,
@@ -168,6 +260,14 @@ export function DayBars({
               height={heights[index] ?? 0}
               color={color}
               showValue={showValues}
+              hovered={hovered === index}
+              dimmed={hovered !== null && hovered !== index}
+              align={tooltipAlign(index, buckets.length)}
+              onHover={(on) => {
+                setHovered((current) =>
+                  on ? index : current === index ? null : current,
+                );
+              }}
             />
           ))}
         </div>

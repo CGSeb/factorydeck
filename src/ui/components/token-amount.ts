@@ -56,18 +56,51 @@ export function tooltipLines(
   ];
 }
 
-export interface HorizontalBox {
+export type TooltipSide = 'above' | 'below';
+
+export interface AnchorBox {
+  top: number;
+  bottom: number;
   left: number;
   right: number;
 }
 
-export function shiftIntoView(
-  box: HorizontalBox,
-  viewportWidth: number,
-  margin: number,
-): number {
-  const overflowRight = box.right - (viewportWidth - margin);
-  if (overflowRight > 0) return Math.max(margin - box.left, -overflowRight);
-  if (box.left < margin) return margin - box.left;
-  return 0;
+export interface TooltipPosition {
+  side: TooltipSide;
+  top: number;
+  left: number;
+}
+
+/**
+ * Places a fixed-position tooltip next to its anchor: on the preferred side
+ * unless only the other side fits, aligned on the anchor's right edge above
+ * or its left edge below, then kept `margin` px inside the viewport.
+ */
+export interface TooltipLayout {
+  anchor: AnchorBox;
+  size: { width: number; height: number };
+  viewport: { width: number; height: number };
+  preferred: TooltipSide;
+  margin: number;
+}
+
+export function placeTooltip({
+  anchor,
+  size,
+  viewport,
+  preferred,
+  margin,
+}: TooltipLayout): TooltipPosition {
+  const fitsAbove = anchor.top - size.height >= margin;
+  const fitsBelow = anchor.bottom + size.height <= viewport.height - margin;
+  let side = preferred;
+  if (preferred === 'above' && !fitsAbove && fitsBelow) side = 'below';
+  if (preferred === 'below' && !fitsBelow && fitsAbove) side = 'above';
+  const top = side === 'above' ? anchor.top - size.height : anchor.bottom;
+  const aligned = side === 'above' ? anchor.right - size.width : anchor.left;
+  const left = Math.max(
+    margin,
+    Math.min(aligned, viewport.width - margin - size.width),
+  );
+  return { side, top, left };
 }

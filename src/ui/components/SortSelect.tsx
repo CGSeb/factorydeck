@@ -1,10 +1,8 @@
 import { type ReactElement, useId } from 'react';
+import { Select, type SelectOption } from './Select.tsx';
 import './controls.css';
 
-export interface SortOption<T extends string> {
-  value: T;
-  label: string;
-}
+export type SortOption<T extends string> = SelectOption<T>;
 
 export interface SortSelectProps<T extends string> {
   options: SortOption<T>[];
@@ -18,26 +16,20 @@ export function SortSelect<T extends string>({
   onChange,
 }: SortSelectProps<T>): ReactElement {
   const id = useId();
+  const labelId = useId();
   return (
     <div className="fd-sort">
-      <label htmlFor={id}>Sort by</label>
-      <select
+      <label id={labelId} htmlFor={id}>
+        Sort by
+      </label>
+      <Select
         id={id}
-        className="fd-control"
+        labelId={labelId}
+        options={options}
         value={value}
-        onChange={(event) => {
-          const chosen = options.find(
-            (option) => option.value === event.target.value,
-          );
-          if (chosen !== undefined) onChange(chosen.value);
-        }}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+        onChange={onChange}
+        align="end"
+      />
     </div>
   );
 }

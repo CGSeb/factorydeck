@@ -25,6 +25,7 @@ A developer moving between FactoryDeck pages finds the same top bar, page header
 
 - Components take their content from the caller; none reads the URL or an API.
 - Sizes and colours come from the tokens of spec 014 only.
+- No layout shift: `PageHeader` with `pending` keeps the summary line's height while it loads, and the header slot (period pills) is aligned with the top of the title, so the header looks the same on every page and in every state.
 - Existing `Layout`, `FactoryBanner`, `DeleteProjectDialog` and `WelcomePanel` keep working as they are; spec 023 moves them onto these components.
 
 ## Expected proof

@@ -112,7 +112,8 @@ export const Below: Story = {
   play: async ({ canvasElement }) => {
     await userEvent.hover(amount(canvasElement));
     await waitFor(() => expect(tooltip(canvasElement)).toBeVisible());
-    await expect(tooltip(canvasElement)).toHaveStyle({ top: '100%' });
+    await expect(tooltip(canvasElement)).toHaveAttribute('data-side', 'below');
+    await expect(tooltip(canvasElement)).toHaveStyle({ position: 'fixed' });
   },
 };
 

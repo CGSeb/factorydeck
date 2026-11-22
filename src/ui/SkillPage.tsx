@@ -199,8 +199,10 @@ function SkillContent({
 export function SkillPage({ loadSkill }: SkillPageProps): ReactElement {
   const { name = '' } = useParams();
   const [filters, setFilters, search] = useSkillFilters();
-  const response = useRefreshing(JSON.stringify({ name, ...filters }), () =>
-    loadSkill(name, filters),
+  const response = useRefreshing(
+    JSON.stringify({ name, ...filters }),
+    () => loadSkill(name, filters),
+    name,
   );
   return (
     <div className="fd-skills">

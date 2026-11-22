@@ -16,6 +16,7 @@ FactoryDeck is a public tool for anyone's projects and sessions. It reads only t
 - Code, comments, commits and docs are in English.
 - Imports use the `.ts` extension; only erasable TypeScript syntax (no enums, no namespaces).
 - Every component of `src/ui` has Storybook stories (`<Component>.stories.tsx`), one per state the specs name. Interactions go in `play` functions. `src/ui/stories.test.tsx` renders every story with happy-dom, runs its `play`, and fails on any axe-core violation. Colour contrast is not checked there (happy-dom computes no colours): check it in Storybook. `pnpm storybook` opens the catalogue on `127.0.0.1:6006`.
+- No layout shift: content that stays on screen does not move while data loads. A page loads through `useRefreshing` (`src/ui/skills-api.ts`), whose required `scope` keeps the last data on screen while a filter or period reloads (a constant for a list page, the item's identity for a detail page). A `PageHeader` whose summary is still loading gets `pending`, so the title, summary line and period pills sit at the same place on every page. Controls built from loaded data (filter counts, options) stay mounted with their last values while new data loads.
 - Run `pnpm check` before declaring work done: format, lint, typecheck and tests must all pass.
 - Commit messages: `type: :gitmoji: Subject` (checked by a `commit-msg` hook).
 - Never edit a generated migration: change `src/db/schema.ts` and run `pnpm db:generate --name <change>`.

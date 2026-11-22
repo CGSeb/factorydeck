@@ -222,6 +222,7 @@ export function SessionsPage({
       <PageHeader
         title="Sessions"
         summary={list === undefined ? undefined : sessionCountText(list.total)}
+        pending={response === undefined}
         slot={
           <PeriodPills
             value={filters.period}

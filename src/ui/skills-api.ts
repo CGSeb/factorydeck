@@ -107,11 +107,23 @@ export function useSkillFilters(): [
   ];
 }
 
+/**
+ * Loads `key` and reloads it every `refreshSeconds`. While a new key loads,
+ * the last response loaded under the same `scope` stays on screen, so a
+ * filter or period change never empties the page and makes it jump. `scope`
+ * names what the data is about: a constant for a list page, the item's
+ * identity for a detail page, so another item's data is never shown.
+ */
 export function useRefreshing<T extends { refreshSeconds: number }>(
   key: string,
   load: () => Promise<T | undefined>,
+  scope: string,
 ): T | undefined {
-  const [loaded, setLoaded] = useState<{ key: string; response: T }>();
+  const [loaded, setLoaded] = useState<{
+    key: string;
+    scope: string;
+    response: T;
+  }>();
 
   useEffect(() => {
     let active = true;
@@ -119,7 +131,7 @@ export function useRefreshing<T extends { refreshSeconds: number }>(
     async function refresh(): Promise<void> {
       const next = await load();
       if (!active) return;
-      if (next !== undefined) setLoaded({ key, response: next });
+      if (next !== undefined) setLoaded({ key, scope, response: next });
       timer = setTimeout(
         () => void refresh(),
         (next?.refreshSeconds ?? RETRY_SECONDS) * 1000,
@@ -132,5 +144,7 @@ export function useRefreshing<T extends { refreshSeconds: number }>(
     };
   }, [key]);
 
-  return loaded?.key === key ? loaded.response : undefined;
+  if (loaded === undefined) return undefined;
+  if (loaded.key === key) return loaded.response;
+  return loaded.scope === scope ? loaded.response : undefined;
 }

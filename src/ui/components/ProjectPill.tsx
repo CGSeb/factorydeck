@@ -5,5 +5,10 @@ import './controls.css';
 export type ProjectPillProps = Omit<ProjectSelectProps, 'className'>;
 
 export function ProjectPill(props: ProjectPillProps): ReactElement {
-  return <ProjectSelect {...props} className="fd-control fd-project-pill" />;
+  return (
+    <ProjectSelect
+      {...props}
+      className="fd-control fd-select-trigger fd-project-pill"
+    />
+  );
 }

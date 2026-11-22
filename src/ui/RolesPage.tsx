@@ -87,9 +87,11 @@ export function RolesPage({
 }: RolesPageProps): ReactElement {
   const [filters, setFilters] = useSkillFilters();
   const key = JSON.stringify(filters);
-  const response = useRefreshing(key, () => loadRoles(filters));
-  const overview = useRefreshing(key, () =>
-    loadOverview(filters.period, filters.project),
+  const response = useRefreshing(key, () => loadRoles(filters), 'roles');
+  const overview = useRefreshing(
+    key,
+    () => loadOverview(filters.period, filters.project),
+    'roles',
   );
 
   return (
@@ -99,6 +101,7 @@ export function RolesPage({
         {...(response?.status === 'ok'
           ? { summary: roleSourceText(response.config) }
           : {})}
+        pending={response === undefined}
         slot={
           <PeriodPills
             value={filters.period}

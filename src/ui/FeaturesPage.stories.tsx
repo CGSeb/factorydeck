@@ -2,6 +2,7 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { ReactElement } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { chooseOption } from './components/select-test.ts';
 import { boardFeatures } from './feature-board-fixtures.ts';
 import {
   APP,
@@ -209,9 +210,8 @@ function sorted(label: string, merged: readonly string[]): Story {
     play: async ({ canvasElement }) => {
       const canvas = within(canvasElement);
       await canvas.findByRole('rowheader', { name: '#52 Export button' });
-      await expect(
-        canvas.getByRole('option', { name: label, selected: true }),
-      ).toBeInTheDocument();
+      const sort = canvas.getByRole('combobox', { name: 'Sort by' });
+      await expect(sort).toHaveTextContent(label);
       await expect(rowHeaders(canvasElement)).toEqual(merged);
     },
   };
@@ -236,8 +236,8 @@ export const SortedByLastActivity: Story = {
     const canvas = within(canvasElement);
     await ready(canvasElement);
     const select = canvas.getByRole('combobox', { name: 'Sort by' });
-    await expect(select).toHaveValue('last');
-    await userEvent.selectOptions(select, 'Tokens');
+    await expect(select).toHaveAttribute('data-value', 'last');
+    await chooseOption(select, 'Tokens');
     await expect(address(canvasElement)).toHaveTextContent(
       '/features?period=all&sort=tokens',
     );
@@ -250,7 +250,7 @@ export const SortedByLastActivity: Story = {
       '#52 Export button',
       '#45 Config loader',
     ]);
-    await userEvent.selectOptions(select, 'Last activity');
+    await chooseOption(select, 'Last activity');
     await expect(address(canvasElement)).toHaveTextContent(
       /^\/features\?period=all$/,
     );

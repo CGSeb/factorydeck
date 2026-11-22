@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { Select } from './components/Select.tsx';
 import {
   type ProjectOption,
   folderName,
@@ -40,23 +41,24 @@ export function ProjectSelect({
   value,
   projects,
   onChange,
-  className = 'project-select',
+  className = 'fd-control fd-select-trigger',
 }: ProjectSelectProps): ReactElement {
   const options = projectOptions(value, projects);
   return (
-    <select
+    <Select
       className={className}
-      aria-label="Project"
+      ariaLabel="Project"
       title={tooltipOf(value, options)}
       value={value ?? ''}
-      onChange={(event) => onChange(event.target.value || undefined)}
-    >
-      <option value="">{ALL_PROJECTS}</option>
-      {options.map((option) => (
-        <option key={option.project} value={option.project}>
-          {projectText(option.project, option.name).text}
-        </option>
-      ))}
-    </select>
+      align="end"
+      options={[
+        { value: '', label: ALL_PROJECTS },
+        ...options.map((option) => ({
+          value: option.project,
+          label: projectText(option.project, option.name).text,
+        })),
+      ]}
+      onChange={(next) => onChange(next || undefined)}
+    />
   );
 }

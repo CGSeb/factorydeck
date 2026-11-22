@@ -9,27 +9,24 @@ const COUNTS = {
   cacheRead: 41_800_000,
   cacheWrite: 320_000,
 };
-const TOOLTIP_WIDTH = 245;
+const TOOLTIP = { width: 245, height: 150 };
 
-function layOut(tooltipLeft: number, viewportWidth: number): void {
+function layOut(anchor: { left: number; top: number }, viewport = 360): void {
   document.documentElement.style.setProperty('--fd-space-2', '8px');
   vi.spyOn(document.documentElement, 'clientWidth', 'get').mockReturnValue(
-    viewportWidth,
+    viewport,
   );
-  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
-    function (this: HTMLElement) {
-      const shift = Number(
-        /translateX\((-?[\d.]+)px\)/.exec(this.style.transform)?.[1] ?? 0,
-      );
-      const left =
-        this.getAttribute('role') === 'tooltip' ? tooltipLeft + shift : 0;
-      return DOMRect.fromRect({
-        x: left,
-        y: 0,
-        width: TOOLTIP_WIDTH,
-        height: 150,
-      });
-    },
+  vi.spyOn(document.documentElement, 'clientHeight', 'get').mockReturnValue(
+    640,
+  );
+  vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(
+    TOOLTIP.width,
+  );
+  vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(
+    TOOLTIP.height,
+  );
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+    DOMRect.fromRect({ x: anchor.left, y: anchor.top, width: 40, height: 20 }),
   );
 }
 
@@ -41,28 +38,38 @@ async function openTooltip(placement: 'above' | 'below'): Promise<HTMLElement> {
   return screen.getByRole('tooltip');
 }
 
-describe('TokenAmount near the viewport edge', () => {
+describe('TokenAmount tooltip position', () => {
   afterEach(() => {
     cleanup();
     document.documentElement.style.removeProperty('--fd-space-2');
     vi.restoreAllMocks();
   });
 
-  it('shifts a tooltip that overflows a 360 px viewport on the right back inside it', async () => {
-    layOut(300, 360);
+  it('is fixed to the viewport so a clipping container cannot cut it', async () => {
+    layOut({ left: 40, top: 300 });
     const tooltip = await openTooltip('below');
-    expect(tooltip.style.transform).toBe('translateX(-193px)');
+    expect(tooltip.style.position).toBe('fixed');
+    expect(tooltip.style.top).toBe('320px');
+    expect(tooltip.style.left).toBe('40px');
   });
 
-  it('shifts a tooltip that overflows on the left back inside it', async () => {
-    layOut(-60, 360);
-    const tooltip = await openTooltip('above');
-    expect(tooltip.style.transform).toBe('translateX(68px)');
+  it('keeps a tooltip that would overflow on the right inside a 360 px viewport', async () => {
+    layOut({ left: 300, top: 300 });
+    const tooltip = await openTooltip('below');
+    expect(tooltip.style.left).toBe('107px');
   });
 
-  it('leaves a tooltip that fits in place', async () => {
-    layOut(40, 360);
+  it('keeps a tooltip that would overflow on the left inside the viewport', async () => {
+    layOut({ left: 0, top: 300 });
     const tooltip = await openTooltip('above');
-    expect(tooltip.style.transform).toBe('');
+    expect(tooltip.style.left).toBe('8px');
+    expect(tooltip.style.top).toBe('150px');
+  });
+
+  it('opens below when there is no room above', async () => {
+    layOut({ left: 200, top: 40 });
+    const tooltip = await openTooltip('above');
+    expect(tooltip.dataset.side).toBe('below');
+    expect(tooltip.style.top).toBe('60px');
   });
 });

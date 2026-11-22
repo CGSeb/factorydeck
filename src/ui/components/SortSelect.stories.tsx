@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, within } from 'storybook/test';
+import { chooseOption } from './select-test.ts';
 import { SortSelect } from './SortSelect.tsx';
 
 const meta = {
@@ -24,8 +25,8 @@ export const Default: Story = {
     const select = within(canvasElement).getByRole('combobox', {
       name: 'Sort by',
     });
-    await expect(select).toHaveValue('stage');
-    await userEvent.selectOptions(select, 'Tokens');
+    await expect(select).toHaveAttribute('data-value', 'stage');
+    await chooseOption(select, 'Tokens');
     await expect(args.onChange).toHaveBeenCalledWith('tokens');
     await expect(args.onChange).toHaveBeenCalledOnce();
   },

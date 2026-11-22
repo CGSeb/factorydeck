@@ -115,8 +115,10 @@ export function FeaturesPage({
   loadFeatures,
 }: FeaturesPageProps): ReactElement {
   const { setPeriod, setSort, setStage, ...view } = useListParams();
-  const response = useRefreshing(JSON.stringify(view.filters), () =>
-    loadFeatures(view.filters),
+  const response = useRefreshing(
+    JSON.stringify(view.filters),
+    () => loadFeatures(view.filters),
+    'features',
   );
   const list = response?.status === 'ok' ? response.list : undefined;
   return (
@@ -128,6 +130,7 @@ export function FeaturesPage({
             ? undefined
             : summaryText(list.rows.length, list.merged)
         }
+        pending={response === undefined}
         slot={<PeriodPills value={view.filters.period} onChange={setPeriod} />}
       />
       {response === undefined ? (

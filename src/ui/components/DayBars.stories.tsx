@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, within } from 'storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 import {
   launchDays,
   tokenDays,
@@ -43,6 +43,15 @@ function labels(canvasElement: HTMLElement, name: string): string[] {
   ].map((label) => label.textContent);
 }
 
+async function tooltipOf(bar: HTMLElement | undefined): Promise<string[]> {
+  const column = bar?.parentElement;
+  if (column == null) throw new Error('No column');
+  await userEvent.hover(column);
+  const tooltip = column.querySelector('[data-tooltip]');
+  if (tooltip === null) throw new Error('No tooltip');
+  return [...tooltip.children].map((line) => line.textContent);
+}
+
 function spokenRows(canvasElement: HTMLElement): string[] {
   return within(canvasElement)
     .getAllByRole('row')
@@ -59,10 +68,7 @@ export const SevenDays: Story = {
       borderRadius: '4px 4px 0 0',
     });
     await expect(bars[3]).toHaveStyle({ height: '2px' });
-    await expect(bars[1]?.parentElement).toHaveAttribute(
-      'title',
-      'Nov 2 · 1.9M tokens',
-    );
+    await expect(await tooltipOf(bars[1])).toEqual(['Nov 2', '1.9M tokens']);
     await expect(labels(canvasElement, 'Tokens per day')).toEqual([
       'Nov 1',
       'Nov 2',
@@ -98,10 +104,7 @@ export const TwentyFourHours: Story = {
   play: async ({ canvasElement }) => {
     const bars = columns(canvasElement, 'Tokens per hour');
     await expect(bars).toHaveLength(24);
-    await expect(bars[14]?.parentElement).toHaveAttribute(
-      'title',
-      '14:00 · 30.0K tokens',
-    );
+    await expect(await tooltipOf(bars[14])).toEqual(['14:00', '30.0K tokens']);
     await expect(labels(canvasElement, 'Tokens per hour')).toEqual([
       '00:00',
       '23:00',
@@ -133,7 +136,7 @@ export const LaunchesAsCounts: Story = {
     const bars = columns(canvasElement, 'Launches per day');
     await expect(bars[0]).toHaveStyle({ height: '40px' });
     await expect(bars[1]).toHaveStyle({ height: '80px' });
-    await expect(bars[0]?.parentElement).toHaveAttribute('title', 'Nov 1 · 2');
+    await expect(await tooltipOf(bars[0])).toEqual(['Nov 1', '2']);
     await expect(spokenRows(canvasElement)[1]).toBe('Nov 24');
   },
 };
@@ -158,5 +161,21 @@ export const LaunchesWithCounts: Story = {
     await expect(columns(canvasElement, 'Launches per day')[1]).toHaveStyle({
       height: '80px',
     });
+  },
+};
+
+export const Hovered: Story = {
+  name: 'Hovered column',
+  play: async ({ canvasElement }) => {
+    const bars = columns(canvasElement, 'Tokens per day');
+    await expect(await tooltipOf(bars[6])).toEqual(['Nov 7', '900.0K tokens']);
+    await expect(bars[6]).toHaveStyle({ opacity: '1' });
+    await expect(bars[0]).toHaveStyle({ opacity: '0.45' });
+    const column = bars[6]?.parentElement;
+    if (column == null) throw new Error('No column');
+    await userEvent.unhover(column);
+    await expect(
+      chart(canvasElement, 'Tokens per day').querySelector('[data-tooltip]'),
+    ).toBeNull();
   },
 };

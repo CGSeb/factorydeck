@@ -55,8 +55,8 @@ export const MergedAboveThreshold: Story = {
     await expect(
       within(blocks[0] ?? canvasElement).getAllByRole('tooltip', {
         hidden: true,
-      })[0]?.style.top,
-    ).toBe('100%');
+      })[0]?.dataset.side,
+    ).toBe('below');
     await expect(
       canvasElement.querySelector('.fd-summary-orchestration'),
     ).toHaveTextContent(/^Orchestration 1\.2M.* · 12% of the tokens$/);
