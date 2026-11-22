@@ -1,3 +1,5 @@
+import type { DemoFriction } from './frictions.ts';
+
 export interface Call {
   model: string | undefined;
   tokens: [number, number, number, number];
@@ -43,6 +45,7 @@ export interface DemoSession {
   prompt: string;
   calls: readonly Call[];
   subAgents?: readonly DemoSubAgent[];
+  frictions?: readonly DemoFriction[];
 }
 
 export interface DemoSubAgent {
@@ -50,6 +53,7 @@ export interface DemoSubAgent {
   agentType: string;
   description: string;
   calls: readonly Call[];
+  frictions?: readonly DemoFriction[];
 }
 
 type Line = Record<string, unknown>;

@@ -168,6 +168,41 @@ export const closingLine = pgTable(
   ],
 );
 
+export const friction = pgTable(
+  'friction',
+  {
+    id: bigserial({ mode: 'number' }).primaryKey(),
+    sourcePath: text('source_path').notNull(),
+    recordUuid: text('record_uuid').notNull(),
+    position: integer().notNull(),
+    sessionId: text('session_id')
+      .notNull()
+      .references(() => session.id, { onDelete: 'cascade' }),
+    subAgentId: text('sub_agent_id'),
+    at: timestamp({ withTimezone: true }).notNull(),
+    agent: text().notNull(),
+    kind: text().notNull(),
+    tool: text(),
+    category: text(),
+    program: text(),
+    exitCode: integer('exit_code'),
+    commandHash: text('command_hash'),
+    hookCommand: text('hook_command'),
+    trigger: text(),
+    preTokens: bigint('pre_tokens', { mode: 'number' }),
+    postTokens: bigint('post_tokens', { mode: 'number' }),
+  },
+  (table) => [
+    unique().on(table.sourcePath, table.recordUuid, table.kind, table.position),
+    index().on(table.sessionId),
+    index().on(table.at),
+    foreignKey({
+      columns: [table.sessionId, table.subAgentId],
+      foreignColumns: [subAgent.sessionId, subAgent.id],
+    }).onDelete('cascade'),
+  ],
+);
+
 export const skippedFile = pgTable(
   'skipped_file',
   {
@@ -183,6 +218,7 @@ export const ingestState = pgTable('ingest_state', {
   id: text().primaryKey(),
   factoryCleanupDone: boolean('factory_cleanup_done').notNull().default(false),
   branchesReadDone: boolean('branches_read_done').notNull().default(false),
+  frictionsReadDone: boolean('frictions_read_done').notNull().default(false),
 });
 
 export const gitHostIssue = pgTable(

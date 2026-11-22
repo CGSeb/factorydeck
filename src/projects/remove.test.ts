@@ -187,7 +187,7 @@ describe('deleting a project', () => {
     expect((await counts()).sessions).toBe(0);
     await installFactory(root);
     expect(summaryLine(await ingest(db, logs))).toBe(
-      'Ingested 3 files: 1 sessions, 1 sub-agents, 2 API calls, 2 skill launches, 0 lines skipped, 0 sessions skipped (no factory).',
+      'Ingested 3 files: 1 sessions, 1 sub-agents, 2 API calls, 2 skill launches, 0 frictions, 0 lines skipped, 0 sessions skipped (no factory).',
     );
     expect((await db.select().from(subAgent))[0]?.agentType).toBe('helper');
   });

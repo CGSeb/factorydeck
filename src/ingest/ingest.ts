@@ -1,4 +1,5 @@
 import { readFile, stat } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import { storeProjectNames } from '../projects/names.ts';
@@ -9,6 +10,10 @@ import {
   hasFactory,
 } from './factory.ts';
 import { type LogFile, findLogFiles, readRange } from './files.ts';
+import {
+  readFrictionsAgainOnce,
+  storeChunkFrictions,
+} from './ingest-frictions.ts';
 import { LOCK_KEY } from './lock.ts';
 import { isObject, parseLines } from './records.ts';
 import {
@@ -34,12 +39,14 @@ export interface IngestCounts {
   subAgents: number;
   apiCalls: number;
   skillLaunches: number;
+  frictions: number;
   linesSkipped: number;
   sessionsSkipped: number;
 }
 
 export interface IngestOptions {
   hasFactory?: FactoryCheck;
+  home?: string;
 }
 
 export type IngestResult =
@@ -59,7 +66,7 @@ export { LOCK_KEY } from './lock.ts';
 
 type FileCounts = Pick<
   IngestCounts,
-  'files' | 'apiCalls' | 'skillLaunches' | 'linesSkipped'
+  'files' | 'apiCalls' | 'skillLaunches' | 'frictions' | 'linesSkipped'
 >;
 
 /**
@@ -89,14 +96,16 @@ export async function ingest(
     const run = await startRun(tx);
     const selection = await selectFactorySessions(run, files, check);
     run.projects = selection.projects;
+    const home = options.home ?? homedir();
     const counts: FileCounts = {
       files: 0,
       apiCalls: 0,
       skillLaunches: 0,
+      frictions: await readFrictionsAgainOnce(run, selection.files, home),
       linesSkipped: 0,
     };
     for (const file of selection.files) {
-      await ingestFile(run, file, counts);
+      await ingestFile(run, file, home, counts);
       await ingestMeta(run, file, counts);
     }
     await saveSubAgents(run);
@@ -117,10 +126,14 @@ export function summaryLine(result: IngestResult): string {
   if (result.status === 'already-running') {
     return 'Ingestion already running.';
   }
-  if (result.files === 0 && result.sessionsSkipped === 0) {
+  if (
+    result.files === 0 &&
+    result.sessionsSkipped === 0 &&
+    result.frictions === 0
+  ) {
     return 'Nothing new.';
   }
-  return `Ingested ${result.files} files: ${result.sessions} sessions, ${result.subAgents} sub-agents, ${result.apiCalls} API calls, ${result.skillLaunches} skill launches, ${result.linesSkipped} lines skipped, ${result.sessionsSkipped} sessions skipped (no factory).`;
+  return `Ingested ${result.files} files: ${result.sessions} sessions, ${result.subAgents} sub-agents, ${result.apiCalls} API calls, ${result.skillLaunches} skill launches, ${result.frictions} frictions, ${result.linesSkipped} lines skipped, ${result.sessionsSkipped} sessions skipped (no factory).`;
 }
 
 function lockTaken(result: unknown): boolean {
@@ -152,9 +165,29 @@ async function unreadRange(
   return { start: reset ? 0 : stored.readOffset, size, reset };
 }
 
+async function forgetFile(
+  run: Run,
+  path: string,
+  sessionRow: Parameters<typeof resetSession>[0],
+  agentRow: { firstAt: Date | null; lastAt: Date | null } | undefined,
+): Promise<void> {
+  await forgetFileRows(run, path);
+  if (agentRow === undefined) {
+    resetSession(sessionRow);
+  } else {
+    Object.assign(agentRow, {
+      firstAt: null,
+      lastAt: null,
+      cwd: null,
+      gitBranch: '',
+    });
+  }
+}
+
 async function ingestFile(
   run: Run,
   file: LogFile,
+  home: string,
   counts: FileCounts,
 ): Promise<void> {
   const range = await unreadRange(run, file.path);
@@ -174,17 +207,7 @@ async function ingestFile(
       ? undefined
       : await loadSubAgent(run, file.sessionId, file.subAgent.id);
   if (range.reset) {
-    await forgetFileRows(run, file.path);
-    if (agentRow === undefined) {
-      resetSession(sessionRow);
-    } else {
-      Object.assign(agentRow, {
-        firstAt: null,
-        lastAt: null,
-        cwd: null,
-        gitBranch: '',
-      });
-    }
+    await forgetFile(run, file.path, sessionRow, agentRow);
   }
   const { records, skipped, consumed } = parseLines(chunk);
   const rows = readThread(
@@ -200,10 +223,18 @@ async function ingestFile(
   );
   keepCwd(agentRow, rows);
   const inserted = await insertThreadRows(run, file.sessionId, rows);
+  const frictions = await storeChunkFrictions(
+    run,
+    { file, subAgentId: agentRow?.id ?? null, home },
+    records,
+    range.start,
+  );
   Object.assign(counts, {
-    linesSkipped: counts.linesSkipped + skipped + rows.skipped,
+    linesSkipped:
+      counts.linesSkipped + skipped + rows.skipped + frictions.untimed,
     apiCalls: counts.apiCalls + inserted.apiCalls,
     skillLaunches: counts.skillLaunches + inserted.skillLaunches,
+    frictions: counts.frictions + frictions.stored,
   });
   await saveOffset(run, file.path, {
     sizeBytes: range.size,

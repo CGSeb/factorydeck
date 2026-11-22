@@ -12,6 +12,13 @@ import {
   unknownPrice,
 } from './calls.ts';
 import { factoryFile } from '../ingest/factory.ts';
+import {
+  ENDPOINT_FRICTIONS,
+  MAIN_FRICTIONS,
+  SECOND_MAIN_FRICTIONS,
+  WORKER_FRICTIONS,
+  demoFrictionLines,
+} from './frictions.ts';
 import { installFakeGitHost } from './fake-git-host.ts';
 import { helpSession } from './help-sessions.ts';
 import { markerSessions } from './marker-sessions.ts';
@@ -45,6 +52,7 @@ export const DEMO_SESSIONS: readonly DemoSession[] = [
       index % 2 === 1 ? launching(haiku, REVIEW_SKILL) : haiku,
       opus,
     ],
+    frictions: [MAIN_FRICTIONS, SECOND_MAIN_FRICTIONS][index] ?? [],
     subAgents: [
       {
         id: 'explore',
@@ -57,6 +65,7 @@ export const DEMO_SESSIONS: readonly DemoSession[] = [
         agentType: 'general-purpose',
         description: `Worker for #${String(index + 11)}`,
         calls: [sonnet, sonnet],
+        frictions: index === 0 ? WORKER_FRICTIONS : [],
       },
       {
         id: 'review',
@@ -126,6 +135,7 @@ export const DEMO_SESSIONS: readonly DemoSession[] = [
         agentType: 'general-purpose',
         description: 'Add the endpoint handler',
         calls: [sonnet],
+        frictions: index === 0 ? ENDPOINT_FRICTIONS : [],
       },
     ],
   })),
@@ -193,6 +203,7 @@ function linesOf(session: DemoSession, clock: Clock): Line[] {
       promptId: `${session.id}-prompt`,
       message: { role: 'user', content: session.prompt },
     },
+    ...demoFrictionLines(session.frictions ?? [], session.id, context, 0),
     ...callLines(session.calls, session.id, (step) => context(step + 1)),
   ];
 }
@@ -210,6 +221,7 @@ function subAgentLines(
       ...context(1),
       message: { role: 'user', content: agent.description },
     },
+    ...demoFrictionLines(agent.frictions ?? [], thread, context, 1),
     ...callLines(agent.calls, thread, (step) => context(step + 2)),
   ];
 }

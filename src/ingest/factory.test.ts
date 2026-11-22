@@ -104,7 +104,7 @@ describe('factory projects only', () => {
     ]);
 
     expect(await run()).toBe(
-      'Ingested 1 files: 1 sessions, 0 sub-agents, 1 API calls, 1 skill launches, 0 lines skipped, 3 sessions skipped (no factory).',
+      'Ingested 1 files: 1 sessions, 0 sub-agents, 1 API calls, 1 skill launches, 0 frictions, 0 lines skipped, 3 sessions skipped (no factory).',
     );
     expect(await storedSessions()).toEqual([['in-factory', factory]]);
     const all = { period: 'all', timeZone: 'UTC' } as const;
@@ -152,7 +152,7 @@ describe('factory projects only', () => {
 
     await installFactory(root);
     expect(await run()).toBe(
-      'Ingested 1 files: 1 sessions, 0 sub-agents, 3 API calls, 3 skill launches, 0 lines skipped, 0 sessions skipped (no factory).',
+      'Ingested 1 files: 1 sessions, 0 sub-agents, 3 API calls, 3 skill launches, 0 frictions, 0 lines skipped, 0 sessions skipped (no factory).',
     );
     expect(await storedSessions()).toEqual([['early', root]]);
     expect(await db.select().from(userPrompt)).toHaveLength(3);
@@ -168,7 +168,7 @@ describe('factory projects only', () => {
     await writeSession('new', root);
     await appendLog(logPath('kept'), turn('kept', 4, root));
     expect(await run()).toBe(
-      'Ingested 0 files: 0 sessions, 0 sub-agents, 0 API calls, 0 skill launches, 0 lines skipped, 2 sessions skipped (no factory).',
+      'Ingested 0 files: 0 sessions, 0 sub-agents, 0 API calls, 0 skill launches, 0 frictions, 0 lines skipped, 2 sessions skipped (no factory).',
     );
     expect(await run()).toBe('Nothing new.');
     expect(await storedSessions()).toEqual([['kept', root]]);
@@ -189,7 +189,7 @@ describe('factory projects only', () => {
 
     await installFactory(root);
     expect(await run()).toBe(
-      'Ingested 1 files: 1 sessions, 0 sub-agents, 1 API calls, 1 skill launches, 0 lines skipped, 0 sessions skipped (no factory).',
+      'Ingested 1 files: 1 sessions, 0 sub-agents, 1 API calls, 1 skill launches, 0 frictions, 0 lines skipped, 0 sessions skipped (no factory).',
     );
     expect(await db.select().from(apiCall)).toHaveLength(2);
   });
