@@ -1,6 +1,6 @@
 # 037 · Stats page and autonomy
 
-Status: ready
+Status: done
 Depends on: 031, 036
 Checked: 2026-11-22
 
@@ -10,20 +10,20 @@ A developer opens a `Stats` page and sees whether their factory delivers on its 
 
 ## Acceptance criteria
 
-- [ ] `/stats` is a React Router route that survives a reload. The sidebar (spec 031) shows a link `Stats` with a new icon `stats` (three bars rising from left to right, drawn like the other icons of `Icon.tsx`), between `Features` and `Sessions`; it carries the `project` parameter like the other links.
-- [ ] `/stats` shows a `PageHeader` (spec 019) titled `Stats`, with `PeriodPills` (spec 017) on the right keeping the `period` parameter, and the summary `<n> issues merged · <m> without a person` (`1 issue merged · 1 without a person`), or `No issue merged` with none, for the period and project. While the figures load, the header is `pending` (AGENTS.md).
-- [ ] Under the header, a `Panel` (spec 019) `Autonomy` shows three `StatFigure`s (spec 036) side by side, wrapping below 680 px:
+- [x] `/stats` is a React Router route that survives a reload. The sidebar (spec 031) shows a link `Stats` with a new icon `stats` (three bars rising from left to right, drawn like the other icons of `Icon.tsx`), between `Features` and `Sessions`; it carries the `project` parameter like the other links.
+- [x] `/stats` shows a `PageHeader` (spec 019) titled `Stats`, with `PeriodPills` (spec 017) on the right keeping the `period` parameter, and the summary `<n> issues merged · <m> without a person` (`1 issue merged · 1 without a person`), or `No issue merged` with none, for the period and project. While the figures load, the header is `pending` (AGENTS.md).
+- [x] Under the header, a `Panel` (spec 019) `Autonomy` shows three `StatFigure`s (spec 036) side by side, wrapping below 680 px:
   - `Merged without a person`: the share of merged issues at stage `Merged`, as a whole percent (`75%`); n = merged issues (`merged issue` / `merged issues`); higher is better.
   - `Spec questions`: the share of merged issues that had a needs-spec episode before their merge (`25%`); n = merged issues; lower is better.
   - `Waiting for an answer`: the median time of the needs-spec episodes answered in the period, formatted like `formatDuration` of `src/ui/format.ts` (`3 h 05 min`, `1 d 4 h`); n = answered episodes (`answered question` / `answered questions`); lower is better; with the note `<k> still waiting` when `k` issues of the project carry the needs-spec label now (left out at 0).
-- [ ] Each figure's change line compares with the previous period of the same length (spec 036): its comparison text is `yesterday` for `Today`, `previous 7 days` for `Last 7 days`, `previous 30 days` for `Last 30 days`; `All time` has no change line.
-- [ ] Under the figures, `Merged without a person, by week`: a `TrendBars` (spec 036, `share` scale, 64 px high, `--fd-stage-merged`) of the last 12 weeks, whatever the period, the current week last. A week's label is its Monday (`Nov 16`), the current one `this week`; its value is the share of the issues merged that week that are at stage `Merged`, with n = issues merged that week; its tooltip value reads `75% · 3 of 4`.
-- [ ] Then `Why a person stepped in`: a `CountBars` (spec 036) among the merged issues of the period at stage `Merged after a person` or `Merged by a person`, noun `merged issues helped by a person`, with the rows `Spec question`, `Score below threshold`, `Gates failed`, `Auto-merge off`, in this order before sorting. With no such issue, the text `No person had to step in.` replaces it.
-- [ ] With no merged issue in the period, the three figures show `Not enough data` (spec 036) and the panel still shows the weekly trend and the reasons text.
-- [ ] The demo data (`pnpm demo`) gains about 60 synthetic merged issues spread over the last 12 weeks, as git host data only (issues, requests, serenity reports, needs-spec label changes; no session): the share merged without a person rises over the weeks, every reason of `Why a person stepped in` occurs, at least one issue has two reasons, and two open issues still carry the needs-spec label. The existing demo issues and sessions stay as they are.
-- [ ] `GET /api/stats/autonomy?period=<period>&tz=<time zone>&project=<root>` returns, for the period and its previous one, the counts behind each figure (merged issues, merged at stage `Merged`, merged with a needs-spec episode, the durations of the answered episodes, the issues waiting now), the 12 weeks (start date, issues merged, merged at stage `Merged`), and the four reason counts with their total. The previous period is left out for `all`. Parameters are read and refused like those of `/api/overview` (specs 003 and 013): a missing or unknown `period` or `tz` answers 400.
-- [ ] The panel loads and fails on its own, with `Loading…` and the unreachable message (`StatusLine`), like the blocks of spec 024; while the period or project changes, the last figures stay on screen (`useRefreshing` with the page as `scope`).
-- [ ] Figures refresh with each collection (spec 008), without a reload. From 1024 px wide, nothing scrolls horizontally.
+- [x] Each figure's change line compares with the previous period of the same length (spec 036): its comparison text is `yesterday` for `Today`, `previous 7 days` for `Last 7 days`, `previous 30 days` for `Last 30 days`; `All time` has no change line.
+- [x] Under the figures, `Merged without a person, by week`: a `TrendBars` (spec 036, `share` scale, 64 px high, `--fd-stage-merged`) of the last 12 weeks, whatever the period, the current week last. A week's label is its Monday (`Nov 16`), the current one `this week`; its value is the share of the issues merged that week that are at stage `Merged`, with n = issues merged that week; its tooltip value reads `75% · 3 of 4`.
+- [x] Then `Why a person stepped in`: a `CountBars` (spec 036) among the merged issues of the period at stage `Merged after a person` or `Merged by a person`, noun `merged issues helped by a person`, with the rows `Spec question`, `Score below threshold`, `Gates failed`, `Auto-merge off`, in this order before sorting. With no such issue, the text `No person had to step in.` replaces it.
+- [x] With no merged issue in the period, the three figures show `Not enough data` (spec 036) and the panel still shows the weekly trend and the reasons text.
+- [x] The demo data (`pnpm demo`) gains about 60 synthetic merged issues spread over the last 12 weeks, as git host data only (issues, requests, serenity reports, needs-spec label changes; no session): the share merged without a person rises over the weeks, every reason of `Why a person stepped in` occurs, at least one issue has two reasons, and two open issues still carry the needs-spec label. The existing demo issues and sessions stay as they are.
+- [x] `GET /api/stats/autonomy?period=<period>&tz=<time zone>&project=<root>` returns, for the period and its previous one, the counts behind each figure (merged issues, merged at stage `Merged`, merged with a needs-spec episode, the durations of the answered episodes, the issues waiting now), the 12 weeks (start date, issues merged, merged at stage `Merged`), and the four reason counts with their total. The previous period is left out for `all`. Parameters are read and refused like those of `/api/overview` (specs 003 and 013): a missing or unknown `period` or `tz` answers 400.
+- [x] The panel loads and fails on its own, with `Loading…` and the unreachable message (`StatusLine`), like the blocks of spec 024; while the period or project changes, the last figures stay on screen (`useRefreshing` with the page as `scope`).
+- [x] Figures refresh with each collection (spec 008), without a reload. From 1024 px wide, nothing scrolls horizontally.
 
 ## Rules
 

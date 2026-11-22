@@ -86,6 +86,25 @@ function waitingIssue(number: number, daysAgo: number): DemoIssue {
   };
 }
 
+function answeredIssue(
+  number: number,
+  daysAgo: number,
+  waitHours: number,
+): DemoIssue {
+  return {
+    number,
+    title: `${String(number)} · Demo answered question ${String(number)}`,
+    closed: false,
+    labels: ['spec', 'agent:ready'],
+    daysAgo,
+    closedDaysAgo: daysAgo - 1,
+    needsSpecAt: {
+      addedDaysAgo: daysAgo - 0.2,
+      removedDaysAgo: daysAgo - 0.2 - waitHours / 24,
+    },
+  };
+}
+
 export function autonomyDemo(): Demo {
   const merged = Array.from({ length: AUTONOMY_MERGED }, (_, index) =>
     mergedDemo(index),
@@ -96,6 +115,10 @@ export function autonomyDemo(): Demo {
       ...merged.flatMap((demo) => demo.issues),
       waitingIssue(last, 3),
       waitingIssue(last + 1, 1.5),
+      answeredIssue(last + 2, 24, 4),
+      answeredIssue(last + 3, 15, 7),
+      answeredIssue(last + 4, 9, 3),
+      answeredIssue(last + 5, 5, 11),
     ],
     requests: merged.flatMap((demo) => demo.requests),
   };
