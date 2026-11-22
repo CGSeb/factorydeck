@@ -1,3 +1,9 @@
+import { autonomyDemo } from './autonomy.ts';
+import {
+  type DemoIssue,
+  type DemoRequest,
+  serenityReport,
+} from './demo-items.ts';
 import type { FakeGitHostData } from './fake-git-host.ts';
 
 export type Row = Record<string, unknown>;
@@ -6,37 +12,6 @@ export const HOUR = 3_600_000;
 export const DAY = 24 * HOUR;
 
 const GITHUB_REPOSITORY = 'example-org/example-app';
-
-export interface DemoIssue {
-  number: number;
-  title: string;
-  closed: boolean;
-  labels: string[];
-  daysAgo: number;
-  needsSpec?: boolean;
-}
-
-export interface DemoRequest {
-  number: number;
-  title: string;
-  state: 'open' | 'merged' | 'closed';
-  closes: number[];
-  checks: string;
-  hoursAgo: number;
-  draft?: boolean;
-  report?: string;
-  refusedReport?: string;
-}
-
-export function serenityReport(score: number, rounds: number): string {
-  return [
-    `## Serenity: ${String(score)}/100 (threshold 80)`,
-    '',
-    '- −10: a demo deduction',
-    '',
-    `Gates: all passed. Review: ${String(rounds)} ${rounds === 1 ? 'round' : 'rounds'}, confidence high.`,
-  ].join('\n');
-}
 
 export function reportComments(now: Date, request: DemoRequest): Row[] {
   const comment = (body: string, hoursAgo: number): Row => ({
@@ -50,11 +25,33 @@ export function reportComments(now: Date, request: DemoRequest): Row[] {
       : [comment(request.refusedReport, request.hoursAgo - 0.5)]),
     ...(request.report === undefined
       ? []
-      : [comment(request.report, request.hoursAgo - 1)]),
+      : [
+          comment(
+            request.report,
+            request.hoursAgo - 1 + (request.reportLead ?? 0),
+          ),
+        ]),
   ];
 }
 
+function labelEvent(now: Date, added: boolean, daysAgo: number): Row {
+  return {
+    __typename: added ? 'LabeledEvent' : 'UnlabeledEvent',
+    createdAt: ago(now, daysAgo * DAY),
+    label: { name: 'agent:needs-spec' },
+  };
+}
+
 function needsSpecEvents(now: Date, issue: DemoIssue): Row[] {
+  const at = issue.needsSpecAt;
+  if (at !== undefined) {
+    return [
+      labelEvent(now, true, at.addedDaysAgo),
+      ...(at.removedDaysAgo === null
+        ? []
+        : [labelEvent(now, false, at.removedDaysAgo)]),
+    ];
+  }
   if (issue.needsSpec !== true) return [];
   return [
     {
@@ -101,9 +98,13 @@ function githubIssueRow(now: Date, issue: DemoIssue): Row {
     labels: issue.labels.map((name) => ({ name, color: GITHUB_COLORS[name] })),
     url: `https://github.com/${GITHUB_REPOSITORY}/issues/${String(issue.number)}`,
     createdAt: ago(now, issue.daysAgo * DAY),
-    closedAt: issue.closed ? ago(now, (issue.daysAgo - 1) * DAY) : null,
-    updatedAt: ago(now, (issue.daysAgo - 1) * DAY),
+    closedAt: issue.closed ? ago(now, closedDaysAgo(issue) * DAY) : null,
+    updatedAt: ago(now, closedDaysAgo(issue) * DAY),
   };
+}
+
+export function closedDaysAgo(issue: DemoIssue): number {
+  return issue.closedDaysAgo ?? issue.daysAgo - 1;
 }
 
 function githubRequestRow(now: Date, request: DemoRequest): Row {
@@ -247,13 +248,16 @@ const GITHUB_REQUESTS: DemoRequest[] = [
 ];
 
 export function demoGitHub(now: Date): FakeGitHostData {
+  const autonomy = autonomyDemo();
+  const issues = [...GITHUB_ISSUES, ...autonomy.issues];
+  const requests = [...GITHUB_REQUESTS, ...autonomy.requests];
   return {
     host: 'github',
     repository: GITHUB_REPOSITORY,
-    issues: GITHUB_ISSUES.map((issue) => githubIssueRow(now, issue)),
-    requests: GITHUB_REQUESTS.map((request) => githubRequestRow(now, request)),
+    issues: issues.map((issue) => githubIssueRow(now, issue)),
+    requests: requests.map((request) => githubRequestRow(now, request)),
     labelEvents: Object.fromEntries(
-      GITHUB_ISSUES.map((issue) => [
+      issues.map((issue) => [
         String(issue.number),
         needsSpecEvents(now, issue),
       ]),

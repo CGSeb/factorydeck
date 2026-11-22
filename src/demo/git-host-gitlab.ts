@@ -1,14 +1,18 @@
 import {
   DAY,
-  type DemoIssue,
-  type DemoRequest,
   HOUR,
   type Row,
   ago,
+  closedDaysAgo,
   reportComments,
-  serenityReport,
 } from './git-host.ts';
-import type { FakeGitHostData } from './fake-git-host.ts';
+import {
+  type DemoIssue,
+  type DemoRequest,
+  serenityReport,
+} from './demo-items.ts';
+import { autoMergeOffDemo } from './autonomy.ts';
+import { FACTORY_WORKFLOW, type FakeGitHostData } from './fake-git-host.ts';
 
 const GITLAB_PROJECT = 'example-group/example-api';
 
@@ -28,8 +32,8 @@ function gitlabIssueRow(now: Date, issue: DemoIssue): Row {
     labels: issue.labels,
     web_url: `https://gitlab.com/${GITLAB_PROJECT}/-/issues/${String(issue.number)}`,
     created_at: ago(now, issue.daysAgo * DAY),
-    closed_at: issue.closed ? ago(now, (issue.daysAgo - 1) * DAY) : null,
-    updated_at: ago(now, (issue.daysAgo - 1) * DAY),
+    closed_at: issue.closed ? ago(now, closedDaysAgo(issue) * DAY) : null,
+    updated_at: ago(now, closedDaysAgo(issue) * DAY),
   };
 }
 
@@ -74,9 +78,12 @@ const GITLAB_REQUESTS: DemoRequest[] = [
 ];
 
 export function demoGitLab(now: Date): FakeGitHostData {
+  const autoMergeOff = autoMergeOffDemo();
+  const requests = [...GITLAB_REQUESTS, ...autoMergeOff.requests];
   return {
     host: 'gitlab',
     repository: GITLAB_PROJECT,
+    factory: FACTORY_WORKFLOW.replace('auto_merge: true', 'auto_merge: false'),
     labels: [
       { name: 'backend', color: '#428bca' },
       { name: 'priority::high', color: '#dc143c' },
@@ -97,10 +104,11 @@ export function demoGitLab(now: Date): FakeGitHostData {
         labels: ['priority::high', 'backend', 'triage'],
         daysAgo: 4,
       },
+      ...autoMergeOff.issues,
     ].map((issue) => gitlabIssueRow(now, issue)),
-    requests: GITLAB_REQUESTS.map((request) => gitlabRequestRow(now, request)),
+    requests: requests.map((request) => gitlabRequestRow(now, request)),
     notes: Object.fromEntries(
-      GITLAB_REQUESTS.map((request) => [
+      requests.map((request) => [
         String(request.number),
         [
           {
@@ -118,7 +126,7 @@ export function demoGitLab(now: Date): FakeGitHostData {
     ),
     reopened: [22],
     closes: Object.fromEntries(
-      GITLAB_REQUESTS.map((request) => [
+      requests.map((request) => [
         String(request.number),
         request.closes.map((iid) => ({ iid, project_id: 7 })),
       ]),
