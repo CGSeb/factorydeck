@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   formatAgo,
-  formatAxisCost,
   formatBucket,
   formatClock,
   formatCost,
@@ -10,7 +9,6 @@ import {
   formatDuration,
   formatTokens,
   formatWorkItem,
-  orMissing,
 } from './format.ts';
 
 describe('formatCost', () => {
@@ -26,13 +24,6 @@ describe('formatCost', () => {
 
   it('shows an unknown cost as —', () => {
     expect(formatCost(null)).toBe('—');
-  });
-});
-
-describe('formatAxisCost', () => {
-  it('shows an axis tick in US dollars with two decimals', () => {
-    expect(formatAxisCost(0.5)).toBe('$0.50');
-    expect(formatAxisCost(2)).toBe('$2.00');
   });
 });
 
@@ -106,13 +97,6 @@ describe('formatDateTime', () => {
       'Jan 7, 09:05',
     );
     expect(formatDateTime(null)).toBe('—');
-  });
-});
-
-describe('orMissing', () => {
-  it('shows — for an empty value', () => {
-    expect(orMissing('')).toBe('—');
-    expect(orMissing('main')).toBe('main');
   });
 });
 

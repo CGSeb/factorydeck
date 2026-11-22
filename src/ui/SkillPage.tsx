@@ -19,7 +19,7 @@ import { UNASSIGNED_COLOR, projectColors } from './design/palette.ts';
 import { formatCount } from './format.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { useProject } from './project-param.ts';
-import { sessionPath, sessionTitle } from './SessionTable.tsx';
+import { sessionPath, sessionTitle } from './session-links.ts';
 import { sortedSessions, tokensPerLaunch } from './skill-view.ts';
 import {
   type LoadSkill,

@@ -20,7 +20,12 @@ import { TokenAmount } from './components/TokenAmount.tsx';
 import { projectColors } from './design/palette.ts';
 import { MISSING, formatAgo, formatDuration } from './format.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
-import { type LinkScope, issueHref, sessionHref } from './session-links.ts';
+import {
+  type LinkScope,
+  issueHref,
+  sessionHref,
+  sessionTitle,
+} from './session-links.ts';
 import {
   ALL,
   sessionCountText,
@@ -30,7 +35,6 @@ import {
 } from './session-list.ts';
 import { canShowMore, nextLimit } from './session-paging.ts';
 import type { LoadSessions, SessionFilters } from './sessions-api.ts';
-import { sessionTitle } from './SessionTable.tsx';
 import './sessions.css';
 
 export interface SessionsPageProps {

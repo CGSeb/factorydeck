@@ -1,6 +1,6 @@
 # 030 · Remove the old UI
 
-Status: ready
+Status: done
 Depends on: 024, 026, 027, 028, 029
 Checked: 2026-11-22
 
@@ -10,12 +10,12 @@ A developer working on FactoryDeck after the redesign finds one set of component
 
 ## Acceptance criteria
 
-- [ ] Every component of `src/ui` that no page or other component imports anymore is deleted with its stories and tests (expected: `UsageTiles`, `CostChart`, `LaunchChart`, `ModelTable`, `ProjectTable`, `FeatureTiles`, `FeatureTable`, `FeatureSessionTable`, `RoleTable`, `SkillTable`, `SessionTable`, `SubAgentTable`, `SessionSkillTable`, `IssuePanel`, `OutcomeLine`, `StageLabel`, `SessionStateLabel`, `TokenCount`, `PeriodSelector`, `ProjectSelect`, `CollectionStatus`, as far as none is still used).
-- [ ] `recharts` is removed from `package.json` and the lockfile; nothing imports it.
-- [ ] `src/ui/styles.css` keeps only rules that a remaining element uses, or is deleted if none is left; no class name in it is unused (checked by a search of each selector in `src/ui`).
-- [ ] The colour check of spec 014 (`scripts/check-design-colors.ts`) covers all of `src/ui`, except `src/ui/design/` and `src/ui/colors.ts`; `pnpm lint` passes with it.
-- [ ] `docs/design/` (the B4 mockups and their README) is deleted, and no spec, doc or code links to it anymore; specs 014 to 029 keep their text, with their mockup lines left as history.
-- [ ] Every page and state of specs 023 to 029 looks and behaves as before this change (same stories, same screenshots).
+- [x] Every component of `src/ui` that no page or other component imports anymore is deleted with its stories and tests (expected: `UsageTiles`, `CostChart`, `LaunchChart`, `ModelTable`, `ProjectTable`, `FeatureTiles`, `FeatureTable`, `FeatureSessionTable`, `RoleTable`, `SkillTable`, `SessionTable`, `SubAgentTable`, `SessionSkillTable`, `IssuePanel`, `OutcomeLine`, `StageLabel`, `SessionStateLabel`, `TokenCount`, `PeriodSelector`, `ProjectSelect`, `CollectionStatus`, as far as none is still used).
+- [x] `recharts` is removed from `package.json` and the lockfile; nothing imports it.
+- [x] `src/ui/styles.css` keeps only rules that a remaining element uses, or is deleted if none is left; no class name in it is unused (checked by a search of each selector in `src/ui`).
+- [x] The colour check of spec 014 (`scripts/check-design-colors.ts`) covers all of `src/ui`, except `src/ui/design/` and `src/ui/colors.ts`; `pnpm lint` passes with it.
+- [x] `docs/design/` (the B4 mockups and their README) is deleted, and no spec, doc or code links to it anymore; specs 014 to 029 keep their text, with their mockup lines left as history.
+- [x] Every page and state of specs 023 to 029 looks and behaves as before this change (same stories, same screenshots).
 
 ## Rules
 

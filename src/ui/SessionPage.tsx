@@ -25,12 +25,12 @@ import {
   type LinkScope,
   issueHref,
   scopeOf,
+  sessionTitle,
   sessionsHref,
   skillHref,
 } from './session-links.ts';
 import type { LoadSession } from './sessions-api.ts';
 import { IssueNumberLink } from './SessionsPage.tsx';
-import { sessionTitle } from './SessionTable.tsx';
 import './sessions.css';
 
 export interface SessionPageProps {

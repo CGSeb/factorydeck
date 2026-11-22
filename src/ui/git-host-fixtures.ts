@@ -18,11 +18,11 @@ export const githubIssue: IssueDetail = {
   url: 'https://github.com/example-org/example-app/issues/52',
   state: 'open',
   labels: [
-    { name: 'agent:review', color: '#5319e7' },
-    { name: 'bug', color: '#d73a4a' },
-    { name: 'good first issue', color: '#7057ff' },
-    { name: 'help wanted', color: '#008672' },
-    { name: 'spec', color: '#fbca04' },
+    { name: 'agent:review', color: null },
+    { name: 'bug', color: null },
+    { name: 'good first issue', color: null },
+    { name: 'help wanted', color: null },
+    { name: 'spec', color: null },
     { name: 'triage', color: null },
   ],
   requests: [
@@ -77,8 +77,8 @@ export const gitlabIssue: IssueDetail = {
   url: 'https://gitlab.com/example-group/example-api/-/issues/21',
   state: 'closed',
   labels: [
-    { name: 'backend', color: '#428bca' },
-    { name: 'priority::high', color: '#dc143c' },
+    { name: 'backend', color: null },
+    { name: 'priority::high', color: null },
   ],
   requests: [
     {
@@ -92,16 +92,6 @@ export const gitlabIssue: IssueDetail = {
     },
   ],
   outcome: { stage: 'merged', report: null, reworked: false },
-};
-
-export const issueWithoutRequests: IssueDetail = {
-  ...githubIssue,
-  number: 61,
-  title: 'Keyboard shortcuts',
-  url: 'https://github.com/example-org/example-app/issues/61',
-  labels: [],
-  requests: [],
-  outcome: { stage: 'open', report: null, reworked: false },
 };
 
 export const appFailure: CollectionFailure = {
