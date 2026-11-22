@@ -8,7 +8,6 @@ import type {
   UserPromptRow,
 } from './thread.ts';
 
-/** What the reader of a rollout carries from one run to the next, with the file's offset. */
 export interface CodexState {
   lines: number;
   model: string;
@@ -55,7 +54,6 @@ export interface CodexRows {
   frictions: FrictionRow[];
   toolCalls: Map<string, ToolCall>;
   outputs: PendingOutput[];
-  /** The file's calls read from `token_count` before its first `token_usage_record`, to delete. */
   dropTokenCountCalls: boolean;
   skipped: number;
   firstModel: string;

@@ -171,6 +171,30 @@ describe('readCodexChunk calls', () => {
   });
 });
 
+describe('readCodexChunk inherited token counts', () => {
+  it('stores no call for a token_count before the history start of a sub-agent', () => {
+    const { rows } = readLines(
+      [
+        sessionMeta({ id: 'sub', parent: 'root', historyStart: 2 }),
+        tokenCount(1, { input: 10, output: 1 }, { input: 10, output: 1 }),
+        tokenCount(3, { input: 10, output: 1 }, { input: 10, output: 1 }),
+        tokenCount(4, { input: 15, output: 2 }, { input: 5, output: 1 }),
+      ],
+      { subAgentId: 'sub', historyStart: 2 },
+    );
+    expect(tokens(rows)).toEqual([
+      {
+        key: 'token_count:',
+        model: '',
+        input: 5,
+        cacheWrite: 0,
+        cacheRead: 0,
+        output: 1,
+      },
+    ]);
+  });
+});
+
 describe('readCodexChunk main thread', () => {
   it('stores user prompts in both forms, closing lines and the turn state', () => {
     const { rows, main, span } = readLines([

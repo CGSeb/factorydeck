@@ -270,7 +270,6 @@ export function unresolvedOutputs(rows: CodexRows): boolean {
   return rows.outputs.some((output) => !rows.toolCalls.has(output.callId));
 }
 
-/** Every friction of the chunk, its tool outputs matched with calls of the chunk or `earlier`. */
 export function codexFrictionRows(
   rows: CodexRows,
   earlier: ReadonlyMap<string, ToolCall> = new Map(),
@@ -290,7 +289,6 @@ export function codexFrictionRows(
   return frictions;
 }
 
-/** Tool calls of earlier records of a rollout, to match the tool outputs of a later chunk. */
 export function codexToolCalls(
   records: readonly { record: LogRecord }[],
 ): Map<string, ToolCall> {

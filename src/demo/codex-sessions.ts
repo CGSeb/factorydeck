@@ -173,7 +173,6 @@ function rolloutPath(folder: string, start: number, id: string): string {
   );
 }
 
-/** Writes the two synthetic Codex sessions of the demo, with two sub-agents in the first. */
 export async function writeDemoCodexSessions(
   folder: string,
   now: Date,

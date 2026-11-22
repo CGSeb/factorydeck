@@ -41,9 +41,7 @@ export type { IngestCounts } from './range.ts';
 export interface IngestOptions {
   hasFactory?: FactoryCheck;
   home?: string;
-  /** Folder of the Codex rollouts; not read when missing. */
   codexFolder?: string;
-  /** Whether a Windows working directory is read as its WSL path; detected when missing. */
   wsl?: boolean;
 }
 

@@ -54,7 +54,6 @@ function applySubAgentMeta(row: SubAgentRow, codex: CodexFile): void {
   });
 }
 
-/** Calls whose response is not already stored for the root session from another file. */
 async function newCalls(
   run: Run,
   file: LogFile,
@@ -176,7 +175,6 @@ async function unreadChunk(
   return chunk === undefined ? undefined : { ...range, chunk };
 }
 
-/** Reads what is new in one Codex rollout, by the rules of spec 043. */
 export async function ingestCodexFile(
   run: Run,
   file: LogFile,
@@ -214,6 +212,6 @@ export async function ingestCodexFile(
   await saveOffset(run, file.path, {
     sizeBytes: range.size,
     readOffset: range.start + parsed.consumed,
-    readerState: { ...state },
+    readerState: { ...state, sessionId: file.sessionId },
   });
 }

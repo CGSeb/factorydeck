@@ -88,6 +88,7 @@ function readTokenCount(reading: Reading, entry: Entry): void {
   const total = JSON.stringify(info['total_token_usage'] ?? null);
   if (total === state.lastTotal) return;
   state.lastTotal = total;
+  if (entry.inherited) return;
   pushCall(
     reading,
     entry,

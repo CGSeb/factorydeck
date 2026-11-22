@@ -30,9 +30,7 @@ export interface CodexMeta {
 
 export interface CodexFile {
   meta: CodexMeta;
-  /** Set for a sub-agent rollout: its own id. */
   subAgentId?: string;
-  /** Working directory, a Windows path read as its WSL path under WSL. */
   cwd: string | null;
 }
 
@@ -171,10 +169,6 @@ function rootOf(
   }
 }
 
-/**
- * Every Codex rollout under `folder` whose first line is its `session_meta`, root sessions first.
- * A folder that does not exist gives no file.
- */
 export async function findCodexFiles(
   folder: string,
   { wsl }: { wsl: boolean },
@@ -214,7 +208,6 @@ export async function findCodexFiles(
     );
 }
 
-/** Working directory of a Codex session: its root rollout's, else its earliest sub-agent's. */
 export function codexSessionCwd(files: readonly LogFile[]): string | null {
   const root = files.find(
     (file) => file.codex !== undefined && file.codex.subAgentId === undefined,

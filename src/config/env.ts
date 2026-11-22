@@ -70,7 +70,6 @@ export function sessionsFolder(env: Pick<Env, 'CLAUDE_PROJECTS_DIR'>): string {
   return expandHome(configured);
 }
 
-/** The folder of Codex session logs: `CODEX_SESSIONS_DIR`, else `~/.codex/sessions`. */
 export function codexSessionsFolder(
   env: Pick<Env, 'CODEX_SESSIONS_DIR'>,
 ): string {

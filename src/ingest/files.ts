@@ -8,7 +8,6 @@ export interface LogFile {
   sessionId: string;
   /** Set for a sub-agent log, with the path of its meta file. */
   subAgent?: { id: string; metaPath: string };
-  /** Set for a Codex rollout. */
   codex?: CodexFile;
 }
 

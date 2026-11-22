@@ -29,7 +29,6 @@ export function agentLabel(agent: string): string {
 
 export interface SessionSummary {
   id: string;
-  /** The coding agent that ran the session: `claude-code` or `codex`. */
   agent: string;
   title: string;
   project: string;
@@ -52,7 +51,6 @@ export interface SessionList {
   sessions: SessionSummary[];
   total: number;
   counts: StateCounts;
-  /** Every coding agent of the sessions of the period and project, whatever their state. */
   agents: string[];
   projects: ProjectOption[];
 }

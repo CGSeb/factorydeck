@@ -111,14 +111,9 @@ export interface CodexChunk {
   source: CodexSource;
   state: CodexState;
   span: Span;
-  /** The turn state of a root session's rollout; none for a sub-agent's. */
   main: TurnState | undefined;
 }
 
-/**
- * Turns the records of a chunk of a Codex rollout into rows, updating the chunk's `state`,
- * `span` and `main` in place.
- */
 export function readCodexChunk(
   records: readonly { record: LogRecord; offset: number; line: number }[],
   { source, state, span, main }: CodexChunk,

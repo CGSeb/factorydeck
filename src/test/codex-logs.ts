@@ -11,8 +11,6 @@ import { type TurnState, parseLines } from '../ingest/records.ts';
 import type { Span } from '../ingest/thread.ts';
 import { minute } from './session-logs.ts';
 
-/** Synthetic Codex rollouts, written under a temporary sessions folder with `writeLog`. */
-
 type Line = Record<string, unknown>;
 
 export function rolloutPath(folder: string, id: string, day = '05'): string {
@@ -215,7 +213,6 @@ export interface ReadChunk {
   skipped: number;
 }
 
-/** Reads synthetic rollout lines as one chunk of a root session, or of a sub-agent. */
 export function readLines(
   lines: readonly (Record<string, unknown> | string)[],
   options: {
@@ -247,7 +244,6 @@ export function readLines(
   return { rows, span, main, state, skipped };
 }
 
-/** The request key of a call, with the position of a `token_count` call left out. */
 export function keyKind(key: string): string {
   return key.startsWith(TOKEN_COUNT_KEY) ? TOKEN_COUNT_KEY : key;
 }
