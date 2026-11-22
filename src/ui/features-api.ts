@@ -1,7 +1,6 @@
 import type {
   FeatureListResponse,
   FeatureResponse,
-  FeatureRow,
 } from '../features/types.ts';
 import {
   type SkillFilters,
@@ -9,24 +8,6 @@ import {
   fetchJson,
   queryOf,
 } from './skills-api.ts';
-
-export const SORT_KEYS = [
-  'cost',
-  'tokens',
-  'sessions',
-  'score',
-  'rounds',
-  'number',
-] as const;
-
-export type SortKey = (typeof SORT_KEYS)[number];
-
-export interface FeatureSort {
-  key: SortKey;
-  order: 'asc' | 'desc';
-}
-
-export const DEFAULT_SORT: FeatureSort = { key: 'cost', order: 'desc' };
 
 export type LoadFeatures = (
   filters: SkillFilters,
@@ -95,34 +76,4 @@ export function featuresPath(filters: SkillFilters): string {
   const params = new URLSearchParams({ period: filters.period });
   if (filters.project !== undefined) params.set('project', filters.project);
   return `/features?${params.toString()}`;
-}
-
-export function nextSort(current: FeatureSort, key: SortKey): FeatureSort {
-  return current.key === key && current.order === 'asc'
-    ? { key, order: 'desc' }
-    : { key, order: 'asc' };
-}
-
-const VALUES: Record<SortKey, (row: FeatureRow) => number | null> = {
-  cost: (row) => row.costUsd,
-  tokens: (row) => row.tokens,
-  sessions: (row) => row.sessions,
-  score: (row) => row.outcome?.report?.score ?? null,
-  rounds: (row) => row.outcome?.report?.rounds ?? null,
-  number: (row) => row.number,
-};
-
-export function sortFeatures(
-  rows: readonly FeatureRow[],
-  { key, order }: FeatureSort,
-): FeatureRow[] {
-  const sign = order === 'asc' ? 1 : -1;
-  return [...rows].sort((left, right) => {
-    const a = VALUES[key](left);
-    const b = VALUES[key](right);
-    if (a === null || b === null) {
-      return a === b ? 0 : a === null ? 1 : -1;
-    }
-    return (a - b) * sign;
-  });
 }

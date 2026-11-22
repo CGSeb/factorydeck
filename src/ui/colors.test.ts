@@ -7,10 +7,10 @@ function hex(value: number): string {
 
 describe('labelTextColor', () => {
   it('picks black on light colours and white on dark ones', () => {
-    expect(labelTextColor('#fbca04')).toBe(BLACK);
-    expect(labelTextColor('#ffffff')).toBe(BLACK);
-    expect(labelTextColor('#5319e7')).toBe(WHITE);
-    expect(labelTextColor('#000000')).toBe(WHITE);
+    expect(labelTextColor(hex(0xfbca04))).toBe(BLACK);
+    expect(labelTextColor(hex(0xffffff))).toBe(BLACK);
+    expect(labelTextColor(hex(0x5319e7))).toBe(WHITE);
+    expect(labelTextColor(hex(0x000000))).toBe(WHITE);
   });
 
   it('reaches WCAG AA (4.5:1) whatever the background', () => {
@@ -27,6 +27,6 @@ describe('labelTextColor', () => {
 
   it('measures contrast like WCAG', () => {
     expect(contrastRatio(BLACK, WHITE)).toBeCloseTo(21, 5);
-    expect(contrastRatio('#777777', WHITE)).toBeCloseTo(4.48, 2);
+    expect(contrastRatio(hex(0x777777), WHITE)).toBeCloseTo(4.48, 2);
   });
 });

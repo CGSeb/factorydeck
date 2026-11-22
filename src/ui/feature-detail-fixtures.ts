@@ -59,8 +59,8 @@ const mergedByPersonIssue: IssueDetail = {
   ...githubIssue,
   state: 'closed',
   labels: [
-    { name: 'spec', color: '#fbca04' },
-    { name: 'agent:review', color: '#5319e7' },
+    { name: 'spec', color: null },
+    { name: 'agent:review', color: null },
   ],
   outcome: {
     stage: 'merged-by-person',
@@ -69,7 +69,7 @@ const mergedByPersonIssue: IssueDetail = {
   },
 };
 
-export const exportFeature: FeatureDetail = {
+const exportFeature: FeatureDetail = {
   project: APP,
   projectName: nameOf(APP),
   number: 52,
@@ -199,7 +199,7 @@ export const reviewFeature: FeatureDetail = {
     number: 61,
     title: 'Keyboard shortcuts',
     url: 'https://github.com/example-org/example-app/issues/61',
-    labels: [{ name: 'agent:review', color: '#5319e7' }],
+    labels: [{ name: 'agent:review', color: null }],
     outcome: { stage: 'in-review', report: null, reworked: false },
   },
   roles: [exportFeature.roles[0]].filter((role) => role !== undefined),

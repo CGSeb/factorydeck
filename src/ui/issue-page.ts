@@ -17,7 +17,7 @@ import type {
 import type { TokenCounts } from './components/token-amount.ts';
 import { roleColors } from './design/palette.ts';
 import { MISSING } from './format.ts';
-import { sessionPath, sessionTitle } from './SessionTable.tsx';
+import { sessionPath, sessionTitle } from './session-links.ts';
 
 const MONTHS = [
   'Jan',

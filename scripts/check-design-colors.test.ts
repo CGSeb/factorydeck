@@ -64,31 +64,42 @@ describe('checkDesignColors', () => {
     writeFileSync(full, content);
   }
 
-  it('passes when there is no components folder', () => {
+  it('passes when there is no src/ui folder', () => {
     expect(checkDesignColors(root)).toEqual([]);
   });
 
-  it('passes on components that only use tokens', () => {
+  it('passes on files that only use tokens', () => {
     write('src/ui/components/Card.css', '.card { color: var(--fd-ink); }\n');
+    write('src/ui/Page.tsx', "const a = 'var(--fd-ink)';\n");
     expect(checkDesignColors(root)).toEqual([]);
   });
 
-  it('flags ts, tsx, css and story files of src/ui/components, nested too', () => {
+  it('flags ts, tsx, css, story and test files anywhere in src/ui', () => {
     write('src/ui/components/Card.css', '.card {\n  color: #123456;\n}\n');
     write('src/ui/components/Card.tsx', "const a = 'rgb(1, 2, 3)';\n");
     write('src/ui/components/Card.stories.tsx', "const b = '#fff';\n");
     write('src/ui/components/charts/util.ts', "const c = 'hsl(1 2% 3%)';\n");
+    write('src/ui/Page.tsx', "const d = '#abcdef';\n");
+    write('src/ui/styles.css', ':root {\n  --x: #000;\n}\n');
+    write('src/ui/colors.test.ts', "const e = '#777777';\n");
+    write('src/ui/designs/old.ts', "const f = '#111';\n");
     expect(checkDesignColors(root)).toEqual([
+      { file: 'src/ui/Page.tsx', line: 1, literal: '#abcdef' },
+      { file: 'src/ui/colors.test.ts', line: 1, literal: '#777777' },
       { file: 'src/ui/components/Card.css', line: 2, literal: '#123456' },
       { file: 'src/ui/components/Card.stories.tsx', line: 1, literal: '#fff' },
       { file: 'src/ui/components/Card.tsx', line: 1, literal: 'rgb(' },
       { file: 'src/ui/components/charts/util.ts', line: 1, literal: 'hsl(' },
+      { file: 'src/ui/designs/old.ts', line: 1, literal: '#111' },
+      { file: 'src/ui/styles.css', line: 2, literal: '#000' },
     ]);
   });
 
-  it('ignores files outside src/ui/components and other extensions', () => {
+  it('ignores src/ui/design/, src/ui/colors.ts, other folders and other extensions', () => {
     write('src/ui/design/tokens.css', ':root { --fd-ink: #17201f; }\n');
-    write('src/ui/OldTable.tsx', "const a = '#fff';\n");
+    write('src/ui/design/nested/palette.ts', "const a = '#fff';\n");
+    write('src/ui/colors.ts', "export const WHITE = '#ffffff';\n");
+    write('src/server/page.ts', "const b = '#fff';\n");
     write('src/ui/components/notes.md', 'colour #fff\n');
     expect(checkDesignColors(root)).toEqual([]);
   });

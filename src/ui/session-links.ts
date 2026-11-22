@@ -1,5 +1,5 @@
 import { type Period, isPeriod } from '../overview/types.ts';
-import { PROJECT_PARAM, projectOf } from './project-param.ts';
+import { PROJECT_PARAM, projectOf, withProject } from './project-param.ts';
 import { featurePath } from './features-api.ts';
 import { skillPath } from './skills-api.ts';
 
@@ -65,4 +65,18 @@ export function skillHref(
       [PROJECT_PARAM, project],
     ]),
   );
+}
+
+export function sessionTitle({
+  title,
+  id,
+}: {
+  title: string;
+  id: string;
+}): string {
+  return title === '' ? id.slice(0, 8) : title;
+}
+
+export function sessionPath(id: string, project?: string): string {
+  return withProject(`/sessions/${encodeURIComponent(id)}`, project);
 }

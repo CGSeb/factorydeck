@@ -1,7 +1,9 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join, relative, sep } from 'node:path';
 
-export const COMPONENTS_DIR = join('src', 'ui', 'components');
+export const UI_DIR = join('src', 'ui');
+
+const EXEMPT = [join(UI_DIR, 'design'), join(UI_DIR, 'colors.ts')];
 
 const CHECKED_FILE = /\.(?:ts|tsx|css)$/;
 const COLOR_LITERAL =
@@ -23,20 +25,27 @@ export function colorLiterals(file: string, source: string): ColorLiteral[] {
   );
 }
 
+function isExempt(path: string): boolean {
+  return EXEMPT.some(
+    (exempt) => path === exempt || path.startsWith(`${exempt}${sep}`),
+  );
+}
+
 export function checkDesignColors(root: string): ColorLiteral[] {
-  const folder = join(root, COMPONENTS_DIR);
+  const folder = join(root, UI_DIR);
   if (!existsSync(folder)) return [];
   return readdirSync(folder, { recursive: true, withFileTypes: true })
     .filter((entry) => entry.isFile() && CHECKED_FILE.test(entry.name))
-    .map((entry) => join(entry.parentPath, entry.name))
+    .map((entry) => relative(root, join(entry.parentPath, entry.name)))
+    .filter((path) => !isExempt(path))
     .toSorted()
     .flatMap((path) =>
-      colorLiterals(relative(root, path), readFileSync(path, 'utf8')),
+      colorLiterals(path, readFileSync(join(root, path), 'utf8')),
     );
 }
 
 export function formatColorLiterals(literals: ColorLiteral[]): string {
-  return `Colour literals outside src/ui/design/ (use a --fd-* token or src/ui/design/palette.ts):\n${literals
+  return `Colour literals outside src/ui/design/ and src/ui/colors.ts (use a --fd-* token or src/ui/design/palette.ts):\n${literals
     .map(({ file, line, literal }) => `${file}:${line}: ${literal}`)
     .join('\n')}\n`;
 }
