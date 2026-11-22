@@ -12,6 +12,7 @@ import {
   PILL_HEIGHT_PX,
   centreAt,
   dotStyle,
+  foldedStackOf,
   emptyStyle,
   lineStyle,
   levelCentre,
@@ -20,6 +21,7 @@ import {
   marksFor,
   pillStyle,
   small,
+  toggled,
   tooltipPosition,
   useWidth,
 } from './range-strip.ts';
@@ -107,30 +109,34 @@ function Dot({
   item,
   format,
   active,
-  onActive,
+  onHover,
+  onFocus,
 }: {
   dot: PlacedDot;
   item: RangeItem;
   format: (value: number) => string;
   active: boolean;
-  onActive: (on: boolean) => void;
+  onHover: (on: boolean) => void;
+  onFocus: (on: boolean) => void;
 }): ReactElement {
-  const on = (): void => {
-    onActive(true);
-  };
-  const off = (): void => {
-    onActive(false);
-  };
   return (
     <a
       href={item.href}
       aria-label={`${item.label}, ${format(item.value)}`}
       data-dot=""
       data-folded={dot.folded ? '' : undefined}
-      onPointerEnter={on}
-      onPointerLeave={off}
-      onFocus={on}
-      onBlur={off}
+      onPointerEnter={() => {
+        onHover(true);
+      }}
+      onPointerLeave={() => {
+        onHover(false);
+      }}
+      onFocus={() => {
+        onFocus(true);
+      }}
+      onBlur={() => {
+        onFocus(false);
+      }}
       style={dotStyle(dot, active)}
     />
   );
@@ -194,14 +200,16 @@ function Dots({
   largest: number;
   format: (value: number) => string;
 }): ReactElement {
-  const [active, setActive] = useState<number | null>(null);
+  const [hovered, setHovered] = useState<number | null>(null);
+  const [focused, setFocused] = useState<number | null>(null);
+  const active = hovered ?? focused;
   const { dots, pills } = stackLayout(
     ordered.map((item) => centreAt(item.value, largest, width)),
   );
   const activeDot = active === null ? undefined : dots[active];
   const activeItem =
     activeDot === undefined ? undefined : ordered[activeDot.item];
-  const foldedStack = activeDot?.folded === true ? activeDot.stack : null;
+  const foldedStack = foldedStackOf(dots, focused);
   return (
     <>
       {dots.map((dot) => {
@@ -212,11 +220,12 @@ function Dots({
             dot={dot}
             item={item}
             format={format}
-            active={active === dot.item}
-            onActive={(on) => {
-              setActive((current) =>
-                on ? dot.item : current === dot.item ? null : current,
-              );
+            active={hovered === dot.item || focused === dot.item}
+            onHover={(on) => {
+              setHovered((current) => toggled(current, dot.item, on));
+            }}
+            onFocus={(on) => {
+              setFocused((current) => toggled(current, dot.item, on));
             }}
           />
         );

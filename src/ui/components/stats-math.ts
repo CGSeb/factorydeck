@@ -31,6 +31,7 @@ export interface Change {
   amount: string;
   comparison: string;
   tone: 'better' | 'worse' | 'none';
+  detail: string;
   text: string;
 }
 
@@ -123,6 +124,10 @@ function changeAmount(kind: FigureKind, rounded: number): string {
   return `${String(size)} ${size === 1 ? 'pt' : 'pts'}`;
 }
 
+function versus(comparison: string): string {
+  return comparison === '' ? '' : ` vs ${comparison}`;
+}
+
 function changeBase(input: ChangeInput): [number, number] | null {
   const { value, previous, previousN } = input;
   if (value === null || !isEnough(input.n)) return null;
@@ -148,7 +153,8 @@ export function changeText(input: ChangeInput): Change | null {
       amount: '',
       comparison,
       tone: 'none',
-      text: `No change vs ${comparison}`,
+      detail: '',
+      text: `No change${versus(comparison)}`,
     };
   }
   const direction = rounded > 0 ? 'up' : 'down';
@@ -159,7 +165,8 @@ export function changeText(input: ChangeInput): Change | null {
     amount,
     comparison,
     tone: improved ? 'better' : 'worse',
-    text: `${direction === 'up' ? '▲' : '▼'} ${amount} vs ${comparison}`,
+    detail: `${amount}${versus(comparison)}`,
+    text: `${direction === 'up' ? '▲' : '▼'} ${amount}${versus(comparison)}`,
   };
 }
 

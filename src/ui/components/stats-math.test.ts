@@ -70,6 +70,7 @@ describe('changeText', () => {
       amount: '12 pts',
       comparison: 'previous 30 days',
       tone: 'better',
+      detail: '12 pts vs previous 30 days',
       text: '▲ 12 pts vs previous 30 days',
     });
   });
@@ -114,6 +115,13 @@ describe('changeText', () => {
       tone: 'none',
       text: 'No change vs previous 30 days',
     });
+  });
+
+  it('leaves out the comparison when none is given', () => {
+    expect(changeText({ ...base, comparison: '' })?.text).toBe('▲ 12 pts');
+    expect(changeText({ ...base, comparison: '', value: 0.5 })?.text).toBe(
+      'No change',
+    );
   });
 
   it('has no change for an amount whose previous value is 0', () => {

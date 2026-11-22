@@ -237,3 +237,20 @@ export const lineStyle: CSSProperties = {
   height: `${String(LINE_PX)}px`,
   background: 'var(--fd-border)',
 };
+
+export function toggled(
+  current: number | null,
+  item: number,
+  on: boolean,
+): number | null {
+  if (on) return item;
+  return current === item ? null : current;
+}
+
+export function foldedStackOf(
+  dots: readonly PlacedDot[],
+  focused: number | null,
+): number | null {
+  const dot = focused === null ? undefined : dots[focused];
+  return dot?.folded === true ? dot.stack : null;
+}

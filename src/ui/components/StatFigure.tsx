@@ -68,8 +68,7 @@ function ChangeLine({ change }: { change: Change }): ReactElement {
   return (
     <span data-change="" style={style}>
       <span aria-hidden="true">{change.direction === 'up' ? '▲' : '▼'}</span>
-      <span style={visuallyHidden}>{change.direction}</span> {change.amount} vs{' '}
-      {change.comparison}
+      <span style={visuallyHidden}>{change.direction}</span> {change.detail}
     </span>
   );
 }

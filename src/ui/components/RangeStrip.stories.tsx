@@ -162,5 +162,17 @@ export const FocusedDot: Story = {
     await expect(
       focused instanceof HTMLElement ? focused.style.boxShadow : '',
     ).toContain('var(--fd-accent)');
+    const other = within(canvasElement).getAllByRole('link')[4];
+    if (other === undefined) throw new Error('No dot');
+    await userEvent.hover(other);
+    await expect(tooltip(canvasElement)[0]).toBe('#13 Show serenity reports');
+    await expect(
+      focused instanceof HTMLElement ? focused.style.boxShadow : '',
+    ).toContain('var(--fd-accent)');
+    await userEvent.unhover(other);
+    await expect(tooltip(canvasElement)[0]).toBe('#15 Link sessions to issues');
+    await expect(
+      focused instanceof HTMLElement ? focused.style.boxShadow : '',
+    ).toContain('var(--fd-accent)');
   },
 };
