@@ -1,5 +1,7 @@
+import { contrastRatio, labelTextColor } from '../colors.ts';
 import { describe, expect, it } from 'vitest';
 import {
+  CATEGORY_COLORS,
   ORCHESTRATION_COLOR,
   UNASSIGNED_COLOR,
   categoryColor,
@@ -130,4 +132,15 @@ describe('projectColors', () => {
     const projects = Array.from({ length: 10 }, (_, index) => `p${index}`);
     expect(projectColors(projects).get('p9')).toBe(PROJECT[1]);
   });
+});
+
+describe('text on palette colours', () => {
+  it.each([...CATEGORY_COLORS, ORCHESTRATION_COLOR, UNASSIGNED_COLOR])(
+    'labelTextColor on %s reaches 4.5:1',
+    (color) => {
+      expect(
+        contrastRatio(labelTextColor(color), color),
+      ).toBeGreaterThanOrEqual(4.5);
+    },
+  );
 });
