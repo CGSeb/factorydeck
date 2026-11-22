@@ -1,16 +1,30 @@
-import type { ReactElement } from 'react';
-import type { Period } from '../overview/types.ts';
+import type { CSSProperties, ReactElement } from 'react';
+import type { OverviewResponse, Period } from '../overview/types.ts';
 import type { RoleListResponse, RoleSourceFile } from '../roles/types.ts';
-import { formatClock } from './format.ts';
-import { UNREACHABLE_MESSAGE } from './overview-api.ts';
-import { PeriodSelector } from './PeriodSelector.tsx';
-import { RoleTable } from './RoleTable.tsx';
+import { PageHeader } from './components/PageHeader.tsx';
+import { PeriodPills } from './components/PeriodPills.tsx';
+import { SplitBar } from './components/SplitBar.tsx';
+import { StatusLine } from './components/StatusLine.tsx';
+import { ModelTokensTable } from './ModelTokensTable.tsx';
+import { type LoadOverview, UNREACHABLE_MESSAGE } from './overview-api.ts';
+import { RoleTokensTable } from './RoleTokensTable.tsx';
 import type { LoadRoles } from './roles-api.ts';
+import { byTokensDescending, colorsOfRoles } from './roles-view.ts';
 import { useRefreshing, useSkillFilters } from './skills-api.ts';
 
 export interface RolesPageProps {
   loadRoles: LoadRoles;
+  loadOverview: LoadOverview;
 }
+
+const LOADING = 'Loading…';
+const NO_ACTIVITY = 'No activity in this period.';
+
+const page: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 'var(--fd-space-6)',
+};
 
 export function roleSourceText({ path, exists }: RoleSourceFile): string {
   return exists
@@ -18,47 +32,81 @@ export function roleSourceText({ path, exists }: RoleSourceFile): string {
     : `No configuration file at ${path}: default roles of the build-feature workflow.`;
 }
 
-function RolesContent({
+function ModelsContent({
   response,
 }: {
-  response: RoleListResponse | undefined;
+  response: OverviewResponse | undefined;
 }): ReactElement {
-  if (response === undefined) return <p className="status">Loading…</p>;
+  if (response === undefined) return <StatusLine>{LOADING}</StatusLine>;
   if (response.status === 'unreachable') {
-    return <p className="status">{UNREACHABLE_MESSAGE}</p>;
+    return <StatusLine>{UNREACHABLE_MESSAGE}</StatusLine>;
   }
-  if (response.list.apiCalls === 0) {
-    return <p className="status">No activity in this period.</p>;
-  }
-  return <RoleTable roles={response.list.roles} />;
+  return (
+    <ModelTokensTable
+      models={byTokensDescending(response.overview.models, (row) => row.model)}
+    />
+  );
 }
 
-export function RolesPage({ loadRoles }: RolesPageProps): ReactElement {
-  const [filters, setFilters] = useSkillFilters();
-  const response = useRefreshing(JSON.stringify(filters), () =>
-    loadRoles(filters),
+function RolesContent({
+  response,
+  overview,
+}: {
+  response: RoleListResponse | undefined;
+  overview: OverviewResponse | undefined;
+}): ReactElement {
+  if (response === undefined) return <StatusLine>{LOADING}</StatusLine>;
+  if (response.status === 'unreachable') {
+    return <StatusLine>{UNREACHABLE_MESSAGE}</StatusLine>;
+  }
+  if (response.list.apiCalls === 0) {
+    return <StatusLine>{NO_ACTIVITY}</StatusLine>;
+  }
+  const roles = byTokensDescending(response.list.roles, (row) => row.role);
+  const colors = colorsOfRoles(response.list.order, roles);
+  return (
+    <>
+      <SplitBar
+        label="Tokens by role"
+        height="tall"
+        segments={roles.map((row) => ({
+          label: row.role,
+          value: row.tokens,
+          color: colors.get(row.role) ?? 'var(--fd-muted)',
+        }))}
+      />
+      <RoleTokensTable roles={roles} colors={colors} />
+      <ModelsContent response={overview} />
+    </>
   );
-  const updatedAt =
-    response?.status === 'ok' && response.updatedAt !== null
-      ? formatClock(new Date(response.updatedAt))
-      : undefined;
+}
+
+export function RolesPage({
+  loadRoles,
+  loadOverview,
+}: RolesPageProps): ReactElement {
+  const [filters, setFilters] = useSkillFilters();
+  const key = JSON.stringify(filters);
+  const response = useRefreshing(key, () => loadRoles(filters));
+  const overview = useRefreshing(key, () =>
+    loadOverview(filters.period, filters.project),
+  );
 
   return (
-    <div className="sessions">
-      <div className="overview-header">
-        <h1>Roles</h1>
-        {updatedAt !== undefined && (
-          <p className="updated">Updated {updatedAt}</p>
-        )}
-        <PeriodSelector
-          value={filters.period}
-          onChange={(period: Period) => setFilters({ ...filters, period })}
-        />
-      </div>
-      {response?.status === 'ok' && (
-        <p className="source">{roleSourceText(response.config)}</p>
-      )}
-      <RolesContent response={response} />
+    <div style={page}>
+      <PageHeader
+        title="Roles"
+        {...(response?.status === 'ok'
+          ? { summary: roleSourceText(response.config) }
+          : {})}
+        slot={
+          <PeriodPills
+            value={filters.period}
+            onChange={(period: Period) => setFilters({ ...filters, period })}
+          />
+        }
+      />
+      <RolesContent response={response} overview={overview} />
     </div>
   );
 }

@@ -14,6 +14,7 @@ export interface RoleUsage {
 
 export interface RoleList {
   roles: RoleUsage[];
+  order: string[];
   apiCalls: number;
   projects: ProjectOption[];
 }

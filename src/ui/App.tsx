@@ -80,7 +80,12 @@ export function App({
           path="skills/:name"
           element={<SkillPage loadSkill={loadSkill} />}
         />
-        <Route path="roles" element={<RolesPage loadRoles={loadRoles} />} />
+        <Route
+          path="roles"
+          element={
+            <RolesPage loadRoles={loadRoles} loadOverview={loadOverview} />
+          }
+        />
       </Route>
     </Routes>
   );
