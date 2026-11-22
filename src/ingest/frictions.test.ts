@@ -51,6 +51,9 @@ describe('shell program', () => {
     ['cat log | grep error', 'cat'],
     ['false || echo no', 'false'],
     ['cd x\npnpm lint', 'pnpm'],
+    ['(cd x && pnpm test)', 'pnpm'],
+    ['{ cd x; make; }', 'make'],
+    ['echo $(date)', 'echo'],
   ])('of %j is %j', (command, program) => {
     expect(programOf(command)).toBe(program);
   });
@@ -107,6 +110,19 @@ describe('tool error fields', () => {
       category: 'other',
       program: null,
       exitCode: null,
+      commandHash: null,
+    });
+  });
+
+  it('keep the exit code of a shell call without a command', () => {
+    expect(
+      toolErrorFields('Exit code 5', { name: 'Bash', command: undefined }),
+    ).toEqual({
+      kind: 'tool-error',
+      tool: 'Bash',
+      category: 'command-failed',
+      program: null,
+      exitCode: 5,
       commandHash: null,
     });
   });

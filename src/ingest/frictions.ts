@@ -150,14 +150,15 @@ export function categoryOf(text: string, tool: string): ToolErrorCategory {
   return 'other';
 }
 
+const GROUPING: ReadonlySet<string> = new Set(['{', '}', '$']);
 const ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=\S*$/;
 
 export function programOf(command: string): string | null {
-  for (const part of command.split(/&&|\|\||;|\||\n/)) {
+  for (const part of command.split(/&&|\|\||;|\||\n|\(|\)/)) {
     const words = part
       .trim()
       .split(/\s+/)
-      .filter((word) => word !== '');
+      .filter((word) => word !== '' && !GROUPING.has(word));
     const word = words.find((candidate) => !ASSIGNMENT.test(candidate));
     if (word === undefined || word === 'cd') continue;
     return word.split('/').findLast((segment) => segment !== '') ?? word;
@@ -174,13 +175,14 @@ export function toolErrorFields(
   call: ToolCall | undefined,
 ): ToolErrorFields {
   const tool = call?.name ?? UNKNOWN_TOOL;
-  const shell = SHELL_TOOLS.has(tool) ? call?.command : undefined;
+  const isShell = SHELL_TOOLS.has(tool);
+  const shell = isShell ? call?.command : undefined;
   return {
     kind: 'tool-error',
     tool,
     category: categoryOf(text, tool),
     program: shell === undefined ? null : programOf(shell),
-    exitCode: shell === undefined ? null : exitCodeOf(text),
+    exitCode: isShell ? exitCodeOf(text) : null,
     commandHash: shell === undefined ? null : commandHash(shell),
   };
 }
@@ -200,7 +202,8 @@ export function withHomeAsTilde(command: string, home: string): string {
 
 function hookCommandOf(entry: unknown): string {
   if (typeof entry !== 'string' || !entry.startsWith('[')) return '';
-  const end = entry.indexOf(']');
+  const labelled = entry.indexOf(']: ');
+  const end = labelled === -1 ? entry.lastIndexOf(']') : labelled;
   return end === -1 ? '' : entry.slice(1, end);
 }
 

@@ -40,7 +40,6 @@ async function insertFrictions(run: Run, rows: FrictionRow[]): Promise<number> {
   );
 }
 
-/** Frictions of the records from `start`, naming tool calls written before it when needed. */
 async function frictionsOfChunk(
   records: Records,
   source: FrictionSource,
@@ -57,7 +56,6 @@ async function frictionsOfChunk(
   return { rows: frictionRows(collector, earlier), untimed: collector.untimed };
 }
 
-/** Stores the frictions of a chunk, skipping those already stored. */
 export async function storeChunkFrictions(
   run: Run,
   thread: FrictionThread,
@@ -90,10 +88,6 @@ async function markFrictionsRead(tx: Transaction): Promise<void> {
     });
 }
 
-/**
- * Reads once, for frictions only, the part of each file stored before frictions were read,
- * then records that it is done. Returns how many frictions it stored.
- */
 export async function readFrictionsAgainOnce(
   run: Run,
   files: readonly LogFile[],

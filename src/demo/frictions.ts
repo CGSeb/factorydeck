@@ -160,7 +160,6 @@ function frictionLines(friction: DemoFriction, base: Line): Line[] {
   ];
 }
 
-/** Lines of a thread's frictions, timed between `from` and the next step. */
 export function demoFrictionLines(
   frictions: readonly DemoFriction[],
   thread: string,

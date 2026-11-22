@@ -106,6 +106,7 @@ describe('Claude Code reader', () => {
       hookErrors: [
         `[node ${HOME}/.claude/hooks/check.ts]: pnpm check fails: secret`,
         'Checks fail on this branch: secret',
+        '[[ -f x ] && check]: failed: secret',
       ],
     };
     expect(rowsOf([record])).toEqual([
@@ -119,6 +120,10 @@ describe('Claude Code reader', () => {
         kind: 'stop-blocked',
         position: 1,
         hookCommand: '',
+      }),
+      expect.objectContaining({
+        position: 2,
+        hookCommand: '[ -f x ] && check',
       }),
     ]);
     expect(stopBlockedOf({ ...record, hookErrors: [] }, HOME)).toEqual([]);

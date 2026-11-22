@@ -111,7 +111,6 @@ export function unresolvedToolCalls(collector: FrictionCollector): boolean {
   );
 }
 
-/** Every friction collected, each tool error named after its call, or `unknown`. */
 export function frictionRows(
   collector: FrictionCollector,
   earlierCalls: ReadonlyMap<string, ToolCall> = new Map(),
@@ -136,7 +135,6 @@ export function toolCallsOfRecords(
   return new Map(records.flatMap(({ record }) => toolCallsOf(record)));
 }
 
-/** The frictions of records read on their own, without the other rows of their thread. */
 export function readFrictions(
   records: readonly { record: LogRecord; offset: number }[],
   source: FrictionSource,

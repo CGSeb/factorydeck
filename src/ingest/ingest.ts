@@ -46,7 +46,6 @@ export interface IngestCounts {
 
 export interface IngestOptions {
   hasFactory?: FactoryCheck;
-  /** The person's home folder, written `~` in the hook commands stored. */
   home?: string;
 }
 
