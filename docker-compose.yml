@@ -2,6 +2,8 @@ services:
   db:
     image: postgres:18
     restart: unless-stopped
+    # Parallel workers and reviewers each run the test suite, and every database test file opens its own scratch database.
+    command: ['postgres', '-c', 'max_connections=300']
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-factorydeck}
       POSTGRES_USER: ${POSTGRES_USER:-factorydeck}
