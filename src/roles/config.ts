@@ -3,9 +3,10 @@ import { isAbsolute } from 'node:path';
 import { parseDocument } from 'yaml';
 import { z } from 'zod';
 import { expandHome } from '../config/env.ts';
+import { UNASSIGNED_ROLE } from './types.ts';
 
 export const MAIN_ROLE = 'main';
-export const UNASSIGNED_ROLE = 'unassigned';
+export { UNASSIGNED_ROLE };
 
 export const WORK_ITEM_SOURCES = ['description', 'branch', 'title'] as const;
 

@@ -1,6 +1,8 @@
 import type { ProjectOption } from '../projects/label.ts';
 import type { Period, TokenCounts } from '../overview/types.ts';
 
+export const UNASSIGNED_ROLE = 'unassigned';
+
 export interface RoleUsage {
   role: string;
   threads: number;
