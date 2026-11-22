@@ -3,7 +3,14 @@ import { join } from 'node:path';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import pg from 'pg';
 import { loadRootEnvFile } from '../config/env.ts';
-import { type Database, createDatabase } from '../db/client.ts';
+import {
+  CONNECTION_TIMEOUT_MS,
+  type Database,
+  createDatabase,
+} from '../db/client.ts';
+
+/** Connections each scratch pool keeps: test files run in parallel, often from several worktrees at once, on one server. */
+const SCRATCH_POOL_SIZE = 2;
 
 /** URL of the PostgreSQL server the database tests use: `DATABASE_URL`, from the environment or the root `.env`. */
 export function postgresUrl(): string {
@@ -29,7 +36,11 @@ export async function createScratchDatabase(): Promise<{
   await admin.query(`create database ${name}`);
   const scratch = new URL(server);
   scratch.pathname = `/${name}`;
-  const { db, close } = createDatabase(scratch.toString());
+  const { db, close } = createDatabase(
+    scratch.toString(),
+    CONNECTION_TIMEOUT_MS,
+    SCRATCH_POOL_SIZE,
+  );
   await migrate(db, {
     migrationsFolder: join(import.meta.dirname, '..', '..', 'drizzle'),
   });
@@ -49,7 +60,11 @@ export async function createTestDatabase(): Promise<{
   close: () => Promise<void>;
 }> {
   const scratch = await createScratchDatabase();
-  const { db, close } = createDatabase(scratch.url);
+  const { db, close } = createDatabase(
+    scratch.url,
+    CONNECTION_TIMEOUT_MS,
+    SCRATCH_POOL_SIZE,
+  );
   return {
     db,
     close: async () => {
