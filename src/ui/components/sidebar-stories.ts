@@ -118,3 +118,23 @@ export function withStoredFold(fold: string | undefined): Decorator {
   return (Story) =>
     createElement(StoredFold, { fold, children: createElement(Story) });
 }
+
+export function currentLinks(canvasElement: HTMLElement): string[] {
+  const nav = within(canvasElement).getByRole('navigation', {
+    name: 'Sections',
+  });
+  return within(nav)
+    .getAllByRole('link')
+    .filter((link) => link.getAttribute('aria-current') === 'page')
+    .map((link) => link.textContent);
+}
+
+export async function peek(canvasElement: HTMLElement): Promise<void> {
+  const canvas = within(canvasElement);
+  await userEvent.click(
+    canvas.getByRole('button', { name: 'Project: All projects' }),
+  );
+  await expect(
+    canvas.getByRole('combobox', { name: 'Project' }),
+  ).toHaveAttribute('aria-expanded', 'true');
+}

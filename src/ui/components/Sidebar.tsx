@@ -9,7 +9,13 @@ import {
 } from 'react';
 import { useDialogFocus } from './dialog-focus.ts';
 import { Icon } from './Icon.tsx';
-import { useFold, useNarrow, useTip } from './sidebar-state.ts';
+import {
+  useAfterPointer,
+  useFold,
+  useNarrow,
+  useScrollLock,
+  useTip,
+} from './sidebar-state.ts';
 import {
   Brand,
   NO_TIP,
@@ -73,16 +79,43 @@ function FoldedProject({
   );
 }
 
+function FoldButton({
+  controls,
+  folded,
+  onClick,
+  tipFor,
+}: {
+  controls: string;
+  folded: boolean;
+  onClick: () => void;
+  tipFor: TipFor;
+}): ReactElement {
+  const name = folded ? 'Expand sidebar' : 'Collapse sidebar';
+  return (
+    <button
+      type="button"
+      className="fd-control fd-sidebar-icon-button fd-sidebar-fold"
+      aria-label={name}
+      aria-expanded={!folded}
+      aria-controls={controls}
+      onClick={onClick}
+      {...(folded ? tipFor(name) : {})}
+    >
+      <Icon name={folded ? 'expand' : 'collapse'} />
+    </button>
+  );
+}
+
 function WideSidebar(props: SidebarProps): ReactElement {
   const id = useId();
   const [folded, toggle] = useFold();
   const [peeking, setPeeking] = useState(false);
+  const afterPointer = useAfterPointer();
   const projectButton = useRef<HTMLButtonElement>(null);
   useFocusAfterPeek(peeking, projectButton);
   const { tip, tipFor } = useTip();
   const shownFolded = folded && !peeking;
   const { project } = props;
-  const foldName = shownFolded ? 'Expand sidebar' : 'Collapse sidebar';
   const projectSlot =
     project === undefined ? null : shownFolded ? (
       <FoldedProject
@@ -99,7 +132,9 @@ function WideSidebar(props: SidebarProps): ReactElement {
           defaultOpen: peeking,
           onClose: peeking
             ? () => {
-                setPeeking(false);
+                afterPointer(() => {
+                  setPeeking(false);
+                });
               }
             : undefined,
         })}
@@ -114,17 +149,15 @@ function WideSidebar(props: SidebarProps): ReactElement {
         tipFor={shownFolded ? tipFor : NO_TIP}
         projectSlot={projectSlot}
         bottom={
-          <button
-            type="button"
-            className="fd-control fd-sidebar-icon-button fd-sidebar-fold"
-            aria-label={foldName}
-            aria-expanded={!shownFolded}
-            aria-controls={id}
-            onClick={toggle}
-            {...(shownFolded ? tipFor(foldName) : {})}
-          >
-            <Icon name={shownFolded ? 'expand' : 'collapse'} />
-          </button>
+          <FoldButton
+            controls={id}
+            folded={shownFolded}
+            onClick={() => {
+              if (peeking) setPeeking(false);
+              else toggle();
+            }}
+            tipFor={tipFor}
+          />
         }
       />
       {shownFolded && <SidebarTip tip={tip} />}
@@ -147,6 +180,7 @@ function Drawer({
 }: SidebarProps & { id: string; onClose: () => void }): ReactElement {
   const dialog = useRef<HTMLDivElement>(null);
   const close = useDialogFocus(onClose, dialog);
+  useScrollLock();
   const { project } = props;
   return (
     <div

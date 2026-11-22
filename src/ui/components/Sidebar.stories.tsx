@@ -10,9 +10,11 @@ import { Sidebar, type SidebarLink, type SidebarProps } from './Sidebar.tsx';
 import { NARROW_QUERY } from './sidebar-state.ts';
 import {
   expectDrawerClosed,
+  currentLinks,
   expectFolded,
   foldAndUnfold,
   openDrawer,
+  peek,
   storedFold,
   tabStaysInDrawer,
   withStoredFold,
@@ -50,8 +52,19 @@ function Harness({
   withProject?: boolean;
 }): ReactElement {
   const [project, setProject] = useState<string>();
+  const [followed, setFollowed] = useState('');
   const props: SidebarProps = {
     links: links(current),
+    renderLink: ({ href, ...link }) => (
+      <a
+        href={href}
+        {...link}
+        onClick={(event) => {
+          event.preventDefault();
+          setFollowed(href);
+        }}
+      />
+    ),
     project: withProject
       ? {
           label: projectLabel(project, PROJECTS),
@@ -78,7 +91,12 @@ function Harness({
       ),
     },
   };
-  return <Sidebar {...props} />;
+  return (
+    <>
+      <Sidebar {...props} />
+      <output aria-label="Followed link">{followed}</output>
+    </>
+  );
 }
 
 function NarrowWindow({ children }: { children: ReactNode }): ReactNode {
@@ -128,16 +146,6 @@ const meta = {
 export default meta;
 
 type Story = StoryObj<typeof meta>;
-
-function currentLinks(canvasElement: HTMLElement): string[] {
-  const nav = within(canvasElement).getByRole('navigation', {
-    name: 'Sections',
-  });
-  return within(nav)
-    .getAllByRole('link')
-    .filter((link) => link.getAttribute('aria-current') === 'page')
-    .map((link) => link.textContent);
-}
 
 export const ExpandedFirstLinkCurrent: Story = {
   render: () => <Harness />,
@@ -248,6 +256,7 @@ export const DrawerOpenAt360: Story = {
       'false',
     );
     await expect(within(drawer).getByRole('combobox')).toBeInTheDocument();
+    await expect(document.body.style.overflow).toBe('hidden');
     await tabStaysInDrawer();
   },
 };
@@ -273,5 +282,34 @@ export const DrawerCloses: Story = {
     if (backdrop === null) throw new Error('No backdrop');
     await userEvent.click(backdrop);
     await expectDrawerClosed(canvasElement);
+    await expect(document.body.style.overflow).toBe('');
+  },
+};
+
+export const FoldedPeekThenCollapse: Story = {
+  render: () => <Harness />,
+  decorators: stored('collapsed'),
+  play: async ({ canvasElement }) => {
+    await peek(canvasElement);
+    await userEvent.click(
+      within(canvasElement).getByRole('button', { name: 'Collapse sidebar' }),
+    );
+    await waitFor(() => expectFolded(canvasElement, true));
+    await expect(storedFold()).toBe('collapsed');
+  },
+};
+
+export const FoldedPeekThenFollowLink: Story = {
+  render: () => <Harness />,
+  decorators: stored('collapsed'),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await peek(canvasElement);
+    await userEvent.click(canvas.getByText('Sessions'));
+    await expect(
+      canvas.getByRole('status', { name: 'Followed link' }),
+    ).toHaveTextContent('#sessions');
+    await waitFor(() => expectFolded(canvasElement, true));
+    await expect(storedFold()).toBe('collapsed');
   },
 };

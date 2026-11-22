@@ -1,4 +1,10 @@
-import { type FocusEvent, type MouseEvent, useEffect, useState } from 'react';
+import {
+  type FocusEvent,
+  type MouseEvent,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 export const SIDEBAR_KEY = 'factorydeck.sidebar';
 export const NARROW_QUERY = '(max-width: 767.98px)';
@@ -116,4 +122,48 @@ export function useTip(): {
       onBlur: hide,
     }),
   };
+}
+
+export function useAfterPointer(): (action: () => void) => void {
+  const pressed = useRef(false);
+  useEffect(() => {
+    function down(): void {
+      pressed.current = true;
+    }
+    function up(): void {
+      pressed.current = false;
+    }
+    document.addEventListener('pointerdown', down, true);
+    document.addEventListener('pointerup', up, true);
+    document.addEventListener('pointercancel', up, true);
+    return () => {
+      document.removeEventListener('pointerdown', down, true);
+      document.removeEventListener('pointerup', up, true);
+      document.removeEventListener('pointercancel', up, true);
+    };
+  }, []);
+  return (action) => {
+    if (!pressed.current) {
+      action();
+      return;
+    }
+    function later(): void {
+      document.removeEventListener('pointerup', later);
+      document.removeEventListener('pointercancel', later);
+      setTimeout(action, 0);
+    }
+    document.addEventListener('pointerup', later);
+    document.addEventListener('pointercancel', later);
+  };
+}
+
+export function useScrollLock(): void {
+  useEffect(() => {
+    const { style } = document.body;
+    const previous = style.overflow;
+    style.overflow = 'hidden';
+    return () => {
+      style.overflow = previous;
+    };
+  }, []);
 }
