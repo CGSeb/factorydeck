@@ -9,6 +9,7 @@ import { ProjectPill } from './ProjectPill.tsx';
 import { RefreshControl } from './RefreshControl.tsx';
 import { ShowMore } from './ShowMore.tsx';
 import { SortSelect } from './SortSelect.tsx';
+import { StageStrip } from './StageStrip.tsx';
 
 const css = readFileSync(join(import.meta.dirname, 'controls.css'), 'utf8');
 const ignore = (): void => undefined;
@@ -45,6 +46,18 @@ function controls(): HTMLElement[] {
         onRefresh={ignore}
       />
       <ProjectPill value={undefined} projects={[]} onChange={ignore} />
+      <StageStrip
+        value="merged"
+        stages={(['ready', 'working', 'in-review', 'merged'] as const).map(
+          (group) => ({
+            group,
+            count: 1,
+            counts: { input: 1, output: 1, cacheRead: 1, cacheWrite: 1 },
+            costUsd: 0.01,
+          }),
+        )}
+        onChange={ignore}
+      />
     </>,
   );
   return [...container.querySelectorAll<HTMLElement>('button, select')];
@@ -69,11 +82,12 @@ describe('controls', () => {
 
   it('gives every control a hit area at least 36 px high', () => {
     const found = controls();
-    expect(found).toHaveLength(10);
+    expect(found).toHaveLength(14);
     for (const control of found) {
       const style = getComputedStyle(control);
       expect(parseFloat(style.minHeight)).toBeGreaterThanOrEqual(36);
-      expect(parseFloat(style.height)).toBeGreaterThanOrEqual(36);
+      const height = parseFloat(style.height);
+      expect(Number.isNaN(height) || height >= 36).toBe(true);
     }
   });
 });

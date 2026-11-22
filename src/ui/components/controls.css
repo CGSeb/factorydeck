@@ -183,3 +183,98 @@
   border: 1px solid var(--fd-field-border);
   border-radius: var(--fd-radius-pill);
 }
+
+.fd-stage-strip {
+  container-type: inline-size;
+  font-family: var(--fd-font-body);
+  color: var(--fd-ink);
+}
+
+.fd-stage-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--fd-space-1);
+}
+
+.fd-stage-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--fd-space-2);
+  padding: var(--fd-space-4) var(--fd-space-5);
+  background: var(--fd-page);
+}
+
+.fd-stage-cell[data-selected='true'] {
+  background: var(--fd-accent-soft);
+}
+
+.fd-stage-cell[data-selected='true'][data-group='merged'] {
+  background: var(--fd-success-bg);
+}
+
+.fd-stage-cell:first-child {
+  border-radius: var(--fd-radius-panel) 0 0 var(--fd-radius-panel);
+}
+
+.fd-stage-cell:last-child {
+  border-radius: 0 var(--fd-radius-panel) var(--fd-radius-panel) 0;
+}
+
+.fd-stage-button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--fd-space-2);
+  width: 100%;
+  padding: 0;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: var(--fd-radius-sm);
+}
+
+.fd-stage-name {
+  display: flex;
+  align-items: center;
+  gap: var(--fd-space-2);
+  font-size: var(--fd-text-sm);
+  font-weight: 600;
+}
+
+.fd-stage-count {
+  font-family: var(--fd-font-display);
+  font-size: var(--fd-title-lg);
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.fd-stage-tokens {
+  font-size: var(--fd-text-sm);
+  color: var(--fd-ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+@container (max-width: 520px) {
+  .fd-stage-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fd-stage-cell:first-child {
+    border-radius: var(--fd-radius-panel) 0 0 0;
+  }
+
+  .fd-stage-cell:nth-child(2) {
+    border-radius: 0 var(--fd-radius-panel) 0 0;
+  }
+
+  .fd-stage-cell:nth-child(3) {
+    border-radius: 0 0 0 var(--fd-radius-panel);
+  }
+
+  .fd-stage-cell:last-child {
+    border-radius: 0 0 var(--fd-radius-panel) 0;
+  }
+}
