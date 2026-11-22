@@ -1,30 +1,8 @@
 import { type ReactElement, useId } from 'react';
-import type {
-  ChecksSummary,
-  ClosingRequest,
-  IssueDetail,
-  IssueLabel,
-} from '../git-host/types.ts';
+import type { IssueDetail, IssueLabel } from '../git-host/types.ts';
 import { labelTextColor } from './colors.ts';
+import { CHECKS_TEXT, requestStateText } from './components/request-text.ts';
 import { OutcomeLine } from './OutcomeLine.tsx';
-
-const CHECKS: Record<ChecksSummary, string> = {
-  passing: 'Passing',
-  failing: 'Failing',
-  pending: 'Pending',
-  none: 'No checks',
-};
-
-function requestState({ state, draft }: ClosingRequest): {
-  key: string;
-  text: string;
-} {
-  if (state === 'merged') return { key: 'merged', text: 'Merged' };
-  if (state === 'closed') return { key: 'closed', text: 'Closed' };
-  return draft
-    ? { key: 'draft', text: 'Draft' }
-    : { key: 'open', text: 'Open' };
-}
 
 function LabelPill({ label }: { label: IssueLabel }): ReactElement {
   if (label.color === null) {
@@ -72,7 +50,7 @@ export function IssuePanel({ issue }: { issue: IssueDetail }): ReactElement {
           aria-label={`${github ? 'Pull' : 'Merge'} requests`}
         >
           {issue.requests.map((request) => {
-            const state = requestState(request);
+            const state = requestStateText(request);
             return (
               <li key={request.number}>
                 <a href={request.url} target="_blank" rel="noreferrer">
@@ -83,7 +61,7 @@ export function IssuePanel({ issue }: { issue: IssueDetail }): ReactElement {
                   {state.text}
                 </span>
                 <span className={`state checks-${request.checks}`}>
-                  {CHECKS[request.checks]}
+                  {CHECKS_TEXT[request.checks]}
                 </span>
               </li>
             );
