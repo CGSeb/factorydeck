@@ -1,6 +1,6 @@
 # 011 · Default roles
 
-Status: ready
+Status: done
 Depends on: 006, 010
 Checked: 2026-11-22
 
@@ -10,13 +10,13 @@ A developer who installs the factorydeck-skills factory on a project sees, with 
 
 ## Acceptance criteria
 
-- [ ] With no configuration file, the roles are the default role rules of Rules: a sub-agent started as `Worker for #31` has the role `builder`, `Review #31` `reviewer`, `Ship #31` `shipper`, `Rebase feat/31-x` `reworker`, `check-spec #31` `spec-checker`, on `/roles`, on the session page and wherever spec 006 shows a role.
-- [ ] A configuration file without a `roles` key uses the default role rules too. A file with `roles: []` has no role rule: every sub-agent takes its type as role (or `unassigned`), as spec 006 describes for no matching rule.
-- [ ] A file with a `roles` list uses that list alone, as in spec 006 (the defaults are not merged into it); a project's `roles` override under `projects` replaces the list for that project, as in spec 006.
-- [ ] Under its heading, `/roles` says `No configuration file at <path>: default roles of the build-feature workflow.` when the file does not exist, with the resolved path; `Rules from <path>` when it exists, as in spec 006, even when the file has no `roles` key.
-- [ ] A `roles` key with no value (`roles:` alone, YAML null) stays an invalid file, as in spec 006: start-up ends with `Invalid configuration in <path>:` and a line naming `roles`.
-- [ ] A sub-agent no default rule matches (such as an `Explore` sub-agent, or a description like `Fix the build`) still takes its type as role, or `unassigned` with an empty type.
-- [ ] The change applies to all data already ingested at the next start, without re-ingesting, as in spec 006.
+- [x] With no configuration file, the roles are the default role rules of Rules: a sub-agent started as `Worker for #31` has the role `builder`, `Review #31` `reviewer`, `Ship #31` `shipper`, `Rebase feat/31-x` `reworker`, `check-spec #31` `spec-checker`, on `/roles`, on the session page and wherever spec 006 shows a role.
+- [x] A configuration file without a `roles` key uses the default role rules too. A file with `roles: []` has no role rule: every sub-agent takes its type as role (or `unassigned`), as spec 006 describes for no matching rule.
+- [x] A file with a `roles` list uses that list alone, as in spec 006 (the defaults are not merged into it); a project's `roles` override under `projects` replaces the list for that project, as in spec 006.
+- [x] Under its heading, `/roles` says `No configuration file at <path>: default roles of the build-feature workflow.` when the file does not exist, with the resolved path; `Rules from <path>` when it exists, as in spec 006, even when the file has no `roles` key.
+- [x] A `roles` key with no value (`roles:` alone, YAML null) stays an invalid file, as in spec 006: start-up ends with `Invalid configuration in <path>:` and a line naming `roles`.
+- [x] A sub-agent no default rule matches (such as an `Explore` sub-agent, or a description like `Fix the build`) still takes its type as role, or `unassigned` with an empty type.
+- [x] The change applies to all data already ingested at the next start, without re-ingesting, as in spec 006.
 
 ## Rules
 

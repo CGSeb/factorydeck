@@ -16,7 +16,7 @@ export interface RolesPageProps {
 export function roleSourceText({ path, exists }: RoleSourceFile): string {
   return exists
     ? `Rules from ${path}`
-    : `No configuration file at ${path}: sub-agents are grouped by type.`;
+    : `No configuration file at ${path}: default roles of the build-feature workflow.`;
 }
 
 function RolesContent({

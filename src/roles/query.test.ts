@@ -182,11 +182,27 @@ describe('listRoles', () => {
     expect(list.projects).toEqual(['/work/app', '/work/lib', 'unassigned']);
   });
 
-  it('falls back to the sub-agent types without a configuration', async () => {
+  it('uses the default role rules without a configuration', async () => {
     const list = await listRoles(
       db,
       { period: 'all', timeZone: 'UTC', now: NOW },
       DEFAULT_CONFIG,
+    );
+    expect(byRole(list.roles)).toEqual({
+      main: [3, 4],
+      builder: [3, 4],
+      reviewer: [2, 2],
+      Explore: [1, 1],
+      Plan: [1, 1],
+      unassigned: [1, 1],
+    });
+  });
+
+  it('falls back to the sub-agent types with roles: []', async () => {
+    const list = await listRoles(
+      db,
+      { period: 'all', timeZone: 'UTC', now: NOW },
+      parseWorkflowConfig('version: 1\nroles: []\n', '/f.yml'),
     );
     expect(byRole(list.roles)).toEqual({
       main: [3, 4],
