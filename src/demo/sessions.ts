@@ -13,8 +13,10 @@ import {
 } from './calls.ts';
 import { factoryFile } from '../ingest/factory.ts';
 import { installFakeGitHost } from './fake-git-host.ts';
+import { helpSession } from './help-sessions.ts';
 import { markerSessions } from './marker-sessions.ts';
-import { demoGitHub, demoGitLab } from './git-host.ts';
+import { demoGitHub } from './git-host.ts';
+import { demoGitLab } from './git-host-gitlab.ts';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -93,6 +95,7 @@ export const DEMO_SESSIONS: readonly DemoSession[] = [
       },
     ],
   },
+  helpSession(EXAMPLE_APP, DAY),
   {
     id: 'demo-app-web',
     folder: '-demo-example-app',

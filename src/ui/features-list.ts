@@ -60,6 +60,7 @@ const STAGE_TO_GROUP: Record<IssueStage, ListGroup> = {
   'in-review': 'in-review',
   merged: 'merged',
   'merged-by-person': 'merged',
+  'merged-after-person': 'merged',
   closed: 'closed',
 };
 

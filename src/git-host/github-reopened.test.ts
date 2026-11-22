@@ -3,7 +3,7 @@ import { ghIssue } from '../test/git-host.ts';
 import { githubReader } from './github.ts';
 
 function node(number: number, reopened: number): Record<string, unknown> {
-  return { number, timelineItems: { totalCount: reopened } };
+  return { number, reopened: { totalCount: reopened } };
 }
 
 describe('GitHub reopened issues', () => {

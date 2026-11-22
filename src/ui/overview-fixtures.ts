@@ -34,8 +34,15 @@ export const fullBoardFeatures: FeatureRow[] = [
   mergedRow(33, 'Empty states', 2),
 ];
 
+export const afterPersonFeatures: FeatureRow[] = fullBoardFeatures.map((row) =>
+  row.number === 30
+    ? { ...row, outcome: outcome('merged-after-person', 88, 2) }
+    : row,
+);
+
 export const unmergedFeatures: FeatureRow[] = boardFeatures.filter(
   (row) =>
     row.outcome?.stage !== 'merged' &&
-    row.outcome?.stage !== 'merged-by-person',
+    row.outcome?.stage !== 'merged-by-person' &&
+    row.outcome?.stage !== 'merged-after-person',
 );

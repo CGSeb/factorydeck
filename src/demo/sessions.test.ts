@@ -272,6 +272,15 @@ describe('demo sessions on the features page', () => {
       ]),
     );
     expect(list.merged.issues).toBeGreaterThan(0);
+    const helped = list.rows
+      .filter((row) => row.outcome?.stage === 'merged-after-person')
+      .map((row) => [row.project, row.number]);
+    expect(helped).toEqual(
+      expect.arrayContaining([
+        [app, 24],
+        [app, 25],
+      ]),
+    );
     expect(list.noWorkItem).not.toBeNull();
     const detail = await featureDetail(
       db,

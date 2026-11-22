@@ -12,7 +12,11 @@ import {
   weekOverview,
 } from './fixtures.ts';
 import { OverviewPage } from './OverviewPage.tsx';
-import { fullBoardFeatures, unmergedFeatures } from './overview-fixtures.ts';
+import {
+  afterPersonFeatures,
+  fullBoardFeatures,
+  unmergedFeatures,
+} from './overview-fixtures.ts';
 import { rolesLoader, someRoles } from './role-fixtures.ts';
 
 function Location(): ReactElement {
@@ -119,6 +123,32 @@ export const AllProjects: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Today' }));
     await canvas.findByText('Tokens per hour');
     await expect(address(canvasElement)).toHaveTextContent('/?period=today');
+  },
+};
+
+export const MergedAfterAPerson: Story = {
+  name: 'Merged after a person',
+  args: { loadFeatures: featuresLoaderOf(afterPersonFeatures) },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await waitFor(async () =>
+      expect(await title(canvasElement)).toHaveTextContent(
+        /^7 issues merged for /,
+      ),
+    );
+    await expect(
+      canvas.getByText(
+        '3.1M tokens per merged issue · 5 of 7 merged without a person · 14 sessions',
+      ),
+    ).toBeVisible();
+    const merged = column(canvasElement, 'Merged');
+    const card = within(merged)
+      .getByRole('link', { name: '#30 Search filters' })
+      .closest('article');
+    if (card === null) throw new Error('No card for #30');
+    await expect(within(card).getByText('serenity 88')).toBeVisible();
+    await expect(within(card).getByText('after a person')).toBeVisible();
+    await expect(within(merged).getByText('by a person')).toBeVisible();
   },
 };
 

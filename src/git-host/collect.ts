@@ -107,7 +107,8 @@ async function collectProject(
     const replace =
       state?.gitHost !== config.gitHost ||
       state.repository !== config.repository ||
-      !state.outcomeSettings;
+      !state.outcomeSettings ||
+      !state.historyRead;
     const since = replace ? null : state.syncedFrom;
     const reader = readerFor(config, project, timeoutMs);
     const changes = await changesOf(db, project, reader, since);

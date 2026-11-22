@@ -42,6 +42,7 @@ export interface DetailContext {
 const MERGED_STAGES: ReadonlySet<string> = new Set([
   'merged',
   'merged-by-person',
+  'merged-after-person',
 ]);
 
 function usageOf(issue: IssueAccumulator): FeatureUsage {

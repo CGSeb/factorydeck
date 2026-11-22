@@ -13,6 +13,7 @@ export const FakeGitHostSchema = z.object({
   closes: z.record(z.string(), z.array(RowSchema)).optional(),
   notes: z.record(z.string(), z.array(RowSchema)).optional(),
   reopened: z.array(z.number()).optional(),
+  labelEvents: z.record(z.string(), z.array(RowSchema)).optional(),
   factory: z.string().optional(),
   fail: z.string().optional(),
   hang: z.boolean().optional(),

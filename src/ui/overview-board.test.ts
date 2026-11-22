@@ -204,6 +204,22 @@ describe('cardBadge', () => {
       { kind: 'text', text: 'by a person' },
     ]);
   });
+
+  it('adds after a person to a merge a person helped', () => {
+    expect(
+      cardBadge(
+        row(1, 'merged-after-person', at, {
+          outcome: outcome('merged-after-person', 88, 2),
+        }),
+      ),
+    ).toEqual([
+      { kind: 'serenity', report: { score: 88, threshold: 80 } },
+      { kind: 'text', text: 'after a person' },
+    ]);
+    expect(cardBadge(row(1, 'merged-after-person', at))).toEqual([
+      { kind: 'text', text: 'after a person' },
+    ]);
+  });
 });
 
 describe('headline', () => {

@@ -101,7 +101,7 @@ describe('serenity report and merge', () => {
       ),
     );
     expect(await outcomeOf(root, 1)).toMatchObject({
-      stage: 'merged',
+      stage: 'merged-after-person',
       report: { score: 90 },
     });
     expect(await outcomeOf(root, 2)).toEqual({

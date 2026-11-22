@@ -207,6 +207,27 @@ export const reviewFeature: FeatureDetail = {
   threads: exportFeature.threads.slice(0, 2),
 };
 
+export const afterPersonFeature: FeatureDetail = {
+  ...exportFeature,
+  number: 62,
+  issue: {
+    status: 'found',
+    title: 'Saved filters',
+    url: 'https://github.com/example-org/example-app/issues/62',
+  },
+  detail: {
+    ...mergedByPersonIssue,
+    number: 62,
+    title: 'Saved filters',
+    url: 'https://github.com/example-org/example-app/issues/62',
+    outcome: {
+      stage: 'merged-after-person',
+      report: { score: 88, threshold: 80, rounds: 2 },
+      reworked: false,
+    },
+  },
+};
+
 export const orchestrationFeature: FeatureDetail = {
   ...exportFeature,
   number: 70,
@@ -247,6 +268,7 @@ export function featureLoaderOf(
     exportFeature,
     uncollectedFeature,
     reviewFeature,
+    afterPersonFeature,
     orchestrationFeature,
     idleFeature,
   ],

@@ -135,7 +135,8 @@ export function featureList(
   const merged = rows.filter(
     (row) =>
       row.outcome?.stage === 'merged' ||
-      row.outcome?.stage === 'merged-by-person',
+      row.outcome?.stage === 'merged-by-person' ||
+      row.outcome?.stage === 'merged-after-person',
   );
   const mergedCost = merged.reduce((sum, row) => sum + (row.costUsd ?? 0), 0);
   return {

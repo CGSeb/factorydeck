@@ -1,6 +1,11 @@
 import { githubChecks } from './checks.ts';
 import type { RunCli } from './command.ts';
-import { latestReport } from './report.ts';
+import {
+  type IssueTimeline,
+  issueTimelines,
+  searchTime,
+} from './github-timeline.ts';
+import { reportHistory } from './report.ts';
 import {
   type GitHostReader,
   type Json,
@@ -29,20 +34,6 @@ const ISSUE_FIELDS =
 const REQUEST_FIELDS =
   'number,title,state,isDraft,headRefName,url,createdAt,mergedAt,closedAt,updatedAt,closingIssuesReferences,statusCheckRollup,comments';
 
-const REOPENED_QUERY = `query($owner: String!, $name: String!, $since: DateTime, $after: String) {
-  repository(owner: $owner, name: $name) {
-    issues(first: ${String(PAGE_SIZE)}, after: $after, orderBy: {field: UPDATED_AT, direction: ASC}, filterBy: {since: $since}) {
-      nodes { number timelineItems(itemTypes: [REOPENED_EVENT]) { totalCount } }
-      pageInfo { hasNextPage endCursor }
-    }
-  }
-}`;
-
-function searchTime(value: string | Date): string {
-  const at = new Date(value);
-  return `${at.toISOString().slice(0, 19)}+00:00`;
-}
-
 function labelsOf(value: unknown): IssueLabel[] {
   return list(value).flatMap((label) => {
     const name = text(label['name']);
@@ -53,7 +44,7 @@ function labelsOf(value: unknown): IssueLabel[] {
 export function githubIssue(
   row: Json,
   now: string,
-  reopened: ReadonlySet<number> = new Set(),
+  timelines: ReadonlyMap<number, IssueTimeline> = new Map(),
 ): IssueRecord | undefined {
   const number = positive(row['number']);
   if (number === undefined) return undefined;
@@ -67,7 +58,8 @@ export function githubIssue(
     createdAt,
     closedAt: time(row['closedAt']),
     updatedAt: requiredTime(row['updatedAt'], createdAt),
-    reopened: reopened.has(number),
+    reopened: timelines.get(number)?.reopened ?? false,
+    labelEvents: timelines.get(number)?.labelEvents ?? [],
   };
 }
 
@@ -117,13 +109,20 @@ export function githubRequest(
     updatedAt: requiredTime(row['updatedAt'], createdAt),
     closes: closesOf(row['closingIssuesReferences'], repository),
     checks: githubChecks(row['statusCheckRollup']),
-    report: latestReport(
-      list(row['comments']).map((comment) => ({
-        body: text(comment['body']),
-        createdAt: time(comment['createdAt']),
-      })),
-    ),
+    ...reportsOf(row['comments']),
   };
+}
+
+function reportsOf(
+  comments: unknown,
+): Pick<RequestRecord, 'report' | 'reports'> {
+  const reports = reportHistory(
+    list(comments).map((comment) => ({
+      body: text(comment['body']),
+      createdAt: time(comment['createdAt']),
+    })),
+  );
+  return { report: reports.at(-1) ?? null, reports };
 }
 
 interface Search {
@@ -176,37 +175,6 @@ async function searchAll(query: Search, since: Date | null): Promise<Json[]> {
   }
 }
 
-async function reopenedIssues(
-  run: RunCli,
-  repository: string,
-  since: Date | null,
-): Promise<Set<number>> {
-  const [owner = '', name = ''] = repository.split('/');
-  const reopened = new Set<number>();
-  let after: string | null = null;
-  for (;;) {
-    const args = ['api', 'graphql', '-f', `query=${REOPENED_QUERY}`];
-    args.push('-f', `owner=${owner}`, '-f', `name=${name}`);
-    if (since !== null) args.push('-f', `since=${searchTime(since)}`);
-    if (after !== null) args.push('-f', `after=${after}`);
-    const issues = field(
-      field(field(object(await run(args), 'graphql'), 'data'), 'repository'),
-      'issues',
-    );
-    for (const node of list(field(issues, 'nodes'))) {
-      const number = positive(node['number']);
-      const count = field(node['timelineItems'], 'totalCount');
-      if (number !== undefined && typeof count === 'number' && count > 0) {
-        reopened.add(number);
-      }
-    }
-    const page = field(issues, 'pageInfo');
-    const next = text(field(page, 'endCursor'));
-    if (field(page, 'hasNextPage') !== true || next === '') return reopened;
-    after = next;
-  }
-}
-
 export function githubReader(
   run: RunCli,
   repository: string,
@@ -229,17 +197,17 @@ export function githubReader(
         { ...search, kind: 'issue', fields: ISSUE_FIELDS },
         since,
       );
-      const reopened =
+      const timelines =
         issues.length === 0
-          ? new Set<number>()
-          : await reopenedIssues(run, repository, since);
+          ? new Map<number, IssueTimeline>()
+          : await issueTimelines(run, repository, since);
       const requests = await searchAll(
         { ...search, kind: 'pr', fields: REQUEST_FIELDS },
         since,
       );
       return {
         issues: byNumber(
-          issues.flatMap((row) => githubIssue(row, at, reopened) ?? []),
+          issues.flatMap((row) => githubIssue(row, at, timelines) ?? []),
         ),
         requests: byNumber(
           requests.flatMap((row) => githubRequest(row, repository, at) ?? []),

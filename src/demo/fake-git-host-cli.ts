@@ -42,6 +42,19 @@ function graphqlField(name: string): string | undefined {
   return args.find((arg) => arg.startsWith(prefix))?.slice(prefix.length);
 }
 
+function labelEventsPage(number: unknown, query: string): Row {
+  const size = Number(/timelineItems\(first: (\d+)/.exec(query)?.[1] ?? '100');
+  const start = Number(graphqlField('events') ?? '0');
+  const events = data.labelEvents?.[String(number)] ?? [];
+  return {
+    nodes: events.slice(start, start + size),
+    pageInfo: {
+      hasNextPage: start + size < events.length,
+      endCursor: String(start + size),
+    },
+  };
+}
+
 function githubGraphql(): void {
   const query = graphqlField('query') ?? '';
   if (
@@ -49,6 +62,17 @@ function githubGraphql(): void {
     data.repository
   ) {
     fail('GraphQL: Could not resolve to a Repository with the name.');
+  }
+  const issue = graphqlField('number');
+  if (issue !== undefined) {
+    print({
+      data: {
+        repository: {
+          issue: { labelEvents: labelEventsPage(issue, query) },
+        },
+      },
+    });
+    return;
   }
   const size = Number(/first: (\d+)/.exec(query)?.[1] ?? '100');
   const since = graphqlField('since');
@@ -66,9 +90,10 @@ function githubGraphql(): void {
         issues: {
           nodes: page.map((row) => ({
             number: row['number'],
-            timelineItems: {
+            reopened: {
               totalCount: reopened.has(Number(row['number'])) ? 1 : 0,
             },
+            labelEvents: labelEventsPage(row['number'], query),
           })),
           pageInfo: {
             hasNextPage: start + size < rows.length,
@@ -132,9 +157,14 @@ function stateEvents(iid: string | undefined): Row[] {
     : [];
 }
 
-function issueAnswer(iid: string | undefined, query: URLSearchParams): unknown {
-  return iid === undefined
-    ? gitlabPage(query, byUpdate(data.issues))
+function issueAnswer(
+  iid: string | undefined,
+  sub: string | undefined,
+  query: URLSearchParams,
+): unknown {
+  if (iid === undefined) return gitlabPage(query, byUpdate(data.issues));
+  return sub === 'resource_label_events'
+    ? gitlabPage(query, data.labelEvents?.[iid] ?? [])
     : gitlabPage(query, stateEvents(iid));
 }
 
@@ -154,7 +184,7 @@ function requestAnswer(
 
 function gitlabAnswer(resource: string[], query: URLSearchParams): unknown {
   const [name, iid, sub] = resource;
-  if (name === 'issues') return issueAnswer(iid, query);
+  if (name === 'issues') return issueAnswer(iid, sub, query);
   if (name === 'labels') return gitlabPage(query, data.labels ?? []);
   return requestAnswer(iid, sub, query);
 }
