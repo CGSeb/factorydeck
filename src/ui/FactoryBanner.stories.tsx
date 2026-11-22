@@ -76,6 +76,9 @@ export const CollectionErrors: Story = {
       'Could not read GitHub for example-app: gh not found.',
     ]);
     await expect(
+      within(canvasElement).getByText(/Could not read GitHub for example-app/),
+    ).toHaveAttribute('title', '/home/dev/example-app');
+    await expect(
       within(canvasElement).getAllByRole('button', { name: 'Delete project' }),
     ).toHaveLength(1);
   },

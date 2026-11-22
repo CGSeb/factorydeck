@@ -109,16 +109,16 @@ export function FactoryBanner({
             }
           />
         ))}
-        {failures.map((failure) => (
-          <li key={`git-host ${failure.project}`}>
-            <span>
-              {failureMessage({
-                ...failure,
-                name: projectText(failure.project, failure.name).text,
-              })}
-            </span>
-          </li>
-        ))}
+        {failures.map((failure) => {
+          const label = projectText(failure.project, failure.name);
+          return (
+            <li key={`git-host ${failure.project}`}>
+              <span title={label.title}>
+                {failureMessage({ ...failure, name: label.text })}
+              </span>
+            </li>
+          );
+        })}
       </ul>
       {shown !== undefined && (
         <DeleteProjectDialog
