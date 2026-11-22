@@ -27,3 +27,12 @@ export function latest(
 export function issueKey(project: string, number: number): string {
   return `${String(number)} ${project}`;
 }
+
+export function earliest(
+  left: string | null,
+  right: string | null,
+): string | null {
+  if (left === null) return right;
+  if (right === null) return left;
+  return left < right ? left : right;
+}

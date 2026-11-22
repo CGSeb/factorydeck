@@ -24,6 +24,13 @@ export interface FeatureUsage {
   orchestrationCostUsd: number | null;
 }
 
+export interface FeatureRoleShare {
+  role: string;
+  tokens: number;
+  tokenCounts: TokenCounts;
+  costUsd: number | null;
+}
+
 export interface FeatureRow extends FeatureUsage {
   project: string;
   projectName: string;
@@ -31,6 +38,7 @@ export interface FeatureRow extends FeatureUsage {
   issue: WorkItemIssue;
   outcome: IssueOutcome | null;
   lastAt: string | null;
+  roles: FeatureRoleShare[];
 }
 
 export interface FeatureTotals {
@@ -83,6 +91,19 @@ export interface FeatureSession {
   costUsd: number | null;
 }
 
+export interface FeatureThread {
+  sessionId: string;
+  sessionTitle: string;
+  threadId: string;
+  role: string;
+  description: string | null;
+  firstAt: string | null;
+  lastAt: string | null;
+  tokens: number;
+  tokenCounts: TokenCounts;
+  costUsd: number | null;
+}
+
 export interface FeatureDetail {
   project: string;
   projectName: string;
@@ -92,6 +113,7 @@ export interface FeatureDetail {
   roles: FeatureRole[];
   orchestration: FeatureRole | null;
   sessions: FeatureSession[];
+  threads: FeatureThread[];
 }
 
 interface Refresh {

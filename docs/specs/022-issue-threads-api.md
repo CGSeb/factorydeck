@@ -1,6 +1,6 @@
 # 022 · Issue threads and role split in the API
 
-Status: ready
+Status: done
 Depends on: 021
 Checked: 2026-11-22
 
@@ -10,12 +10,12 @@ A developer sees, on every issue of the redesigned features list, how its tokens
 
 ## Acceptance criteria
 
-- [ ] Each issue row of `GET /api/features` gets `roles`: one entry per role with calls on that issue in the period (role of spec 006), each with `role`, `tokens`, `tokenCounts` (spec 021) and `costUsd`, sorted by tokens descending, then a last entry for the orchestration role of spec 010 when the issue has an orchestration share. The entries' tokens add up to the row's `tokens`.
-- [ ] `GET /api/features/<n>?project=<root>` gets `threads`: each thread of spec 006 whose work item is the issue and that has at least one call in the period, with `sessionId`, `sessionTitle`, `threadId`, `role`, `description` (the sub-agent description, or `null` for a session's main thread), `firstAt` and `lastAt` (its first and last call in the period), `tokens`, `tokenCounts` and `costUsd`; sorted by `firstAt`, then by `threadId`.
-- [ ] The threads' tokens plus the issue's orchestration share (the `orchestration` row of spec 010) add up to the issue's tokens on the list, for the same period and project.
-- [ ] A main-thread session with the issue as its work item (spec 006) appears as one thread with `description: null`; a sub-agent appears as its own thread, even when its session works on several issues.
-- [ ] An issue with calls only through the orchestration share has an empty `threads` list.
-- [ ] No existing field changes; the current UI keeps working unchanged.
+- [x] Each issue row of `GET /api/features` gets `roles`: one entry per role with calls on that issue in the period (role of spec 006), each with `role`, `tokens`, `tokenCounts` (spec 021) and `costUsd`, sorted by tokens descending, then a last entry for the orchestration role of spec 010 when the issue has an orchestration share. The entries' tokens add up to the row's `tokens`.
+- [x] `GET /api/features/<n>?project=<root>` gets `threads`: each thread of spec 006 whose work item is the issue and that has at least one call in the period, with `sessionId`, `sessionTitle`, `threadId`, `role`, `description` (the sub-agent description, or `null` for a session's main thread), `firstAt` and `lastAt` (its first and last call in the period), `tokens`, `tokenCounts` and `costUsd`; sorted by `firstAt`, then by `threadId`.
+- [x] The threads' tokens plus the issue's orchestration share (the `orchestration` row of spec 010) add up to the issue's tokens on the list, for the same period and project.
+- [x] A main-thread session with the issue as its work item (spec 006) appears as one thread with `description: null`; a sub-agent appears as its own thread, even when its session works on several issues.
+- [x] An issue with calls only through the orchestration share has an empty `threads` list.
+- [x] No existing field changes; the current UI keeps working unchanged.
 
 ## Rules
 
