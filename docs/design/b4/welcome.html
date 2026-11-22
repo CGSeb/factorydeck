@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>B4 · No session yet</title>
+    <script src="./support.js"></script>
+  </head>
+  <body>
+    <x-dc>
+      <helmet>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap"
+          rel="stylesheet"
+        />
+        <style>
+          body {
+            margin: 0;
+          }
+          a {
+            color: #0b5f58;
+          }
+          a:hover {
+            color: #063f3a;
+          }
+        </style>
+      </helmet>
+      <div
+        style="
+          font-family: Inter, system-ui, sans-serif;
+          color: #17201f;
+          background: #f3f5f4;
+          min-height: 900px;
+        "
+      >
+        <header style="background: #ffffff; border-bottom: 1px solid #dfe5e3">
+          <div
+            style="
+              max-width: 1360px;
+              margin: 0 auto;
+              padding: 0 24px;
+              display: flex;
+              flex-wrap: wrap;
+              align-items: center;
+              gap: 8px 28px;
+              min-height: 60px;
+            "
+          >
+            <span
+              style="
+                font-family: 'Space Grotesk', sans-serif;
+                font-weight: 700;
+                font-size: 18px;
+              "
+              >Factory<span style="color: #0f766e">Deck</span></span
+            >
+            <nav aria-label="Sections" style="flex: 1 1 auto">
+              <ul
+                style="
+                  list-style: none;
+                  margin: 0;
+                  padding: 0;
+                  display: flex;
+                  flex-wrap: wrap;
+                  gap: 4px;
+                "
+              >
+                <li>
+                  <a
+                    href="#"
+                    aria-current="page"
+                    style="
+                      display: flex;
+                      align-items: center;
+                      height: 40px;
+                      padding: 0 14px;
+                      border-radius: 999px;
+                      text-decoration: none;
+                      font-size: 14px;
+                      background: #e3eeeb;
+                      color: #0b3f3a;
+                      font-weight: 600;
+                    "
+                    >Overview</a
+                  >
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    style="
+                      display: flex;
+                      align-items: center;
+                      height: 40px;
+                      padding: 0 14px;
+                      border-radius: 999px;
+                      text-decoration: none;
+                      font-size: 14px;
+                      color: #3c4846;
+                    "
+                    >Features</a
+                  >
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    style="
+                      display: flex;
+                      align-items: center;
+                      height: 40px;
+                      padding: 0 14px;
+                      border-radius: 999px;
+                      text-decoration: none;
+                      font-size: 14px;
+                      color: #3c4846;
+                    "
+                    >Sessions</a
+                  >
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    style="
+                      display: flex;
+                      align-items: center;
+                      height: 40px;
+                      padding: 0 14px;
+                      border-radius: 999px;
+                      text-decoration: none;
+                      font-size: 14px;
+                      color: #3c4846;
+                    "
+                    >Skills</a
+                  >
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    style="
+                      display: flex;
+                      align-items: center;
+                      height: 40px;
+                      padding: 0 14px;
+                      border-radius: 999px;
+                      text-decoration: none;
+                      font-size: 14px;
+                      color: #3c4846;
+                    "
+                    >Roles</a
+                  >
+                </li>
+              </ul>
+            </nav>
+            <div style="display: flex; align-items: center; gap: 10px">
+              <span style="font-size: 12px; color: #55625f"
+                >Issues not collected yet</span
+              >
+              <button
+                type="button"
+                aria-label="Refresh"
+                style="
+                  width: 40px;
+                  height: 40px;
+                  border-radius: 999px;
+                  border: 1px solid #cfd8d5;
+                  background: #ffffff;
+                  display: inline-flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#17201f"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  aria-hidden="true"
+                >
+                  <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
+                  <path d="M21 3v5h-5" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main
+          style="
+            max-width: 1360px;
+            margin: 0 auto;
+            padding: 64px 24px;
+            box-sizing: border-box;
+          "
+        >
+          <section
+            aria-labelledby="welcome-title"
+            style="
+              max-width: 720px;
+              margin: 0 auto;
+              background: #ffffff;
+              border-radius: 18px;
+              padding: 40px;
+              display: flex;
+              flex-direction: column;
+              gap: 24px;
+            "
+          >
+            <div style="display: flex; flex-direction: column; gap: 10px">
+              <span style="font-size: 13px; font-weight: 600; color: #0f766e"
+                >No factory project yet</span
+              >
+              <h1
+                id="welcome-title"
+                style="
+                  margin: 0;
+                  font-family: 'Space Grotesk', sans-serif;
+                  font-size: 32px;
+                  font-weight: 600;
+                  letter-spacing: -0.02em;
+                  line-height: 1.15;
+                "
+              >
+                Install the factory in a project
+              </h1>
+              <p
+                style="
+                  margin: 0;
+                  font-size: 15px;
+                  line-height: 1.55;
+                  color: #3c4846;
+                "
+              >
+                FactoryDeck shows the projects that use the factorydeck-skills
+                workflow. None of yours does yet.
+              </p>
+            </div>
+            <ol
+              style="
+                list-style: none;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+              "
+            >
+              <li
+                style="
+                  display: grid;
+                  grid-template-columns: 36px 1fr;
+                  gap: 14px;
+                  align-items: start;
+                "
+              >
+                <span
+                  style="
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 50%;
+                    background: #e3eeeb;
+                    color: #0b3f3a;
+                    font-weight: 700;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                  "
+                  >1</span
+                >
+                <span
+                  style="font-size: 15px; line-height: 1.55; padding-top: 4px"
+                  >Install factorydeck-skills in your coding agent: see the
+                  <a href="https://github.com/CGSeb/factorydeck-skills#install"
+                    >install steps</a
+                  >.</span
+                >
+              </li>
+              <li
+                style="
+                  display: grid;
+                  grid-template-columns: 36px 1fr;
+                  gap: 14px;
+                  align-items: start;
+                "
+              >
+                <span
+                  style="
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 50%;
+                    background: #e3eeeb;
+                    color: #0b3f3a;
+                    font-weight: 700;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                  "
+                  >2</span
+                >
+                <span
+                  style="font-size: 15px; line-height: 1.55; padding-top: 4px"
+                  >In your project, run
+                  <code
+                    style="
+                      background: #f3f5f4;
+                      padding: 2px 6px;
+                      border-radius: 5px;
+                    "
+                    >/setup-factory</code
+                  >. It writes
+                  <code
+                    style="
+                      background: #f3f5f4;
+                      padding: 2px 6px;
+                      border-radius: 5px;
+                    "
+                    >docs/agents/factory.yml</code
+                  >.</span
+                >
+              </li>
+              <li
+                style="
+                  display: grid;
+                  grid-template-columns: 36px 1fr;
+                  gap: 14px;
+                  align-items: start;
+                "
+              >
+                <span
+                  style="
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 50%;
+                    background: #e3eeeb;
+                    color: #0b3f3a;
+                    font-weight: 700;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                  "
+                  >3</span
+                >
+                <span
+                  style="font-size: 15px; line-height: 1.55; padding-top: 4px"
+                  >Work in that project with your coding agent. FactoryDeck
+                  finds it at its next ingestion, earlier sessions
+                  included.</span
+                >
+              </li>
+            </ol>
+            <p
+              style="
+                margin: 0;
+                font-size: 13px;
+                color: #55625f;
+                border-top: 1px solid #e3e9e7;
+                padding-top: 16px;
+              "
+            >
+              The project select appears once a project has sessions.
+            </p>
+          </section>
+        </main>
+      </div>
+    </x-dc>
+    <script
+      type="text/x-dc"
+      data-dc-script
+      data-props='{"$preview":{"width":1440,"height":900}}'
+    >
+      class Component extends DCLogic {
+        renderVals() { return {}; }
+      }
+    </script>
+  </body>
+</html>

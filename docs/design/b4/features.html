@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>B4 · Features</title>
+    <script src="./support.js"></script>
+  </head>
+  <body>
+    <x-dc>
+      <helmet>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap"
+          rel="stylesheet"
+        />
+        <style>
+          body {
+            margin: 0;
+          }
+          a {
+            color: #0b5f58;
+          }
+          a:hover {
+            color: #063f3a;
+          }
+          .num {
+            font-variant-numeric: tabular-nums;
+          }
+          .tip {
+            position: relative;
+            display: inline-flex;
+            cursor: help;
+            text-decoration: underline dotted;
+            text-underline-offset: 3px;
+            text-decoration-thickness: 1px;
+          }
+          .tip-pop {
+            display: none;
+            position: absolute;
+            z-index: 5;
+            bottom: calc(100% + 8px);
+            right: 0;
+            min-width: 190px;
+            background: #17201f;
+            color: #ffffff;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-family: Inter, system-ui, sans-serif;
+            font-size: 12px;
+            font-weight: 400;
+            line-height: 1.5;
+            letter-spacing: 0;
+            text-transform: none;
+            text-align: left;
+            white-space: nowrap;
+            box-shadow: 0 8px 24px rgba(16, 32, 30, 0.25);
+          }
+          .tip:hover .tip-pop,
+          .tip:focus .tip-pop,
+          .tip-pop.is-open {
+            display: block;
+          }
+          .tip-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 18px;
+          }
+          .tip-cost {
+            font-weight: 600;
+            border-bottom: 1px solid #3a4644;
+            padding-bottom: 5px;
+            margin-bottom: 4px;
+          }
+          .tip-muted {
+            color: #b9c4c1;
+          }
+        </style>
+      </helmet>
+      <div
+        style="
+          font-family: Inter, system-ui, sans-serif;
+          color: #17201f;
+          background: #ffffff;
+          min-height: 1180px;
+        "
+      >
+        <header style="border-bottom: 1px solid #dfe5e3">
+          <div
+            style="
+              max-width: 1360px;
+              margin: 0 auto;
+              padding: 0 24px;
+              display: flex;
+              flex-wrap: wrap;
+              align-items: center;
+              gap: 8px 28px;
+              min-height: 60px;
+            "
+          >
+            <span
+              style="
+                font-family: 'Space Grotesk', sans-serif;
+                font-weight: 700;
+                font-size: 18px;
+              "
+              >Factory<span style="color: #0f766e">Deck</span></span
+            >
+            <nav aria-label="Sections" style="flex: 1 1 auto">
+              <ul
+                style="
+                  list-style: none;
+                  margin: 0;
+                  padding: 0;
+                  display: flex;
+                  flex-wrap: wrap;
+                  gap: 4px;
+                "
+              >
+                <sc-for list="{{nav}}" as="item" hint-placeholder-count="5"
+                  ><li>
+                    <a href="{{item.href}}" style="{{item.style}}"
+                      >{{item.label}}</a
+                    >
+                  </li></sc-for
+                >
+              </ul>
+            </nav>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-wrap: wrap;
+              "
+            >
+              <select
+                aria-label="Project"
+                title="All projects"
+                style="
+                  font: inherit;
+                  font-size: 14px;
+                  font-weight: 600;
+                  height: 40px;
+                  padding: 0 12px;
+                  border: 1px solid #cfd8d5;
+                  border-radius: 999px;
+                  background: #f3f5f4;
+                  color: #17201f;
+                  max-width: 16em;
+                "
+              >
+                <option>All projects</option>
+                <option>Acme Shop</option>
+                <option>Ledger API</option>
+                <option>docs-site</option>
+              </select>
+              <span style="font-size: 12px; color: #55625f"
+                >Collected 2 min ago</span
+              >
+              <button
+                type="button"
+                aria-label="Refresh"
+                style="
+                  width: 40px;
+                  height: 40px;
+                  border-radius: 999px;
+                  border: 1px solid #cfd8d5;
+                  background: #ffffff;
+                  display: inline-flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#17201f"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  aria-hidden="true"
+                >
+                  <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
+                  <path d="M21 3v5h-5" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main
+          style="
+            max-width: 1360px;
+            margin: 0 auto;
+            padding: 28px 24px 40px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              flex-wrap: wrap;
+              justify-content: space-between;
+              align-items: flex-end;
+              gap: 16px;
+            "
+          >
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <h1
+                style="
+                  margin: 0;
+                  font-family: 'Space Grotesk', sans-serif;
+                  font-size: 28px;
+                  font-weight: 600;
+                  letter-spacing: -0.02em;
+                "
+              >
+                Features
+              </h1>
+              <p class="num" style="margin: 0; font-size: 14px; color: #55625f">
+                17 issues · 11 merged, 9 without a person · 2.8M tokens per
+                merged issue
+              </p>
+            </div>
+            <div
+              role="group"
+              aria-label="Period"
+              style="display: flex; gap: 6px; flex-wrap: wrap"
+            >
+              <button
+                type="button"
+                style="
+                  font: inherit;
+                  font-size: 13px;
+                  height: 36px;
+                  padding: 0 14px;
+                  border-radius: 999px;
+                  border: 1px solid #cfd8d5;
+                  background: #ffffff;
+                  color: #33403d;
+                "
+              >
+                Today
+              </button>
+              <button
+                type="button"
+                aria-pressed="true"
+                style="
+                  font: inherit;
+                  font-size: 13px;
+                  font-weight: 600;
+                  height: 36px;
+                  padding: 0 14px;
+                  border-radius: 999px;
+                  border: 1px solid #17201f;
+                  background: #17201f;
+                  color: #ffffff;
+                "
+              >
+                Last 7 days
+              </button>
+              <button
+                type="button"
+                style="
+                  font: inherit;
+                  font-size: 13px;
+                  height: 36px;
+                  padding: 0 14px;
+                  border-radius: 999px;
+                  border: 1px solid #cfd8d5;
+                  background: #ffffff;
+                  color: #33403d;
+                "
+              >
+                Last 30 days
+              </button>
+              <button
+                type="button"
+                style="
+                  font: inherit;
+                  font-size: 13px;
+                  height: 36px;
+                  padding: 0 14px;
+                  border-radius: 999px;
+                  border: 1px solid #cfd8d5;
+                  background: #ffffff;
+                  color: #33403d;
+                "
+              >
+                All time
+              </button>
+            </div>
+          </div>
+
+          <section
+            aria-label="Stages"
+            style="
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+              gap: 4px;
+              border-radius: 14px;
+              overflow: hidden;
+            "
+          >
+            <sc-for list="{{stages}}" as="s" hint-placeholder-count="4">
+              <button
+                type="button"
+                aria-pressed="{{s.pressed}}"
+                style="{{s.style}}"
+              >
+                <span
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-size: 13px;
+                    font-weight: 600;
+                  "
+                  ><span style="{{s.dot}}"></span>{{s.name}}</span
+                >
+                <span
+                  class="num"
+                  style="
+                    font-family: 'Space Grotesk', sans-serif;
+                    font-size: 32px;
+                    font-weight: 600;
+                    line-height: 1;
+                  "
+                  >{{s.count}}</span
+                >
+                <span class="num" style="font-size: 13px; color: #3c4846"
+                  >{{s.tokens}} tokens</span
+                >
+              </button>
+            </sc-for>
+          </section>
+
+          <section style="overflow-x: auto">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 12px;
+                flex-wrap: wrap;
+                margin-bottom: 4px;
+              "
+            >
+              <h2
+                style="
+                  margin: 0;
+                  font-family: 'Space Grotesk', sans-serif;
+                  font-size: 18px;
+                  font-weight: 600;
+                "
+              >
+                Issues
+              </h2>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                  font-size: 13px;
+                "
+              >
+                <label for="f-sort" style="color: #55625f">Sort by</label>
+                <select
+                  id="f-sort"
+                  style="
+                    font: inherit;
+                    font-size: 13px;
+                    height: 36px;
+                    padding: 0 10px;
+                    border: 1px solid #cfd8d5;
+                    border-radius: 8px;
+                    background: #ffffff;
+                    color: #17201f;
+                  "
+                >
+                  <option>Stage</option>
+                  <option>Tokens</option>
+                  <option>Review rounds</option>
+                  <option>Serenity</option>
+                  <option>Last activity</option>
+                </select>
+              </div>
+            </div>
+            <table
+              style="
+                width: 100%;
+                min-width: 820px;
+                border-collapse: collapse;
+                font-size: 13px;
+              "
+            >
+              <thead>
+                <tr style="color: #55625f; text-align: left; font-size: 12px">
+                  <th style="font-weight: 500; padding: 8px 0">Issue</th>
+                  <th style="font-weight: 500">Project</th>
+                  <th style="font-weight: 500; width: 160px">Split by role</th>
+                  <th style="font-weight: 500; text-align: right">Sessions</th>
+                  <th style="font-weight: 500; text-align: right">Rounds</th>
+                  <th style="font-weight: 500; text-align: right">Serenity</th>
+                  <th style="font-weight: 500; text-align: right">Tokens</th>
+                </tr>
+              </thead>
+              <sc-for list="{{groups}}" as="g" hint-placeholder-count="4">
+                <tbody>
+                  <tr>
+                    <th
+                      colspan="7"
+                      scope="colgroup"
+                      style="
+                        text-align: left;
+                        padding: 18px 0 6px;
+                        font-size: 12px;
+                        text-transform: uppercase;
+                        letter-spacing: 0.06em;
+                        color: #3c4846;
+                        border-bottom: 2px solid #17201f;
+                      "
+                    >
+                      <span
+                        style="
+                          display: inline-flex;
+                          align-items: center;
+                          gap: 8px;
+                        "
+                        ><span style="{{g.dot}}"></span>{{g.name}}
+                        <span class="num" style="color: #55625f"
+                          >{{g.count}}</span
+                        ></span
+                      >
+                    </th>
+                  </tr>
+                  <sc-for list="{{g.rows}}" as="i" hint-placeholder-count="2">
+                    <tr style="border-bottom: 1px solid #edf1ef">
+                      <td style="padding: 10px 0">
+                        <a
+                          href="issue.html"
+                          style="
+                            color: #17201f;
+                            font-weight: 600;
+                            text-decoration: none;
+                          "
+                          ><span
+                            class="num"
+                            style="color: #55625f; font-weight: 500"
+                            >#{{i.n}}</span
+                          >
+                          {{i.title}}</a
+                        >
+                      </td>
+                      <td style="color: #3c4846">
+                        <span
+                          style="
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 6px;
+                          "
+                          title="{{i.root}}"
+                          ><span style="{{i.projectDot}}"></span
+                          >{{i.project}}</span
+                        >
+                      </td>
+                      <td>
+                        <div
+                          style="
+                            display: flex;
+                            height: 8px;
+                            border-radius: 4px;
+                            overflow: hidden;
+                            gap: 1px;
+                            width: 150px;
+                          "
+                        >
+                          <sc-for
+                            list="{{i.split}}"
+                            as="p"
+                            hint-placeholder-count="3"
+                            ><div style="{{p}}"></div
+                          ></sc-for>
+                        </div>
+                      </td>
+                      <td class="num" style="text-align: right">
+                        {{i.sessions}}
+                      </td>
+                      <td class="num" style="text-align: right">
+                        {{i.rounds}}
+                      </td>
+                      <td
+                        class="num"
+                        style="text-align: right; font-weight: 600; color: {{i.serTone}}"
+                      >
+                        {{i.serenity}}
+                      </td>
+                      <td style="text-align: right">
+                        <span
+                          class="tip num"
+                          tabindex="0"
+                          style="font-weight: 700"
+                          >{{i.t.total}}<span class="tip-pop" role="tooltip"
+                            ><span class="tip-row tip-cost"
+                              ><span>Cost</span><span>{{i.t.cost}}</span></span
+                            ><span class="tip-row"
+                              ><span class="tip-muted">Input</span
+                              ><span>{{i.t.input}}</span></span
+                            ><span class="tip-row"
+                              ><span class="tip-muted">Output</span
+                              ><span>{{i.t.output}}</span></span
+                            ><span class="tip-row"
+                              ><span class="tip-muted">Cache read</span
+                              ><span>{{i.t.read}}</span></span
+                            ><span class="tip-row"
+                              ><span class="tip-muted">Cache write</span
+                              ><span>{{i.t.write}}</span></span
+                            ></span
+                          ></span
+                        >
+                      </td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </sc-for>
+              <tbody>
+                <tr style="border-bottom: 1px solid #edf1ef; color: #3c4846">
+                  <td style="padding: 12px 0" colspan="3">
+                    <span style="font-weight: 600">No issue</span>
+                    <span style="color: #55625f"
+                      >· sessions not tied to an issue</span
+                    >
+                  </td>
+                  <td class="num" style="text-align: right">14</td>
+                  <td></td>
+                  <td></td>
+                  <td class="num" style="text-align: right; font-weight: 700">
+                    2.4M
+                  </td>
+                </tr>
+                <tr style="font-weight: 700">
+                  <td style="padding: 12px 0" colspan="3">Total</td>
+                  <td class="num" style="text-align: right">96</td>
+                  <td></td>
+                  <td></td>
+                  <td class="num" style="text-align: right">41.8M</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+        </main>
+      </div>
+    </x-dc>
+    <script
+      type="text/x-dc"
+      data-dc-script
+      data-props='{"$preview":{"width":1440,"height":1180}}'
+    >
+      class Component extends DCLogic {
+        renderVals() {
+          const fmt = (m) => m >= 1 ? m.toFixed(1) + 'M' : Math.round(m * 1000) + 'k';
+          const tok = (usd) => { const m = usd * 0.227; return { total: fmt(m), cost: '$' + usd.toFixed(2), input: fmt(m * 0.07), output: fmt(m * 0.05), read: fmt(m * 0.78), write: fmt(m * 0.10) }; };
+          const nav = [['Overview','overview.html'],['Features','#'],['Sessions','sessions.html'],['Skills','skills.html'],['Roles','roles.html']].map(([label,href], i) => ({ label, href, style: 'display:flex;align-items:center;height:40px;padding:0 14px;border-radius:999px;text-decoration:none;font-size:14px;' + (i === 1 ? 'background:#e3eeeb;color:#0b3f3a;font-weight:600' : 'color:#3c4846') }));
+          const dot = (c) => 'width:9px;height:9px;border-radius:50%;background:' + c;
+          const stageColor = { Ready: '#8a9592', Working: '#2f5fb3', 'In review': '#c27a12', Merged: '#1f8a5b' };
+          const stages = [['Ready',2,'1.2M'],['Working',2,'2.8M'],['In review',2,'7.5M'],['Merged',11,'30.3M']].map(([name,count,tokens]) => ({ name, count, tokens, dot: dot(stageColor[name]), pressed: 'false', style: 'font:inherit;text-align:left;cursor:pointer;border:0;display:flex;flex-direction:column;gap:8px;padding:16px 20px;color:#17201f;background:#f3f5f4' }));
+          const roleColor = { builder: '#0f766e', reviewer: '#c27a12', reworker: '#b4442c', Orchestration: '#5b6b8c', shipper: '#3d8bd4', 'spec-checker': '#7c9a5a' };
+          const projects = { 'Acme Shop': ['/home/me/acme-shop','#7c3aed'], 'Ledger API': ['/home/me/ledger-api','#c2410c'], 'docs-site': ['/home/me/docs-site','#2f5fb3'] };
+          const tone = (s) => s === '—' ? '#55625f' : (Number(s) >= 80 ? '#14593a' : '#8a4b00');
+          const row = (n,title,project,sessions,rounds,serenity,usd,parts) => ({ n, title, project, root: projects[project][0], projectDot: 'width:8px;height:8px;border-radius:2px;background:' + projects[project][1], sessions, rounds, serenity, serTone: tone(serenity), t: tok(usd), split: parts.map(([r,v]) => 'flex:' + v + ';background:' + roleColor[r]) });
+          const groups = [
+            { name: 'In review', count: 2, dot: dot(stageColor['In review']), rows: [
+              row(139,'Invoice export to CSV','Ledger API',7,'2','—',21.3,[['builder',12],['reviewer',4],['reworker',3],['Orchestration',2]]),
+              row(140,'Product image zoom','Acme Shop',4,'1','—',11.8,[['builder',8],['reviewer',2],['Orchestration',1.8]])
+            ]},
+            { name: 'Working', count: 2, dot: dot(stageColor.Working), rows: [
+              row(137,'Search by SKU','Acme Shop',2,'0','—',8.9,[['builder',7.6],['Orchestration',1.3]]),
+              row(141,'Sidebar search','docs-site',1,'0','—',3.3,[['builder',2.8],['Orchestration',0.5]])
+            ]},
+            { name: 'Ready', count: 2, dot: dot(stageColor.Ready), rows: [
+              row(128,'Guest cart merge','Acme Shop',2,'0','—',5.1,[['spec-checker',1],['builder',4.1]]),
+              row(144,'Refund API endpoint','Ledger API',1,'0','—',0.4,[['spec-checker',0.4]])
+            ]},
+            { name: 'Merged', count: 11, dot: dot(stageColor.Merged), rows: [
+              row(135,'Rate-limit webhooks','Ledger API',9,'3','61',27.4,[['builder',11.2],['reviewer',6.1],['reworker',5.4],['Orchestration',3.4],['shipper',1.3]]),
+              row(142,'Checkout retries','Acme Shop',5,'1','92',14.8,[['builder',9],['reviewer',2.6],['Orchestration',2],['shipper',1.2]]),
+              row(138,'Saved addresses','Acme Shop',5,'1','85',12.1,[['builder',7.4],['reviewer',2.5],['Orchestration',1.4],['shipper',0.8]]),
+              row(131,'Dark mode tokens','docs-site',4,'1','88',9.6,[['builder',6],['reviewer',1.8],['Orchestration',1.2],['shipper',0.6]])
+            ]}
+          ];
+          return { nav, stages, groups };
+        }
+      }
+    </script>
+  </body>
+</html>

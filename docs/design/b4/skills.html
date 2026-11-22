@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>B4 · Skills</title>
+    <script src="./support.js"></script>
+  </head>
+  <body>
+    <x-dc>
+      <helmet>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap"
+          rel="stylesheet"
+        />
+        <style>
+          body {
+            margin: 0;
+          }
+          a {
+            color: #0b5f58;
+          }
+          a:hover {
+            color: #063f3a;
+          }
+          .num {
+            font-variant-numeric: tabular-nums;
+          }
+          .tip {
+            position: relative;
+            display: inline-flex;
+            cursor: help;
+            text-decoration: underline dotted;
+            text-underline-offset: 3px;
+            text-decoration-thickness: 1px;
+          }
+          .tip-pop {
+            display: none;
+            position: absolute;
+            z-index: 5;
+            bottom: calc(100% + 8px);
+            right: 0;
+            min-width: 190px;
+            background: #17201f;
+            color: #ffffff;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-family: Inter, system-ui, sans-serif;
+            font-size: 12px;
+            font-weight: 400;
+            line-height: 1.5;
+            text-align: left;
+            white-space: nowrap;
+            box-shadow: 0 8px 24px rgba(16, 32, 30, 0.25);
+          }
+          .tip:hover .tip-pop,
+          .tip:focus .tip-pop,
+          .tip-pop.is-open {
+            display: block;
+          }
+          .tip-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 18px;
+          }
+          .tip-cost {
+            font-weight: 600;
+            border-bottom: 1px solid #3a4644;
+            padding-bottom: 5px;
+            margin-bottom: 4px;
+          }
+          .tip-muted {
+            color: #b9c4c1;
+          }
+        </style>
+      </helmet>
+      <div
+        style="
+          font-family: Inter, system-ui, sans-serif;
+          color: #17201f;
+          background: #ffffff;
+          min-height: 1000px;
+        "
+      >
+        <header style="border-bottom: 1px solid #dfe5e3">
+          <div
+            style="
+              max-width: 1360px;
+              margin: 0 auto;
+              padding: 0 24px;
+              display: flex;
+              flex-wrap: wrap;
+              align-items: center;
+              gap: 8px 28px;
+              min-height: 60px;
+            "
+          >
+            <span
+              style="
+                font-family: 'Space Grotesk', sans-serif;
+                font-weight: 700;
+                font-size: 18px;
+              "
+              >Factory<span style="color: #0f766e">Deck</span></span
+            >
+            <nav aria-label="Sections" style="flex: 1 1 auto">
+              <ul
+                style="
+                  list-style: none;
+                  margin: 0;
+                  padding: 0;
+                  display: flex;
+                  flex-wrap: wrap;
+                  gap: 4px;
+                "
+              >
+                <sc-for list="{{nav}}" as="item" hint-placeholder-count="5"
+                  ><li>
+                    <a href="{{item.href}}" style="{{item.style}}"
+                      >{{item.label}}</a
+                    >
+                  </li></sc-for
+                >
+              </ul>
+            </nav>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-wrap: wrap;
+              "
+            >
+              <select
+                aria-label="Project"
+                title="All projects"
+                style="
+                  font: inherit;
+                  font-size: 14px;
+                  font-weight: 600;
+                  height: 40px;
+                  padding: 0 12px;
+                  border: 1px solid #cfd8d5;
+                  border-radius: 999px;
+                  background: #f3f5f4;
+                  color: #17201f;
+                  max-width: 16em;
+                "
+              >
+                <option>All projects</option>
+                <option>Acme Shop</option>
+                <option>Ledger API</option>
+                <option>docs-site</option>
+              </select>
+              <span style="font-size: 12px; color: #55625f"
+                >Collected 2 min ago</span
+              >
+              <button
+                type="button"
+                aria-label="Refresh"
+                style="
+                  width: 40px;
+                  height: 40px;
+                  border-radius: 999px;
+                  border: 1px solid #cfd8d5;
+                  background: #ffffff;
+                  display: inline-flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#17201f"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  aria-hidden="true"
+                >
+                  <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
+                  <path d="M21 3v5h-5" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main
+          style="
+            max-width: 1360px;
+            margin: 0 auto;
+            padding: 28px 24px 40px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              flex-wrap: wrap;
+              justify-content: space-between;
+              align-items: flex-end;
+              gap: 16px;
+            "
+          >
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <h1
+                style="
+                  margin: 0;
+                  font-family: 'Space Grotesk', sans-serif;
+                  font-size: 28px;
+                  font-weight: 600;
+                  letter-spacing: -0.02em;
+                "
+              >
+                Skills
+              </h1>
+              <p class="num" style="margin: 0; font-size: 14px; color: #55625f">
+                6 skills launched 58 times · 31.5M tokens in skill sessions
+              </p>
+            </div>
+            <div
+              role="group"
+              aria-label="Period"
+              style="display: flex; gap: 6px; flex-wrap: wrap"
+            >
+              <button
+                type="button"
+                style="
+                  font: inherit;
+                  font-size: 13px;
+                  height: 36px;
+                  padding: 0 14px;
+                  border-radius: 999px;
+                  border: 1px solid #cfd8d5;
+                  background: #ffffff;
+                  color: #33403d;
+                "
+              >
+                Today
+              </button>
+              <button
+                type="button"
+                aria-pressed="true"
+                style="
+                  font: inherit;
+                  font-size: 13px;
+                  font-weight: 600;
+                  height: 36px;
+                  padding: 0 14px;
+                  border-radius: 999px;
+                  border: 1px solid #17201f;
+                  background: #17201f;
+                  color: #ffffff;
+                "
+              >
+                Last 7 days
+              </button>
+              <button
+                type="button"
+                style="
+                  font: inherit;
+                  font-size: 13px;
+                  height: 36px;
+                  padding: 0 14px;
+                  border-radius: 999px;
+                  border: 1px solid #cfd8d5;
+                  background: #ffffff;
+                  color: #33403d;
+                "
+              >
+                Last 30 days
+              </button>
+              <button
+                type="button"
+                style="
+                  font: inherit;
+                  font-size: 13px;
+                  height: 36px;
+                  padding: 0 14px;
+                  border-radius: 999px;
+                  border: 1px solid #cfd8d5;
+                  background: #ffffff;
+                  color: #33403d;
+                "
+              >
+                All time
+              </button>
+            </div>
+          </div>
+
+          <section style="overflow-x: auto">
+            <table
+              aria-label="Skills"
+              style="
+                width: 100%;
+                min-width: 820px;
+                border-collapse: collapse;
+                font-size: 13px;
+              "
+            >
+              <thead>
+                <tr
+                  style="
+                    color: #55625f;
+                    text-align: left;
+                    font-size: 12px;
+                    border-bottom: 2px solid #17201f;
+                  "
+                >
+                  <th style="font-weight: 500; padding: 8px 0">Skill</th>
+                  <th style="font-weight: 500; text-align: right">Launches</th>
+                  <th style="font-weight: 500; text-align: right">Sessions</th>
+                  <th style="font-weight: 500; text-align: right">
+                    Tokens per launch
+                  </th>
+                  <th style="font-weight: 500; width: 32%; padding-left: 24px">
+                    Tokens
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{skills}}" as="s" hint-placeholder-count="7">
+                  <tr style="border-bottom: 1px solid #edf1ef">
+                    <th scope="row" style="text-align: left; padding: 12px 0">
+                      <a href="{{s.href}}" style="{{s.nameStyle}}"
+                        >{{s.name}}</a
+                      >
+                    </th>
+                    <td class="num" style="text-align: right">
+                      {{s.launches}}
+                    </td>
+                    <td class="num" style="text-align: right">
+                      {{s.sessions}}
+                    </td>
+                    <td class="num" style="text-align: right; color: #3c4846">
+                      {{s.per}}
+                    </td>
+                    <td style="padding-left: 24px">
+                      <div
+                        style="display: flex; align-items: center; gap: 12px"
+                      >
+                        <div
+                          style="
+                            flex: 1;
+                            height: 10px;
+                            background: #edf1ef;
+                            border-radius: 5px;
+                          "
+                        >
+                          <div style="{{s.bar}}"></div>
+                        </div>
+                        <span
+                          class="tip num"
+                          tabindex="0"
+                          style="
+                            font-weight: 700;
+                            min-width: 48px;
+                            justify-content: flex-end;
+                          "
+                          >{{s.t.total}}<span class="tip-pop" role="tooltip"
+                            ><span class="tip-row tip-cost"
+                              ><span>Cost</span><span>{{s.t.cost}}</span></span
+                            ><span class="tip-row"
+                              ><span class="tip-muted">Input</span
+                              ><span>{{s.t.input}}</span></span
+                            ><span class="tip-row"
+                              ><span class="tip-muted">Output</span
+                              ><span>{{s.t.output}}</span></span
+                            ><span class="tip-row"
+                              ><span class="tip-muted">Cache read</span
+                              ><span>{{s.t.read}}</span></span
+                            ><span class="tip-row"
+                              ><span class="tip-muted">Cache write</span
+                              ><span>{{s.t.write}}</span></span
+                            ></span
+                          ></span
+                        >
+                      </div>
+                    </td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </section>
+        </main>
+      </div>
+    </x-dc>
+    <script
+      type="text/x-dc"
+      data-dc-script
+      data-props='{"$preview":{"width":1440,"height":1000}}'
+    >
+      class Component extends DCLogic {
+        renderVals() {
+          const fmt = (m) => m >= 1 ? m.toFixed(1) + 'M' : Math.round(m * 1000) + 'k';
+          const tok = (m) => ({ total: fmt(m), cost: '$' + (m / 0.227).toFixed(2), input: fmt(m * 0.07), output: fmt(m * 0.05), read: fmt(m * 0.78), write: fmt(m * 0.10) });
+          const nav = [['Overview','overview.html'],['Features','features.html'],['Sessions','sessions.html'],['Skills','#'],['Roles','roles.html']].map(([label,href], i) => ({ label, href, style: 'display:flex;align-items:center;height:40px;padding:0 14px;border-radius:999px;text-decoration:none;font-size:14px;' + (i === 3 ? 'background:#e3eeeb;color:#0b3f3a;font-weight:600' : 'color:#3c4846') }));
+          const rows = [['build-feature',6,6,14.8],['code-review',21,18,8.4],['check-spec',9,9,2.6],['write-spec',3,3,2.1],['simplify',11,10,2.0],['run',8,7,1.6],['No skill',null,38,10.3]];
+          const max = 14.8;
+          const skills = rows.map(([name,launches,sessions,m]) => ({ name, href: launches === null ? '#' : 'skill.html', nameStyle: launches === null ? 'color:#55625f;font-weight:500;font-style:italic;text-decoration:none' : 'color:#17201f;font-weight:600;font-family:ui-monospace,monospace;text-decoration:none', launches: launches ?? '—', sessions, per: launches ? fmt(m / launches) : '—', t: tok(m), bar: 'height:10px;border-radius:5px;background:' + (launches === null ? '#a9b3b0' : '#0f766e') + ';width:' + Math.round(m / max * 100) + '%' }));
+          return { nav, skills };
+        }
+      }
+    </script>
+  </body>
+</html>
