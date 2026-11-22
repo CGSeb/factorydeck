@@ -26,6 +26,7 @@ function stateStory(state: SessionState): Story {
       const badge = within(canvasElement).getByText(text);
       await expect(badge).toHaveAttribute('data-tone', tone);
       await expect(badge.style.background).toBe(`var(--fd-${tone}-bg)`);
+      await expect(badge.style.color).toBe(`var(--fd-${tone})`);
       const marker = badge.querySelector<HTMLElement>('[aria-hidden="true"]');
       await expect(marker).toHaveStyle({ width: '7px', height: '7px' });
       await expect(marker?.style.background).toBe(dot);

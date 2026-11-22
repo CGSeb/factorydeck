@@ -22,6 +22,7 @@ export const ShortName: Story = {
   play: async ({ canvasElement }) => {
     const tag = within(canvasElement).getByText('shop');
     await expect(tag).toHaveAttribute('title', '/work/shop');
+    await expect(tag.style.color).toBe('var(--fd-ink-2)');
     await expect(tag.querySelector('[aria-hidden="true"]')).toHaveStyle({
       width: '8px',
       height: '8px',
@@ -34,9 +35,12 @@ export const ShortName: Story = {
 export const LongNameCut: Story = {
   args: { project: '/work/long', name: LONG_NAME, color: projectColor(1) },
   play: async ({ canvasElement }) => {
-    await expect(
-      within(canvasElement).getByText(`${LONG_NAME.slice(0, 60)}…`),
-    ).toBeInTheDocument();
+    const tag = within(canvasElement).getByText(`${LONG_NAME.slice(0, 60)}…`);
+    await expect(tag).toHaveAttribute('title', `${LONG_NAME}\n/work/long`);
+    await expect(tag.querySelector('[aria-hidden="true"]')).toHaveStyle({
+      width: '8px',
+      background: projectColor(1),
+    });
   },
 };
 
