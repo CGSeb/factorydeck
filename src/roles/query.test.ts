@@ -179,7 +179,11 @@ describe('listRoles', () => {
     });
     expect(list.roles[0]?.role).toBe('main');
     expect(list.apiCalls).toBe(13);
-    expect(list.projects).toEqual(['/work/app', '/work/lib', 'unassigned']);
+    expect(list.projects).toEqual([
+      { project: '/work/app', name: 'app' },
+      { project: '/work/lib', name: 'lib' },
+      { project: 'unassigned', name: 'unassigned' },
+    ]);
   });
 
   it('uses the default role rules without a configuration', async () => {

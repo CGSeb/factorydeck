@@ -1,3 +1,4 @@
+import type { ProjectOption } from '../projects/label.ts';
 import type {
   IssueDetail,
   IssueOutcome,
@@ -24,6 +25,7 @@ export interface FeatureUsage {
 
 export interface FeatureRow extends FeatureUsage {
   project: string;
+  projectName: string;
   number: number;
   issue: WorkItemIssue;
   outcome: IssueOutcome | null;
@@ -48,7 +50,7 @@ export interface FeatureList {
   noWorkItem: FeatureUsage | null;
   totals: FeatureTotals;
   merged: MergedSummary;
-  projects: string[];
+  projects: ProjectOption[];
 }
 
 export interface FeatureQuery {
@@ -77,6 +79,7 @@ export interface FeatureSession {
 
 export interface FeatureDetail {
   project: string;
+  projectName: string;
   number: number;
   issue: WorkItemIssue;
   detail: IssueDetail | null;

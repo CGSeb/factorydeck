@@ -54,6 +54,10 @@ export const Found: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByRole('heading', { name: 'Issue #52' });
+    await expect(canvas.getByText('Example App')).toHaveAttribute(
+      'title',
+      '/home/dev/example-app',
+    );
     await expect(
       canvas.getByRole('link', { name: '#52 Export button' }),
     ).toHaveAttribute(

@@ -61,6 +61,10 @@ export const WithSubAgents: Story = {
     await expect(
       canvas.getByText('/home/dev/example-app/packages/web'),
     ).toBeVisible();
+    await expect(canvas.getByText('Example App')).toHaveAttribute(
+      'title',
+      '/home/dev/example-app',
+    );
     await expect(canvas.getByText('feat/export')).toBeVisible();
     await expect(
       canvas.getByRole('region', { name: 'Session' }),

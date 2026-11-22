@@ -202,7 +202,11 @@ describe('listSessions', () => {
       'working-1',
       'edge-inactive',
     ]);
-    expect(week.projects).toEqual(['/work/app', '/work/lib', 'unassigned']);
+    expect(week.projects).toEqual([
+      { project: '/work/app', name: 'app' },
+      { project: '/work/lib', name: 'lib' },
+      { project: 'unassigned', name: 'unassigned' },
+    ]);
     const none = await listSessions(
       db,
       { ...all, project: '/work/lib', state: 'waiting' },

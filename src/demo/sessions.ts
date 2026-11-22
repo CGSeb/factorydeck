@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { appendFile, mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
   type Call,
@@ -10,6 +10,7 @@ import {
   sonnet,
   unknownPrice,
 } from './calls.ts';
+import { factoryFile } from '../ingest/factory.ts';
 import { installFakeGitHost } from './fake-git-host.ts';
 import { demoGitHub, demoGitLab } from './git-host.ts';
 
@@ -20,6 +21,7 @@ type Line = Record<string, unknown>;
 
 export const EXAMPLE_APP = 'example-app';
 export const EXAMPLE_API = 'example-api';
+export const EXAMPLE_APP_NAME = 'Example App';
 
 export const DEMO_SESSIONS: readonly DemoSession[] = [
   ...[9, 6, 4, 3, 2, 1].map((days, index) => ({
@@ -252,6 +254,10 @@ export async function writeDemoSessions(
     await installFakeGitHost(
       demoProjectRoot(projects, EXAMPLE_API),
       demoGitLab(now),
+    );
+    await appendFile(
+      factoryFile(demoProjectRoot(projects, EXAMPLE_APP)),
+      `project:\n  name: ${EXAMPLE_APP_NAME}\n`,
     );
   }
   for (const session of DEMO_SESSIONS) {

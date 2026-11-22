@@ -1,7 +1,7 @@
 import type { Database } from '../db/client.ts';
 import { UNASSIGNED_PROJECT, session } from '../db/schema.ts';
 import type { FactoryCheck } from '../ingest/factory.ts';
-import { projectName } from '../projects/remove.ts';
+import { folderName } from '../projects/label.ts';
 import { CLI_TIMEOUT_MS, cliRunner, firstLine } from './command.ts';
 import {
   type GitHostConfig,
@@ -124,7 +124,7 @@ async function collectProject(
     if (error instanceof GitHostConfigError) gitHost = error.gitHost ?? gitHost;
     const reason = reasonOf(error);
     await saveFailure(db, project, gitHost, reason);
-    const name = projectName(project);
+    const name = folderName(project);
     return { failure: { project, name, gitHost, reason } };
   }
 }

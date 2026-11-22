@@ -5,6 +5,7 @@ import type {
   UsageOverview,
 } from '../overview/types.ts';
 import type { LoadOverview } from './overview-api.ts';
+import { nameOf } from './project-fixtures.ts';
 
 const DAYS = [
   '2026-01-01',
@@ -52,6 +53,7 @@ export const weekOverview: UsageOverview = {
   projects: [
     {
       project: '/home/dev/example-app',
+      projectName: nameOf('/home/dev/example-app'),
       sessions: 9,
       apiCalls: 982,
       tokens: 9_102_330,
@@ -59,6 +61,7 @@ export const weekOverview: UsageOverview = {
     },
     {
       project: '/home/dev/example-lib',
+      projectName: nameOf('/home/dev/example-lib'),
       sessions: 4,
       apiCalls: 301,
       tokens: 3_204_190,
@@ -66,6 +69,7 @@ export const weekOverview: UsageOverview = {
     },
     {
       project: 'unassigned',
+      projectName: nameOf('unassigned'),
       sessions: 1,
       apiCalls: 44,
       tokens: 213_000,

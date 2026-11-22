@@ -8,6 +8,7 @@ import {
   formatDateTime,
   orMissing,
 } from './format.ts';
+import { ProjectName } from './ProjectName.tsx';
 import { IssuePanel } from './IssuePanel.tsx';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import type { LoadSession } from './sessions-api.ts';
@@ -57,7 +58,12 @@ function SessionHeader({
 }): ReactElement {
   const { tokens } = session;
   const facts: { label: string; value: ReactNode }[] = [
-    { label: 'Project', value: session.project },
+    {
+      label: 'Project',
+      value: (
+        <ProjectName project={session.project} name={session.projectName} />
+      ),
+    },
     { label: 'Working directory', value: orMissing(session.cwd ?? '') },
     { label: 'Branch', value: orMissing(session.gitBranch) },
     {

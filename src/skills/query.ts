@@ -1,5 +1,6 @@
 import { type SQL, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
+import { type ProjectNames, projectNames } from '../projects/names.ts';
 import { byCostDescending, periodStart, select } from '../overview/query.ts';
 import type { TokenCounts } from '../overview/types.ts';
 import { costOf } from '../pricing.ts';
@@ -84,14 +85,6 @@ function sortSkills(rows: SkillUsage[]): SkillUsage[] {
   return rows.sort(byCostDescending((row) => row.skill ?? NO_SKILL_LABEL));
 }
 
-async function projectsOf(db: Database): Promise<string[]> {
-  const rows = await select(
-    db,
-    sql`select project from session group by project order by project collate "C"`,
-  );
-  return rows.map((row) => text(row['project']));
-}
-
 async function scopeOf(db: Database, query: SkillQuery): Promise<Scope> {
   return {
     startAt: await periodStart(db, query),
@@ -160,13 +153,13 @@ export async function listSkills(
           and ${callInScope(scope, sql`l.at`)}
         group by l.skill`,
     ),
-    projectsOf(db),
+    projectNames(db),
   ]);
   const skills = buildSkills(usageRows, launchRows);
   return {
     skills,
     launches: skills.reduce((sum, row) => sum + row.launches, 0),
-    projects,
+    projects: projects.options(),
   };
 }
 
@@ -242,11 +235,11 @@ export async function skillDetail(
         group by s.id, s.title, s.project`,
     ),
     select(db, seriesQuery(scope, skill, query)),
-    projectsOf(db),
+    projectNames(db),
   ]);
   const total = emptyUsage();
   for (const row of usageRows) addUsage(total, row);
-  const sessions = buildSessions(usageRows, launchRows);
+  const sessions = buildSessions(usageRows, launchRows, projects);
   const launches = sessions.reduce((sum, row) => sum + row.launches, 0);
   const costUsd = costOrZero(total);
   return {
@@ -260,11 +253,15 @@ export async function skillDetail(
       launches: Number(row['launches']),
     })),
     sessions,
-    projects,
+    projects: projects.options(),
   };
 }
 
-function buildSessions(usageRows: Row[], launchRows: Row[]): SkillSession[] {
+function buildSessions(
+  usageRows: Row[],
+  launchRows: Row[],
+  names: ProjectNames,
+): SkillSession[] {
   const bySession = new Map<string, Usage>();
   for (const row of usageRows) {
     const id = text(row['session_id']);
@@ -278,6 +275,7 @@ function buildSessions(usageRows: Row[], launchRows: Row[]): SkillSession[] {
         id,
         title: text(row['title']),
         project: text(row['project']),
+        projectName: names.label(text(row['project'])),
         launches: Number(row['launches']),
         tokens: usage.tokens,
         costUsd: costOrZero(usage),

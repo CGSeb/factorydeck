@@ -5,7 +5,8 @@ import { DeleteProjectDialog } from './DeleteProjectDialog.tsx';
 const meta = {
   component: DeleteProjectDialog,
   args: {
-    name: 'old-app',
+    project: '/home/dev/old-app',
+    name: 'Old App',
     sessions: 12,
     state: 'idle',
     onCancel: fn(),
@@ -20,7 +21,7 @@ type Story = StoryObj<typeof meta>;
 export const Open: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    const dialog = canvas.getByRole('dialog', { name: 'Delete old-app?' });
+    const dialog = canvas.getByRole('dialog', { name: 'Delete Old App?' });
     await expect(dialog).toHaveTextContent(
       'This removes its 12 sessions and everything FactoryDeck stored about them (sub-agents, API calls, skill launches, prompts). The session logs on disk are not touched. If the factory is installed again in this project, its sessions are read again.',
     );
@@ -61,7 +62,7 @@ export const Failed: Story = {
   args: { state: 'failed' },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByRole('alert')).toHaveTextContent(
-      'Could not delete old-app. Try again.',
+      'Could not delete Old App. Try again.',
     );
   },
 };
@@ -70,7 +71,7 @@ export const Refused: Story = {
   args: { state: 'has-factory' },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByRole('alert')).toHaveTextContent(
-      'old-app has its factory configuration again, so it was not deleted.',
+      'Old App has its factory configuration again, so it was not deleted.',
     );
   },
 };
@@ -79,7 +80,7 @@ export const NotFound: Story = {
   args: { state: 'not-found' },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByRole('alert')).toHaveTextContent(
-      'old-app is no longer in FactoryDeck.',
+      'Old App is no longer in FactoryDeck.',
     );
   },
 };

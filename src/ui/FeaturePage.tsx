@@ -6,6 +6,7 @@ import {
   issueNumber,
 } from '../features/types.ts';
 import { DEFAULT_PERIOD, type Period, isPeriod } from '../overview/types.ts';
+import { ProjectName } from './ProjectName.tsx';
 import { FeatureSessionTable } from './FeatureSessionTable.tsx';
 import { type LoadFeature, featuresPath } from './features-api.ts';
 import { formatClock } from './format.ts';
@@ -65,7 +66,9 @@ function FeatureContent({
         )}
         <PeriodSelector value={period} onChange={onPeriod} />
       </div>
-      <p className="source">{feature.project}</p>
+      <p className="source">
+        <ProjectName project={feature.project} name={feature.projectName} />
+      </p>
       {feature.detail !== null && <IssuePanel issue={feature.detail} />}
       {roles.length === 0 ? (
         <p className="status">No activity in this period.</p>

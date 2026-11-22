@@ -38,7 +38,7 @@ const list: SkillList = {
     },
   ],
   launches: 2,
-  projects: ['/work/app'],
+  projects: [{ project: '/work/app', name: 'app' }],
 };
 
 const queries: { skill?: string; query: SkillQuery }[] = [];

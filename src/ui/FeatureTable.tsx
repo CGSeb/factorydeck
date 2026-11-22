@@ -12,6 +12,7 @@ import {
   nextSort,
   sortFeatures,
 } from './features-api.ts';
+import { ProjectName } from './ProjectName.tsx';
 import { MISSING, formatCost, formatCount } from './format.ts';
 import type { SkillFilters } from './skills-api.ts';
 import { StageLabel } from './StageLabel.tsx';
@@ -140,7 +141,11 @@ function IssueRow({
       <th scope="row" className="left">
         <Link to={path}>{issueText(row)}</Link>
       </th>
-      {showProject && <td className="left project">{row.project}</td>}
+      {showProject && (
+        <td className="left project">
+          <ProjectName project={row.project} name={row.projectName} />
+        </td>
+      )}
       <td className="left">
         {row.outcome === null ? (
           MISSING

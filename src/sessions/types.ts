@@ -1,3 +1,4 @@
+import type { ProjectOption } from '../projects/label.ts';
 import type { IssueDetail, WorkItemIssue } from '../git-host/types.ts';
 import type { Period, TokenCounts } from '../overview/types.ts';
 import type { SkillUsage } from '../skills/types.ts';
@@ -18,6 +19,7 @@ export interface SessionSummary {
   id: string;
   title: string;
   project: string;
+  projectName: string;
   gitBranch: string;
   workItem: number | null;
   issue: WorkItemIssue | null;
@@ -34,7 +36,7 @@ export interface SessionList {
   sessions: SessionSummary[];
   total: number;
   counts: StateCounts;
-  projects: string[];
+  projects: ProjectOption[];
 }
 
 export interface SessionListQuery {

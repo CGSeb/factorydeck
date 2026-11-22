@@ -25,13 +25,14 @@ const list: SessionList = {
   sessions: [],
   total: 0,
   counts: { working: 0, waiting: 0, inactive: 0 },
-  projects: ['/work/app'],
+  projects: [{ project: '/work/app', name: 'app' }],
 };
 
 const detail: SessionDetail = {
   id: 's-1',
   title: '',
   project: '/work/app',
+  projectName: 'app',
   cwd: '/work/app',
   gitBranch: 'main',
   workItem: null,

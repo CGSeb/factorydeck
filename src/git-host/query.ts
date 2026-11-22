@@ -2,7 +2,7 @@ import { and, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import { gitHostIssue, gitHostProject, gitHostRequest } from '../db/schema.ts';
 import type { FactoryCheck } from '../ingest/factory.ts';
-import { projectName } from '../projects/remove.ts';
+import { projectNames } from '../projects/names.ts';
 import { type StageLabels, issueOutcome } from './outcome.ts';
 import { runFinishedAt } from './store.ts';
 import type {
@@ -278,26 +278,29 @@ export async function collectionStatus(
   db: Database,
   hasFactory: FactoryCheck,
 ): Promise<CollectionStatus> {
-  const [finishedAt, rows] = await Promise.all([
+  const [finishedAt, rows, names] = await Promise.all([
     runFinishedAt(db),
     db
       .select()
       .from(gitHostProject)
       .where(isNotNull(gitHostProject.error))
       .orderBy(gitHostProject.project),
+    projectNames(db),
   ]);
   const failures: CollectionFailure[] = [];
   for (const row of rows) {
     if (row.error === null || !(await hasFactory(row.project))) continue;
     failures.push({
       project: row.project,
-      name: projectName(row.project),
+      name: names.label(row.project),
       gitHost: gitHostOf(row.errorGitHost) ?? gitHostOf(row.gitHost),
       reason: row.error,
     });
   }
   failures.sort(
-    (a, b) => compareText(a.name, b.name) || compareText(a.project, b.project),
+    (a, b) =>
+      compareText(a.name.toLowerCase(), b.name.toLowerCase()) ||
+      compareText(a.project, b.project),
   );
   return { collectedAt: finishedAt?.toISOString() ?? null, failures };
 }

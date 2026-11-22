@@ -69,6 +69,12 @@ export const AllProjects: Story = {
     await expect(
       canvas.getByRole('columnheader', { name: 'Project' }),
     ).toBeVisible();
+    await expect(
+      canvas.getByText('example-lib', { selector: 'span' }),
+    ).toHaveAttribute('title', '/home/dev/example-lib');
+    await expect(
+      canvas.getAllByText('Example App', { selector: 'span' })[0],
+    ).toHaveAttribute('title', '/home/dev/example-app');
     await userEvent.click(canvas.getByRole('button', { name: 'Tokens' }));
     await expect(address(canvasElement)).toHaveTextContent(
       '/features?period=all&sort=tokens&order=asc',

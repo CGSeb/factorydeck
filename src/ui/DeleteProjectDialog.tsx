@@ -5,11 +5,13 @@ import {
   useId,
   useRef,
 } from 'react';
+import { projectText } from '../projects/label.ts';
 
 export type DeleteDialogState =
   'idle' | 'deleting' | 'failed' | 'has-factory' | 'not-found';
 
 export interface DeleteProjectDialogProps {
+  project: string;
   name: string;
   sessions: number;
   state: DeleteDialogState;
@@ -75,7 +77,36 @@ function useDialogFocus(
   return cancel;
 }
 
+function DialogActions({
+  cancel,
+  deleting,
+  onCancel,
+  onConfirm,
+}: {
+  cancel: RefObject<HTMLButtonElement | null>;
+  deleting: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}): ReactElement {
+  return (
+    <div className="dialog-actions">
+      <button type="button" ref={cancel} onClick={onCancel}>
+        Cancel
+      </button>
+      <button
+        type="button"
+        className="danger"
+        disabled={deleting}
+        onClick={onConfirm}
+      >
+        {deleting ? 'Deleting…' : 'Delete project'}
+      </button>
+    </div>
+  );
+}
+
 export function DeleteProjectDialog({
+  project,
   name,
   sessions,
   state,
@@ -86,9 +117,8 @@ export function DeleteProjectDialog({
   const textId = useId();
   const dialog = useRef<HTMLDivElement>(null);
   const cancel = useDialogFocus(onCancel, dialog);
-  const message = MESSAGES[state]?.(name);
-  const deleting = state === 'deleting';
-
+  const label = projectText(project, name);
+  const message = MESSAGES[state]?.(label.text);
   return (
     <div
       className="dialog-backdrop"
@@ -105,7 +135,9 @@ export function DeleteProjectDialog({
         aria-labelledby={titleId}
         aria-describedby={textId}
       >
-        <h2 id={titleId}>Delete {name}?</h2>
+        <h2 id={titleId} title={label.title}>
+          Delete {label.text}?
+        </h2>
         <p id={textId}>
           This removes its {sessions} sessions and everything FactoryDeck stored
           about them (sub-agents, API calls, skill launches, prompts). The
@@ -117,19 +149,12 @@ export function DeleteProjectDialog({
             {message}
           </p>
         )}
-        <div className="dialog-actions">
-          <button type="button" ref={cancel} onClick={onCancel}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="danger"
-            disabled={deleting}
-            onClick={onConfirm}
-          >
-            {deleting ? 'Deleting…' : 'Delete project'}
-          </button>
-        </div>
+        <DialogActions
+          cancel={cancel}
+          deleting={state === 'deleting'}
+          onCancel={onCancel}
+          onConfirm={onConfirm}
+        />
       </div>
     </div>
   );

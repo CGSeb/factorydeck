@@ -1,3 +1,4 @@
+import type { ProjectOption } from '../projects/label.ts';
 import { type ReactElement, useEffect, useId, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { DEFAULT_PERIOD, type Period, isPeriod } from '../overview/types.ts';
@@ -131,7 +132,7 @@ function FilterBar({
   onChange,
 }: {
   filters: SessionFilters;
-  projects: string[];
+  projects: ProjectOption[];
   onChange: (next: SessionFilters) => void;
 }): ReactElement {
   const stateId = useId();

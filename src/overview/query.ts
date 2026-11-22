@@ -1,6 +1,7 @@
 import { type SQL, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import { costOf, modelFamily } from '../pricing.ts';
+import { type ProjectNames, projectNames } from '../projects/names.ts';
 import {
   FAMILIES,
   type Family,
@@ -203,6 +204,7 @@ const NO_USAGE: Usage = { apiCalls: 0, tokens: 0, costUsd: null };
 function summarize(
   projectRows: Row[],
   sessionRows: Row[],
+  names: ProjectNames,
 ): Pick<UsageOverview, 'totals' | 'projects' | 'models'> {
   const totals = emptyTotals();
   const models = new Map<string, ModelUsage>();
@@ -217,7 +219,12 @@ function summarize(
       ...NO_USAGE,
     };
     models.set(usage.model, addTo(model, usage, cost));
-    const row = projects.get(project) ?? { project, sessions: 0, ...NO_USAGE };
+    const row = projects.get(project) ?? {
+      project,
+      projectName: names.label(project),
+      sessions: 0,
+      ...NO_USAGE,
+    };
     projects.set(project, addTo(row, usage, cost));
   }
   for (const raw of sessionRows) {
@@ -229,7 +236,7 @@ function summarize(
   return {
     totals,
     projects: [...projects.values()].sort(
-      byCostDescending((row) => row.project),
+      byCostDescending((row) => row.projectName),
     ),
     models: [...models.values()].sort(byCostDescending((row) => row.model)),
   };
@@ -259,18 +266,19 @@ export async function usageOverview(
   query: OverviewQuery,
 ): Promise<UsageOverview> {
   const window = await windowOf(db, query);
-  const [hasData, projectRows, sessionRows, bucketRows, usageRows] =
+  const [hasData, projectRows, sessionRows, bucketRows, usageRows, names] =
     await Promise.all([
       select(db, sql`select exists(select 1 from session) as has_data`),
       select(db, usageByProjectQuery(window)),
       select(db, sessionsByProjectQuery(window)),
       select(db, bucketsQuery(window)),
       select(db, usageByBucketQuery(window)),
+      projectNames(db),
     ]);
   return {
     hasData: hasData[0]?.['has_data'] === true,
     bucket: window.unit,
-    ...summarize(projectRows, sessionRows),
+    ...summarize(projectRows, sessionRows, names),
     series: buildSeries(bucketRows, usageRows),
   };
 }

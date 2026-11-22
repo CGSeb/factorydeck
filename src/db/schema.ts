@@ -12,6 +12,7 @@ import {
   timestamp,
   unique,
 } from 'drizzle-orm/pg-core';
+import { UNASSIGNED_PROJECT } from '../projects/label.ts';
 import type { StageLabels } from '../git-host/outcome.ts';
 import type { SerenityReport } from '../git-host/types.ts';
 
@@ -25,8 +26,7 @@ export const sourceFile = pgTable('source_file', {
     .defaultNow(),
 });
 
-/** Project of a session with no working directory in any record. */
-export const UNASSIGNED_PROJECT = 'unassigned';
+export { UNASSIGNED_PROJECT };
 
 /** A Claude Code session: the main thread of one `<session id>.jsonl` log. */
 export const session = pgTable('session', {
@@ -215,4 +215,9 @@ export const gitHostProject = pgTable('git_host_project', {
 export const gitHostRun = pgTable('git_host_run', {
   id: text().primaryKey(),
   finishedAt: timestamp('finished_at', { withTimezone: true }).notNull(),
+});
+
+export const projectName = pgTable('project_name', {
+  project: text().primaryKey(),
+  name: text().notNull(),
 });

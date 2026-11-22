@@ -1,6 +1,6 @@
 # 012 · Project names
 
-Status: ready
+Status: done
 Depends on: 010
 Checked: 2026-11-22
 
@@ -10,25 +10,25 @@ A developer sees each of their projects under a readable name they choose, such 
 
 ## Acceptance criteria
 
-- [ ] A project's `docs/agents/factory.yml` can hold an optional section `project` with a key `name`:
+- [x] A project's `docs/agents/factory.yml` can hold an optional section `project` with a key `name`:
 
   ```yaml
   project:
     name: FactoryDeck
   ```
 
-- [ ] A project's **display name** is its `project.name`, as last read by the ingestion (Rules); a project with no name read yet shows its folder name (the last segment of its root path, such as `factorydeck` for `/home/me/factorydeck`). `unassigned` stays `unassigned`.
-- [ ] The display name replaces the root path wherever a project is shown: the `By project` table of the overview (spec 003), the project column of the session list and the `Project` field of the session page (spec 004), the options of the project filters (specs 004 to 006 and 010), the project column of `/features` and the project line of an issue page (spec 010), and the warning banner and delete dialog of spec 007 (`<project name>` in their wording).
-- [ ] Wherever a display name is shown, its root path is its tooltip (`title`), except in the options of the project filters, where a duplicated name carries it as text instead (next criterion). The `Working directory` field of the session page and the `<root>/docs/agents/factory.yml` path of the spec 007 banner keep showing paths.
-- [ ] When two or more projects with stored sessions have the same display name (compared case-insensitively), each of them is shown as `<name> (<root>)`, in the filter options and everywhere else a project is shown; a unique name is shown alone.
-- [ ] The options of the project filters stay `All projects` first, then the projects sorted by display name, case-insensitively (then by root); the value of each option and of the `project` URL parameter stays the project root, so every link and URL of specs 004 to 010 keeps working.
-- [ ] The `By project` table of the overview keeps its sort by cost descending; a tie is broken by display name.
-- [ ] Renaming a project in its `docs/agents/factory.yml` changes its display name on every page at the next ingestion run, without a reload (the refresh of spec 003) and without re-ingesting any session.
-- [ ] A `project.name` that is missing, empty or only spaces, not a string (a number, a list, a map), under a `project` that is not a map, or in a file that is not valid YAML (a duplicated key included), counts as no name: the project keeps the last name read, or its folder name if none was ever read.
-- [ ] A name is cleaned before it is stored: line breaks, tabs and runs of spaces become one space, and leading and trailing spaces are removed. A cleaned name longer than 60 characters is shown as its first 60 characters followed by `…`, everywhere, with the full name and the root path in its tooltip.
-- [ ] `unassigned` has no tooltip.
-- [ ] A project whose `docs/agents/factory.yml` is no longer found (spec 007) keeps the last name read.
-- [ ] This repository's `docs/agents/factory.yml` has `project: name: FactoryDeck`; the demo projects of `pnpm demo` have names in their `docs/agents/factory.yml`, and one of them has none, so it shows its folder name.
+- [x] A project's **display name** is its `project.name`, as last read by the ingestion (Rules); a project with no name read yet shows its folder name (the last segment of its root path, such as `factorydeck` for `/home/me/factorydeck`). `unassigned` stays `unassigned`.
+- [x] The display name replaces the root path wherever a project is shown: the `By project` table of the overview (spec 003), the project column of the session list and the `Project` field of the session page (spec 004), the options of the project filters (specs 004 to 006 and 010), the project column of `/features` and the project line of an issue page (spec 010), and the warning banner and delete dialog of spec 007 (`<project name>` in their wording).
+- [x] Wherever a display name is shown, its root path is its tooltip (`title`), except in the options of the project filters, where a duplicated name carries it as text instead (next criterion). The `Working directory` field of the session page and the `<root>/docs/agents/factory.yml` path of the spec 007 banner keep showing paths.
+- [x] When two or more projects with stored sessions have the same display name (compared case-insensitively), each of them is shown as `<name> (<root>)`, in the filter options and everywhere else a project is shown; a unique name is shown alone.
+- [x] The options of the project filters stay `All projects` first, then the projects sorted by display name, case-insensitively (then by root); the value of each option and of the `project` URL parameter stays the project root, so every link and URL of specs 004 to 010 keeps working.
+- [x] The `By project` table of the overview keeps its sort by cost descending; a tie is broken by display name.
+- [x] Renaming a project in its `docs/agents/factory.yml` changes its display name on every page at the next ingestion run, without a reload (the refresh of spec 003) and without re-ingesting any session.
+- [x] A `project.name` that is missing, empty or only spaces, not a string (a number, a list, a map), under a `project` that is not a map, or in a file that is not valid YAML (a duplicated key included), counts as no name: the project keeps the last name read, or its folder name if none was ever read.
+- [x] A name is cleaned before it is stored: line breaks, tabs and runs of spaces become one space, and leading and trailing spaces are removed. A cleaned name longer than 60 characters is shown as its first 60 characters followed by `…`, everywhere, with the full name and the root path in its tooltip.
+- [x] `unassigned` has no tooltip.
+- [x] A project whose `docs/agents/factory.yml` is no longer found (spec 007) keeps the last name read.
+- [x] This repository's `docs/agents/factory.yml` has `project: name: FactoryDeck`; the demo projects of `pnpm demo` have names in their `docs/agents/factory.yml`, and one of them has none, so it shows its folder name.
 
 ## Rules
 

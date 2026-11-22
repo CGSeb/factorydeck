@@ -40,11 +40,12 @@ const list: FeatureList = {
     withoutPerson: null,
     unknownPriceCalls: 0,
   },
-  projects: ['/work/app'],
+  projects: [{ project: '/work/app', name: 'app' }],
 };
 
 const feature: FeatureDetail = {
   project: '/work/app',
+  projectName: 'app',
   number: 7,
   issue: { status: 'not-collected' },
   detail: null,

@@ -23,6 +23,7 @@ export type SeriesPoint = { bucket: string } & Record<Family, number>;
 
 export interface ProjectUsage {
   project: string;
+  projectName: string;
   sessions: number;
   apiCalls: number;
   tokens: number;

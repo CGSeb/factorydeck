@@ -25,6 +25,7 @@ function row(
 ): FeatureRow {
   return {
     project,
+    projectName: 'app',
     number,
     issue: { status: 'not-collected' },
     outcome:

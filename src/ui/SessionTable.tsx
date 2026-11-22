@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { Link, useNavigate } from 'react-router';
 import type { SessionSummary } from '../sessions/types.ts';
+import { ProjectName } from './ProjectName.tsx';
 import { formatAgo, formatCost, formatDuration, orMissing } from './format.ts';
 import { SessionStateLabel } from './SessionStateLabel.tsx';
 import { TokenCount } from './TokenCount.tsx';
@@ -78,7 +79,9 @@ export function SessionTable({
             <th scope="row" className="left">
               <Link to={sessionPath(row.id)}>{sessionTitle(row)}</Link>
             </th>
-            <td className="left">{row.project}</td>
+            <td className="left">
+              <ProjectName project={row.project} name={row.projectName} />
+            </td>
             <td className="left">{orMissing(row.gitBranch)}</td>
             <td>
               <WorkItemLink workItem={row.workItem} issue={row.issue} />
