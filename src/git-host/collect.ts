@@ -10,6 +10,7 @@ import {
 } from './config.ts';
 import { githubReader } from './github.ts';
 import { gitlabReader } from './gitlab.ts';
+import { readOutcomeSettings } from './outcome-settings.ts';
 import type { Changes, GitHostReader } from './parse.ts';
 import {
   pendingRequests,
@@ -102,9 +103,11 @@ async function collectProject(
   try {
     const config = await readGitHostConfig(project);
     gitHost = config.gitHost;
+    const settings = await readOutcomeSettings(project, config.gitHost);
     const replace =
       state?.gitHost !== config.gitHost ||
-      state.repository !== config.repository;
+      state.repository !== config.repository ||
+      !state.outcomeSettings;
     const since = replace ? null : state.syncedFrom;
     const reader = readerFor(config, project, timeoutMs);
     const changes = await changesOf(db, project, reader, since);
@@ -114,6 +117,7 @@ async function collectProject(
       startedAt,
       replace,
       changes,
+      settings,
     });
     return { changes };
   } catch (error) {

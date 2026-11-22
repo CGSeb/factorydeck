@@ -18,6 +18,14 @@ export interface IssueLabel {
   color: string | null;
 }
 
+export interface SerenityReport {
+  score: number;
+  threshold: number;
+  rounds: number | null;
+  gatesPassed: boolean;
+  at: string;
+}
+
 export interface IssueRecord {
   number: number;
   title: string;
@@ -27,6 +35,7 @@ export interface IssueRecord {
   createdAt: string;
   closedAt: string | null;
   updatedAt: string;
+  reopened: boolean;
 }
 
 export interface RequestRecord {
@@ -42,6 +51,7 @@ export interface RequestRecord {
   updatedAt: string;
   closes: number[];
   checks: ChecksSummary;
+  report: SerenityReport | null;
 }
 
 export type WorkItemIssue =
@@ -59,6 +69,26 @@ export interface ClosingRequest {
   createdAt: string;
 }
 
+export const ISSUE_STAGES = [
+  'merged',
+  'merged-by-person',
+  'closed',
+  'blocked',
+  'needs-spec',
+  'in-review',
+  'working',
+  'ready',
+  'open',
+] as const;
+
+export type IssueStage = (typeof ISSUE_STAGES)[number];
+
+export interface IssueOutcome {
+  stage: IssueStage;
+  report: { score: number; threshold: number; rounds: number | null } | null;
+  reworked: boolean;
+}
+
 export interface IssueDetail {
   gitHost: GitHostName;
   number: number;
@@ -67,6 +97,7 @@ export interface IssueDetail {
   state: IssueState;
   labels: IssueLabel[];
   requests: ClosingRequest[];
+  outcome: IssueOutcome;
 }
 
 export interface CollectionFailure {

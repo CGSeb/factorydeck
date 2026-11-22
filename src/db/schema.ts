@@ -12,6 +12,8 @@ import {
   timestamp,
   unique,
 } from 'drizzle-orm/pg-core';
+import type { StageLabels } from '../git-host/outcome.ts';
+import type { SerenityReport } from '../git-host/types.ts';
 
 /** A session log already read, so the next ingestion resumes where it stopped. */
 export const sourceFile = pgTable('source_file', {
@@ -173,6 +175,7 @@ export const gitHostIssue = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
     closedAt: timestamp('closed_at', { withTimezone: true }),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
+    reopened: boolean().notNull().default(false),
   },
   (table) => [primaryKey({ columns: [table.project, table.number] })],
 );
@@ -193,6 +196,7 @@ export const gitHostRequest = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
     closes: jsonb().$type<number[]>().notNull(),
     checks: text().notNull(),
+    report: jsonb().$type<SerenityReport>(),
   },
   (table) => [primaryKey({ columns: [table.project, table.number] })],
 );
@@ -204,6 +208,8 @@ export const gitHostProject = pgTable('git_host_project', {
   syncedFrom: timestamp('synced_from', { withTimezone: true }),
   error: text(),
   errorGitHost: text('error_git_host'),
+  stageLabels: jsonb('stage_labels').$type<StageLabels>(),
+  autoMerge: boolean('auto_merge'),
 });
 
 export const gitHostRun = pgTable('git_host_run', {

@@ -1,5 +1,6 @@
 import { gitlabChecks } from './checks.ts';
 import type { RunCli } from './command.ts';
+import { latestReport } from './report.ts';
 import {
   type GitHostReader,
   type Json,
@@ -38,6 +39,7 @@ export function gitlabIssue(
   row: Json,
   colors: Colors,
   now: string,
+  reopened: ReadonlySet<number> = new Set(),
 ): IssueRecord | undefined {
   const number = positive(row['iid']);
   if (number === undefined) return undefined;
@@ -51,6 +53,7 @@ export function gitlabIssue(
     createdAt,
     closedAt: time(row['closed_at']),
     updatedAt: requiredTime(row['updated_at'], createdAt),
+    reopened: reopened.has(number),
   };
 }
 
@@ -77,6 +80,7 @@ export function gitlabRequest(
   row: Json,
   closes: unknown,
   now: string,
+  notes: unknown = [],
 ): RequestRecord | undefined {
   const number = positive(row['iid']);
   if (number === undefined) return undefined;
@@ -94,6 +98,14 @@ export function gitlabRequest(
     updatedAt: requiredTime(row['updated_at'], createdAt),
     closes: closesOf(closes, row['target_project_id'] ?? row['project_id']),
     checks: gitlabChecks(field(row['head_pipeline'], 'status')),
+    report: latestReport(
+      list(notes)
+        .filter((note) => note['system'] !== true)
+        .map((note) => ({
+          body: text(note['body']),
+          createdAt: time(note['created_at']),
+        })),
+    ),
   };
 }
 
@@ -148,10 +160,33 @@ async function requestsOf(
       `merge_requests/${String(iid)}/closes_issues`,
       new URLSearchParams(),
     );
-    const record = gitlabRequest(detail, closes, api.now());
+    const notes = await pages(
+      api,
+      `merge_requests/${String(iid)}/notes`,
+      new URLSearchParams({ order_by: 'created_at', sort: 'asc' }),
+    );
+    const record = gitlabRequest(detail, closes, api.now(), notes);
     if (record !== undefined) found.push(record);
   }
   return found;
+}
+
+async function reopenedIssues(
+  api: Api,
+  numbers: number[],
+): Promise<Set<number>> {
+  const reopened = new Set<number>();
+  for (const iid of numbers) {
+    const events = await pages(
+      api,
+      `issues/${String(iid)}/resource_state_events`,
+      new URLSearchParams(),
+    );
+    if (events.some((event) => text(event['state']) === 'reopened')) {
+      reopened.add(iid);
+    }
+  }
+  return reopened;
 }
 
 export function gitlabReader(
@@ -168,6 +203,10 @@ export function gitlabReader(
     changes: async (since) => {
       const issueRows = await pages(api, 'issues', updatedQuery(since));
       const colors = issueRows.length > 0 ? await labelColors(api) : new Map();
+      const reopened = await reopenedIssues(
+        api,
+        issueRows.flatMap((row) => positive(row['iid']) ?? []),
+      );
       const at = now();
       const requestQuery = updatedQuery(since);
       requestQuery.set('state', 'all');
@@ -175,7 +214,9 @@ export function gitlabReader(
       const numbers = requestRows.flatMap((row) => positive(row['iid']) ?? []);
       return {
         issues: byNumber(
-          issueRows.flatMap((row) => gitlabIssue(row, colors, at) ?? []),
+          issueRows.flatMap(
+            (row) => gitlabIssue(row, colors, at, reopened) ?? [],
+          ),
         ),
         requests: byNumber(await requestsOf(api, numbers)),
       };

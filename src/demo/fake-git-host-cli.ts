@@ -37,7 +37,54 @@ function print(value: unknown): void {
   process.stdout.write(JSON.stringify(value));
 }
 
+function graphqlField(name: string): string | undefined {
+  const prefix = `${name}=`;
+  return args.find((arg) => arg.startsWith(prefix))?.slice(prefix.length);
+}
+
+function githubGraphql(): void {
+  const query = graphqlField('query') ?? '';
+  if (
+    `${graphqlField('owner') ?? ''}/${graphqlField('name') ?? ''}` !==
+    data.repository
+  ) {
+    fail('GraphQL: Could not resolve to a Repository with the name.');
+  }
+  const size = Number(/first: (\d+)/.exec(query)?.[1] ?? '100');
+  const since = graphqlField('since');
+  const start = Number(graphqlField('after') ?? '0');
+  const rows = byUpdate(data.issues).filter(
+    (row) =>
+      since === undefined ||
+      new Date(updatedOf(row)).getTime() >= new Date(since).getTime(),
+  );
+  const page = rows.slice(start, start + size);
+  const reopened = new Set(data.reopened ?? []);
+  print({
+    data: {
+      repository: {
+        issues: {
+          nodes: page.map((row) => ({
+            number: row['number'],
+            timelineItems: {
+              totalCount: reopened.has(Number(row['number'])) ? 1 : 0,
+            },
+          })),
+          pageInfo: {
+            hasNextPage: start + size < rows.length,
+            endCursor: String(start + size),
+          },
+        },
+      },
+    },
+  });
+}
+
 function github(): void {
+  if (args[0] === 'api' && args[1] === 'graphql') {
+    githubGraphql();
+    return;
+  }
   if (option('--repo') !== data.repository) {
     fail(
       `GraphQL: Could not resolve to a Repository with the name '${option('--repo') ?? ''}'.`,
@@ -79,18 +126,37 @@ function gitlabPage(query: URLSearchParams, rows: Row[]): Row[] {
   return updated.slice(start, start + size);
 }
 
-function gitlabAnswer(resource: string[], query: URLSearchParams): unknown {
-  const [name, iid, sub] = resource;
-  if (name === 'issues') return gitlabPage(query, byUpdate(data.issues));
-  if (name === 'labels') return gitlabPage(query, data.labels ?? []);
-  if (name === 'merge_requests' && iid === undefined) {
-    return gitlabPage(query, byUpdate(data.requests));
-  }
+function stateEvents(iid: string | undefined): Row[] {
+  return (data.reopened ?? []).includes(Number(iid))
+    ? [{ state: 'closed' }, { state: 'reopened' }]
+    : [];
+}
+
+function issueAnswer(iid: string | undefined, query: URLSearchParams): unknown {
+  return iid === undefined
+    ? gitlabPage(query, byUpdate(data.issues))
+    : gitlabPage(query, stateEvents(iid));
+}
+
+function requestAnswer(
+  iid: string | undefined,
+  sub: string | undefined,
+  query: URLSearchParams,
+): unknown {
+  if (iid === undefined) return gitlabPage(query, byUpdate(data.requests));
   const request = data.requests.find((row) => String(row['iid']) === iid);
   if (request === undefined) fail('404 Not found');
+  if (sub === 'notes') return gitlabPage(query, data.notes?.[iid] ?? []);
   return sub === 'closes_issues'
-    ? gitlabPage(query, data.closes?.[iid ?? ''] ?? [])
+    ? gitlabPage(query, data.closes?.[iid] ?? [])
     : request;
+}
+
+function gitlabAnswer(resource: string[], query: URLSearchParams): unknown {
+  const [name, iid, sub] = resource;
+  if (name === 'issues') return issueAnswer(iid, query);
+  if (name === 'labels') return gitlabPage(query, data.labels ?? []);
+  return requestAnswer(iid, sub, query);
 }
 
 function gitlab(): void {

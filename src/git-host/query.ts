@@ -3,13 +3,17 @@ import type { Database } from '../db/client.ts';
 import { gitHostIssue, gitHostProject, gitHostRequest } from '../db/schema.ts';
 import type { FactoryCheck } from '../ingest/factory.ts';
 import { projectName } from '../projects/remove.ts';
+import { type StageLabels, issueOutcome } from './outcome.ts';
 import { runFinishedAt } from './store.ts';
 import type {
   ChecksSummary,
+  ClosingRequest,
   CollectionFailure,
   CollectionStatus,
   GitHostName,
   IssueDetail,
+  IssueLabel,
+  IssueOutcome,
   IssueState,
   RequestState,
   WorkItemIssue,
@@ -108,6 +112,51 @@ export async function withIssues<T extends { workItem: number | null }>(
   }));
 }
 
+type RequestRow = typeof gitHostRequest.$inferSelect;
+
+type IssueRow = typeof gitHostIssue.$inferSelect;
+
+function outcomeOf(
+  issue: IssueRow,
+  requests: RequestRow[],
+  state: { stageLabels: StageLabels | null; autoMerge: boolean | null },
+): IssueOutcome {
+  return issueOutcome(
+    {
+      state: issueState(issue.state),
+      labels: issue.labels.map((label) => label.name),
+      reopened: issue.reopened,
+    },
+    requests.map((request) => ({
+      state: requestState(request.state),
+      mergedAt: request.mergedAt?.toISOString() ?? null,
+      updatedAt: request.updatedAt.toISOString(),
+      report: request.report,
+    })),
+    { labels: state.stageLabels, autoMerge: state.autoMerge },
+  );
+}
+
+function closingRequest(request: RequestRow): ClosingRequest {
+  return {
+    number: request.number,
+    title: request.title,
+    url: request.url,
+    state: requestState(request.state),
+    draft: request.draft,
+    checks: checksOf(request.checks),
+    createdAt: request.createdAt.toISOString(),
+  };
+}
+
+function sortedLabels(labels: IssueLabel[]): IssueLabel[] {
+  return [...labels].sort(
+    (a, b) =>
+      compareText(a.name.toLowerCase(), b.name.toLowerCase()) ||
+      compareText(a.name, b.name),
+  );
+}
+
 export async function issueDetail(
   db: Database,
   project: string,
@@ -115,7 +164,11 @@ export async function issueDetail(
 ): Promise<IssueDetail | null> {
   const [[state], [issue], requests] = await Promise.all([
     db
-      .select({ gitHost: gitHostProject.gitHost })
+      .select({
+        gitHost: gitHostProject.gitHost,
+        stageLabels: gitHostProject.stageLabels,
+        autoMerge: gitHostProject.autoMerge,
+      })
       .from(gitHostProject)
       .where(
         and(
@@ -141,27 +194,18 @@ export async function issueDetail(
       .orderBy(desc(gitHostRequest.createdAt), desc(gitHostRequest.number)),
   ]);
   const gitHost = gitHostOf(state?.gitHost ?? null);
-  if (gitHost === null || issue === undefined) return null;
+  if (state === undefined || gitHost === null || issue === undefined) {
+    return null;
+  }
   return {
     gitHost,
     number: issue.number,
     title: issue.title,
     url: issue.url,
     state: issueState(issue.state),
-    labels: [...issue.labels].sort(
-      (a, b) =>
-        compareText(a.name.toLowerCase(), b.name.toLowerCase()) ||
-        compareText(a.name, b.name),
-    ),
-    requests: requests.map((request) => ({
-      number: request.number,
-      title: request.title,
-      url: request.url,
-      state: requestState(request.state),
-      draft: request.draft,
-      checks: checksOf(request.checks),
-      createdAt: request.createdAt.toISOString(),
-    })),
+    labels: sortedLabels(issue.labels),
+    requests: requests.map(closingRequest),
+    outcome: outcomeOf(issue, requests, state),
   };
 }
 

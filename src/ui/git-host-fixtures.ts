@@ -63,6 +63,11 @@ export const githubIssue: IssueDetail = {
       createdAt: hoursAgo(40),
     },
   ],
+  outcome: {
+    stage: 'merged',
+    report: { score: 86, threshold: 80, rounds: 1 },
+    reworked: true,
+  },
 };
 
 export const gitlabIssue: IssueDetail = {
@@ -86,6 +91,7 @@ export const gitlabIssue: IssueDetail = {
       createdAt: hoursAgo(5),
     },
   ],
+  outcome: { stage: 'merged', report: null, reworked: false },
 };
 
 export const issueWithoutRequests: IssueDetail = {
@@ -95,6 +101,7 @@ export const issueWithoutRequests: IssueDetail = {
   url: 'https://github.com/example-org/example-app/issues/61',
   labels: [],
   requests: [],
+  outcome: { stage: 'open', report: null, reworked: false },
 };
 
 export const appFailure: CollectionFailure = {

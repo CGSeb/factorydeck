@@ -24,6 +24,28 @@ interface DemoRequest {
   checks: string;
   hoursAgo: number;
   draft?: boolean;
+  report?: string;
+}
+
+function serenityReport(score: number, rounds: number): string {
+  return [
+    `## Serenity: ${String(score)}/100 (threshold 80)`,
+    '',
+    '- −10: a demo deduction',
+    '',
+    `Gates: all passed. Review: ${String(rounds)} ${rounds === 1 ? 'round' : 'rounds'}, confidence high.`,
+  ].join('\n');
+}
+
+function reportComments(now: Date, request: DemoRequest): Row[] {
+  if (request.report === undefined) return [];
+  return [
+    {
+      author: { login: 'factory-bot' },
+      body: request.report,
+      createdAt: ago(now, (request.hoursAgo - 1) * HOUR),
+    },
+  ];
 }
 
 const GITHUB_COLORS: Record<string, string> = {
@@ -31,6 +53,7 @@ const GITHUB_COLORS: Record<string, string> = {
   spec: '1d76db',
   'agent:review': '5319e7',
   'agent:ready': 'fbca04',
+  'agent:blocked': 'b60205',
   bug: 'd73a4a',
 };
 
@@ -79,6 +102,7 @@ function githubRequestRow(now: Date, request: DemoRequest): Row {
       repository: { name: 'example-app', owner: { login: 'example-org' } },
     })),
     statusCheckRollup: GITHUB_ROLLUPS[request.checks] ?? [],
+    comments: reportComments(now, request),
   };
 }
 
@@ -108,7 +132,7 @@ const GITHUB_ISSUES: DemoIssue[] = [
     number: 14,
     title: '014 · Empty state',
     closed: false,
-    labels: ['bug'],
+    labels: ['bug', 'agent:blocked'],
     daysAgo: 5,
   },
   {
@@ -128,6 +152,7 @@ const GITHUB_REQUESTS: DemoRequest[] = [
     closes: [11],
     checks: 'passing',
     hoursAgo: 200,
+    report: serenityReport(86, 1),
   },
   {
     number: 18,
@@ -144,6 +169,7 @@ const GITHUB_REQUESTS: DemoRequest[] = [
     closes: [12],
     checks: 'failing',
     hoursAgo: 30,
+    report: serenityReport(72, 2),
   },
   {
     number: 20,
@@ -222,6 +248,7 @@ const GITLAB_REQUESTS: DemoRequest[] = [
     closes: [21],
     checks: 'passing',
     hoursAgo: 160,
+    report: serenityReport(64, 3),
   },
   {
     number: 4,
@@ -259,6 +286,24 @@ export function demoGitLab(now: Date): FakeGitHostData {
       },
     ].map((issue) => gitlabIssueRow(now, issue)),
     requests: GITLAB_REQUESTS.map((request) => gitlabRequestRow(now, request)),
+    notes: Object.fromEntries(
+      GITLAB_REQUESTS.map((request) => [
+        String(request.number),
+        [
+          {
+            body: 'added 1 commit',
+            system: true,
+            created_at: ago(now, request.hoursAgo * HOUR),
+          },
+          ...reportComments(now, request).map((comment) => ({
+            body: comment['body'],
+            system: false,
+            created_at: comment['createdAt'],
+          })),
+        ],
+      ]),
+    ),
+    reopened: [22],
     closes: Object.fromEntries(
       GITLAB_REQUESTS.map((request) => [
         String(request.number),

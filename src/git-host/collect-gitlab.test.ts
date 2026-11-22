@@ -125,6 +125,7 @@ describe('collect from GitLab', () => {
           checks: 'failing',
         }),
       ],
+      outcome: { stage: 'merged', report: null, reworked: true },
     });
     const first = (await calls(root))[0];
     expect(first?.args).toEqual([

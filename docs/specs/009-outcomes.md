@@ -1,6 +1,6 @@
 # 009 · Outcomes
 
-Status: ready
+Status: done
 Depends on: 007, 008
 Checked: 2026-11-21
 
@@ -10,12 +10,12 @@ A developer opening a session sees how its issue ended up in the factory: where 
 
 ## Acceptance criteria
 
-- [ ] The collection of spec 008 also reads, for each pull or merge request it collects, its comments, and for each issue, whether it was reopened. Of the comments it stores only what Rules call a serenity report; no other comment text is stored.
-- [ ] Each collected issue has a stage, one of `Merged`, `Merged by a person`, `Closed without merge`, `Blocked`, `Needs spec`, `In review`, `Working`, `Ready`, `Open`, set by the rules below.
-- [ ] Under the issue of spec 008, the session page header shows `Outcome`: the stage as a coloured label with its text, then `Serenity <score>/100 (threshold <threshold>)`, then `<r> review round` or `<r> review rounds`, then `Reworked` when the issue was reworked. Score and rounds show `—` when no serenity report was found; `Reworked` is simply absent when it does not apply.
-- [ ] A score below its threshold is shown with the warning colour of the theme and the text `below threshold` after it, so it does not rely on colour alone.
-- [ ] A work item `(not found)` or not collected yet (spec 008) shows no `Outcome` line.
-- [ ] Stages, scores and rounds refresh with each collection of spec 008 (automatic or `Refresh`), without a reload.
+- [x] The collection of spec 008 also reads, for each pull or merge request it collects, its comments, and for each issue, whether it was reopened. Of the comments it stores only what Rules call a serenity report; no other comment text is stored.
+- [x] Each collected issue has a stage, one of `Merged`, `Merged by a person`, `Closed without merge`, `Blocked`, `Needs spec`, `In review`, `Working`, `Ready`, `Open`, set by the rules below.
+- [x] Under the issue of spec 008, the session page header shows `Outcome`: the stage as a coloured label with its text, then `Serenity <score>/100 (threshold <threshold>)`, then `<r> review round` or `<r> review rounds`, then `Reworked` when the issue was reworked. Score and rounds show `—` when no serenity report was found; `Reworked` is simply absent when it does not apply.
+- [x] A score below its threshold is shown with the warning colour of the theme and the text `below threshold` after it, so it does not rely on colour alone.
+- [x] A work item `(not found)` or not collected yet (spec 008) shows no `Outcome` line.
+- [x] Stages, scores and rounds refresh with each collection of spec 008 (automatic or `Refresh`), without a reload.
 
 ## Rules
 

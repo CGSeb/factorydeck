@@ -1,0 +1,149 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "449d28f4-07ef-4cc8-8a08-06ad0b31f90a",
+  "prevIds": [
+    "50859759-2c69-408e-9699-f75555b4c218"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "git_host_issue",
+        "reopened"
+      ],
+      "writes": [
+        "s|col|public.git_host_issue.reopened",
+        "n|col|public.git_host_issue.reopened",
+        "e|col|public.git_host_issue.reopened"
+      ],
+      "reads": [
+        "n|tbl|public.git_host_issue",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "git_host_project",
+        "stage_labels"
+      ],
+      "writes": [
+        "s|col|public.git_host_project.stage_labels",
+        "n|col|public.git_host_project.stage_labels",
+        "e|col|public.git_host_project.stage_labels"
+      ],
+      "reads": [
+        "n|tbl|public.git_host_project",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "git_host_project",
+        "auto_merge"
+      ],
+      "writes": [
+        "s|col|public.git_host_project.auto_merge",
+        "n|col|public.git_host_project.auto_merge",
+        "e|col|public.git_host_project.auto_merge"
+      ],
+      "reads": [
+        "n|tbl|public.git_host_project",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "git_host_request",
+        "report"
+      ],
+      "writes": [
+        "s|col|public.git_host_request.report",
+        "n|col|public.git_host_request.report",
+        "e|col|public.git_host_request.report"
+      ],
+      "reads": [
+        "n|tbl|public.git_host_request",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "git_host_issue",
+        "name": "reopened",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "git_host_project",
+        "name": "stage_labels",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "git_host_project",
+        "name": "auto_merge",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "git_host_request",
+        "name": "report",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

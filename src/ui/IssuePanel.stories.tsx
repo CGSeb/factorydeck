@@ -47,6 +47,11 @@ export const GitHubWithPullRequests: Story = {
       '#54 feat: Export button, first tryClosedNo checks',
       '#53 feat: Export data modelMergedPassing',
     ]);
+    const outcome = canvas.getByRole('term');
+    await expect(outcome).toHaveTextContent('Outcome');
+    await expect(outcome.nextElementSibling).toHaveTextContent(
+      'MergedSerenity 86/100 (threshold 80)1 review roundReworked',
+    );
   },
 };
 

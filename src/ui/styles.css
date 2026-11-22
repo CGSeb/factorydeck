@@ -587,3 +587,53 @@ th.left {
   background: var(--page);
   border-color: var(--border);
 }
+
+.outcome {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin: 0;
+}
+
+.outcome dt {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.outcome dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin: 0;
+}
+
+.stage-success {
+  color: #1d5e2f;
+  background: #e3f4e7;
+  border-color: #9fd3ae;
+}
+
+.stage-danger {
+  color: #8a1c12;
+  background: #fdeceb;
+  border-color: #f0b3ad;
+}
+
+.stage-warning {
+  color: #7a4100;
+  background: #fdf0dc;
+  border-color: #f0c486;
+}
+
+.stage-neutral {
+  color: var(--muted);
+  background: var(--page);
+  border-color: var(--border);
+}
+
+.serenity-below {
+  font-weight: 600;
+  color: #7a4100;
+}
