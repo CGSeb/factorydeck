@@ -4,7 +4,13 @@ import { byCostDescending, periodStart, select } from '../overview/query.ts';
 import { addCounts, countsOf, emptyCounts } from '../overview/tokens.ts';
 import { costOf } from '../pricing.ts';
 import { projectNames } from '../projects/names.ts';
-import { MAIN_ROLE, type WorkflowConfig, roleOf, rulesFor } from './config.ts';
+import {
+  MAIN_ROLE,
+  type WorkflowConfig,
+  configuredRoles,
+  roleOf,
+  rulesFor,
+} from './config.ts';
 import type { RoleList, RoleQuery, RoleUsage } from './types.ts';
 
 type Row = Record<string, unknown>;
@@ -105,6 +111,7 @@ export async function listRoles(
   const roles = summarizeRoles(config, usageRows);
   return {
     roles,
+    order: configuredRoles(config, query.project),
     apiCalls: roles.reduce((sum, row) => sum + row.apiCalls, 0),
     projects: names.options(),
   };

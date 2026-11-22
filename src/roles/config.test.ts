@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_RULES,
   type WorkflowRules,
+  configuredRoles,
   loadWorkflowConfig,
   parseWorkflowConfig,
   rulesFor,
@@ -265,5 +266,50 @@ describe('parseWorkflowConfig', () => {
       '  projects["/a/"]: same project as "/a"',
       `  projects["~/code//"]: same project as ${JSON.stringify(`${homedir()}/code`)}`,
     ]);
+  });
+});
+
+describe('configuredRoles', () => {
+  const config = parseWorkflowConfig(
+    [
+      'version: 1',
+      'roles:',
+      '  - name: builder',
+      "    description: '^Build '",
+      '  - name: reviewer',
+      "    description: '^Review '",
+      'projects:',
+      '  /work/lib/:',
+      '    roles:',
+      '      - name: writer',
+      "        description: '^Write '",
+      '      - name: builder',
+      "        description: '^Make '",
+      '  /work/docs:',
+      '    work_items: []',
+    ].join('\n'),
+    PATH,
+  );
+
+  it('lists the roles in configuration order, then the project ones, once each', () => {
+    expect(configuredRoles(config)).toEqual(['builder', 'reviewer', 'writer']);
+  });
+
+  it('lists the roles that apply to one project', () => {
+    expect(configuredRoles(config, '/work/lib')).toEqual(['writer', 'builder']);
+    expect(configuredRoles(config, '/work/docs')).toEqual([
+      'builder',
+      'reviewer',
+    ]);
+    expect(configuredRoles(config, '/work/other')).toEqual([
+      'builder',
+      'reviewer',
+    ]);
+  });
+
+  it('lists the default roles without a configuration file', () => {
+    expect(
+      configuredRoles({ ...config, rules: DEFAULT_RULES, projects: new Map() }),
+    ).toEqual(DEFAULT_RULES.roles.map((rule) => rule.name));
   });
 });

@@ -264,6 +264,20 @@ export function rulesFor(
   };
 }
 
+export function configuredRoles(
+  config: WorkflowConfig,
+  project?: string,
+): string[] {
+  const lists =
+    project === undefined
+      ? [
+          config.rules.roles,
+          ...[...config.projects.values()].map((rules) => rules.roles ?? []),
+        ]
+      : [rulesFor(config, project).roles];
+  return [...new Set(lists.flat().map((rule) => rule.name))];
+}
+
 export function roleOf(
   rules: WorkflowRules,
   agent: { agentType: string; description: string },

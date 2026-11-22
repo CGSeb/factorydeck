@@ -37,6 +37,7 @@ const list: RoleList = {
       costUsd: 0.5,
     },
   ],
+  order: ['builder'],
   apiCalls: 3,
   projects: [{ project: '/work/app', name: 'app' }],
 };
