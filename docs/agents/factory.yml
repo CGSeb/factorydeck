@@ -10,6 +10,9 @@
 
 version: 2
 
+project:
+  name: FactoryDeck
+
 repository:
   git_host: github
   # Path of the file that holds the exact CLI command of each operation the skills name in bold.
