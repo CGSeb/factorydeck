@@ -48,7 +48,7 @@ export function autonomyFigures(counts: AutonomyCounts): AutonomyFigures {
   return {
     withoutPerson: shareOf(counts.mergedWithoutPerson, counts.merged),
     specQuestions: shareOf(counts.mergedAfterQuestion, counts.merged),
-    waiting: median(counts.answeredWaitsMs),
+    waiting: counts.merged === 0 ? null : median(counts.answeredWaitsMs),
   };
 }
 

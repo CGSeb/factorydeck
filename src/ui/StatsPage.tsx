@@ -84,7 +84,7 @@ function Figures({
       />
       <StatFigure
         label="Waiting for an answer"
-        value={current.merged === 0 ? null : now.waiting}
+        value={now.waiting}
         format={formatElapsed}
         kind="amount"
         n={current.answeredWaitsMs.length}

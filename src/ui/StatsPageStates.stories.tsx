@@ -128,3 +128,30 @@ export const ChangePeriod: Story = {
     ).toHaveTextContent('?period=today');
   },
 };
+
+export const PreviousWithoutMerge: Story = {
+  name: 'Previous period without a merged issue',
+  args: {
+    loadAutonomy: autonomyLoaderOf(
+      autonomyOf({
+        previous: {
+          ...noCounts,
+          answeredWaitsMs: [1, 2, 3, 4, 5].map((hours) => hours * 3_600_000),
+        },
+      }),
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    await loaded(canvasElement);
+    await expect(figureTexts(canvasElement, '[data-value]')).toEqual([
+      '75%',
+      '25%',
+      '4 h 03 min',
+    ]);
+    await expect(figureTexts(canvasElement, '[data-change]')).toEqual([
+      '',
+      '',
+      '',
+    ]);
+  },
+};

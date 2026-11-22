@@ -49,6 +49,14 @@ describe('stats view', () => {
         answeredWaitsMs: [],
       }),
     ).toEqual({ withoutPerson: null, specQuestions: null, waiting: null });
+    expect(
+      autonomyFigures({
+        merged: 0,
+        mergedWithoutPerson: 0,
+        mergedAfterQuestion: 0,
+        answeredWaitsMs: [1, 2, 3, 4, 5].map((hours) => hours * HOUR),
+      }).waiting,
+    ).toBeNull();
   });
 
   it('notes the questions still waiting, none at 0', () => {
