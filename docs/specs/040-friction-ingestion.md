@@ -24,15 +24,17 @@ A developer will see where their agents stumble: tools that fail or are refused,
 
 - **Claude Code reader**:
   - A tool error is a `tool_result` block with `is_error: true` in a `user` record; its tool is the name of the `tool_use` block with the same id in the same file. A result whose call is not found has the tool `unknown`.
-  - Its **category**, the first that applies, from the result's text (string content, or the text blocks joined):
+  - Its **category**, the first that applies, from the result's text (string content, or the text blocks joined), its markers and `Exit code` matched after trimming leading whitespace:
     1. `permission-denied`: the text starts with `Permission for this action was denied`, `Permission for this command was denied`, `Permission to use ` (and holds `has been denied`), or `The user doesn't want to proceed with this tool use`, or holds `was blocked by a deny rule`;
     2. `hook-blocked`: the text starts with `<event>:<tool> hook error`, where `<event>` is a hook event name such as `PreToolUse` or `PostToolUse`;
     3. `tool-misuse`: the text starts with `<tool_use_error>` (a file edited before it was read, a string to replace not found, a blocked pattern);
     4. `command-failed`: the tool is a shell command and the text starts with `Exit code <n>`; `<n>` is the exit code;
     5. `other`.
-  - The **program** of a shell command is the first word of its first part that is not a `cd`, parts being split on `&&`, `||`, `;` and `|`, after leading `NAME=value` assignments; a path keeps its last segment (`./scripts/x.sh` → `x.sh`). An empty command has no program.
-  - A stop blocked is each entry of `hookErrors` of a `system` record with subtype `stop_hook_summary`; the hook's command is the text inside the leading `[…]` of the entry, else empty.
-  - A compaction is a `system` record with subtype `compact_boundary`; trigger and tokens come from its `compactMetadata` (`trigger`, `preTokens`, `postTokens`).
+  - The **program** of a shell command is the first word of its first part that is not a `cd`, parts being split on `&&`, `||`, `;`, `|`, a newline, `(` and `)`, after leading `NAME=value` assignments and skipping the words `{`, `}` and `$`; a path keeps its last segment (`./scripts/x.sh` → `x.sh`). An empty command has no program.
+  - A stop blocked is each entry of `hookErrors` of a `system` record with subtype `stop_hook_summary`; the hook's command is the text inside the leading `[…]` of the entry, ending at the first `]: `, else at the last `]`; else empty.
+  - A compaction is a `system` record with subtype `compact_boundary`; trigger and tokens come from its `compactMetadata` (`trigger`, `preTokens`, `postTokens`). A compaction with no trigger stores a null trigger; any other trigger string is kept as written.
+- A friction record with no valid timestamp is not stored and counts in the lines skipped.
+- A run that only did the one-time read prints the summary line with its frictions (`Ingested 0 files: … <f> frictions …`), not `Nothing new.`.
 - A friction belongs to the thread of its record (main thread or sub-agent, spec 006), so it takes that thread's role and work item wherever spec 041 needs them.
 - These markers are those Claude Code writes today; a text that matches none is `other`, never dropped. Other coding agents get their reader with the ingestion of their sessions, in a later spec.
 - Logs of projects without the factory are skipped as spec 007 says.
