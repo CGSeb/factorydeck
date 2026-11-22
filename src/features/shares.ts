@@ -42,6 +42,7 @@ interface ThreadGroup {
 }
 
 interface PricedGroup {
+  sessionId: string;
   calls: number;
   tokens: number;
   counts: TokenCounts;
@@ -99,6 +100,7 @@ export function addToRole(
 
 export function totalsOf(groups: PricedGroup[]): FeatureTotals {
   const totals: FeatureTotals = {
+    sessions: new Set(groups.map((group) => group.sessionId)).size,
     apiCalls: 0,
     tokens: 0,
     tokenCounts: emptyCounts(),

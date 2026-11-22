@@ -2,14 +2,15 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { ReactElement } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { boardFeatures } from './feature-board-fixtures.ts';
 import {
   APP,
   featureList,
   featuresLoaderOf,
   featuresResponse,
-  someFeatures,
 } from './feature-fixtures.ts';
 import type { LoadFeatures } from './features-api.ts';
+import { FEATURE_SORT_OPTIONS } from './features-list.ts';
 import { FeaturesPage } from './FeaturesPage.tsx';
 
 function Location(): ReactElement {
@@ -43,7 +44,7 @@ function routed(fallback: string): Decorator {
 
 const meta = {
   component: FeaturesPage,
-  args: { loadFeatures: featuresLoaderOf(someFeatures) },
+  args: { loadFeatures: featuresLoaderOf(boardFeatures) },
   decorators: [routed('/features?period=all')],
 } satisfies Meta<typeof FeaturesPage>;
 
@@ -61,44 +62,58 @@ function rowHeaders(canvasElement: HTMLElement): string[] {
     .map((cell) => cell.textContent);
 }
 
+function groupHeaders(canvasElement: HTMLElement): string[] {
+  return within(canvasElement)
+    .getAllByRole('columnheader')
+    .filter((cell) => cell.getAttribute('scope') === 'colgroup')
+    .map((cell) => cell.textContent);
+}
+
+async function ready(canvasElement: HTMLElement): Promise<void> {
+  await within(canvasElement).findByRole('rowheader', {
+    name: '#61 Bulk import',
+  });
+}
+
 export const AllProjects: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByRole('rowheader', { name: '#52 Export button' });
-    await expect(canvas.getByRole('heading', { name: 'Cost' })).toBeVisible();
+    await ready(canvasElement);
+    await expect(
+      canvas.getByRole('heading', { level: 1, name: 'Features' }),
+    ).toBeVisible();
+    await expect(
+      canvas.getByText(
+        '12 issues · 3 merged, 2 without a person · 4.7M tokens per merged issue',
+      ),
+    ).toBeVisible();
     await expect(
       canvas.getByRole('columnheader', { name: 'Project' }),
     ).toBeVisible();
-    await expect(
-      canvas.getByText('example-lib', { selector: 'span' }),
-    ).toHaveAttribute('title', '/home/dev/example-lib');
-    await expect(
-      canvas.getAllByText('Example App', { selector: 'span' })[0],
-    ).toHaveAttribute('title', '/home/dev/example-app');
-    await userEvent.click(canvas.getByRole('button', { name: 'Tokens' }));
-    await expect(address(canvasElement)).toHaveTextContent(
-      '/features?period=all&sort=tokens&order=asc',
-    );
-    await expect(rowHeaders(canvasElement).slice(0, 2)).toEqual([
-      '#99 (not found)',
-      '#40 Dark mode',
+    await expect(groupHeaders(canvasElement)).toEqual([
+      'In review2',
+      'Working2',
+      'Ready2',
+      'Merged3',
+      'Closed1',
+      'Unknown2',
     ]);
-    await userEvent.click(canvas.getByRole('button', { name: 'Tokens' }));
-    await expect(address(canvasElement)).toHaveTextContent(
-      '/features?period=all&sort=tokens&order=desc',
-    );
-    await expect(rowHeaders(canvasElement).at(-2)).toBe('No work item');
-    await userEvent.click(canvas.getByRole('button', { name: 'Today' }));
-    await expect(address(canvasElement)).toHaveTextContent(
-      '/features?period=today&sort=tokens&order=desc',
-    );
-    await waitFor(() =>
-      expect(rowHeaders(canvasElement)).toEqual([
-        '#52 Export button',
-        'No work item',
-        'Total',
-      ]),
-    );
+    await expect(rowHeaders(canvasElement)).toEqual([
+      '#61 Bulk import',
+      '#60 Retry policy',
+      '#57 Dark mode',
+      '#58 Typed errors',
+      '#63 Audit log',
+      '#64 Rate limits',
+      '#45 Config loader',
+      '#52 Export button',
+      '#48 Session list',
+      '#44 Old charts',
+      '#70 (not found)',
+      '#12',
+      'No work item',
+      'Total',
+    ]);
   },
 };
 
@@ -108,12 +123,16 @@ export const OneProject: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByRole('rowheader', { name: '#52 Export button' });
-    await expect(canvas.queryByRole('combobox')).toBeNull();
+    await ready(canvasElement);
     await expect(
       canvas.queryByRole('columnheader', { name: 'Project' }),
     ).toBeNull();
-    await expect(canvas.queryByRole('rowheader', { name: '#28' })).toBeNull();
+    await expect(canvas.queryByRole('rowheader', { name: '#12' })).toBeNull();
+    await expect(
+      canvas.getByText(
+        '7 issues · 2 merged, 1 without a person · 5.7M tokens per merged issue',
+      ),
+    ).toBeVisible();
     await userEvent.click(canvas.getByRole('button', { name: 'Today' }));
     await expect(address(canvasElement)).toHaveTextContent(
       '/features?period=today&project=%2Fhome%2Fdev%2Fexample-app',
@@ -121,36 +140,132 @@ export const OneProject: Story = {
   },
 };
 
-export const SortedFromAddress: Story = {
-  parameters: { entry: '/features?period=all&sort=number&order=asc' },
+export const StageSelected: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByRole('rowheader', { name: '#52 Export button' });
+    await ready(canvasElement);
+    const merged = canvas.getByRole('button', { name: /^Merged/ });
+    await userEvent.click(merged);
+    await expect(address(canvasElement)).toHaveTextContent(
+      '/features?period=all&stage=merged',
+    );
+    await expect(merged).toHaveAttribute('aria-pressed', 'true');
+    await expect(groupHeaders(canvasElement)).toEqual(['Merged3']);
     await expect(rowHeaders(canvasElement)).toEqual([
-      '#28 Session list',
-      '#28',
-      '#40 Dark mode',
+      '#45 Config loader',
       '#52 Export button',
-      '#99 (not found)',
-      'No work item',
-      'Total',
+      '#48 Session list',
     ]);
-    await expect(
-      canvas.getByRole('columnheader', { name: 'Issue' }),
-    ).toHaveAttribute('aria-sort', 'ascending');
+    await userEvent.click(merged);
+    await expect(address(canvasElement)).toHaveTextContent(
+      /^\/features\?period=all$/,
+    );
+    await expect(rowHeaders(canvasElement).at(-1)).toBe('Total');
   },
 };
 
-export const OpensAnIssue: Story = {
+export const StageFromAddress: Story = {
+  parameters: {
+    entry: '/features?period=all&stage=in-review&stage=merged',
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const cell = await canvas.findByRole('cell', {
-      name: 'Merged by a person',
-    });
-    await userEvent.click(cell);
+    await ready(canvasElement);
+    await expect(
+      canvas.getByRole('button', { name: /^In review/ }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    await expect(rowHeaders(canvasElement)).toEqual([
+      '#61 Bulk import',
+      '#60 Retry policy',
+    ]);
+  },
+};
+
+export const UnknownStageInAddress: Story = {
+  parameters: { entry: '/features?period=all&stage=Merged' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await ready(canvasElement);
+    await expect(
+      canvas.getByRole('button', { name: /^Merged/ }),
+    ).toHaveAttribute('aria-pressed', 'false');
+    await expect(groupHeaders(canvasElement)).toHaveLength(6);
+  },
+};
+
+const BY_SIZE = ['#48 Session list', '#52 Export button', '#45 Config loader'];
+
+function sorted(label: string, merged: readonly string[]): Story {
+  const sort = FEATURE_SORT_OPTIONS.find((option) => option.label === label);
+  return {
+    parameters: {
+      entry: `/features?period=all&stage=merged&sort=${sort?.value ?? ''}`,
+    },
+    play: async ({ canvasElement }) => {
+      const canvas = within(canvasElement);
+      await canvas.findByRole('rowheader', { name: '#52 Export button' });
+      await expect(
+        canvas.getByRole('option', { name: label, selected: true }),
+      ).toBeInTheDocument();
+      await expect(rowHeaders(canvasElement)).toEqual(merged);
+    },
+  };
+}
+
+export const SortedByTokens = sorted('Tokens', BY_SIZE);
+
+export const SortedBySessions = sorted('Sessions', BY_SIZE);
+
+export const SortedByReviewRounds = sorted('Review rounds', BY_SIZE);
+
+export const SortedBySerenity = sorted('Serenity', BY_SIZE.toReversed());
+
+export const SortedByIssueNumber = sorted('Issue number', [
+  '#52 Export button',
+  '#48 Session list',
+  '#45 Config loader',
+]);
+
+export const SortedByLastActivity: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await ready(canvasElement);
+    const select = canvas.getByRole('combobox', { name: 'Sort by' });
+    await expect(select).toHaveValue('last');
+    await userEvent.selectOptions(select, 'Tokens');
     await expect(address(canvasElement)).toHaveTextContent(
-      '/features/28?project=%2Fhome%2Fdev%2Fexample-app&period=all',
+      '/features?period=all&sort=tokens',
     );
+    await expect(rowHeaders(canvasElement).slice(0, 2)).toEqual([
+      '#61 Bulk import',
+      '#60 Retry policy',
+    ]);
+    await expect(rowHeaders(canvasElement).slice(6, 9)).toEqual([
+      '#48 Session list',
+      '#52 Export button',
+      '#45 Config loader',
+    ]);
+    await userEvent.selectOptions(select, 'Last activity');
+    await expect(address(canvasElement)).toHaveTextContent(
+      /^\/features\?period=all$/,
+    );
+  },
+};
+
+export const ClosedAndUnknown: Story = {
+  args: {
+    loadFeatures: featuresLoaderOf(
+      boardFeatures.filter((row) => [44, 70, 12].includes(row.number)),
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole('rowheader', { name: '#44 Old charts' });
+    await expect(groupHeaders(canvasElement)).toEqual(['Closed1', 'Unknown2']);
+    await expect(canvas.getByText('3 issues')).toBeVisible();
+    await expect(
+      canvas.getByRole('button', { name: /^Merged/ }),
+    ).toHaveTextContent('Merged0');
   },
 };
 
@@ -160,7 +275,15 @@ export const NoActivity: Story = {
     const canvas = within(canvasElement);
     await canvas.findByText('No activity in this period.');
     await expect(canvas.queryByRole('table')).toBeNull();
-    await expect(canvas.queryByRole('region', { name: 'Totals' })).toBeNull();
+    await expect(canvas.queryByRole('group', { name: 'Stages' })).toBeNull();
+    await expect(canvas.getByText('0 issues')).toBeVisible();
+  },
+};
+
+export const Loading: Story = {
+  args: { loadFeatures: () => new Promise(() => undefined) },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText('Loading…')).toBeVisible();
   },
 };
 
@@ -180,13 +303,11 @@ function refreshingLoader(): LoadFeatures {
   let calls = 0;
   return () => {
     calls += 1;
-    const [first] = someFeatures;
-    const row =
-      first === undefined
-        ? []
-        : [{ ...first, costUsd: calls === 1 ? 8.5 : 9.75 }];
+    const [first] = boardFeatures;
+    const rows =
+      first === undefined ? [] : [{ ...first, sessions: calls === 1 ? 4 : 9 }];
     return Promise.resolve({
-      ...featuresResponse(featureList(row, null)),
+      ...featuresResponse(featureList(rows, null)),
       refreshSeconds: 0.2,
     });
   };
@@ -196,7 +317,7 @@ export const RefreshesWithoutReload: Story = {
   args: { loadFeatures: refreshingLoader() },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findAllByRole('cell', { name: '~$8.50' });
-    await canvas.findAllByRole('cell', { name: '~$9.75' });
+    await canvas.findAllByRole('cell', { name: '4' });
+    await waitFor(() => canvas.getAllByRole('cell', { name: '9' }));
   },
 };

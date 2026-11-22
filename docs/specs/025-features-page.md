@@ -1,6 +1,6 @@
 # 025 · Features page
 
-Status: ready
+Status: done
 Depends on: 020, 022, 023
 Checked: 2026-11-22
 
@@ -10,14 +10,14 @@ A developer lists every issue their factory worked on in the period, grouped by 
 
 ## Acceptance criteria
 
-- [ ] `/features` shows a `PageHeader` (spec 019) titled `Features`, with the summary `<n> issues · <m> merged, <k> without a person · <t> tokens per merged issue` (the last two parts left out with no merged issue) and `PeriodPills` on the right.
-- [ ] Under it, a `StageStrip` (spec 017) with the four groups of spec 024, each with its number of issues and its tokens. Selecting a group shows only that group in the list and sets the URL parameter `stage` to `ready`, `working`, `in-review` or `merged`; selecting it again removes the parameter. Opening `/features?stage=<group>` selects it. Values match exactly: another spelling (`Merged`, `in_review`), an empty value or an unknown value means none; with the parameter repeated, the first one counts.
-- [ ] A `DataTable` (spec 019) `Issues` with a `SortSelect` (spec 017) above it on the right, groups its rows under group header rows, in this order: `In review`, `Working`, `Ready`, `Merged`, then `Closed` (stage `Closed without merge`) and `Unknown` (issues not found or not collected); a group with no row is left out. Columns: `Issue` (`#<n> <title>` linked to the issue page, as spec 010), `Project` (`ProjectTag`, only with `All projects`), `Split by role` (a thin `SplitBar` 150 px wide of the row's `roles`, spec 022, colours from `roleColors`), `Sessions`, `Rounds`, `Serenity` (score in `--fd-success` at or above its threshold, `--fd-warning` and `below threshold` under it, `—` without report), `Tokens` (`TokenAmount`).
-- [ ] The `SortSelect` options are `Last activity` (default, most recent first, by `lastAt` of spec 021), `Tokens`, `Sessions`, `Review rounds`, `Serenity`, `Issue number`; rows are sorted inside each group; the choice is kept in the URL as spec 010's sort, and the default leaves no parameter.
-- [ ] After the groups, a row `No work item` (spec 010) with its sessions and tokens, then a bold `Total` row with all sessions and the period's tokens, whatever the stage filter; with a stage selected, `No work item` and `Total` are left out.
-- [ ] The tiles of spec 010 are removed; the summary line replaces them.
-- [ ] With no call in the period, `No activity in this period.` replaces the strip and table; loading and unreachable states as spec 024.
-- [ ] From 1024 px wide, the table scrolls inside its box when it is wider than the page; nothing else scrolls horizontally. Figures refresh without a reload.
+- [x] `/features` shows a `PageHeader` (spec 019) titled `Features`, with the summary `<n> issues · <m> merged, <k> without a person · <t> tokens per merged issue` (the last two parts left out with no merged issue) and `PeriodPills` on the right.
+- [x] Under it, a `StageStrip` (spec 017) with the four groups of spec 024, each with its number of issues and its tokens. Selecting a group shows only that group in the list and sets the URL parameter `stage` to `ready`, `working`, `in-review` or `merged`; selecting it again removes the parameter. Opening `/features?stage=<group>` selects it. Values match exactly: another spelling (`Merged`, `in_review`), an empty value or an unknown value means none; with the parameter repeated, the first one counts.
+- [x] A `DataTable` (spec 019) `Issues` with a `SortSelect` (spec 017) above it on the right, groups its rows under group header rows, in this order: `In review`, `Working`, `Ready`, `Merged`, then `Closed` (stage `Closed without merge`) and `Unknown` (issues not found or not collected); a group with no row is left out. Columns: `Issue` (`#<n> <title>` linked to the issue page, as spec 010), `Project` (`ProjectTag`, only with `All projects`), `Split by role` (a thin `SplitBar` 150 px wide of the row's `roles`, spec 022, colours from `roleColors`), `Sessions`, `Rounds`, `Serenity` (score in `--fd-success` at or above its threshold, `--fd-warning` and `below threshold` under it, `—` without report), `Tokens` (`TokenAmount`).
+- [x] The `SortSelect` options are `Last activity` (default, most recent first, by `lastAt` of spec 021), `Tokens`, `Sessions`, `Review rounds`, `Serenity`, `Issue number`; rows are sorted inside each group; the choice is kept in the URL as spec 010's sort, and the default leaves no parameter.
+- [x] After the groups, a row `No work item` (spec 010) with its sessions and tokens, then a bold `Total` row with all sessions and the period's tokens, whatever the stage filter; with a stage selected, `No work item` and `Total` are left out.
+- [x] The tiles of spec 010 are removed; the summary line replaces them.
+- [x] With no call in the period, `No activity in this period.` replaces the strip and table; loading and unreachable states as spec 024.
+- [x] From 1024 px wide, the table scrolls inside its box when it is wider than the page; nothing else scrolls horizontally. Figures refresh without a reload.
 
 ## Rules
 

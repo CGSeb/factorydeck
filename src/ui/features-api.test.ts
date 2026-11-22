@@ -7,7 +7,6 @@ import {
   featuresLoader,
   nextSort,
   sortFeatures,
-  sortOf,
 } from './features-api.ts';
 import { splitTokens } from './token-fixtures.ts';
 
@@ -98,21 +97,6 @@ describe('features API', () => {
 });
 
 describe('sorting', () => {
-  it('reads the sort of the address, cost descending by default', () => {
-    expect(sortOf(new URLSearchParams(''))).toEqual(DEFAULT_SORT);
-    expect(sortOf(new URLSearchParams('sort=bogus&order=asc'))).toEqual(
-      DEFAULT_SORT,
-    );
-    expect(sortOf(new URLSearchParams('sort=rounds&order=desc'))).toEqual({
-      key: 'rounds',
-      order: 'desc',
-    });
-    expect(sortOf(new URLSearchParams('sort=rounds'))).toEqual({
-      key: 'rounds',
-      order: 'asc',
-    });
-  });
-
   it('sorts ascending first, then descending on a second click', () => {
     const first = nextSort(DEFAULT_SORT, 'tokens');
     expect(first).toEqual({ key: 'tokens', order: 'asc' });

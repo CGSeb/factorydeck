@@ -13,7 +13,7 @@ import { splitTokens } from './token-fixtures.ts';
 export const APP = '/home/dev/example-app';
 export const LIB = '/home/dev/example-lib';
 
-function outcome(
+export function outcome(
   stage: IssueOutcome['stage'],
   score: number | null,
   rounds: number | null = null,
@@ -25,13 +25,17 @@ function outcome(
   };
 }
 
-function found(project: string, number: number, title: string) {
+export function found(
+  project: string,
+  number: number,
+  title: string,
+): Pick<FeatureRow, 'project' | 'projectName' | 'number' | 'issue'> {
   return {
     project,
     projectName: nameOf(project),
     number,
     issue: {
-      status: 'found' as const,
+      status: 'found',
       title,
       url: `https://github.com/example-org/example-app/issues/${String(number)}`,
     },
@@ -138,6 +142,7 @@ export function featureList(
     rows,
     noWorkItem: unassigned,
     totals: {
+      sessions: all.reduce((sum, row) => sum + row.sessions, 0),
       apiCalls: all.reduce((sum, row) => sum + row.apiCalls, 0),
       tokens: all.reduce((sum, row) => sum + row.tokens, 0),
       tokenCounts: {
