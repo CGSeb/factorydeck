@@ -27,7 +27,7 @@ export const Roles: Story = {
       within(table)
         .getAllByRole('columnheader')
         .map((cell) => cell.textContent),
-    ).toEqual(['Role', 'Threads', 'API calls', 'Tokens per thread', 'Tokens']);
+    ).toEqual(['Role', 'Threads', 'API calls', 'Tokens per thread']);
     await expect(within(table).getAllByRole('row')).toHaveLength(7);
   },
 };

@@ -1,9 +1,7 @@
 import { type ReactElement, useId } from 'react';
 import type { RoleUsage } from '../roles/types.ts';
-import { BarCell } from './components/BarCell.tsx';
 import { DataTable, NUMERIC_CELL, TotalRow } from './components/DataTable.tsx';
 import { RoleTag } from './components/RoleTag.tsx';
-import { TokenAmount } from './components/TokenAmount.tsx';
 import { formatCount } from './format.ts';
 import { roleTotals, tokensPerThread } from './roles-view.ts';
 
@@ -11,16 +9,12 @@ export const TABLE_HEADING = 'fd-panel-heading';
 
 export const headingSpace = { marginBottom: 'var(--fd-space-3)' };
 
-export const tokensColumn = { width: '32%', minWidth: '180px' };
-
 function RoleRow({
   row,
   color,
-  total,
 }: {
   row: RoleUsage;
   color: string;
-  total: number;
 }): ReactElement {
   return (
     <tr>
@@ -30,15 +24,6 @@ function RoleRow({
       <td className={NUMERIC_CELL}>{formatCount(row.threads)}</td>
       <td className={NUMERIC_CELL}>{formatCount(row.apiCalls)}</td>
       <td className={NUMERIC_CELL}>{tokensPerThread(row)}</td>
-      <td>
-        <BarCell
-          label={row.role}
-          counts={row.tokenCounts}
-          costUsd={row.costUsd}
-          total={total}
-          color={color}
-        />
-      </td>
     </tr>
   );
 }
@@ -51,9 +36,6 @@ function RolesTotalRow({ roles }: { roles: RoleUsage[] }): ReactElement {
       <td className={NUMERIC_CELL}>{formatCount(totals.threads)}</td>
       <td className={NUMERIC_CELL}>{formatCount(totals.apiCalls)}</td>
       <td />
-      <td className={NUMERIC_CELL}>
-        <TokenAmount counts={totals.tokenCounts} costUsd={totals.costUsd} />
-      </td>
     </TotalRow>
   );
 }
@@ -68,7 +50,6 @@ export function RoleTokensTable({
   colors,
 }: RoleTokensTableProps): ReactElement {
   const titleId = useId();
-  const total = roles.reduce((sum, row) => sum + row.tokens, 0);
   return (
     <div>
       <h2 id={titleId} className={TABLE_HEADING} style={headingSpace}>
@@ -88,9 +69,6 @@ export function RoleTokensTable({
               <th scope="col" className={NUMERIC_CELL}>
                 Tokens per thread
               </th>
-              <th scope="col" style={tokensColumn}>
-                Tokens
-              </th>
             </tr>
           </thead>
           <tbody>
@@ -99,7 +77,6 @@ export function RoleTokensTable({
                 key={row.role}
                 row={row}
                 color={colors.get(row.role) ?? 'var(--fd-muted)'}
-                total={total}
               />
             ))}
           </tbody>

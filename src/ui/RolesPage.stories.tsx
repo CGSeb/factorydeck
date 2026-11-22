@@ -104,11 +104,10 @@ export const DefaultRoles: Story = {
       within(builder)
         .getAllByRole('cell')
         .map((cell) => cell.textContent),
-    ).toEqual(['6', '320', '1.5M', expect.stringContaining('9.1M')]);
+    ).toEqual(['6', '320', '1.5M']);
     const total = within(roles).getByRole('row', { name: /^Total/ });
     await expect(total).toHaveTextContent('19');
     await expect(total).toHaveTextContent('662');
-    await expect(total).toHaveTextContent('20.4M');
     await expect(hex(segmentColor(canvasElement, 'builder'))).toBe(
       CATEGORY_COLORS[0],
     );
@@ -123,6 +122,12 @@ export const DefaultRoles: Story = {
       'claude-opus-example',
       'claude-sonnet-example',
     ]);
+    await expect(
+      canvas.getByRole('group', { name: 'Tokens by model' }),
+    ).toHaveTextContent('claude-opus-example');
+    await expect(hex(segmentColor(canvasElement, 'claude-opus-example'))).toBe(
+      CATEGORY_COLORS[0],
+    );
   },
 };
 
@@ -271,7 +276,7 @@ export const RefreshesWithoutReload: Story = {
     const roles = await within(canvasElement).findByRole('table', {
       name: 'By role',
     });
-    await waitFor(() => expect(roles).toHaveTextContent('8.4M'));
-    await waitFor(() => expect(roles).toHaveTextContent('9.6M'));
+    await waitFor(() => expect(roles).toHaveTextContent('2.1M'));
+    await waitFor(() => expect(roles).toHaveTextContent('2.4M'));
   },
 };

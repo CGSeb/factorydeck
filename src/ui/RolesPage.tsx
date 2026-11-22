@@ -5,11 +5,15 @@ import { PageHeader } from './components/PageHeader.tsx';
 import { PeriodPills } from './components/PeriodPills.tsx';
 import { SplitBar } from './components/SplitBar.tsx';
 import { StatusLine } from './components/StatusLine.tsx';
-import { ModelTokensTable } from './ModelTokensTable.tsx';
+import { ModelTokensTable, modelLabel } from './ModelTokensTable.tsx';
 import { type LoadOverview, UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { RoleTokensTable } from './RoleTokensTable.tsx';
 import type { LoadRoles } from './roles-api.ts';
-import { byTokensDescending, colorsOfRoles } from './roles-view.ts';
+import {
+  byTokensDescending,
+  colorsOfModels,
+  colorsOfRoles,
+} from './roles-view.ts';
 import { useRefreshing, useSkillFilters } from './skills-api.ts';
 
 export interface RolesPageProps {
@@ -41,10 +45,24 @@ function ModelsContent({
   if (response.status === 'unreachable') {
     return <StatusLine>{UNREACHABLE_MESSAGE}</StatusLine>;
   }
+  const models = byTokensDescending(
+    response.overview.models,
+    (row) => row.model,
+  );
+  const colors = colorsOfModels(models);
   return (
-    <ModelTokensTable
-      models={byTokensDescending(response.overview.models, (row) => row.model)}
-    />
+    <>
+      <SplitBar
+        label="Tokens by model"
+        height="tall"
+        segments={models.map((row) => ({
+          label: modelLabel(row.model),
+          value: row.tokens,
+          color: colors.get(row.model) ?? 'var(--fd-muted)',
+        }))}
+      />
+      <ModelTokensTable models={models} colors={colors} />
+    </>
   );
 }
 
