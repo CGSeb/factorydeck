@@ -1,5 +1,6 @@
 import { open, readdir } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
+import type { CodexFile } from './codex-files.ts';
 
 /** A session log: the main thread of a session, or one of its sub-agents. */
 export interface LogFile {
@@ -7,6 +8,8 @@ export interface LogFile {
   sessionId: string;
   /** Set for a sub-agent log, with the path of its meta file. */
   subAgent?: { id: string; metaPath: string };
+  /** Set for a Codex rollout. */
+  codex?: CodexFile;
 }
 
 const SUB_AGENT_FILE = /^agent-(.+)\.jsonl$/;

@@ -144,6 +144,7 @@ describe('issue threads on the feature detail', () => {
       {
         sessionId: 'orch',
         sessionTitle: 'Run the queue',
+        sessionAgent: 'claude-code',
         threadId: 'b5',
         role: 'builder',
         description: 'Build #5',
@@ -161,6 +162,7 @@ describe('issue threads on the feature detail', () => {
       expect.objectContaining({
         sessionId: 'rev',
         sessionTitle: 'Review queue',
+        sessionAgent: 'claude-code',
         threadId: 'r1',
         role: 'reviewer',
         description: 'Review #5',
@@ -177,6 +179,7 @@ describe('issue threads on the feature detail', () => {
       expect.objectContaining({
         sessionId: 'main5',
         sessionTitle: 'Polish #5 by hand',
+        sessionAgent: 'claude-code',
         threadId: 'main5',
         role: 'main',
         description: null,

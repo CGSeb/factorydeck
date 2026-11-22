@@ -147,7 +147,7 @@ async function usageRows(
   const project = query.project ?? null;
   return select(
     db,
-    sql`select a.session_id, s.project, s.title, s.git_branch as session_branch,
+    sql`select a.session_id, s.project, s.title, s.agent, s.git_branch as session_branch,
         coalesce(a.sub_agent_id, '') as sub_agent,
         sa.agent_type, sa.description, sa.git_branch as agent_branch,
         coalesce(sa.first_at, fc.first_call_at) as agent_first_at, marker.idx as marker, a.model,
@@ -168,7 +168,7 @@ async function usageRows(
       ${markerSegments(markers)}
       where (${project}::text is null or s.project = ${project}::text)
         and (${startAt}::timestamptz is null or a.at >= ${startAt}::timestamptz)
-      group by a.session_id, s.project, s.title, s.git_branch, a.sub_agent_id,
+      group by a.session_id, s.project, s.title, s.agent, s.git_branch, a.sub_agent_id,
         sa.agent_type, sa.description, sa.git_branch, sa.first_at, fc.first_call_at, marker.idx, a.model`,
   );
 }

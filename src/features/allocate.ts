@@ -37,6 +37,7 @@ export type Row = Record<string, unknown>;
 interface CallGroup {
   sessionId: string;
   sessionTitle: string;
+  sessionAgent: string;
   project: string;
   subAgent: string;
   description: string | null;
@@ -120,6 +121,7 @@ function groupOf(
   return {
     sessionId,
     sessionTitle: title,
+    sessionAgent: text(row['agent']),
     project,
     subAgent,
     description: main ? null : description,

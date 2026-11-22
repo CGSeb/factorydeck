@@ -83,7 +83,11 @@ export function issueActivity(feature: FeatureDetail): string {
 export function threadTitle(thread: FeatureThread): string {
   const description = thread.description?.trim() ?? '';
   if (description !== '') return description;
-  return sessionTitle({ title: thread.sessionTitle, id: thread.sessionId });
+  return sessionTitle({
+    title: thread.sessionTitle,
+    id: thread.sessionId,
+    agent: thread.sessionAgent,
+  });
 }
 
 function addCounts(a: TokenCounts, b: TokenCounts): TokenCounts {

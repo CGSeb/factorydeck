@@ -21,6 +21,7 @@ export const sourceFile = pgTable('source_file', {
   path: text().primaryKey(),
   sizeBytes: bigint('size_bytes', { mode: 'number' }).notNull(),
   readOffset: bigint('read_offset', { mode: 'number' }).notNull(),
+  readerState: jsonb('reader_state').$type<Record<string, unknown>>(),
   ingestedAt: timestamp('ingested_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -28,9 +29,10 @@ export const sourceFile = pgTable('source_file', {
 
 export { UNASSIGNED_PROJECT };
 
-/** A Claude Code session: the main thread of one `<session id>.jsonl` log. */
+/** A coding agent session: the main thread of one session log. */
 export const session = pgTable('session', {
   id: text().primaryKey(),
+  agent: text().notNull().default('claude-code'),
   /** Root path of the project, or `unassigned`. */
   project: text().notNull().default(UNASSIGNED_PROJECT),
   cwd: text(),

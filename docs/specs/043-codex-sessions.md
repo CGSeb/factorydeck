@@ -1,6 +1,6 @@
 # 043 · Codex sessions
 
-Status: ready
+Status: done
 Depends on: 032, 040
 Checked: 2026-11-22
 
@@ -10,18 +10,18 @@ A developer whose factory runs some of its work with Codex sees those sessions i
 
 ## Acceptance criteria
 
-- [ ] Ingestion reads session logs through one reader per coding agent. Each stored session records its agent: `claude-code` for the logs of spec 002, `codex` for those of this spec. Everything FactoryDeck computes from sessions (overview, features, roles, sessions, skills, stats, frictions) counts every agent's sessions together, with no other change of rule.
-- [ ] `pnpm ingest` also reads every `rollout-*.jsonl` file under the Codex sessions folder, at any depth (`<year>/<month>/<day>/`). The folder is `CODEX_SESSIONS_DIR` of the root `.env`, else `~/.codex/sessions`; an empty value falls back to the default, like every FactoryDeck variable. A Codex folder that does not exist is skipped without error or message, unlike the Claude Code folder of spec 002.
-- [ ] For each Codex file it stores one session: its id (`session_meta.id`), working directory (`session_meta.cwd`), git branch (`session_meta.git.branch`, else empty), every branch as spec 002 orders them, an empty title, the time of its first and last record, and whether its last turn has ended (a `task_complete` event after the last `task_started`).
-- [ ] A Codex sub-agent's rollout (rules) is stored as a sub-agent of its root session, with its type, description, model and first and last record time, so it shows in the session page's `Sub-agents` table and its role and work item follow spec 006 like a Claude Code sub-agent's.
-- [ ] For each model response it stores one API call: session, sub-agent (if any), time, model, and the four token kinds (rules). A response repeated in the same file, or already stored for the same root session from another file, is stored once.
-- [ ] For each prompt the person typed it stores a user prompt marker (time only, no text), and for each final reply of a turn its closing line as spec 032 does, so `Work item: #<n> (<role>)` markers written by a Codex session give its calls to that issue and role.
-- [ ] Codex frictions follow spec 040 with the agent `codex`: a shell command that ends with a non-zero exit code is a `tool-error` of category `command-failed` with its program, exit code and command hash; any other tool output the log marks as failed is a `tool-error` of category `other`; a compaction record is a `compaction` with trigger `auto` and no token counts. No text is stored.
-- [ ] Projects follow spec 007: the session belongs to the factory project whose root holds its working directory. When FactoryDeck runs under WSL, a Windows working directory (`D:\Dev\x`) is read as its WSL path (`/mnt/d/Dev/x`) first, so a Codex session run on Windows joins the same project as Claude Code sessions run in WSL in that folder. A session outside any factory project is skipped as spec 007 says.
-- [ ] Re-reading, offsets, skipped lines, deletion with the project and the lock follow spec 002 for Codex files too. The summary line of spec 002 counts the files and rows of every agent together.
-- [ ] The sessions list and the session page (spec 027) show the agent: a neutral tag `Claude Code` or `Codex` in the session page's line under its title, after the `SessionStateBadge`, and in a list column `Agent` after `Title`. The list's `Agent` column shows only when the period and project hold sessions of more than one agent.
-- [ ] A Codex session with no title shows `Codex session <first 8 characters of its id>` wherever a session title is shown.
-- [ ] The demo data (`pnpm demo`) holds two synthetic Codex sessions in a demo project, one with a `Work item` marker, a failed command and two sub-agents (`agent_role` `worker` and `explorer`), so the agent tag, the list column and Codex sub-agents show.
+- [x] Ingestion reads session logs through one reader per coding agent. Each stored session records its agent: `claude-code` for the logs of spec 002, `codex` for those of this spec. Everything FactoryDeck computes from sessions (overview, features, roles, sessions, skills, stats, frictions) counts every agent's sessions together, with no other change of rule.
+- [x] `pnpm ingest` also reads every `rollout-*.jsonl` file under the Codex sessions folder, at any depth (`<year>/<month>/<day>/`). The folder is `CODEX_SESSIONS_DIR` of the root `.env`, else `~/.codex/sessions`; an empty value falls back to the default, like every FactoryDeck variable. A Codex folder that does not exist is skipped without error or message, unlike the Claude Code folder of spec 002.
+- [x] For each Codex file it stores one session: its id (`session_meta.id`), working directory (`session_meta.cwd`), git branch (`session_meta.git.branch`, else empty), every branch as spec 002 orders them, an empty title, the time of its first and last record, and whether its last turn has ended (a `task_complete` event after the last `task_started`).
+- [x] A Codex sub-agent's rollout (rules) is stored as a sub-agent of its root session, with its type, description, model and first and last record time, so it shows in the session page's `Sub-agents` table and its role and work item follow spec 006 like a Claude Code sub-agent's.
+- [x] For each model response it stores one API call: session, sub-agent (if any), time, model, and the four token kinds (rules). A response repeated in the same file, or already stored for the same root session from another file, is stored once.
+- [x] For each prompt the person typed it stores a user prompt marker (time only, no text), and for each final reply of a turn its closing line as spec 032 does, so `Work item: #<n> (<role>)` markers written by a Codex session give its calls to that issue and role.
+- [x] Codex frictions follow spec 040 with the agent `codex`: a shell command that ends with a non-zero exit code is a `tool-error` of category `command-failed` with its program, exit code and command hash; any other tool output the log marks as failed is a `tool-error` of category `other`; a compaction record is a `compaction` with trigger `auto` and no token counts. No text is stored.
+- [x] Projects follow spec 007: the session belongs to the factory project whose root holds its working directory. When FactoryDeck runs under WSL, a Windows working directory (`D:\Dev\x`) is read as its WSL path (`/mnt/d/Dev/x`) first, so a Codex session run on Windows joins the same project as Claude Code sessions run in WSL in that folder. A session outside any factory project is skipped as spec 007 says.
+- [x] Re-reading, offsets, skipped lines, deletion with the project and the lock follow spec 002 for Codex files too. The summary line of spec 002 counts the files and rows of every agent together.
+- [x] The sessions list and the session page (spec 027) show the agent: a neutral tag `Claude Code` or `Codex` in the session page's line under its title, after the `SessionStateBadge`, and in a list column `Agent` after `Title`. The list's `Agent` column shows only when the period and project hold sessions of more than one agent.
+- [x] A Codex session with no title shows `Codex session <first 8 characters of its id>` wherever a session title is shown.
+- [x] The demo data (`pnpm demo`) holds two synthetic Codex sessions in a demo project, one with a `Work item` marker, a failed command and two sub-agents (`agent_role` `worker` and `explorer`), so the agent tag, the list column and Codex sub-agents show.
 
 ## Rules
 

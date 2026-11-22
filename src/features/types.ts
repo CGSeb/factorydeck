@@ -95,6 +95,7 @@ export interface FeatureSession {
 export interface FeatureThread {
   sessionId: string;
   sessionTitle: string;
+  sessionAgent: string;
   threadId: string;
   role: string;
   description: string | null;

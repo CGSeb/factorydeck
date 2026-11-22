@@ -44,6 +44,7 @@ function thread({
   return {
     sessionId: SESSION_IDS[session - 1] ?? '',
     sessionTitle: session === 1 ? 'Build the export button' : '',
+    sessionAgent: 'claude-code',
     threadId,
     role,
     description,

@@ -7,6 +7,7 @@ import {
   type StateCounts,
   type SessionSummary,
 } from '../sessions/types.ts';
+import { AgentTag } from './components/AgentTag.tsx';
 import { DataTable, NUMERIC_CELL } from './components/DataTable.tsx';
 import { FilterPills } from './components/FilterPills.tsx';
 import { PageHeader } from './components/PageHeader.tsx';
@@ -67,6 +68,7 @@ interface RowContext {
   filters: SessionFilters;
   colors: Map<string, string>;
   now: Date;
+  showAgent: boolean;
 }
 
 function SessionRow({
@@ -74,6 +76,7 @@ function SessionRow({
   filters,
   colors,
   now,
+  showAgent,
 }: RowContext & { row: SessionSummary }): ReactElement {
   const scope = { project: filters.project, period: filters.period };
   return (
@@ -84,6 +87,11 @@ function SessionRow({
       <th scope="row">
         <Link to={sessionHref(row.id, scope)}>{sessionTitle(row)}</Link>
       </th>
+      {showAgent && (
+        <td>
+          <AgentTag agent={row.agent} />
+        </td>
+      )}
       {filters.project === undefined && (
         <td>
           <ProjectTag
@@ -123,6 +131,7 @@ function SessionsTable({
           <tr>
             <th scope="col">State</th>
             <th scope="col">Title</th>
+            {context.showAgent && <th scope="col">Agent</th>}
             {context.filters.project === undefined && (
               <th scope="col">Project</th>
             )}
@@ -168,6 +177,7 @@ function SessionRows({
             filters={filters}
             colors={projectColors(list.projects.map((row) => row.project))}
             now={new Date()}
+            showAgent={list.agents.length > 1}
           />
         </Panel>
       )}

@@ -1,3 +1,4 @@
+import { CODEX_AGENT } from '../sessions/types.ts';
 import { type Period, isPeriod } from '../overview/types.ts';
 import { PROJECT_PARAM, projectOf, withProject } from './project-param.ts';
 import { featurePath } from './features-api.ts';
@@ -70,11 +71,16 @@ export function skillHref(
 export function sessionTitle({
   title,
   id,
+  agent,
 }: {
   title: string;
   id: string;
+  agent?: string | undefined;
 }): string {
-  return title === '' ? id.slice(0, 8) : title;
+  if (title !== '') return title;
+  return agent === CODEX_AGENT
+    ? `Codex session ${id.slice(0, 8)}`
+    : id.slice(0, 8);
 }
 
 export function sessionPath(id: string, project?: string): string {
