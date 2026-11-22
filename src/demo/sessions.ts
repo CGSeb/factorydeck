@@ -1,5 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { installFakeGitHost } from './fake-git-host.ts';
+import { demoGitHub, demoGitLab } from './git-host.ts';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -249,6 +251,16 @@ export async function writeDemoSessions(
   for (const name of [EXAMPLE_APP, EXAMPLE_API]) {
     await mkdir(demoProjectRoot(projects, name), { recursive: true });
     if (factory) await installDemoFactory(projects, name);
+  }
+  if (factory) {
+    await installFakeGitHost(
+      demoProjectRoot(projects, EXAMPLE_APP),
+      demoGitHub(now),
+    );
+    await installFakeGitHost(
+      demoProjectRoot(projects, EXAMPLE_API),
+      demoGitLab(now),
+    );
   }
   for (const session of DEMO_SESSIONS) {
     const dir = join(folder, session.folder);

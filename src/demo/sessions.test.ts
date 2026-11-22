@@ -1,6 +1,8 @@
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Database } from '../db/client.ts';
+import { collect } from '../git-host/collect.ts';
+import { hasFactory } from '../ingest/factory.ts';
 import { ingest } from '../ingest/ingest.ts';
 import { usageOverview } from '../overview/query.ts';
 import { loadWorkflowConfig } from '../roles/config.ts';
@@ -119,5 +121,43 @@ describe('demo sessions', () => {
     expect(api?.subAgents.map((agent) => [agent.role, agent.workItem])).toEqual(
       [['api-builder', 21]],
     );
+  });
+
+  it('cover issues and requests of a GitHub and a GitLab project', async () => {
+    const result = await collect(db, { hasFactory });
+    expect(result).toMatchObject({ projects: 2, failures: [] });
+    const options = { inactiveAfterMinutes: 30, now: NOW };
+    const app = await sessionDetail(db, 'demo-app-2', options);
+    expect(app?.issueDetail).toMatchObject({
+      gitHost: 'github',
+      number: 12,
+      state: 'open',
+      requests: [
+        { number: 19, state: 'open', checks: 'failing' },
+        { number: 18, state: 'closed', checks: 'failing' },
+      ],
+    });
+    const draft = await sessionDetail(db, 'demo-app-3', options);
+    expect(draft?.issueDetail?.requests).toMatchObject([
+      { number: 20, draft: true, checks: 'pending' },
+    ]);
+    const missing = await sessionDetail(db, 'demo-app-6', options);
+    expect(missing?.issue).toEqual({ status: 'not-found' });
+    const none = await sessionDetail(db, 'demo-app-5', options);
+    expect(none?.issueDetail?.requests).toEqual([]);
+    const config = loadWorkflowConfig(join(await sessionsFolder(), 'none.yml'));
+    const api = await sessionDetail(db, 'demo-api-1', options, {
+      ...config,
+      rules: {
+        roles: [],
+        workItems: [{ from: 'branch', pattern: /^[a-z]+\/(\d+)-/ }],
+      },
+    });
+    expect(api?.issueDetail).toMatchObject({
+      gitHost: 'gitlab',
+      number: 21,
+      state: 'closed',
+      requests: [{ number: 3, state: 'merged', checks: 'passing' }],
+    });
   });
 });

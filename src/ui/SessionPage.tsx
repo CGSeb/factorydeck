@@ -1,4 +1,4 @@
-import { type ReactElement, useEffect, useState } from 'react';
+import { type ReactElement, type ReactNode, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import type { TokenCounts } from '../overview/types.ts';
 import type { SessionDetail, SessionResponse } from '../sessions/types.ts';
@@ -6,9 +6,9 @@ import {
   formatClock,
   formatCost,
   formatDateTime,
-  formatWorkItem,
   orMissing,
 } from './format.ts';
+import { IssuePanel } from './IssuePanel.tsx';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import type { LoadSession } from './sessions-api.ts';
 import { SessionSkillTable } from './SessionSkillTable.tsx';
@@ -16,6 +16,7 @@ import { SessionStateLabel } from './SessionStateLabel.tsx';
 import { sessionTitle } from './SessionTable.tsx';
 import { SubAgentTable } from './SubAgentTable.tsx';
 import { TokenCount } from './TokenCount.tsx';
+import { WorkItemLink } from './WorkItemLink.tsx';
 
 const RETRY_SECONDS = 10;
 
@@ -55,11 +56,14 @@ function SessionHeader({
   updatedAt: string | null;
 }): ReactElement {
   const { tokens } = session;
-  const facts = [
+  const facts: { label: string; value: ReactNode }[] = [
     { label: 'Project', value: session.project },
     { label: 'Working directory', value: orMissing(session.cwd ?? '') },
     { label: 'Branch', value: orMissing(session.gitBranch) },
-    { label: 'Work item', value: formatWorkItem(session.workItem) },
+    {
+      label: 'Work item',
+      value: <WorkItemLink workItem={session.workItem} issue={session.issue} />,
+    },
     { label: 'First activity', value: formatDateTime(session.firstAt) },
     { label: 'Last activity', value: formatDateTime(session.lastAt) },
     { label: 'Cost', value: formatCost(session.costUsd) },
@@ -89,6 +93,9 @@ function SessionHeader({
           </div>
         </dl>
       </section>
+      {session.issueDetail !== null && (
+        <IssuePanel issue={session.issueDetail} />
+      )}
     </>
   );
 }

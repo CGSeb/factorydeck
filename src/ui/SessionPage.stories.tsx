@@ -9,6 +9,7 @@ import {
   sessionWithSubAgents,
   sessionWithoutSubAgents,
 } from './session-fixtures.ts';
+import { gitlabIssue } from './git-host-fixtures.ts';
 import type { LoadSession } from './sessions-api.ts';
 import { SessionPage } from './SessionPage.tsx';
 
@@ -68,7 +69,10 @@ export const WithSubAgents: Story = {
       canvas.getByRole('table', { name: 'Sub-agents' }),
     ).getAllByRole('row');
     await expect(subAgentRows[0]).toHaveTextContent('TypeRoleWork item');
-    await expect(subAgentRows[2]).toHaveTextContent('builder#53');
+    await expect(subAgentRows[2]).toHaveTextContent('builder#53 (not found)');
+    await expect(
+      canvas.getByRole('region', { name: '#52 Export button' }),
+    ).toHaveTextContent('#58 feat: Export buttonDraftPending');
     await expect(canvas.getByText('4.2M')).toBeVisible();
     await expect(canvas.getByText('Cache read')).toBeVisible();
     await expect(canvas.getByText('~$6.42')).toBeVisible();
@@ -77,6 +81,60 @@ export const WithSubAgents: Story = {
       canvas.getByRole('table', { name: 'Skills' }),
     ).toHaveTextContent('kit:write-spec');
     await expect(canvas.getByText('~$2.32')).toBeVisible();
+  },
+};
+
+export const GitLabMergeRequests: Story = {
+  args: {
+    loadSession: detailLoader(
+      detailResponse({
+        ...sessionWithSubAgents,
+        workItem: 21,
+        issue: {
+          status: 'found',
+          title: gitlabIssue.title,
+          url: gitlabIssue.url,
+        },
+        issueDetail: gitlabIssue,
+      }),
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const issue = await canvas.findByRole('region', {
+      name: '#21 Add the refunds endpoint',
+    });
+    await expect(issue).toHaveTextContent(
+      '!12 Add the refunds endpointMergedPassing',
+    );
+    await expect(
+      within(canvas.getByRole('region', { name: 'Session' })).getByRole(
+        'link',
+        { name: '#21' },
+      ),
+    ).toHaveAttribute('title', 'Add the refunds endpoint');
+  },
+};
+
+export const WorkItemNotFound: Story = {
+  args: {
+    loadSession: detailLoader(
+      detailResponse({
+        ...sessionWithSubAgents,
+        issue: { status: 'not-found' },
+        issueDetail: null,
+      }),
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole('heading', { name: 'Add the export button' });
+    await expect(
+      canvas.getByRole('region', { name: 'Session' }),
+    ).toHaveTextContent('Work item#52 (not found)');
+    await expect(
+      canvas.queryByRole('region', { name: '#52 Export button' }),
+    ).toBeNull();
   },
 };
 

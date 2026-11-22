@@ -1,4 +1,5 @@
 import { type ReactElement, useId, useState } from 'react';
+import { type CollectionFailure, failureMessage } from '../git-host/types.ts';
 import type { MissingFactory } from '../projects/types.ts';
 import {
   type DeleteDialogState,
@@ -8,6 +9,7 @@ import type { DeleteProject } from './factory-api.ts';
 
 export interface FactoryBannerProps {
   missing: MissingFactory[];
+  failures?: CollectionFailure[];
   deleteProject: DeleteProject;
   onDeleted: (project: string) => void;
 }
@@ -41,11 +43,15 @@ function BannerLine({
   );
 }
 
-export function FactoryBanner({
-  missing,
-  deleteProject,
-  onDeleted,
-}: FactoryBannerProps): ReactElement {
+function useDeleteDialog(
+  missing: MissingFactory[],
+  deleteProject: DeleteProject,
+  onDeleted: (project: string) => void,
+): {
+  shown: OpenDialog | undefined;
+  setDialog: (dialog: OpenDialog | undefined) => void;
+  confirm: (open: OpenDialog) => Promise<void>;
+} {
   const [dialog, setDialog] = useState<OpenDialog>();
   const shown =
     dialog !== undefined &&
@@ -71,6 +77,20 @@ export function FactoryBanner({
     );
   }
 
+  return { shown, setDialog, confirm };
+}
+
+export function FactoryBanner({
+  missing,
+  failures = [],
+  deleteProject,
+  onDeleted,
+}: FactoryBannerProps): ReactElement {
+  const { shown, setDialog, confirm } = useDeleteDialog(
+    missing,
+    deleteProject,
+    onDeleted,
+  );
   return (
     <section className="factory-banner" aria-label="Factory configuration">
       <ul>
@@ -87,6 +107,11 @@ export function FactoryBanner({
               })
             }
           />
+        ))}
+        {failures.map((failure) => (
+          <li key={`git-host ${failure.project}`}>
+            <span>{failureMessage(failure)}</span>
+          </li>
         ))}
       </ul>
       {shown !== undefined && (
