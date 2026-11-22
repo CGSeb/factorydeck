@@ -1,9 +1,4 @@
-import {
-  type CSSProperties,
-  type ReactElement,
-  useEffect,
-  useState,
-} from 'react';
+import type { CSSProperties, ReactElement } from 'react';
 import { labelTextColor } from '../colors.ts';
 import {
   type ChartSegment,
@@ -18,6 +13,7 @@ import {
   chartTooltip,
   chartTooltipLabel,
   chartTooltipValue,
+  useHoverAnchor,
 } from './chart-tooltip.ts';
 
 export type SplitBarHeight = 'thin' | 'medium' | 'tall';
@@ -163,21 +159,6 @@ function HitZones({
   );
 }
 
-function useHovered(): [Hovered | null, (next: Hovered | null) => void] {
-  const [hovered, setHovered] = useState<Hovered | null>(null);
-  useEffect(() => {
-    if (hovered === null) return undefined;
-    function clear(): void {
-      setHovered(null);
-    }
-    window.addEventListener('scroll', clear, true);
-    return () => {
-      window.removeEventListener('scroll', clear, true);
-    };
-  }, [hovered]);
-  return [hovered, setHovered];
-}
-
 export function SplitBar({
   label,
   segments,
@@ -185,7 +166,7 @@ export function SplitBar({
 }: SplitBarProps): ReactElement {
   const parts = splitParts(segments);
   const heightPx = HEIGHT_PX[height];
-  const [hovered, setHovered] = useHovered();
+  const [hovered, setHovered] = useHoverAnchor<Hovered>();
   const hoveredPart = hovered === null ? undefined : parts[hovered.index];
   return (
     <div role="group" aria-label={label} style={{ position: 'relative' }}>

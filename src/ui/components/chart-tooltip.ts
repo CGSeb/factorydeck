@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import { type CSSProperties, useEffect, useState } from 'react';
 
 export const chartTooltip: CSSProperties = {
   zIndex: 20,
@@ -27,3 +27,22 @@ export const chartTooltipValue: CSSProperties = {
   fontWeight: 600,
   fontVariantNumeric: 'tabular-nums',
 };
+
+/**
+ * Hover state for a fixed-position chart tooltip. Scrolling clears it,
+ * since a fixed tooltip would otherwise stay where the hovered mark was.
+ */
+export function useHoverAnchor<T>(): [T | null, (next: T | null) => void] {
+  const [hovered, setHovered] = useState<T | null>(null);
+  useEffect(() => {
+    if (hovered === null) return undefined;
+    function clear(): void {
+      setHovered(null);
+    }
+    window.addEventListener('scroll', clear, true);
+    return () => {
+      window.removeEventListener('scroll', clear, true);
+    };
+  }, [hovered]);
+  return [hovered, setHovered];
+}

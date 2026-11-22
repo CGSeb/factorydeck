@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { SkillSession, SkillUsage } from '../skills/types.ts';
 import {
-  largestTokens,
   skillsSummary,
   sortedSessions,
   sortedSkills,
+  tokenTotal,
   tokensPerLaunch,
 } from './skill-view.ts';
 import { splitTokens } from './token-fixtures.ts';
@@ -100,9 +100,9 @@ describe('tokensPerLaunch', () => {
   });
 });
 
-describe('largestTokens', () => {
-  it('finds the largest row, or 0 without rows', () => {
-    expect(largestTokens([{ tokens: 3 }, { tokens: 9 }])).toBe(9);
-    expect(largestTokens([])).toBe(0);
+describe('tokenTotal', () => {
+  it('adds up the rows, or 0 without rows', () => {
+    expect(tokenTotal([{ tokens: 3 }, { tokens: 9 }])).toBe(12);
+    expect(tokenTotal([])).toBe(0);
   });
 });

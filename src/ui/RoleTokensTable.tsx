@@ -16,11 +16,11 @@ export const tokensColumn = { width: '32%', minWidth: '180px' };
 function RoleRow({
   row,
   color,
-  largest,
+  total,
 }: {
   row: RoleUsage;
   color: string;
-  largest: number;
+  total: number;
 }): ReactElement {
   return (
     <tr>
@@ -32,9 +32,10 @@ function RoleRow({
       <td className={NUMERIC_CELL}>{tokensPerThread(row)}</td>
       <td>
         <BarCell
+          label={row.role}
           counts={row.tokenCounts}
           costUsd={row.costUsd}
-          largest={largest}
+          total={total}
           color={color}
         />
       </td>
@@ -67,7 +68,7 @@ export function RoleTokensTable({
   colors,
 }: RoleTokensTableProps): ReactElement {
   const titleId = useId();
-  const largest = roles.reduce((max, row) => Math.max(max, row.tokens), 0);
+  const total = roles.reduce((sum, row) => sum + row.tokens, 0);
   return (
     <div>
       <h2 id={titleId} className={TABLE_HEADING} style={headingSpace}>
@@ -98,7 +99,7 @@ export function RoleTokensTable({
                 key={row.role}
                 row={row}
                 color={colors.get(row.role) ?? 'var(--fd-muted)'}
-                largest={largest}
+                total={total}
               />
             ))}
           </tbody>

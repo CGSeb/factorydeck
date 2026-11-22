@@ -60,9 +60,15 @@ export function columnHeights(
   );
 }
 
-export function barPercent(value: number, largest: number): number {
-  if (largest <= 0 || value <= 0) return 0;
-  return Math.min(100, (value / largest) * 100);
+export function barPercent(value: number, total: number): number {
+  if (total <= 0 || value <= 0) return 0;
+  return Math.min(100, (value / total) * 100);
+}
+
+/** A share of a total as text: `48%`, or `<1%` for a share above 0 that rounds to 0. */
+export function shareText(value: number, total: number): string {
+  const share = wholePercent(value, total);
+  return share === 0 && value > 0 && total > 0 ? '<1%' : `${String(share)}%`;
 }
 
 export function edgeLabels<T>(items: readonly T[]): T[] {

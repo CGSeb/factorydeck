@@ -4,6 +4,7 @@ import {
   barPercent,
   columnHeights,
   edgeLabels,
+  shareText,
   splitParts,
   wholePercent,
 } from './chart-math.ts';
@@ -92,7 +93,7 @@ describe('columnHeights', () => {
 });
 
 describe('barPercent', () => {
-  it('divides the value by the largest of the column', () => {
+  it('divides the value by the total of the column', () => {
     expect(barPercent(50, 200)).toBe(25);
     expect(barPercent(200, 200)).toBe(100);
   });
@@ -119,5 +120,21 @@ describe('edgeLabels', () => {
 
   it('has no label without buckets', () => {
     expect(edgeLabels([])).toEqual([]);
+  });
+});
+
+describe('shareText', () => {
+  it('writes the whole percent of the total', () => {
+    expect(shareText(379, 787)).toBe('48%');
+    expect(shareText(787, 787)).toBe('100%');
+  });
+
+  it('writes <1% for a share above 0 that rounds to 0', () => {
+    expect(shareText(1, 1000)).toBe('<1%');
+  });
+
+  it('writes 0% for nothing or an empty column', () => {
+    expect(shareText(0, 1000)).toBe('0%');
+    expect(shareText(0, 0)).toBe('0%');
   });
 });
