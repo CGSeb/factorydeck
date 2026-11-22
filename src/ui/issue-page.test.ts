@@ -4,13 +4,14 @@ import type { ClosingRequest } from '../git-host/types.ts';
 import {
   ORCHESTRATION_DETAIL,
   dateRange,
-  formatDay,
   issueActivity,
   issuePullRequest,
   issueSteps,
   issueTotal,
   threadTitle,
+  timeRange,
 } from './issue-page.ts';
+import { formatDay } from './format.ts';
 
 const COUNTS = { input: 10, cacheWrite: 20, cacheRead: 30, output: 40 };
 
@@ -84,6 +85,29 @@ describe('formatDay and dateRange', () => {
   });
 });
 
+describe('timeRange', () => {
+  it('writes the day once and both times within one day', () => {
+    expect(timeRange(local(18, 9), local(18, 22))).toBe(
+      '18 Nov, 09:00 → 22:00',
+    );
+  });
+
+  it('writes one time when both ends are the same minute', () => {
+    expect(timeRange(local(18, 9), local(18, 9))).toBe('18 Nov, 09:00');
+  });
+
+  it('writes both days and times across days', () => {
+    expect(timeRange(local(18, 9), local(21, 14))).toBe(
+      '18 Nov, 09:00 → 21 Nov, 14:00',
+    );
+  });
+
+  it('writes the known end when the other is missing', () => {
+    expect(timeRange(local(18, 9), null)).toBe('18 Nov, 09:00');
+    expect(timeRange(null, null)).toBe('—');
+  });
+});
+
 describe('issueSteps', () => {
   it('groups consecutive threads of one role only', () => {
     const steps = issueSteps(
@@ -100,9 +124,9 @@ describe('issueSteps', () => {
       'builder',
     ]);
     expect(steps.map((step) => step.detail)).toEqual([
-      'builder · 1 thread · 18 Nov',
-      'reviewer · 2 threads · 19 Nov → 20 Nov',
-      'builder · 1 thread · 21 Nov',
+      'builder · 1 thread · 18 Nov, 10:00 → 11:00',
+      'reviewer · 2 threads · 19 Nov, 10:00 → 20 Nov, 11:00',
+      'builder · 1 thread · 21 Nov, 10:00 → 11:00',
     ]);
     expect(steps[1]?.counts).toEqual({
       input: 20,
@@ -125,7 +149,7 @@ describe('issueSteps', () => {
         id: 'session-builder-18:agent-builder-18',
         title: 'builder on day 18',
         href: '/sessions/session-builder-18?project=%2Fhome%2Fdev%2Fexample-app',
-        date: '18 Nov',
+        date: '18 Nov, 10:00',
         counts: COUNTS,
         costUsd: 1,
       },

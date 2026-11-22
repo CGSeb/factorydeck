@@ -94,7 +94,7 @@ describe('formatDuration', () => {
 describe('formatDateTime', () => {
   it('shows a local date and time', () => {
     expect(formatDateTime(new Date(2026, 0, 7, 9, 5).toISOString())).toBe(
-      'Jan 7, 09:05',
+      '7 Jan, 09:05',
     );
     expect(formatDateTime(null)).toBe('—');
   });
