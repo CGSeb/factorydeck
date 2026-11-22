@@ -1,11 +1,6 @@
-import {
-  type ReactElement,
-  type RefObject,
-  useEffect,
-  useId,
-  useRef,
-} from 'react';
+import { type ReactElement, type RefObject, useId, useRef } from 'react';
 import { projectText } from '../projects/label.ts';
+import { useDialogFocus } from './components/dialog-focus.ts';
 
 export type DeleteDialogState =
   'idle' | 'deleting' | 'failed' | 'has-factory' | 'not-found';
@@ -27,55 +22,6 @@ const MESSAGES: Readonly<
     `${name} has its factory configuration again, so it was not deleted.`,
   'not-found': (name) => `${name} is no longer in FactoryDeck.`,
 };
-
-function keepFocusInside(event: KeyboardEvent, dialog: HTMLElement): void {
-  const focusable = [
-    ...dialog.querySelectorAll<HTMLElement>('button:not(:disabled)'),
-  ];
-  const first = focusable.at(0);
-  const last = focusable.at(-1);
-  if (first === undefined || last === undefined) {
-    event.preventDefault();
-    return;
-  }
-  const active = document.activeElement;
-  const inside = active instanceof Node && dialog.contains(active);
-  if (event.shiftKey && (!inside || active === first)) {
-    event.preventDefault();
-    last.focus();
-  } else if (!event.shiftKey && (!inside || active === last)) {
-    event.preventDefault();
-    first.focus();
-  }
-}
-
-function useDialogFocus(
-  onCancel: () => void,
-  dialog: RefObject<HTMLDivElement | null>,
-): RefObject<HTMLButtonElement | null> {
-  const cancel = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    const opener =
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : undefined;
-    cancel.current?.focus();
-    return () => {
-      if (opener?.isConnected === true) opener.focus();
-    };
-  }, []);
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent): void {
-      if (event.key === 'Escape') onCancel();
-      if (event.key === 'Tab' && dialog.current !== null) {
-        keepFocusInside(event, dialog.current);
-      }
-    }
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [onCancel, dialog]);
-  return cancel;
-}
 
 function DialogActions({
   cancel,
