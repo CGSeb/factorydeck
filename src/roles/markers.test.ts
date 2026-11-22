@@ -10,6 +10,7 @@ import { DEFAULT_CONFIG, parseWorkflowConfig } from './config.ts';
 import { listRoles } from './query.ts';
 
 const APP = '/work/marker-app';
+const OTHER = '/work/marker-other';
 const NOW = new Date('2026-05-20T12:00:00Z');
 const MODEL = 'claude-sonnet-4-5';
 const state = { inactiveAfterMinutes: 30, now: NOW };
@@ -71,6 +72,8 @@ beforeAll(async () => {
     { id: 'titled', project: APP, title: 'Fix #20', lastAt: at(3) },
     { id: 'plain', project: APP, title: 'Fix #30', lastAt: at(3) },
     { id: 'only', project: APP, title: 'Another spec', lastAt: at(9) },
+    { id: 'early', project: OTHER, title: 'Old spec', lastAt: at(3) },
+    { id: 'tie', project: OTHER, title: 'Tied spec', lastAt: at(3) },
   ]);
   await db.insert(subAgent).values([
     {
@@ -102,17 +105,23 @@ beforeAll(async () => {
       call('titled', 3),
       call('plain', 3),
       call('only', 8),
+      call('early', 3),
+      call('tie', 3),
     ]);
-  await db
-    .insert(closingLine)
-    .values([
-      line('spec', 2, 'Work item: #10 (spec-writer)'),
-      line('spec', 4, 'Done, see #99 above.'),
-      line('spec', 6, 'Work item: #11'),
-      line('titled', 2, 'Work item: #21'),
-      line('plain', 2, 'Fixed #30.'),
-      line('only', 9, 'Work item: #40 (spec-writer)'),
-    ]);
+  await db.insert(closingLine).values([
+    line('spec', 2, 'Work item: #10 (spec-writer)'),
+    line('spec', 4, 'Done, see #99 above.'),
+    line('spec', 6, 'Work item: #11'),
+    line('titled', 2, 'Work item: #21'),
+    line('plain', 2, 'Fixed #30.'),
+    line('only', 9, 'Work item: #40 (spec-writer)'),
+    {
+      ...line('early', 0, 'Work item: #50 (spec-writer)'),
+      at: new Date('2026-04-01T09:00:00Z'),
+    },
+    { ...line('tie', 2, 'Work item: #61'), position: 20 },
+    { ...line('tie', 2, 'Work item: #60'), position: 10 },
+  ]);
 });
 
 afterAll(async () => {
@@ -214,6 +223,36 @@ describe('work item markers', () => {
         detail?.subAgents.map((agent) => [agent.id, agent.workItem]) ?? [],
       ),
     ).toEqual({ x: 11, y: 12 });
+  });
+
+  it('applies a marker written before the period to calls inside it', async () => {
+    const list = await listFeatures(
+      db,
+      { ...week, project: OTHER },
+      DEFAULT_CONFIG,
+    );
+    expect(callsByIssue(list.rows)).toEqual({ 50: 1, 61: 1 });
+    const roles = await listRoles(
+      db,
+      { period: '7d', timeZone: 'UTC', project: OTHER, now: NOW },
+      DEFAULT_CONFIG,
+    );
+    expect(roles.roles.map((row) => [row.role, row.apiCalls])).toContainEqual([
+      'spec-writer',
+      1,
+    ]);
+  });
+
+  it('keeps the later line in the file of two markers with the same time', async () => {
+    const sessions = await listSessions(
+      db,
+      { period: 'all', timeZone: 'UTC', project: OTHER, limit: 10 },
+      state,
+      DEFAULT_CONFIG,
+    );
+    expect(sessions.sessions.find((row) => row.id === 'tie')?.workItem).toBe(
+      61,
+    );
   });
 
   it('reads no marker when the configuration has no marker rule', async () => {
