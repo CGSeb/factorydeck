@@ -4,6 +4,8 @@ import {
   boolean,
   foreignKey,
   index,
+  integer,
+  jsonb,
   pgTable,
   primaryKey,
   text,
@@ -157,4 +159,54 @@ export const skippedFile = pgTable(
 export const ingestState = pgTable('ingest_state', {
   id: text().primaryKey(),
   factoryCleanupDone: boolean('factory_cleanup_done').notNull().default(false),
+});
+
+export const gitHostIssue = pgTable(
+  'git_host_issue',
+  {
+    project: text().notNull(),
+    number: integer().notNull(),
+    title: text().notNull(),
+    state: text().notNull(),
+    labels: jsonb().$type<{ name: string; color: string | null }[]>().notNull(),
+    url: text().notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+    closedAt: timestamp('closed_at', { withTimezone: true }),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.project, table.number] })],
+);
+
+export const gitHostRequest = pgTable(
+  'git_host_request',
+  {
+    project: text().notNull(),
+    number: integer().notNull(),
+    title: text().notNull(),
+    state: text().notNull(),
+    draft: boolean().notNull(),
+    headBranch: text('head_branch').notNull(),
+    url: text().notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+    mergedAt: timestamp('merged_at', { withTimezone: true }),
+    closedAt: timestamp('closed_at', { withTimezone: true }),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
+    closes: jsonb().$type<number[]>().notNull(),
+    checks: text().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.project, table.number] })],
+);
+
+export const gitHostProject = pgTable('git_host_project', {
+  project: text().primaryKey(),
+  gitHost: text('git_host'),
+  repository: text(),
+  syncedFrom: timestamp('synced_from', { withTimezone: true }),
+  error: text(),
+  errorGitHost: text('error_git_host'),
+});
+
+export const gitHostRun = pgTable('git_host_run', {
+  id: text().primaryKey(),
+  finishedAt: timestamp('finished_at', { withTimezone: true }).notNull(),
 });
