@@ -108,7 +108,7 @@ export async function factoryStatus(
       compare(a.name.toLowerCase(), b.name.toLowerCase()) ||
       compare(a.project, b.project),
   );
-  return { hasSessions: rows.length > 0, missing };
+  return { hasSessions: rows.length > 0, missing, projects: names.options() };
 }
 
 function compare(a: string, b: string): number {

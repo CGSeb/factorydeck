@@ -77,7 +77,10 @@ export const Found: Story = {
     );
     await expect(
       canvas.getByRole('link', { name: 'Build the export button' }),
-    ).toBeVisible();
+    ).toHaveAttribute(
+      'href',
+      expect.stringMatching(/\?project=%2Fhome%2Fdev%2Fexample-app$/),
+    );
     await userEvent.click(canvas.getByRole('button', { name: 'Last 7 days' }));
     await expect(address(canvasElement)).toHaveTextContent(
       '/features/52?project=%2Fhome%2Fdev%2Fexample-app&period=7d',
@@ -116,7 +119,9 @@ export const NotFound: Story = {
     await userEvent.click(
       canvas.getByRole('link', { name: 'Back to features' }),
     );
-    await expect(address(canvasElement)).toHaveTextContent('/features');
+    await expect(address(canvasElement)).toHaveTextContent(
+      /^\/features\?project=%2Fhome%2Fdev%2Fexample-app$/,
+    );
   },
 };
 

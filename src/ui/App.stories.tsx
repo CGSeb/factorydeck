@@ -19,6 +19,7 @@ import {
   someFeatures,
 } from './feature-fixtures.ts';
 import { fixedLoader, okResponse, weekOverview } from './fixtures.ts';
+import { optionsOf } from './project-fixtures.ts';
 import { rolesLoader, someRoles } from './role-fixtures.ts';
 import {
   detailLoader,
@@ -191,5 +192,45 @@ export const FactoryNotFound: Story = {
       canvas.getByText(/Factory configuration not found for Old App/),
     ).toBeVisible();
     await canvas.findByText('1 working · 1 waiting for you · 1 inactive');
+  },
+};
+
+export const OneProjectAcrossPages: Story = {
+  args: {
+    ...loaders,
+    loadFactory: factoryLoaderOf(
+      factoryResponse(
+        [],
+        true,
+        optionsOf(['/home/dev/example-app', '/home/dev/example-lib']),
+      ),
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('~$48.27');
+    await userEvent.selectOptions(
+      await canvas.findByRole('combobox', { name: 'Project' }),
+      '/home/dev/example-app',
+    );
+    await userEvent.click(canvas.getByRole('link', { name: 'Sessions' }));
+    await canvas.findByText('1 working · 0 waiting for you · 0 inactive');
+    await expect(canvas.getByRole('combobox', { name: 'Project' })).toHaveValue(
+      '/home/dev/example-app',
+    );
+    await expect(
+      canvas.getByRole('link', { name: 'Add the export button' }),
+    ).toHaveAttribute(
+      'href',
+      expect.stringMatching(/\?project=%2Fhome%2Fdev%2Fexample-app$/),
+    );
+    await userEvent.click(canvas.getByRole('link', { name: 'Features' }));
+    await canvas.findByRole('rowheader', { name: '#52 Export button' });
+    await expect(
+      canvas.queryByRole('columnheader', { name: 'Project' }),
+    ).toBeNull();
+    await expect(canvas.getByRole('combobox', { name: 'Project' })).toHaveValue(
+      '/home/dev/example-app',
+    );
   },
 };

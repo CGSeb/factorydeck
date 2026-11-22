@@ -16,6 +16,7 @@ import {
 export interface OverviewQuery {
   period: Period;
   timeZone: string;
+  project?: string | undefined;
   now?: Date;
 }
 
@@ -32,6 +33,7 @@ interface Window {
   timeZone: string;
   nowAt: string;
   startAt: string | null;
+  project: string | null;
 }
 
 const DAYS_BEFORE_TODAY: Record<Exclude<Period, 'all'>, number> = {
@@ -96,13 +98,13 @@ export function byCostDescending<
 
 async function windowOf(
   db: Database,
-  { period, timeZone, now = new Date() }: OverviewQuery,
+  { period, timeZone, project, now = new Date() }: OverviewQuery,
 ): Promise<Window> {
   const unit = period === 'today' ? 'hour' : 'day';
   const format = unit === 'hour' ? 'YYYY-MM-DD"T"HH24:00' : 'YYYY-MM-DD';
   const nowAt = now.toISOString();
   const startAt = await periodStart(db, { period, timeZone, now });
-  return { unit, format, timeZone, nowAt, startAt };
+  return { unit, format, timeZone, nowAt, startAt, project: project ?? null };
 }
 
 export async function periodStart(
@@ -121,9 +123,12 @@ export async function periodStart(
   return text(row?.['start']);
 }
 
-function inWindow({ startAt }: Window): SQL {
-  return sql`(${startAt}::timestamptz is null or a.at >= ${startAt}::timestamptz)`;
+function inWindow({ startAt, project }: Window): SQL {
+  return sql`(${startAt}::timestamptz is null or a.at >= ${startAt}::timestamptz)
+    and (${project}::text is null or s.project = ${project}::text)`;
 }
+
+const CALLS = sql`api_call a join session s on s.id = a.session_id`;
 
 function bucketsQuery(window: Window): SQL {
   const { unit, format, timeZone, nowAt, startAt } = window;
@@ -131,7 +136,7 @@ function bucketsQuery(window: Window): SQL {
       select
         date_trunc(${unit}, coalesce(${startAt}::timestamptz, min(a.at)) at time zone ${timeZone}) as first,
         date_trunc(${unit}, greatest(${nowAt}::timestamptz, max(a.at)) at time zone ${timeZone}) as last
-      from api_call a where ${inWindow(window)}
+      from ${CALLS} where ${inWindow(window)}
     )
     select to_char(step, ${format}) as bucket
     from bounds, generate_series(bounds.first, bounds.last, ('1 ' || ${unit})::interval) as step
@@ -143,19 +148,17 @@ function usageByBucketQuery(window: Window): SQL {
   const { unit, format, timeZone } = window;
   return sql`select to_char(date_trunc(${unit}, a.at at time zone ${timeZone}), ${format}) as bucket,
       ${USAGE_COLUMNS}
-    from api_call a where ${inWindow(window)} group by 1, a.model`;
+    from ${CALLS} where ${inWindow(window)} group by 1, a.model`;
 }
 
 function usageByProjectQuery(window: Window): SQL {
   return sql`select s.project, ${USAGE_COLUMNS}
-    from api_call a join session s on s.id = a.session_id
-    where ${inWindow(window)} group by s.project, a.model`;
+    from ${CALLS} where ${inWindow(window)} group by s.project, a.model`;
 }
 
 function sessionsByProjectQuery(window: Window): SQL {
   return sql`select s.project, count(distinct a.session_id) as sessions
-    from api_call a join session s on s.id = a.session_id
-    where ${inWindow(window)} group by rollup (s.project)`;
+    from ${CALLS} where ${inWindow(window)} group by rollup (s.project)`;
 }
 
 function emptyTotals(): UsageOverview['totals'] {

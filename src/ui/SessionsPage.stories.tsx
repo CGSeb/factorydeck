@@ -21,8 +21,14 @@ function Location(): ReactElement {
 const meta = {
   component: SessionsPage,
   decorators: [
-    (Story) => (
-      <MemoryRouter initialEntries={['/sessions?period=all']}>
+    (Story, { parameters }) => (
+      <MemoryRouter
+        initialEntries={[
+          typeof parameters['entry'] === 'string'
+            ? parameters['entry']
+            : '/sessions?period=all',
+        ]}
+      >
         <Routes>
           <Route
             path="/sessions"
@@ -55,15 +61,41 @@ export const WithRows: Story = {
     );
     await waitFor(() => expect(canvas.getAllByRole('row')).toHaveLength(2));
     await expect(canvas.getByRole('link', { name: 'b81e44d0' })).toBeVisible();
-    await userEvent.selectOptions(
-      canvas.getByRole('combobox', { name: 'Project' }),
-      '/home/dev/example-app',
+    await expect(
+      canvas.queryByRole('combobox', { name: 'Project' }),
+    ).toBeNull();
+    await expect(
+      canvas.getByRole('status', { name: 'Address' }),
+    ).toHaveTextContent('?period=all&state=waiting');
+  },
+};
+
+export const OneProject: Story = {
+  args: { loadSessions: listLoader(someSessions) },
+  parameters: {
+    entry: '/sessions?period=all&project=%2Fhome%2Fdev%2Fexample-app',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('1 working · 0 waiting for you · 0 inactive');
+    await expect(
+      canvas.queryByRole('combobox', { name: 'Project' }),
+    ).toBeNull();
+    const [link] = canvas.getAllByRole('link');
+    await expect(link).toHaveAttribute(
+      'href',
+      expect.stringMatching(
+        /^\/sessions\/[^?]+\?project=%2Fhome%2Fdev%2Fexample-app$/,
+      ),
     );
-    await canvas.findByText('No sessions match these filters.');
+    await userEvent.selectOptions(
+      canvas.getByRole('combobox', { name: 'State' }),
+      'working',
+    );
     await expect(
       canvas.getByRole('status', { name: 'Address' }),
     ).toHaveTextContent(
-      '?period=all&project=%2Fhome%2Fdev%2Fexample-app&state=waiting',
+      '?period=all&project=%2Fhome%2Fdev%2Fexample-app&state=working',
     );
   },
 };

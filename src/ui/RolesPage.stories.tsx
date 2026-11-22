@@ -19,8 +19,14 @@ function Location(): ReactElement {
 const meta = {
   component: RolesPage,
   decorators: [
-    (Story) => (
-      <MemoryRouter initialEntries={['/roles?period=all']}>
+    (Story, { parameters }) => (
+      <MemoryRouter
+        initialEntries={[
+          typeof parameters['entry'] === 'string'
+            ? parameters['entry']
+            : '/roles?period=all',
+        ]}
+      >
         <Routes>
           <Route
             path="/roles"
@@ -50,11 +56,19 @@ export const WithRoles: Story = {
       canvas.getByText('Rules from /home/dev/factorydeck/factorydeck.yml'),
     ).toBeVisible();
     await expect(canvas.getAllByRole('row')).toHaveLength(6);
-    await userEvent.selectOptions(
-      canvas.getByRole('combobox', { name: 'Project' }),
-      '/home/dev/example-lib',
-    );
+    await expect(canvas.queryByRole('combobox')).toBeNull();
+  },
+};
+
+export const OneProject: Story = {
+  args: { loadRoles: rolesLoader(someRoles) },
+  parameters: {
+    entry: '/roles?period=all&project=%2Fhome%2Fdev%2Fexample-lib',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
     await waitFor(() => expect(canvas.getAllByRole('row')).toHaveLength(2));
+    await expect(canvas.queryByRole('combobox')).toBeNull();
     await userEvent.click(canvas.getByRole('button', { name: 'Last 30 days' }));
     await expect(
       canvas.getByRole('status', { name: 'Address' }),

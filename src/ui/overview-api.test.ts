@@ -25,6 +25,16 @@ describe('overviewLoader', () => {
     expect(urls).toEqual(['/api/overview?period=30d&tz=Europe%2FParis']);
   });
 
+  it('asks for the project when one is given', async () => {
+    const urls: string[] = [];
+    const body = { status: 'unreachable', refreshSeconds: 10 };
+    const load = overviewLoader(answering(503, body, urls), () => 'UTC');
+    await load('7d', '/work/my app');
+    expect(urls).toEqual([
+      '/api/overview?period=7d&tz=UTC&project=%2Fwork%2Fmy+app',
+    ]);
+  });
+
   it('gives nothing when the server does not answer or answers something else', async () => {
     const failing: typeof fetch = () =>
       Promise.reject(new TypeError('fetch failed'));

@@ -252,6 +252,16 @@ describe('listSkills', () => {
     });
     expect(sum(filtered.skills, 'tokens')).toBe(lib?.tokens);
     expect(filtered.launches).toBe(0);
+    const libOverview = await usageOverview(db, {
+      ...query,
+      period: 'all',
+      project: lib?.project,
+    });
+    expect(sum(filtered.skills, 'apiCalls')).toBe(libOverview.totals.apiCalls);
+    expect(sum(filtered.skills, 'costUsd')).toBeCloseTo(
+      libOverview.totals.costUsd,
+      10,
+    );
   });
 
   it('lists launches, sessions and average cost, sorted by cost', async () => {

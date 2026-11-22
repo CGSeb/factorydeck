@@ -11,7 +11,6 @@ import {
 import { formatClock } from './format.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { PeriodSelector } from './PeriodSelector.tsx';
-import { ProjectSelect } from './ProjectSelect.tsx';
 import { type SkillFilters, useRefreshing } from './skills-api.ts';
 
 export interface FeaturesPageProps {
@@ -74,13 +73,6 @@ export function FeaturesPage({
         <PeriodSelector
           value={filters.period}
           onChange={(period: Period) => setFilters({ ...filters, period })}
-        />
-      </div>
-      <div className="filters">
-        <ProjectSelect
-          value={filters.project}
-          projects={response?.status === 'ok' ? response.list.projects : []}
-          onChange={(project) => setFilters({ ...filters, project })}
         />
       </div>
       <FeaturesContent

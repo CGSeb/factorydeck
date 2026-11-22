@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
+import { projectOf } from './project-param.ts';
 import { DEFAULT_PERIOD, type Period, isPeriod } from '../overview/types.ts';
 import type { SkillListResponse, SkillResponse } from '../skills/types.ts';
 
@@ -92,7 +93,7 @@ export function useSkillFilters(): [
   const period = searchParams.get('period');
   const filters: SkillFilters = {
     period: isPeriod(period) ? period : DEFAULT_PERIOD,
-    project: searchParams.get('project') ?? undefined,
+    project: projectOf(searchParams),
   };
   const paramsOf = (next: SkillFilters): URLSearchParams => {
     const params = new URLSearchParams({ period: next.period });

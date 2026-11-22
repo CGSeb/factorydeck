@@ -1,3 +1,4 @@
+import type { ProjectOption } from '../projects/label.ts';
 import type { FactoryResponse, MissingFactory } from '../projects/types.ts';
 import type {
   DeleteOutcome,
@@ -22,8 +23,15 @@ export const archivedLib: MissingFactory = {
 export function factoryResponse(
   missing: MissingFactory[] = [],
   hasSessions = true,
+  projects: ProjectOption[] = [],
 ): FactoryResponse {
-  return { status: 'ok', refreshSeconds: 3600, hasSessions, missing };
+  return {
+    status: 'ok',
+    refreshSeconds: 3600,
+    hasSessions,
+    missing,
+    projects,
+  };
 }
 
 export function factoryLoaderOf(response: FactoryResponse): LoadFactory {

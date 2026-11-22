@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { MemoryRouter } from 'react-router';
+import type { ReactElement } from 'react';
+import { MemoryRouter, useLocation } from 'react-router';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import {
   emptyOverview,
@@ -10,14 +11,42 @@ import {
   unreachableResponse,
   weekOverview,
 } from './fixtures.ts';
+import type { LoadOverview } from './overview-api.ts';
 import { OverviewPage } from './OverviewPage.tsx';
+
+function Location(): ReactElement {
+  const { search } = useLocation();
+  return <output aria-label="Address">{search}</output>;
+}
+
+const appOnly: LoadOverview = (_period, project) =>
+  Promise.resolve(
+    okResponse(
+      project === undefined
+        ? weekOverview
+        : {
+            ...weekOverview,
+            totals: { ...weekOverview.totals, costUsd: 36.4, sessions: 9 },
+            projects: weekOverview.projects.filter(
+              (row) => row.project === project,
+            ),
+          },
+    ),
+  );
 
 const meta = {
   component: OverviewPage,
   decorators: [
-    (Story) => (
-      <MemoryRouter initialEntries={['/?period=7d']}>
+    (Story, { parameters }) => (
+      <MemoryRouter
+        initialEntries={[
+          typeof parameters['entry'] === 'string'
+            ? parameters['entry']
+            : '/?period=7d',
+        ]}
+      >
         <Story />
+        <Location />
       </MemoryRouter>
     ),
   ],
@@ -104,5 +133,22 @@ export const UnknownPrices: Story = {
     await expect(canvas.getAllByText('—')).toHaveLength(3);
     await userEvent.click(canvas.getByRole('button', { name: 'All time' }));
     await pressed(canvasElement, 'All time');
+  },
+};
+
+export const OneProject: Story = {
+  args: { loadOverview: appOnly },
+  parameters: { entry: '/?period=7d&project=%2Fhome%2Fdev%2Fexample-app' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Cost per day');
+    await expect(canvas.getAllByText('~$36.40')).toHaveLength(2);
+    const table = canvas.getByRole('table', { name: 'By project' });
+    await expect(within(table).getAllByRole('row')).toHaveLength(2);
+    await expect(within(table).getByText('Example App')).toBeVisible();
+    await userEvent.click(canvas.getByRole('button', { name: 'Today' }));
+    await expect(
+      canvas.getByRole('status', { name: 'Address' }),
+    ).toHaveTextContent('?period=today&project=%2Fhome%2Fdev%2Fexample-app');
   },
 };

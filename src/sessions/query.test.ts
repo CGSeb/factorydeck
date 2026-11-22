@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Database } from '../db/client.ts';
 import { apiCall, session, subAgent } from '../db/schema.ts';
+import { usageOverview } from '../overview/query.ts';
 import { createTestDatabase } from '../test/postgres.ts';
 import { listSessions, sessionDetail } from './query.ts';
 import type { SessionListQuery } from './types.ts';
@@ -213,6 +214,26 @@ describe('listSessions', () => {
       options,
     );
     expect(none).toMatchObject({ sessions: [], total: 0 });
+  });
+
+  it('adds up to the overview of the same project over all time', async () => {
+    for (const project of ['/work/app', '/work/lib', 'unassigned']) {
+      const query = { ...all, project, now: NOW };
+      const [{ sessions }, overview] = await Promise.all([
+        listSessions(db, query, options),
+        usageOverview(db, query),
+      ]);
+      const { tokens } = overview.totals;
+      expect(sessions.reduce((sum, row) => sum + row.tokens, 0)).toBe(
+        tokens.input + tokens.cacheWrite + tokens.cacheRead + tokens.output,
+      );
+      expect(
+        sessions.reduce((sum, row) => sum + (row.costUsd ?? 0), 0),
+      ).toBeCloseTo(overview.totals.costUsd, 9);
+      expect(sessions.filter((row) => row.tokens > 0)).toHaveLength(
+        overview.totals.sessions,
+      );
+    }
   });
 
   it('pages by the limit', async () => {

@@ -7,7 +7,7 @@ import { formatClock, formatCost, formatCount } from './format.ts';
 import { LaunchChart } from './LaunchChart.tsx';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { PeriodSelector } from './PeriodSelector.tsx';
-import { ProjectSelect } from './ProjectSelect.tsx';
+import { useProject } from './project-param.ts';
 import { sessionPath, sessionTitle } from './SessionTable.tsx';
 import {
   type LoadSkill,
@@ -48,6 +48,7 @@ function SkillFacts({ skill }: { skill: SkillDetail }): ReactElement {
 }
 
 function SkillSessions({ skill }: { skill: SkillDetail }): ReactElement {
+  const project = useProject();
   const titleId = useId();
   return (
     <section className="panel" aria-labelledby={titleId}>
@@ -71,7 +72,9 @@ function SkillSessions({ skill }: { skill: SkillDetail }): ReactElement {
             {skill.sessions.map((row) => (
               <tr key={row.id}>
                 <th scope="row">
-                  <Link to={sessionPath(row.id)}>{sessionTitle(row)}</Link>
+                  <Link to={sessionPath(row.id, project)}>
+                    {sessionTitle(row)}
+                  </Link>
                 </th>
                 <td className="left">
                   <ProjectName project={row.project} name={row.projectName} />
@@ -132,13 +135,6 @@ export function SkillPage({ loadSkill }: SkillPageProps): ReactElement {
         <PeriodSelector
           value={filters.period}
           onChange={(period: Period) => setFilters({ ...filters, period })}
-        />
-      </div>
-      <div className="filters">
-        <ProjectSelect
-          value={filters.project}
-          projects={response?.status === 'ok' ? response.skill.projects : []}
-          onChange={(project) => setFilters({ ...filters, project })}
         />
       </div>
       <SkillContent response={response} />

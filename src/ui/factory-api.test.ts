@@ -9,6 +9,7 @@ describe('factory API', () => {
       refreshSeconds: 10,
       hasSessions: false,
       missing: [],
+      projects: [],
     };
     const response = await factoryLoader((input) => {
       urls.push(typeof input === 'string' ? input : '');

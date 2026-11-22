@@ -75,6 +75,32 @@ export const LongName: Story = {
   },
 };
 
+export const LongNameSelected: Story = {
+  args: {
+    value: '/home/dev/long',
+    projects: [{ project: '/home/dev/long', name: 'L'.repeat(70) }],
+  },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByRole('combobox', { name: 'Project' }),
+    ).toHaveAttribute('title', `${'L'.repeat(70)}\n/home/dev/long`);
+  },
+};
+
+export const OneProjectSelected: Story = {
+  args: { value: '/home/dev/example-lib' },
+  play: async ({ canvasElement }) => {
+    const select = within(canvasElement).getByRole('combobox', {
+      name: 'Project',
+    });
+    await expect(select).toHaveValue('/home/dev/example-lib');
+    await expect(select).toHaveAttribute(
+      'title',
+      'example-lib\n/home/dev/example-lib',
+    );
+  },
+};
+
 export const UnknownProjectInUrl: Story = {
   args: { value: '/home/dev/gone' },
   play: async ({ canvasElement }) => {

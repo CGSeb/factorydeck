@@ -2,6 +2,7 @@ import { type ReactElement, useId } from 'react';
 import { Link } from 'react-router';
 import type { FeatureSession } from '../features/types.ts';
 import { formatAgo, formatCost } from './format.ts';
+import { useProject } from './project-param.ts';
 import { SessionStateLabel } from './SessionStateLabel.tsx';
 import { sessionPath, sessionTitle } from './SessionTable.tsx';
 import { TokenCount } from './TokenCount.tsx';
@@ -16,6 +17,7 @@ export function FeatureSessionTable({
   now,
 }: FeatureSessionTableProps): ReactElement {
   const titleId = useId();
+  const project = useProject();
   return (
     <section className="panel" aria-labelledby={titleId}>
       <h2 id={titleId}>Sessions</h2>
@@ -40,7 +42,9 @@ export function FeatureSessionTable({
             {sessions.map((row) => (
               <tr key={row.id}>
                 <th scope="row">
-                  <Link to={sessionPath(row.id)}>{sessionTitle(row)}</Link>
+                  <Link to={sessionPath(row.id, project)}>
+                    {sessionTitle(row)}
+                  </Link>
                 </th>
                 <td className="left">
                   <SessionStateLabel state={row.state} />
