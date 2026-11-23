@@ -2,8 +2,9 @@ import type { Database } from '../db/client.ts';
 import { lookupOutcomes } from '../git-host/query.ts';
 import type { WorkflowConfig } from '../roles/config.ts';
 import type { SessionMarkers } from '../roles/markers.ts';
+import { UNASSIGNED_ROLE } from '../roles/config.ts';
 import { summarizeRoles } from '../roles/query.ts';
-import type { StatsBounds } from '../stats/bounds.ts';
+import { type StatsBounds, statsBounds } from '../stats/bounds.ts';
 import {
   type IssueTally,
   compactedThreads,
@@ -19,46 +20,96 @@ import {
   type ThreadInfo,
   categoryRows,
   commandRows,
-  compactionRows,
   hookRows,
   kindCounts,
   repeatedRows,
   toolRows,
 } from './summarize.ts';
 import type { CallGroup, LoadedRow } from './threads.ts';
-import type {
-  ContextPeaks,
-  FrictionKind,
-  FrictionStats,
-  FrictionWeek,
-  IssueFrictionRow,
+import {
+  type ContextPeaks,
+  type FrictionBucket,
+  type FrictionKind,
+  type FrictionStats,
+  type IssueFrictionRow,
+  type RoleOption,
+  parseKind,
 } from './types.ts';
 
 export type { FrictionQuery } from './load.ts';
 export { issueFrictionCount } from './load.ts';
 
-function weekIndex(bounds: StatsBounds, at: string): number | null {
-  const moment = Date.parse(at);
-  let found: number | null = null;
-  bounds.weeks.forEach((week, index) => {
-    if (week.start <= moment) found = index;
-  });
-  return found;
+function bucketIndex(
+  buckets: StatsBounds['buckets'],
+  moment: number,
+): number | null {
+  const index = buckets.findLastIndex((bucket) => bucket.start <= moment);
+  return index === -1 ? null : index;
 }
 
-function weekCounts(
+function bucketCounts(
   bounds: StatsBounds,
   frictions: readonly LoadedRow[],
   calls: readonly CallGroup[],
-): FrictionWeek[] {
-  const weeks = frictions.map((row) => weekIndex(bounds, row.at));
-  return bounds.weeks.map((week, index) => ({
-    start: week.day,
-    frictions: weeks.filter((value) => value === index).length,
-    apiCalls: calls
-      .filter((group) => group.week === index)
-      .reduce((sum, group) => sum + group.calls, 0),
+): FrictionBucket[] {
+  const counts = bounds.buckets.map((bucket) => ({
+    start: bucket.key,
+    frictions: 0,
+    apiCalls: 0,
   }));
+  for (const row of frictions) {
+    const index = bucketIndex(bounds.buckets, Date.parse(row.at));
+    const bucket = index === null ? undefined : counts[index];
+    if (bucket !== undefined) bucket.frictions += 1;
+  }
+  for (const group of calls) {
+    const index =
+      group.slot === null ? null : bucketIndex(bounds.buckets, group.slot);
+    const bucket = index === null ? undefined : counts[index];
+    if (bucket !== undefined) bucket.apiCalls += group.calls;
+  }
+  return counts;
+}
+
+function earliestSlot(calls: readonly CallGroup[]): number | null {
+  let found: number | null = null;
+  for (const { slot } of calls) {
+    if (slot !== null && (found === null || slot < found)) found = slot;
+  }
+  return found;
+}
+
+async function trendBounds(
+  db: Database,
+  query: FrictionQuery,
+  loaded: FrictionWindow,
+  calls: readonly CallGroup[],
+): Promise<StatsBounds> {
+  if (query.period !== 'all') return loaded.bounds;
+  return statsBounds(db, { ...query, earliestMerge: earliestSlot(calls) });
+}
+
+export function roleOptions(
+  calls: readonly CallGroup[],
+  frictions: readonly LoadedRow[],
+  selected: string | undefined,
+): RoleOption[] {
+  const counts = new Map<string, number>();
+  for (const group of calls) counts.set(group.role, 0);
+  if (selected !== undefined && !counts.has(selected)) counts.set(selected, 0);
+  for (const row of frictions) {
+    const count = counts.get(row.thread.role);
+    if (count !== undefined) counts.set(row.thread.role, count + 1);
+  }
+  const last = (role: string): number => (role === UNASSIGNED_ROLE ? 1 : 0);
+  return [...counts]
+    .map(([role, count]) => ({ role, frictions: count }))
+    .sort(
+      (left, right) =>
+        last(left.role) - last(right.role) ||
+        right.frictions - left.frictions ||
+        left.role.localeCompare(right.role),
+    );
 }
 
 function ofKind<R extends FrictionRow>(
@@ -94,12 +145,12 @@ function roleThreads(
 function contextOf(
   period: readonly CallGroup[],
   previous: readonly CallGroup[] | undefined,
-  frictions: readonly FrictionRow[],
+  compactions: readonly FrictionRow[],
 ): ContextPeaks {
   const threads = threadPeaks(period);
   const context: ContextPeaks = {
     threads,
-    compacted: compactedThreads(period, frictions),
+    compacted: compactedThreads(period, compactions),
     medianPeak: medianPeak(threads),
   };
   if (previous === undefined) return context;
@@ -135,7 +186,7 @@ function tables(
   kind: FrictionKind | undefined,
 ): Pick<
   FrictionStats,
-  'categories' | 'tools' | 'commands' | 'repeated' | 'hooks' | 'compactions'
+  'categories' | 'tools' | 'commands' | 'repeated' | 'hooks'
 > {
   const errors = ofKind(rows, kind, 'tool-error');
   const failed = errors.filter((row) => row.category === 'command-failed');
@@ -145,8 +196,13 @@ function tables(
     commands: commandRows(failed),
     repeated: repeatedRows(failed, threadOf),
     hooks: hookRows(ofKind(rows, kind, 'stop-blocked')),
-    compactions: compactionRows(ofKind(rows, kind, 'compaction')),
   };
+}
+
+interface Selection {
+  calls: CallGroup[];
+  rows: LoadedRow[];
+  compactions: LoadedRow[];
 }
 
 async function breakdown(
@@ -156,36 +212,41 @@ async function breakdown(
     config,
     loaded,
   }: { query: FrictionQuery; config: WorkflowConfig; loaded: FrictionWindow },
-  rows: readonly LoadedRow[],
+  { calls, rows, compactions }: Selection,
 ): Promise<Pick<FrictionStats, 'roles' | 'issues' | 'context'>> {
   const kind = query.kind ?? null;
   const selected =
     kind === null ? rows : rows.filter((row) => row.kind === kind);
   const byIssue = query.filter?.issue !== undefined;
-  const periodCalls = loaded.calls.filter((group) => group.inPeriod);
+  const periodCalls = calls.filter((group) => group.inPeriod);
   const repeated = repeatedRows(
     rows.filter((row) => row.category === 'command-failed'),
     threadOf,
   );
   return {
-    roles: roleRows(
-      selected,
-      roleThreads(config, loaded.markers, periodCalls, byIssue),
-    ),
+    roles:
+      query.role === undefined
+        ? roleRows(
+            selected,
+            roleThreads(config, loaded.markers, periodCalls, byIssue),
+          )
+        : [],
     issues: byIssue
       ? []
-      : await issueRows(db, issueTallies(selected, rows, repeated), (root) =>
+      : await issueRows(db, issueTallies(selected, repeated), (root) =>
           loaded.names.label(root),
         ),
     context: contextOf(
       periodCalls,
       loaded.startMs === null
         ? undefined
-        : loaded.calls.filter((group) => group.inPrevious),
-      rows,
+        : calls.filter((group) => group.inPrevious),
+      compactions,
     ),
   };
 }
+
+const COMPACTION = 'compaction';
 
 export async function frictionStats(
   db: Database,
@@ -193,25 +254,51 @@ export async function frictionStats(
   config: WorkflowConfig,
 ): Promise<FrictionStats> {
   const kind = query.kind ?? null;
+  const { role } = query;
   const loaded = await loadWindow(db, query, config);
-  const { startMs, frictions } = loaded;
-  const rows =
-    startMs === null
-      ? frictions
-      : frictions.filter((row) => Date.parse(row.at) >= startMs);
+  const { startMs } = loaded;
+  const inPeriod = (row: LoadedRow): boolean =>
+    startMs === null || Date.parse(row.at) >= startMs;
   const ofSelected = (list: readonly LoadedRow[]): LoadedRow[] =>
     kind === null ? [...list] : list.filter((row) => row.kind === kind);
+  const ofRole = <T>(list: readonly T[], roleOf: (item: T) => string): T[] =>
+    role === undefined
+      ? [...list]
+      : list.filter((item) => roleOf(item) === role);
+  const frictions = loaded.frictions.filter(
+    (row) => parseKind(row.kind) !== undefined,
+  );
+  const periodCalls = loaded.calls.filter((group) => group.inPeriod);
+  const calls = ofRole(loaded.calls, (group) => group.role);
+  const roleFrictions = ofRole(frictions, (row) => row.thread.role);
+  const rows = roleFrictions.filter(inPeriod);
+  const compactions = ofRole(
+    loaded.frictions.filter((row) => row.kind === COMPACTION && inPeriod(row)),
+    (row) => row.thread.role,
+  );
+  const bounds = await trendBounds(db, query, loaded, calls);
   return {
     kind,
+    role: role ?? null,
     frictions: ofSelected(rows).length,
-    apiCalls: loaded.calls
+    apiCalls: calls
       .filter((group) => group.inPeriod)
       .reduce((sum, group) => sum + group.calls, 0),
     counts: kindCounts(rows),
-    weeks: weekCounts(loaded.bounds, ofSelected(frictions), loaded.calls),
+    roleOptions: roleOptions(
+      periodCalls,
+      ofSelected(frictions.filter(inPeriod)),
+      role,
+    ),
+    unit: bounds.unit,
+    buckets: bucketCounts(bounds, ofSelected(roleFrictions), calls),
     ...tables(rows, query.kind),
     subject: loaded.subject,
-    ...(await breakdown(db, { query, config, loaded }, rows)),
+    ...(await breakdown(
+      db,
+      { query, config, loaded },
+      { calls, rows, compactions },
+    )),
     projects: loaded.names.options(),
   };
 }

@@ -24,7 +24,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-const TREND = 'Frictions per 100 API calls, by week';
+const TREND = 'Frictions per 100 API calls, by day';
 const TOOL_TABLES = [
   TREND,
   'By category',
@@ -66,23 +66,16 @@ export const SelectEachKind: Story = {
       'By role',
       'Issues with the most frictions',
     ]);
-    await pick(canvasElement, /^Compactions/);
-    await expect(address(canvasElement)).toHaveTextContent(
-      '?period=30d&kind=compaction',
-    );
-    await canvas.findByText('4 frictions · 0.2 per 100 API calls');
-    await expect(tableHeadings(canvasElement)).toEqual([
-      TREND,
-      'Compactions',
-      'By role',
-      'Issues with the most frictions',
-      'Context peaks',
-    ]);
+    await expect(
+      within(canvas.getByRole('group', { name: 'Kind' }))
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual(['All46', 'Tool errors41', 'Stop blocked5']);
     await pick(canvasElement, /^All/);
     await expect(address(canvasElement)).toHaveTextContent('?period=30d');
     await expect(address(canvasElement)).not.toHaveTextContent('kind');
-    await canvas.findByText('50 frictions · 2.4 per 100 API calls');
-    await expect(tableHeadings(canvasElement)).toHaveLength(10);
+    await canvas.findByText('46 frictions · 2.2 per 100 API calls');
+    await expect(tableHeadings(canvasElement)).toHaveLength(9);
   },
 };
 
@@ -102,8 +95,8 @@ export const KindFromAddress: Story = {
 };
 
 export const UnknownKind: Story = {
-  name: 'Unknown kind in the address',
-  parameters: { entry: '/frictions?period=7d&kind=Compaction' },
+  name: 'Compaction or an unknown kind in the address',
+  parameters: { entry: '/frictions?period=7d&kind=compaction' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await frictionsLoaded(canvasElement);
@@ -111,19 +104,22 @@ export const UnknownKind: Story = {
     await expect(
       within(kinds).getByRole('button', { name: /^All/ }),
     ).toHaveAttribute('aria-pressed', 'true');
-    await expect(tableHeadings(canvasElement)).toHaveLength(10);
+    await expect(
+      within(kinds).queryByRole('button', { name: /^Compactions/ }),
+    ).toBeNull();
+    await expect(tableHeadings(canvasElement)).toHaveLength(9);
   },
 };
 
 export const PeriodKeepsKind: Story = {
   name: 'Changing the period keeps the kind',
-  parameters: { entry: '/frictions?period=30d&kind=compaction' },
+  parameters: { entry: '/frictions?period=30d&kind=stop-blocked' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await frictionsLoaded(canvasElement);
     await userEvent.click(canvas.getByRole('button', { name: 'Last 7 days' }));
     await expect(address(canvasElement)).toHaveTextContent(
-      '?period=7d&kind=compaction',
+      '?period=7d&kind=stop-blocked',
     );
   },
 };
@@ -193,6 +189,17 @@ export const At1024: Story = {
   ],
   play: async ({ canvasElement }) => {
     await frictionsLoaded(canvasElement);
-    await expect(tableHeadings(canvasElement)).toHaveLength(10);
+    await expect(tableHeadings(canvasElement)).toHaveLength(9);
+  },
+};
+
+export const LoadingWithFilter: Story = {
+  name: 'Loading a session filter shows no chip yet',
+  args: { loadFrictions: pendingFrictions },
+  parameters: { entry: '/frictions?period=7d&session=s-1' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('Loading…')).toBeVisible();
+    await expect(canvas.queryByText(/^Session:/)).toBeNull();
   },
 };

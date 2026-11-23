@@ -1,18 +1,12 @@
 import type { ReactElement } from 'react';
 import type {
-  CompactionRow,
   FrictionKind,
   FrictionStats,
   HookRow,
 } from '../frictions/types.ts';
 import { NUMERIC_CELL } from './components/DataTable.tsx';
 import { formatCount, formatDateTime } from './format.ts';
-import {
-  TRIGGER_LABELS,
-  compactTokens,
-  hookText,
-  showsKind,
-} from './frictions-view.ts';
+import { hookText, showsKind } from './frictions-view.ts';
 import { PagedTable } from './PagedTable.tsx';
 import type { LinkScope } from './session-links.ts';
 import {
@@ -62,42 +56,6 @@ export function HookTable({
   );
 }
 
-export function CompactionTable({
-  rows,
-}: {
-  rows: readonly CompactionRow[];
-}): ReactElement {
-  return (
-    <PagedTable
-      title="Compactions"
-      rows={rows}
-      className="fd-friction-table"
-      head={
-        <>
-          <th scope="col">Trigger</th>
-          <th scope="col" className={NUMERIC_CELL}>
-            Compactions
-          </th>
-          <th scope="col" className={NUMERIC_CELL}>
-            Median tokens before
-          </th>
-          <th scope="col" className={NUMERIC_CELL}>
-            Threads
-          </th>
-        </>
-      }
-      renderRow={(row) => (
-        <tr key={row.trigger}>
-          <th scope="row">{TRIGGER_LABELS[row.trigger]}</th>
-          <td className={NUMERIC_CELL}>{formatCount(row.compactions)}</td>
-          <td className={NUMERIC_CELL}>{compactTokens(row.medianPreTokens)}</td>
-          <td className={NUMERIC_CELL}>{formatCount(row.threads)}</td>
-        </tr>
-      )}
-    />
-  );
-}
-
 export interface FrictionTablesProps {
   stats: FrictionStats;
   kind: FrictionKind | undefined;
@@ -123,9 +81,6 @@ export function FrictionTables({
       )}
       {toolErrors && <RepeatedTable rows={stats.repeated} scope={scope} />}
       {shown('stop-blocked', stats.hooks) && <HookTable rows={stats.hooks} />}
-      {shown('compaction', stats.compactions) && (
-        <CompactionTable rows={stats.compactions} />
-      )}
     </div>
   );
 }

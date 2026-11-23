@@ -1,9 +1,10 @@
 import type {
   FrictionStats,
   FrictionSubject,
-  FrictionWeek,
+  FrictionBucket,
   FrictionsResponse,
   KindCounts,
+  RoleOption,
 } from '../frictions/types.ts';
 import {
   APP,
@@ -15,47 +16,32 @@ import {
 } from './friction-breakdown-fixtures.ts';
 import type { FrictionFilters, LoadFrictions } from './frictions-api.ts';
 
-const WEEK_STARTS = [
-  '2026-09-07',
-  '2026-09-14',
-  '2026-09-21',
-  '2026-09-28',
-  '2026-10-05',
-  '2026-10-12',
-  '2026-10-19',
-  '2026-10-26',
-  '2026-11-02',
-  '2026-11-09',
-  '2026-11-16',
-  '2026-11-23',
-];
+const FIRST_DAY = Date.UTC(2026, 9, 25);
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function dayStart(index: number): string {
+  return new Date(FIRST_DAY + index * DAY_MS).toISOString().slice(0, 10);
+}
 
 export const LONG_HOOK =
   'node ~/.agents/hooks/check-every-test-lint-and-type-before-the-agent-stops.ts --strict --report=summary';
 
-export function weeksOf(
+export function daysOf(
   counts: readonly (readonly [number, number])[],
-): FrictionWeek[] {
-  return WEEK_STARTS.map((start, index) => {
+): FrictionBucket[] {
+  return Array.from({ length: 30 }, (_, index) => {
     const [frictions, apiCalls] = counts[index] ?? [0, 0];
-    return { start, frictions, apiCalls };
+    return { start: dayStart(index), frictions, apiCalls };
   });
 }
 
-export const fallingWeeks = weeksOf([
-  [30, 900],
-  [28, 950],
-  [26, 1000],
-  [0, 3],
-  [22, 980],
-  [20, 1010],
-  [17, 990],
-  [15, 1020],
-  [12, 1000],
-  [10, 980],
-  [9, 1030],
-  [4, 410],
-]);
+export const fallingDays = daysOf(
+  Array.from({ length: 30 }, (_, index): [number, number] => {
+    if (index === 6) return [0, 0];
+    if (index === 12) return [1, 3];
+    return [Math.max(0, 4 - Math.floor(index / 8)), 60 + (index % 5) * 4];
+  }),
+);
 
 const TOOLS = [
   'Bash',
@@ -75,15 +61,25 @@ const TOOLS = [
 export const allCounts: KindCounts = {
   'tool-error': 41,
   'stop-blocked': 5,
-  compaction: 4,
 };
+
+export const allRoles: RoleOption[] = [
+  { role: 'builder', frictions: 26 },
+  { role: 'reviewer', frictions: 9 },
+  { role: 'main', frictions: 8 },
+  { role: 'shipper', frictions: 0 },
+  { role: 'unassigned', frictions: 3 },
+];
 
 export const frictionStats: FrictionStats = {
   kind: null,
-  frictions: 50,
+  role: null,
+  frictions: 46,
   apiCalls: 2048,
   counts: allCounts,
-  weeks: fallingWeeks,
+  roleOptions: allRoles,
+  unit: 'day',
+  buckets: fallingDays,
   categories: [
     { category: 'command-failed', errors: 22 },
     { category: 'permission-denied', errors: 9 },
@@ -142,10 +138,6 @@ export const frictionStats: FrictionStats = {
       lastAt: '2026-11-20T11:00:00Z',
     },
   ],
-  compactions: [
-    { trigger: 'auto', compactions: 3, medianPreTokens: 306_000, threads: 2 },
-    { trigger: 'manual', compactions: 1, medianPreTokens: null, threads: 1 },
-  ],
   subject: null,
   roles: roleRows,
   issues: issueRows,
@@ -183,9 +175,46 @@ function subjectOf(filters: FrictionFilters): FrictionSubject | null {
   return null;
 }
 
+export function withRole(
+  stats: FrictionStats,
+  role: string | undefined,
+): FrictionStats {
+  if (role === undefined) return stats;
+  const option = stats.roleOptions.find((candidate) => candidate.role === role);
+  if (option === undefined) {
+    return {
+      ...noActivityStats,
+      role,
+      roleOptions: [
+        ...stats.roleOptions.slice(0, -1),
+        { role, frictions: 0 },
+        ...stats.roleOptions.slice(-1),
+      ],
+    };
+  }
+  const blocked = Math.min(1, option.frictions);
+  return {
+    ...stats,
+    role,
+    frictions: option.frictions,
+    apiCalls: Math.round(stats.apiCalls / 2),
+    counts: {
+      'tool-error': option.frictions - blocked,
+      'stop-blocked': blocked,
+    },
+    roles: [],
+    issues: stats.issues.slice(0, 3),
+    context: {
+      ...stats.context,
+      threads: stats.context.threads.slice(0, 2),
+      compacted: 1,
+    },
+  };
+}
+
 export function filteredStats(filters: FrictionFilters): FrictionStats {
   const subject = subjectOf(filters);
-  if (subject === null) return statsFor(filters.kind);
+  if (subject === null) return withRole(statsFor(filters.kind), filters.role);
   const known =
     subject.kind === 'session'
       ? subject.title !== null
@@ -222,7 +251,6 @@ export function statsFor(
     commands: keep('tool-error', stats.commands),
     repeated: keep('tool-error', stats.repeated),
     hooks: keep('stop-blocked', stats.hooks),
-    compactions: keep('compaction', stats.compactions),
     roles: stats.roles.map((row) => ({
       ...row,
       mainKind: row.mainKind === kind ? kind : null,
@@ -244,17 +272,20 @@ export function frictionsLoaderOf(
   stats: FrictionStats = frictionStats,
 ): LoadFrictions {
   return (filters) =>
-    Promise.resolve(okFrictions(statsFor(filters.kind, stats)));
+    Promise.resolve(
+      okFrictions(withRole(statsFor(filters.kind, stats), filters.role)),
+    );
 }
 
 export const noFrictionStats: FrictionStats = {
   ...statsFor('stop-blocked', {
     ...frictionStats,
-    counts: { 'tool-error': 0, 'stop-blocked': 0, compaction: 0 },
+    counts: { 'tool-error': 0, 'stop-blocked': 0 },
   }),
   kind: null,
   frictions: 0,
-  weeks: weeksOf(WEEK_STARTS.map(() => [0, 800])),
+  roleOptions: allRoles.map((option) => ({ ...option, frictions: 0 })),
+  buckets: daysOf(Array.from({ length: 30 }, () => [0, 60])),
   roles: roleRows.map((row) => ({
     ...row,
     frictions: 0,

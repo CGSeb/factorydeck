@@ -38,14 +38,14 @@ async function checkRoles(canvasElement: HTMLElement): Promise<void> {
     '4.3',
     '2.3',
     '1.6',
-    '1.3',
+    '1.0',
     '0.0',
   ]);
   await expect(columnTexts(roles, 4)).toEqual([
     'Tool errors',
     'Tool errors',
     'Stop blocked',
-    'Compactions',
+    'Tool errors',
     '—',
   ]);
 }
@@ -128,13 +128,7 @@ export const OneProject: Story = {
       within(issues)
         .getAllByRole('columnheader')
         .map((cell) => cell.textContent),
-    ).toEqual([
-      'Issue',
-      'Stage',
-      'Frictions',
-      'Repeated failures',
-      'Compactions',
-    ]);
+    ).toEqual(['Issue', 'Stage', 'Frictions', 'Repeated failures']);
   },
 };
 
@@ -153,11 +147,21 @@ export const StopBlockedHidesPeaks: Story = {
 export const SessionFilter: Story = {
   name: 'Filtered on a session',
   parameters: {
-    entry: `/frictions?period=all&project=%2Fwork%2Fapp&session=${BUILD_SESSION}&kind=compaction`,
+    entry: `/frictions?period=all&project=%2Fwork%2Fapp&session=${BUILD_SESSION}&kind=stop-blocked`,
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('Session: Build the frictions page');
+    const chip = await canvas.findByText('Session: Build the frictions page');
+    await expect(
+      canvas
+        .getByRole('group', { name: 'Role' })
+        .compareDocumentPosition(chip) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    await expect(
+      chip.compareDocumentPosition(
+        canvas.getByRole('heading', { name: /^Frictions per 100 API calls/ }),
+      ) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     await expect(canvas.getByRole('table', { name: 'By role' })).toBeVisible();
     await expect(
       canvas.getByRole('table', { name: 'Issues with the most frictions' }),
@@ -166,7 +170,7 @@ export const SessionFilter: Story = {
       canvas.getByRole('button', { name: 'Remove filter' }),
     );
     await expect(address(canvasElement)).toHaveTextContent(
-      '?period=all&project=%2Fwork%2Fapp&kind=compaction',
+      '?period=all&project=%2Fwork%2Fapp&kind=stop-blocked',
     );
     await expect(canvas.queryByText(/^Session:/)).toBeNull();
   },

@@ -44,7 +44,7 @@ export async function frictionsLoaded(
   canvasElement: HTMLElement,
 ): Promise<void> {
   await within(canvasElement).findByRole('heading', {
-    name: 'Frictions per 100 API calls, by week',
+    name: /^Frictions per 100 API calls, by /,
   });
 }
 

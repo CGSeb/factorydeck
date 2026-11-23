@@ -39,8 +39,8 @@ describe('frictions by role', () => {
       {
         role: 'main',
         threads: 2,
-        frictions: 4,
-        perThread: 2,
+        frictions: 3,
+        perThread: 1.5,
         mainKind: 'tool-error',
       },
       {
@@ -53,9 +53,9 @@ describe('frictions by role', () => {
       {
         role: 'reviewer',
         threads: 2,
-        frictions: 1,
-        perThread: 0.5,
-        mainKind: 'compaction',
+        frictions: 0,
+        perThread: 0,
+        mainKind: null,
       },
       {
         role: 'shipper',
@@ -83,7 +83,7 @@ describe('frictions by role', () => {
 });
 
 describe('issues with the most frictions', () => {
-  it('gives each issue its frictions, repeated failures and compactions', async () => {
+  it('gives each issue its frictions and repeated failures, compactions left out', async () => {
     const { issues } = await stats();
     expect(
       issues.map((row) => [
@@ -91,15 +91,14 @@ describe('issues with the most frictions', () => {
         row.number,
         row.frictions,
         row.repeated,
-        row.compactions,
       ]),
     ).toEqual([
-      [APP, 9, 4, 1, 0],
-      [APP, 7, 4, 0, 1],
-      [APP, 22, 1, 0, 1],
-      [APP, 21, 1, 0, 0],
-      [API, 3, 1, 0, 0],
+      [APP, 9, 4, 1],
+      [APP, 7, 3, 0],
+      [APP, 21, 1, 0],
+      [API, 3, 1, 0],
     ]);
+    expect(issues[0]).not.toHaveProperty('compactions');
   });
 
   it('says which issues are found, not found or not collected', async () => {
@@ -121,10 +120,10 @@ describe('issues with the most frictions', () => {
   });
 
   it('keeps only issues with a friction of the kind', async () => {
-    const { issues } = await stats({ kind: 'compaction' });
+    const { issues } = await stats({ kind: 'stop-blocked' });
     expect(issues.map((row) => [row.number, row.frictions])).toEqual([
-      [22, 1],
-      [7, 1],
+      [9, 1],
+      [3, 1],
     ]);
   });
 });

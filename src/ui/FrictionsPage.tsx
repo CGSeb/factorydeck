@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import type { FrictionsResponse } from '../frictions/types.ts';
+import type { FrictionStats, FrictionsResponse } from '../frictions/types.ts';
 import type { Period } from '../overview/types.ts';
 import { FilterPills } from './components/FilterPills.tsx';
 import { PageHeader } from './components/PageHeader.tsx';
@@ -15,12 +15,15 @@ import {
 } from './frictions-api.ts';
 import {
   ALL_KINDS,
+  ALL_ROLES,
   API_CALL_NOUN,
   type KindChoice,
   chipText,
+  frictionBuckets,
   frictionSummary,
+  frictionTrendTitle,
   kindOptions,
-  weekBuckets,
+  roleOptions,
 } from './frictions-view.ts';
 import { FrictionBreakdown } from './FrictionBreakdown.tsx';
 import { FrictionFilterChip } from './FrictionFilterChip.tsx';
@@ -31,28 +34,21 @@ import './frictions-page.css';
 
 export interface FrictionsPageProps {
   loadFrictions: LoadFrictions;
+  now?: Date | undefined;
 }
 
-export const TREND_TITLE = 'Frictions per 100 API calls, by week';
 export const NO_ACTIVITY = 'No activity in this period.';
 export const NO_FRICTION = 'No friction in this period.';
 
-function FrictionsContent({
-  response,
+function FrictionPills({
+  stats,
   filters,
   onFilters,
 }: {
-  response: FrictionsResponse | undefined;
+  stats: FrictionStats;
   filters: FrictionFilters;
   onFilters: (next: FrictionFilters) => void;
 }): ReactElement {
-  if (response === undefined) return <StatusLine>Loading…</StatusLine>;
-  if (response.status === 'unreachable') {
-    return <StatusLine>{UNREACHABLE_MESSAGE}</StatusLine>;
-  }
-  const { frictions: stats } = response;
-  if (stats.apiCalls === 0) return <StatusLine>{NO_ACTIVITY}</StatusLine>;
-  const scope = { project: filters.project, period: filters.period };
   return (
     <>
       <FilterPills<KindChoice>
@@ -66,10 +62,39 @@ function FrictionsContent({
           });
         }}
       />
-      <Panel heading={TREND_TITLE}>
+      <FilterPills<string>
+        label="Role"
+        options={roleOptions(stats.roleOptions)}
+        value={filters.role ?? ALL_ROLES}
+        onChange={(role) => {
+          onFilters({
+            ...filters,
+            role: role === ALL_ROLES ? undefined : role,
+          });
+        }}
+      />
+    </>
+  );
+}
+
+function FrictionsContent({
+  stats,
+  filters,
+  now,
+}: {
+  stats: FrictionStats;
+  filters: FrictionFilters;
+  now: Date;
+}): ReactElement {
+  if (stats.apiCalls === 0) return <StatusLine>{NO_ACTIVITY}</StatusLine>;
+  const scope = { project: filters.project, period: filters.period };
+  const title = frictionTrendTitle(stats.unit);
+  return (
+    <>
+      <Panel heading={title}>
         <TrendBars
-          label={TREND_TITLE}
-          buckets={weekBuckets(stats.weeks)}
+          label={title}
+          buckets={frictionBuckets(stats, now)}
           scale="count"
           color="var(--fd-warning)"
           height={64}
@@ -96,18 +121,59 @@ function FrictionsContent({
   );
 }
 
+function FrictionsBody({
+  response,
+  filters,
+  onFilters,
+  now,
+}: {
+  response: FrictionsResponse | undefined;
+  filters: FrictionFilters;
+  onFilters: (next: FrictionFilters) => void;
+  now: Date;
+}): ReactElement {
+  const chip = chipText(
+    filters,
+    response?.status === 'ok' ? response.frictions.subject : undefined,
+  );
+  const chipElement =
+    chip === null ? null : (
+      <FrictionFilterChip
+        text={chip}
+        onRemove={() => {
+          onFilters(withoutFilter(filters));
+        }}
+      />
+    );
+  if (response?.status !== 'ok') {
+    return (
+      <StatusLine>
+        {response === undefined ? 'Loading…' : UNREACHABLE_MESSAGE}
+      </StatusLine>
+    );
+  }
+  const { frictions: stats } = response;
+  const withFilters = stats.apiCalls > 0 || stats.role !== null;
+  return (
+    <>
+      {withFilters && (
+        <FrictionPills stats={stats} filters={filters} onFilters={onFilters} />
+      )}
+      {chipElement}
+      <FrictionsContent stats={stats} filters={filters} now={now} />
+    </>
+  );
+}
+
 export function FrictionsPage({
   loadFrictions,
+  now = new Date(),
 }: FrictionsPageProps): ReactElement {
   const [filters, setFilters] = useFrictionFilters();
   const response = useRefreshing(
     JSON.stringify(filters),
     () => loadFrictions(filters),
     'frictions',
-  );
-  const chip = chipText(
-    filters,
-    response?.status === 'ok' ? response.frictions.subject : undefined,
   );
   return (
     <div className="fd-frictions">
@@ -126,18 +192,11 @@ export function FrictionsPage({
           />
         }
       />
-      {chip === null ? null : (
-        <FrictionFilterChip
-          text={chip}
-          onRemove={() => {
-            setFilters(withoutFilter(filters));
-          }}
-        />
-      )}
-      <FrictionsContent
+      <FrictionsBody
         response={response}
         filters={filters}
         onFilters={setFilters}
+        now={now}
       />
     </div>
   );

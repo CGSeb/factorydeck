@@ -157,7 +157,7 @@ export const Frictions: Story = {
     await canvas.findByRole('heading', { level: 1, name: 'Frictions' });
     await expect(
       await canvas.findByRole('heading', {
-        name: 'Frictions per 100 API calls, by week',
+        name: 'Frictions per 100 API calls, by day',
       }),
     ).toBeVisible();
   },

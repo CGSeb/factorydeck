@@ -40,22 +40,22 @@ describe('a session filter', () => {
       title: '',
       agent: 'claude-code',
     });
-    expect(result.frictions).toBe(2);
+    expect(result.frictions).toBe(1);
     expect(result.apiCalls).toBe(2);
     expect(
       result.roles.map((row) => [row.role, row.threads, row.frictions]),
     ).toEqual([
       ['builder', 1, 1],
-      ['reviewer', 1, 1],
+      ['reviewer', 1, 0],
     ]);
-    expect(result.issues.map((row) => row.number)).toEqual([22, 21]);
+    expect(result.issues.map((row) => row.number)).toEqual([21]);
     expect(result.context.threads.map((thread) => thread.peak)).toEqual([
       70_000,
     ]);
     expect(result.context.compacted).toBe(1);
-    expect(result.weeks.at(-1)).toEqual({
+    expect(result.buckets.at(-3)).toEqual({
       start: '2026-03-16',
-      frictions: 2,
+      frictions: 1,
       apiCalls: 2,
     });
   });
@@ -87,13 +87,13 @@ describe('an issue filter', () => {
         url: 'https://git.example/app/issues/7',
       },
     });
-    expect(result.frictions).toBe(4);
+    expect(result.frictions).toBe(3);
     expect(result.apiCalls).toBe(4);
     expect(result.issues).toEqual([]);
     expect(
       result.roles.map((row) => [row.role, row.threads, row.frictions]),
     ).toEqual([
-      ['main', 1, 3],
+      ['main', 1, 2],
       ['unassigned', 1, 1],
       ['reviewer', 1, 0],
     ]);
@@ -103,15 +103,10 @@ describe('an issue filter', () => {
         .sort((left, right) => left - right),
     ).toEqual([10_000, 20_000, 30_000]);
     expect(result.context.compacted).toBe(1);
-    expect(result.weeks.at(-2)).toEqual({
-      start: '2026-03-09',
-      frictions: 0,
-      apiCalls: 0,
-    });
-    expect(result.weeks.at(-3)).toEqual({
-      start: '2026-03-02',
-      frictions: 1,
-      apiCalls: 1,
+    expect(result.buckets.at(-3)).toEqual({
+      start: '2026-03-16',
+      frictions: 3,
+      apiCalls: 4,
     });
   });
 
@@ -154,7 +149,7 @@ describe('issueFrictionCount', () => {
         { project: APP, number: 7 },
         week,
       ),
-    ).toBe(4);
+    ).toBe(3);
     expect(
       await issueFrictionCount(
         db,
@@ -162,7 +157,7 @@ describe('issueFrictionCount', () => {
         { project: APP, number: 7 },
         null,
       ),
-    ).toBe(5);
+    ).toBe(4);
     expect(
       await issueFrictionCount(
         db,
@@ -180,7 +175,7 @@ describe('the friction counts of the detail APIs', () => {
   it('gives a session every friction of its life, sub-agents included', async () => {
     expect(
       (await sessionDetail(db, 's-main', state, DEFAULT_CONFIG))?.frictions,
-    ).toBe(9);
+    ).toBe(8);
     expect(
       (await sessionDetail(db, 's-api', state, DEFAULT_CONFIG))?.frictions,
     ).toBe(1);
@@ -190,11 +185,11 @@ describe('the friction counts of the detail APIs', () => {
     const context = { config: DEFAULT_CONFIG, state };
     const key = { project: APP, number: 7 };
     const week = { period: '7d', timeZone: 'UTC', now: NOW } as const;
-    expect((await featureDetail(db, key, week, context))?.frictions).toBe(4);
+    expect((await featureDetail(db, key, week, context))?.frictions).toBe(3);
     expect(
       (await featureDetail(db, key, { ...week, period: 'all' }, context))
         ?.frictions,
-    ).toBe(5);
+    ).toBe(4);
     expect(
       (await featureDetail(db, { project: APP, number: 21 }, week, context))
         ?.frictions,

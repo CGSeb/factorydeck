@@ -13,12 +13,13 @@ describe('frictionFiltersOf', () => {
     ['', undefined],
     ['kind=tool-error', 'tool-error'],
     ['kind=stop-blocked', 'stop-blocked'],
-    ['kind=compaction', 'compaction'],
+    ['kind=compaction', undefined],
     ['kind=', undefined],
     ['kind=all', undefined],
     ['kind=Compaction', undefined],
     ['kind=tool_error', undefined],
-    ['kind=compaction&kind=tool-error', 'compaction'],
+    ['kind=compaction&kind=tool-error', undefined],
+    ['kind=stop-blocked&kind=tool-error', 'stop-blocked'],
     ['kind=nope&kind=tool-error', undefined],
   ])('reads ?%s as the kind %s', (search, kind) => {
     expect(frictionFiltersOf(new URLSearchParams(search)).kind).toBe(kind);
@@ -27,14 +28,56 @@ describe('frictionFiltersOf', () => {
   it('reads the period and project next to the kind', () => {
     expect(
       frictionFiltersOf(
-        new URLSearchParams('period=30d&project=%2Fwork%2Fapp&kind=compaction'),
+        new URLSearchParams(
+          'period=30d&project=%2Fwork%2Fapp&kind=tool-error&role=builder',
+        ),
       ),
-    ).toEqual({ period: '30d', project: '/work/app', kind: 'compaction' });
+    ).toEqual({
+      period: '30d',
+      project: '/work/app',
+      kind: 'tool-error',
+      role: 'builder',
+    });
     expect(frictionFiltersOf(new URLSearchParams('period=year'))).toEqual({
       period: '7d',
       project: undefined,
       kind: undefined,
     });
+  });
+});
+
+describe('the role parameter', () => {
+  it.each([
+    ['', undefined],
+    ['role=builder', 'builder'],
+    ['role=unassigned', 'unassigned'],
+    ['role=Builder', 'Builder'],
+    ['role=%20builder', ' builder'],
+    ['role=all', 'all'],
+    ['role=', undefined],
+    ['role=reviewer&role=builder', 'reviewer'],
+    ['role=&role=builder', undefined],
+  ])('reads ?%s as the role %s', (search, role) => {
+    expect(frictionFiltersOf(new URLSearchParams(search)).role).toBe(role);
+  });
+
+  it('writes the role, removes it for All, and keeps it when the chip is removed', () => {
+    const filters = frictionFiltersOf(
+      new URLSearchParams('period=7d&role=builder&session=s-1'),
+    );
+    expect(frictionParams(filters).toString()).toBe(
+      'period=7d&role=builder&session=s-1',
+    );
+    expect(frictionParams(withoutFilter(filters)).toString()).toBe(
+      'period=7d&role=builder',
+    );
+    expect(
+      frictionParams({
+        ...filters,
+        role: undefined,
+        session: undefined,
+      }).toString(),
+    ).toBe('period=7d');
   });
 });
 
@@ -63,14 +106,14 @@ describe('the session and issue parameters', () => {
   it('writes them back, and drops them with the chip', () => {
     const issue = frictionFiltersOf(
       new URLSearchParams(
-        'period=30d&project=%2Fwork%2Fapp&issue=12&kind=compaction',
+        'period=30d&project=%2Fwork%2Fapp&issue=12&kind=stop-blocked',
       ),
     );
     expect(frictionParams(issue).toString()).toBe(
-      'period=30d&project=%2Fwork%2Fapp&kind=compaction&issue=12',
+      'period=30d&project=%2Fwork%2Fapp&kind=stop-blocked&issue=12',
     );
     expect(frictionParams(withoutFilter(issue)).toString()).toBe(
-      'period=30d&project=%2Fwork%2Fapp&kind=compaction',
+      'period=30d&project=%2Fwork%2Fapp&kind=stop-blocked',
     );
   });
 
@@ -121,7 +164,12 @@ describe('frictionsLoader', () => {
       () => 'Europe/Paris',
     );
     await expect(
-      load({ period: '30d', project: '/work/app', kind: 'compaction' }),
+      load({
+        period: '30d',
+        project: '/work/app',
+        kind: 'tool-error',
+        role: 'builder',
+      }),
     ).resolves.toEqual(body);
     await load({ period: '7d', project: undefined, kind: undefined });
     await load({
@@ -137,7 +185,7 @@ describe('frictionsLoader', () => {
       session: 's-1',
     });
     expect(urls).toEqual([
-      '/api/frictions?period=30d&tz=Europe%2FParis&project=%2Fwork%2Fapp&kind=compaction',
+      '/api/frictions?period=30d&tz=Europe%2FParis&project=%2Fwork%2Fapp&kind=tool-error&role=builder',
       '/api/frictions?period=7d&tz=Europe%2FParis',
       '/api/frictions?period=7d&tz=Europe%2FParis&project=%2Fwork%2Fapp&issue=12',
       '/api/frictions?period=all&tz=Europe%2FParis&session=s-1',

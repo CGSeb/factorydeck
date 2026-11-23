@@ -1,8 +1,6 @@
 import {
   type CategoryRow,
   type CommandRow,
-  type CompactionRow,
-  type CompactionTrigger,
   FRICTION_CATEGORIES,
   FRICTION_KINDS,
   type FrictionCategory,
@@ -67,7 +65,6 @@ export function kindCounts(rows: readonly FrictionRow[]): KindCounts {
   const counts: KindCounts = {
     'tool-error': 0,
     'stop-blocked': 0,
-    compaction: 0,
   };
   for (const row of rows) {
     const kind = FRICTION_KINDS.find((candidate) => candidate === row.kind);
@@ -197,30 +194,4 @@ export function median(values: readonly number[]): number | null {
   const upper = ordered[middle] ?? 0;
   if (ordered.length % 2 === 1) return upper;
   return Math.round(((ordered[middle - 1] ?? 0) + upper) / 2);
-}
-
-function triggerOf(value: string | null): CompactionTrigger {
-  return value === 'auto' || value === 'manual' ? value : 'other';
-}
-
-export function compactionRows(
-  compactions: readonly FrictionRow[],
-): CompactionRow[] {
-  const groups = groupBy(compactions, (row) => triggerOf(row.trigger));
-  return (['auto', 'manual', 'other'] as const).flatMap((trigger) => {
-    const rows = groups.get(trigger) ?? [];
-    if (rows.length === 0) return [];
-    return [
-      {
-        trigger,
-        compactions: rows.length,
-        medianPreTokens: median(
-          rows.flatMap((row) =>
-            row.preTokens === null ? [] : [row.preTokens],
-          ),
-        ),
-        threads: distinct(rows, threadKey),
-      },
-    ];
-  });
 }

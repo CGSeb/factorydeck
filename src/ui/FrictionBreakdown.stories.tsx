@@ -129,3 +129,23 @@ export const ManyRoles: Story = {
     ).toBeNull();
   },
 };
+
+export const RoleSelected: Story = {
+  name: 'A role selected leaves By role out',
+  args: { stats: { ...frictionStats, role: 'builder', roles: [] } },
+  play: async ({ canvasElement }) => {
+    await expect(tableHeadings(canvasElement)).toEqual([
+      'Issues with the most frictions',
+      'Context peaks',
+    ]);
+  },
+};
+
+export const RoleWithoutIssues: Story = {
+  name: 'A role selected and no issue leaves no empty block',
+  args: { stats: { ...frictionStats, role: 'builder', roles: [], issues: [] } },
+  play: async ({ canvasElement }) => {
+    await expect(tableHeadings(canvasElement)).toEqual(['Context peaks']);
+    await expect(canvasElement.querySelector('.fd-friction-tables')).toBeNull();
+  },
+};
