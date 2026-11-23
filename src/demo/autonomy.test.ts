@@ -59,17 +59,26 @@ describe('demo autonomy', () => {
     expect(share(autonomy.buckets.slice(6))).toBeGreaterThan(
       share(autonomy.buckets.slice(0, 6)),
     );
-    const { specQuestion, belowThreshold, gatesFailed, autoMergeOff, total } =
-      autonomy.reasons;
-    for (const count of [specQuestion, belowThreshold, gatesFailed]) {
+    const { total, roundsSum, roundsCount, ...rows } = autonomy.reasons;
+    for (const count of Object.values(rows)) {
       expect(count).toBeGreaterThan(0);
     }
-    expect(autoMergeOff).toBeGreaterThan(0);
-    expect(
-      specQuestion + belowThreshold + gatesFailed + autoMergeOff,
-    ).toBeGreaterThan(total);
-    expect(autonomy.waitingNow).toBe(2);
-    expect(autonomy.current.answeredWaitsMs.length).toBeGreaterThan(5);
+    expect(Object.values(rows).reduce((sum, count) => sum + count, 0)).toBe(
+      total,
+    );
+    expect(roundsCount).toBeGreaterThan(0);
+    expect(roundsSum).toBeGreaterThan(roundsCount);
+    expect(autonomy.waitingNow).toBe(3);
+    expect(autonomy.current.stopWaitsMs.length).toBeGreaterThan(5);
+  });
+
+  it('answers at least 5 stops in the last 7 days', async () => {
+    const week = await autonomyStats(
+      db,
+      { period: '7d', timeZone: 'UTC', now: NOW },
+      hasFactory,
+    );
+    expect(week.current.stopWaitsMs.length).toBeGreaterThanOrEqual(5);
   });
 
   it('merges at least 5 issues on one of the last 7 days and 3 in one hour of today', async () => {

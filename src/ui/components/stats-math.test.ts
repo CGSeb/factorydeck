@@ -86,6 +86,33 @@ describe('changeText', () => {
     ).toMatchObject({ direction: 'down', amount: '18%', tone: 'worse' });
   });
 
+  it('gives a points change in whole points of the unrounded difference, from a previous zero', () => {
+    expect(
+      changeText({ ...base, kind: 'points', value: 12.4, previous: 8.6 }),
+    ).toMatchObject({
+      direction: 'up',
+      amount: '4 pts',
+      tone: 'better',
+      text: '▲ 4 pts vs previous 30 days',
+    });
+    expect(
+      changeText({ ...base, kind: 'points', value: 3, previous: 0 })?.text,
+    ).toBe('▲ 3 pts vs previous 30 days');
+    expect(
+      changeText({ ...base, kind: 'points', value: -2, previous: 9 })?.text,
+    ).toBe('▼ 11 pts vs previous 30 days');
+  });
+
+  it('reads a negative zero points change as no change', () => {
+    expect(
+      changeText({ ...base, kind: 'points', value: 4.7, previous: 5 }),
+    ).toMatchObject({
+      direction: null,
+      tone: 'none',
+      text: 'No change vs previous 30 days',
+    });
+  });
+
   it('treats a fall as better when lower is better', () => {
     expect(
       changeText({

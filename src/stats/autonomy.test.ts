@@ -188,21 +188,25 @@ describe('autonomy stats', () => {
       merged: 6,
       mergedWithoutPerson: 3,
       mergedAfterQuestion: 1,
-      answeredWaitsMs: [24 * HOUR, 54 * HOUR],
+      stopWaitsMs: [2 * HOUR, 22 * HOUR, 24 * HOUR, 54 * HOUR],
     });
     expect(autonomy.previous).toEqual({
       merged: 1,
       mergedWithoutPerson: 1,
       mergedAfterQuestion: 0,
-      answeredWaitsMs: [3 * HOUR],
+      stopWaitsMs: [3 * HOUR],
     });
     expect(autonomy.waitingNow).toBe(1);
     expect(autonomy.reasons).toEqual({
-      specQuestion: 1,
-      belowThreshold: 1,
+      below1To5: 0,
+      below6To15: 0,
+      below16Plus: 1,
       gatesFailed: 1,
+      specQuestion: 0,
       autoMergeOff: 1,
       total: 3,
+      roundsSum: 2,
+      roundsCount: 2,
     });
   });
 
@@ -211,11 +215,15 @@ describe('autonomy stats', () => {
     expect(autonomy.current.merged).toBe(1);
     expect(autonomy.current.mergedWithoutPerson).toBe(0);
     expect(autonomy.reasons).toEqual({
-      specQuestion: 0,
-      belowThreshold: 0,
+      below1To5: 0,
+      below6To15: 0,
+      below16Plus: 0,
       gatesFailed: 0,
+      specQuestion: 0,
       autoMergeOff: 1,
       total: 1,
+      roundsSum: 0,
+      roundsCount: 0,
     });
     expect(autonomy.waitingNow).toBe(0);
   });
@@ -223,7 +231,7 @@ describe('autonomy stats', () => {
   it('takes every merge for all time, with no previous period', async () => {
     const autonomy = await stats('all');
     expect(autonomy.current.merged).toBe(8);
-    expect(autonomy.current.answeredWaitsMs).toHaveLength(4);
+    expect(autonomy.current.stopWaitsMs).toHaveLength(6);
     expect(autonomy).not.toHaveProperty('previous');
   });
 
@@ -231,7 +239,7 @@ describe('autonomy stats', () => {
     const autonomy = await stats('today');
     expect(autonomy.current.merged).toBe(0);
     expect(autonomy.previous?.merged).toBe(0);
-    expect(autonomy.previous?.answeredWaitsMs).toEqual([24 * HOUR]);
+    expect(autonomy.previous?.stopWaitsMs).toEqual([24 * HOUR]);
   });
 
   it('counts all time by week, from the week of the first merge, the current one last', async () => {

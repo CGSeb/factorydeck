@@ -3,7 +3,9 @@ import type { Database } from '../db/client.ts';
 import { collect } from '../git-host/collect.ts';
 import { hasFactory } from '../ingest/factory.ts';
 import { ingest } from '../ingest/ingest.ts';
+import { outcomeOf } from '../git-host/query.ts';
 import { loadIssues } from '../stats/autonomy.ts';
+import { storedReports } from '../stats/stops.ts';
 import { firstReport, qualityFacts, qualityStats } from '../stats/quality.ts';
 import { createTestDatabase } from '../test/postgres.ts';
 import { sessionsFolder } from '../test/session-logs.ts';
@@ -31,6 +33,7 @@ describe('demo quality', () => {
     const merged = (
       await loadIssues(db, undefined, hasFactory, (issue, requests, state) => ({
         facts: qualityFacts(issue, requests, state),
+        reworked: outcomeOf(issue, requests, state).reworked,
         first: firstReport(requests),
         reopened: issue.reopened,
         requests: requests.length,
@@ -49,22 +52,53 @@ describe('demo quality', () => {
       new Set([1, 2, 3]),
     );
     expect(
-      merged.filter(({ facts, requests }) => facts.reworked && requests > 1)
+      merged.filter(({ reworked, requests }) => reworked && requests > 1)
         .length,
     ).toBeGreaterThanOrEqual(2);
+    expect(merged.some(({ reworked, reopened }) => reworked && reopened)).toBe(
+      true,
+    );
+  });
+
+  it('has issues with one, two and three reports whose score rises, and one whose score falls', async () => {
+    const merged = (
+      await loadIssues(db, undefined, hasFactory, (issue, requests, state) => ({
+        facts: qualityFacts(issue, requests, state),
+        reports: storedReports(requests).length,
+      }))
+    ).filter(({ facts }) => facts.mergedAt !== null);
+    expect(merged.some(({ reports }) => reports === 1)).toBe(true);
+    for (const count of [2, 3]) {
+      expect(
+        merged.some(
+          ({ facts, reports }) =>
+            reports === count && facts.gain !== null && facts.gain > 0,
+        ),
+      ).toBe(true);
+    }
     expect(
-      merged.some(({ facts, reopened }) => facts.reworked && reopened),
+      merged.some(({ facts }) => facts.gain !== null && facts.gain < 0),
     ).toBe(true);
   });
 
   it('closes about 5 issues without merge over the 12 weeks', async () => {
+    const closed = (
+      await loadIssues(
+        db,
+        undefined,
+        hasFactory,
+        (issue, requests, state) =>
+          qualityFacts(issue, requests, state).stage === 'closed' &&
+          issue.closedAt !== null,
+      )
+    ).filter(Boolean).length;
+    expect(closed).toBeGreaterThanOrEqual(5);
+    expect(closed).toBeLessThanOrEqual(7);
     const quality = await qualityStats(
       db,
       { period: 'all', timeZone: 'UTC', now: NOW },
       hasFactory,
     );
-    expect(quality.current.closedWithoutMerge).toBeGreaterThanOrEqual(5);
-    expect(quality.current.closedWithoutMerge).toBeLessThanOrEqual(7);
     expect(quality.current.firstPassed).toBeLessThan(
       quality.current.mergedWithReport,
     );

@@ -46,7 +46,9 @@ function merged(at: string, stage: IssueFacts['stage'] = 'merged'): IssueFacts {
     stage,
     mergedAt: Date.parse(at),
     episodes: [],
-    reasons: [],
+    stops: [],
+    row: null,
+    rounds: [],
   };
 }
 

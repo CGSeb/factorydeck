@@ -10,7 +10,7 @@ export interface Noun {
   other: string;
 }
 
-export type FigureKind = 'share' | 'amount';
+export type FigureKind = 'share' | 'amount' | 'points';
 export type BetterDirection = 'higher' | 'lower';
 
 export interface ChangeInput {
@@ -116,7 +116,9 @@ export function changeText(input: ChangeInput): Change | null {
   const raw =
     kind === 'share'
       ? (value - previous) * 100
-      : ((value - previous) / previous) * 100;
+      : kind === 'points'
+        ? value - previous
+        : ((value - previous) / previous) * 100;
   const rounded = Math.round(raw);
   if (rounded === 0) {
     return {

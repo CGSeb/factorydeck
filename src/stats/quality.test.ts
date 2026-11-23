@@ -222,7 +222,7 @@ function stats(period: 'today' | '7d' | '30d' | 'all', project?: string) {
 }
 
 describe('quality stats', () => {
-  it('counts first reports, rounds, rework and ended issues of the period across factory projects', async () => {
+  it('counts first reports, rounds and score gains of the period across factory projects', async () => {
     const quality = await stats('7d');
     expect(quality.current).toEqual({
       merged: 5,
@@ -230,9 +230,8 @@ describe('quality stats', () => {
       firstPassed: 2,
       roundsSum: 6,
       roundsCount: 3,
-      reworked: 2,
-      ended: 6,
-      closedWithoutMerge: 1,
+      gainSum: 30,
+      gainCount: 3,
     });
   });
 
@@ -244,9 +243,8 @@ describe('quality stats', () => {
       firstPassed: 1,
       roundsSum: 1,
       roundsCount: 1,
-      reworked: 0,
-      ended: 2,
-      closedWithoutMerge: 1,
+      gainSum: 0,
+      gainCount: 0,
     });
   });
 
@@ -266,12 +264,11 @@ describe('quality stats', () => {
       merged: 1,
       mergedWithReport: 1,
       firstPassed: 1,
-      ended: 1,
-      closedWithoutMerge: 0,
+      gainCount: 0,
     });
   });
 
-  it('takes every issue for all time, with no previous period, leaving out a close without time', async () => {
+  it('takes every issue for all time, with no previous period', async () => {
     const quality = await stats('all');
     expect(quality.current).toEqual({
       merged: 7,
@@ -279,9 +276,8 @@ describe('quality stats', () => {
       firstPassed: 3,
       roundsSum: 8,
       roundsCount: 5,
-      reworked: 2,
-      ended: 10,
-      closedWithoutMerge: 3,
+      gainSum: 30,
+      gainCount: 3,
     });
     expect(quality).not.toHaveProperty('previous');
   });
@@ -289,7 +285,6 @@ describe('quality stats', () => {
   it('has no merged issue today', async () => {
     const quality = await stats('today');
     expect(quality.current.merged).toBe(0);
-    expect(quality.current.ended).toBe(0);
     expect(quality.firstReports).toEqual([]);
   });
 

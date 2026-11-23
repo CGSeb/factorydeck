@@ -3,13 +3,20 @@ import type { Database } from '../db/client.ts';
 import { gitHostIssue, gitHostProject, gitHostRequest } from '../db/schema.ts';
 import type { Period } from '../overview/types.ts';
 import { needsSpecEpisodes } from '../git-host/milestones.ts';
-import { refusalReasons } from '../git-host/outcome.ts';
 import {
   type IssueRow,
   type RequestRow,
   outcomeOf,
 } from '../git-host/query.ts';
 import type { IssueStage } from '../git-host/types.ts';
+import {
+  type HelpRow,
+  type Stop,
+  helpRow,
+  refusing,
+  reportStops,
+  storedReports,
+} from './stops.ts';
 import type {
   AutonomyCounts,
   AutonomyReasons,
@@ -32,15 +39,14 @@ export interface Episode {
   removedAt: number | null;
 }
 
-export type PersonReason =
-  'spec-question' | 'below-threshold' | 'gates-failed' | 'auto-merge-off';
-
 export interface IssueFacts {
   open: boolean;
   stage: IssueStage;
   mergedAt: number | null;
   episodes: Episode[];
-  reasons: PersonReason[];
+  stops: Stop[];
+  row: HelpRow | null;
+  rounds: number[];
 }
 
 export interface Window {
@@ -68,31 +74,6 @@ export function mergeTime(requests: readonly RequestRow[]): number | null {
   return found;
 }
 
-function reasonsOf(
-  {
-    stage,
-    mergedAt,
-    episodes,
-  }: { stage: IssueStage; mergedAt: number; episodes: readonly Episode[] },
-  requests: readonly RequestRow[],
-  autoMerge: boolean | null,
-): PersonReason[] {
-  const reasons = new Set<PersonReason>();
-  if (episodes.some((episode) => episode.at < mergedAt)) {
-    reasons.add('spec-question');
-  }
-  for (const request of requests) {
-    for (const report of request.reports) {
-      if (time(report.at) >= mergedAt) continue;
-      for (const reason of refusalReasons(report, null)) reasons.add(reason);
-    }
-  }
-  if (stage === 'merged-by-person' && autoMerge === false) {
-    reasons.add('auto-merge-off');
-  }
-  return [...reasons];
-}
-
 export function issueFacts(
   issue: IssueRow,
   requests: RequestRow[],
@@ -107,15 +88,30 @@ export function issueFacts(
     removedAt: episode.removedAt === null ? null : time(episode.removedAt),
   }));
   const mergedAt = MERGED_STAGES.has(stage) ? mergeTime(requests) : null;
+  const open = issue.state !== 'closed';
+  const reports = storedReports(requests);
+  const closedAt =
+    open || issue.closedAt === null ? null : issue.closedAt.getTime();
+  const helped = mergedAt !== null && stage !== 'merged';
+  const refused = helped
+    ? reports.filter((report) => refusing(report) && time(report.at) < mergedAt)
+    : [];
   return {
-    open: issue.state !== 'closed',
+    open,
     stage,
     mergedAt,
     episodes,
-    reasons:
-      mergedAt === null || stage === 'merged'
-        ? []
-        : reasonsOf({ stage, mergedAt, episodes }, requests, state.autoMerge),
+    stops: [
+      ...episodes.map((episode) => ({
+        at: episode.at,
+        end: episode.removedAt,
+      })),
+      ...reportStops(reports, mergedAt, closedAt),
+    ],
+    row: helped ? helpRow(refused, episodes, mergedAt) : null,
+    rounds: refused.flatMap((report) =>
+      report.rounds === null ? [] : [report.rounds],
+    ),
   };
 }
 
@@ -143,11 +139,11 @@ export function autonomyCounts(
         (episode) => issue.mergedAt !== null && episode.at < issue.mergedAt,
       ),
     ).length,
-    answeredWaitsMs: issues
-      .flatMap((issue) => issue.episodes)
-      .flatMap((episode) =>
-        episode.removedAt !== null && inside(episode.removedAt, window)
-          ? [episode.removedAt - episode.at]
+    stopWaitsMs: issues
+      .flatMap((issue) => issue.stops)
+      .flatMap((stop) =>
+        stop.end !== null && inside(stop.end, window)
+          ? [stop.end - stop.at]
           : [],
       )
       .sort((a, b) => a - b),
@@ -156,7 +152,7 @@ export function autonomyCounts(
 
 export function waitingNow(issues: readonly IssueFacts[]): number {
   return issues.filter(
-    (issue) => issue.open && issue.episodes.at(-1)?.removedAt === null,
+    (issue) => issue.open && issue.stops.some((stop) => stop.end === null),
   ).length;
 }
 
@@ -164,17 +160,20 @@ export function reasonCounts(
   issues: readonly IssueFacts[],
   window: Window,
 ): AutonomyReasons {
-  const helped = mergedIn(issues, window).filter(
-    (issue) => issue.stage !== 'merged',
-  );
-  const count = (reason: PersonReason): number =>
-    helped.filter((issue) => issue.reasons.includes(reason)).length;
+  const helped = mergedIn(issues, window).filter((issue) => issue.row !== null);
+  const count = (row: HelpRow): number =>
+    helped.filter((issue) => issue.row === row).length;
+  const rounds = helped.flatMap((issue) => issue.rounds);
   return {
-    specQuestion: count('spec-question'),
-    belowThreshold: count('below-threshold'),
+    below1To5: count('below-1-5'),
+    below6To15: count('below-6-15'),
+    below16Plus: count('below-16'),
     gatesFailed: count('gates-failed'),
+    specQuestion: count('spec-question'),
     autoMergeOff: count('auto-merge-off'),
     total: helped.length,
+    roundsSum: rounds.reduce((sum, value) => sum + value, 0),
+    roundsCount: rounds.length,
   };
 }
 

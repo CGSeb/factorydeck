@@ -56,40 +56,48 @@ export const risingWeeks = weeksOf([
 export const emptyWeeks = weeksOf([]);
 
 export const someReasons: AutonomyReasons = {
-  specQuestion: 3,
-  belowThreshold: 2,
+  below1To5: 2,
+  below6To15: 3,
+  below16Plus: 1,
   gatesFailed: 1,
+  specQuestion: 2,
   autoMergeOff: 1,
-  total: 6,
+  total: 10,
+  roundsSum: 11,
+  roundsCount: 6,
 };
 
 export const noReasons: AutonomyReasons = {
-  specQuestion: 0,
-  belowThreshold: 0,
+  below1To5: 0,
+  below6To15: 0,
+  below16Plus: 0,
   gatesFailed: 0,
+  specQuestion: 0,
   autoMergeOff: 0,
   total: 0,
+  roundsSum: 0,
+  roundsCount: 0,
 };
 
 export const monthCounts: AutonomyCounts = {
   merged: 24,
   mergedWithoutPerson: 18,
   mergedAfterQuestion: 6,
-  answeredWaitsMs: [2, 3, 3.1, 5, 7, 28].map((hours) => hours * HOUR),
+  stopWaitsMs: [2, 3, 3.1, 5, 7, 28].map((hours) => hours * HOUR),
 };
 
 export const previousMonthCounts: AutonomyCounts = {
   merged: 20,
   mergedWithoutPerson: 11,
   mergedAfterQuestion: 7,
-  answeredWaitsMs: [4, 6, 9, 26, 30].map((hours) => hours * HOUR),
+  stopWaitsMs: [4, 6, 9, 26, 30].map((hours) => hours * HOUR),
 };
 
 export const noCounts: AutonomyCounts = {
   merged: 0,
   mergedWithoutPerson: 0,
   mergedAfterQuestion: 0,
-  answeredWaitsMs: [],
+  stopWaitsMs: [],
 };
 
 export function autonomyOf(
@@ -158,9 +166,8 @@ export const monthQuality: QualityCounts = {
   firstPassed: 15,
   roundsSum: 31,
   roundsCount: 22,
-  reworked: 5,
-  ended: 28,
-  closedWithoutMerge: 4,
+  gainSum: 108,
+  gainCount: 9,
 };
 
 export const previousMonthQuality: QualityCounts = {
@@ -169,9 +176,8 @@ export const previousMonthQuality: QualityCounts = {
   firstPassed: 10,
   roundsSum: 32,
   roundsCount: 18,
-  reworked: 6,
-  ended: 23,
-  closedWithoutMerge: 3,
+  gainSum: 56,
+  gainCount: 7,
 };
 
 export const noQuality: QualityCounts = {
@@ -180,9 +186,8 @@ export const noQuality: QualityCounts = {
   firstPassed: 0,
   roundsSum: 0,
   roundsCount: 0,
-  reworked: 0,
-  ended: 0,
-  closedWithoutMerge: 0,
+  gainSum: 0,
+  gainCount: 0,
 };
 
 export const mixedFirstReports: FirstReport[] = [

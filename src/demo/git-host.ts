@@ -33,6 +33,14 @@ export function reportComments(now: Date, request: DemoRequest): Row[] {
             request.hoursAgo - 1 + (request.reportLead ?? 0),
           ),
         ]),
+    ...(request.extraReport === undefined
+      ? []
+      : [
+          comment(
+            request.extraReport.body,
+            request.hoursAgo - request.extraReport.lead,
+          ),
+        ]),
   ];
 }
 
