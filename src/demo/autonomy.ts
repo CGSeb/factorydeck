@@ -84,11 +84,11 @@ function mergedDemo(index: number): Demo {
       : kind === 'gates'
         ? serenityReport(88, null, false)
         : undefined;
-  const first =
+  const extra =
     kind === 'spec-below'
-      ? serenityReport(below - 6, 1)
+      ? { body: serenityReport(84, 1), lead: 0.6 }
       : index === FALLING_INDEX
-        ? serenityReport(96, 1)
+        ? { body: serenityReport(85, 1), lead: 0.9 }
         : undefined;
   const request: DemoRequest = {
     number: number + REQUEST_OFFSET,
@@ -100,7 +100,7 @@ function mergedDemo(index: number): Demo {
     report: serenityReport(90, reviewRounds(index, refused !== undefined)),
     reportLead: 0.25,
     ...(refused === undefined ? {} : { refusedReport: refused }),
-    ...(first === undefined ? {} : { firstReport: first }),
+    ...(extra === undefined ? {} : { extraReport: extra }),
   };
   return { issues: [issue], requests: [request] };
 }

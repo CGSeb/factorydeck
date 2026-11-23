@@ -19,7 +19,7 @@ export interface DemoRequest {
   draft?: boolean;
   report?: string;
   refusedReport?: string;
-  firstReport?: string;
+  extraReport?: { body: string; lead: number };
   reportLead?: number;
 }
 
