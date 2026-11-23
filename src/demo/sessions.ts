@@ -2,8 +2,6 @@ import { appendFile, mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
   type DemoSession,
-  type DemoSubAgent,
-  callLines,
   haiku,
   launching,
   noModel,
@@ -17,9 +15,15 @@ import {
   MAIN_FRICTIONS,
   SECOND_MAIN_FRICTIONS,
   WORKER_FRICTIONS,
-  demoFrictionLines,
 } from './frictions.ts';
 import { installFakeGitHost } from './fake-git-host.ts';
+import {
+  type Clock,
+  jsonLines,
+  linesOf,
+  subAgentLines,
+} from './session-lines.ts';
+import { flowSessions } from './flow-sessions.ts';
 import { helpSession } from './help-sessions.ts';
 import { markerSessions } from './marker-sessions.ts';
 import { demoGitHub } from './git-host.ts';
@@ -27,8 +31,6 @@ import { demoGitLab } from './git-host-gitlab.ts';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
-
-type Line = Record<string, unknown>;
 
 export const EXAMPLE_APP = 'example-app';
 export const EXAMPLE_API = 'example-api';
@@ -115,6 +117,7 @@ export const DEMO_SESSIONS: readonly DemoSession[] = [
     calls: [launching(sonnet, SPEC_SKILL), sonnet, haiku],
   },
   ...markerSessions(EXAMPLE_APP, DAY, SPEC_SKILL),
+  ...flowSessions(EXAMPLE_APP),
   ...[7, 2].map((days, index) => ({
     id: `demo-api-${String(index + 1)}`,
     folder: '-demo-example-api',
@@ -162,73 +165,6 @@ export const DEMO_SESSIONS: readonly DemoSession[] = [
     ],
   },
 ];
-
-interface Clock {
-  now: number;
-  projects: string;
-}
-
-function contextOf(
-  session: DemoSession,
-  { now, projects }: Clock,
-  thread: string,
-  sidechain: boolean,
-): (step: number) => Line {
-  const start = now - session.startsAgo;
-  return (step) => ({
-    uuid: `${thread}-${String(step)}`,
-    timestamp: new Date(start + step * 60_000).toISOString(),
-    sessionId: session.id,
-    isSidechain: sidechain,
-    ...(session.project === undefined
-      ? {}
-      : {
-          cwd: join(projects, session.project),
-          gitBranch: session.gitBranch,
-        }),
-  });
-}
-
-function linesOf(session: DemoSession, clock: Clock): Line[] {
-  const context = contextOf(session, clock, session.id, false);
-  return [
-    {
-      type: 'custom-title',
-      customTitle: session.prompt,
-      sessionId: session.id,
-    },
-    {
-      type: 'user',
-      ...context(0),
-      promptId: `${session.id}-prompt`,
-      message: { role: 'user', content: session.prompt },
-    },
-    ...demoFrictionLines(session.frictions ?? [], session.id, context, 0),
-    ...callLines(session.calls, session.id, (step) => context(step + 1)),
-  ];
-}
-
-function subAgentLines(
-  session: DemoSession,
-  agent: DemoSubAgent,
-  clock: Clock,
-): Line[] {
-  const thread = `${session.id}-${agent.id}`;
-  const context = contextOf(session, clock, thread, true);
-  return [
-    {
-      type: 'user',
-      ...context(1),
-      message: { role: 'user', content: agent.description },
-    },
-    ...demoFrictionLines(agent.frictions ?? [], thread, context, 1),
-    ...callLines(agent.calls, thread, (step) => context(step + 2)),
-  ];
-}
-
-function jsonLines(lines: readonly Line[]): string {
-  return `${lines.map((line) => JSON.stringify(line)).join('\n')}\n`;
-}
 
 export function demoProjectRoot(projects: string, name: string): string {
   return join(projects, name);

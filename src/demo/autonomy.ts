@@ -33,7 +33,7 @@ interface Demo {
 }
 
 export function mergedHoursAgo(index: number): number {
-  return (OLDEST_MERGE_DAYS - index * MERGE_SPACING_DAYS) * 24 + 1;
+  return mergeDaysAgo(index) * 24 + 1;
 }
 
 export function reviewRounds(index: number, refused: boolean): number {
@@ -41,9 +41,17 @@ export function reviewRounds(index: number, refused: boolean): number {
   return index % 3 === 0 ? 3 : 2;
 }
 
+export function mergedIssueNumber(index: number): number {
+  return FIRST_ISSUE + index;
+}
+
+export function mergeDaysAgo(index: number): number {
+  return OLDEST_MERGE_DAYS - index * MERGE_SPACING_DAYS;
+}
+
 function mergedDemo(index: number): Demo {
-  const number = FIRST_ISSUE + index;
-  const mergeDays = OLDEST_MERGE_DAYS - index * MERGE_SPACING_DAYS;
+  const number = mergedIssueNumber(index);
+  const mergeDays = mergeDaysAgo(index);
   const kind = helpKind(index);
   const asked = kind === 'spec' || kind === 'spec-below';
   const waitDays = (WAITS_HOURS[index % WAITS_HOURS.length] ?? 6) / 24;
