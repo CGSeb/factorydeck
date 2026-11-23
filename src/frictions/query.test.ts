@@ -91,6 +91,20 @@ describe('frictionStats', () => {
     expect(result.buckets[8]?.apiCalls).toBe(0);
   });
 
+  it('puts calls in the local hour of a half-hour time zone', async () => {
+    const result = await stats({
+      period: 'today',
+      timeZone: 'Asia/Kolkata',
+      now: new Date('2026-03-17T12:00:00Z'),
+    });
+    expect(result.buckets[14]).toEqual({
+      start: '2026-03-17T14:00',
+      frictions: 2,
+      apiCalls: 40,
+    });
+    expect(result.buckets[13]?.apiCalls).toBe(0);
+  });
+
   it('starts the All time trend on the week of the earliest API call', async () => {
     const result = await stats({ period: 'all' });
     expect(result.unit).toBe('week');

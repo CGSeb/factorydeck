@@ -147,12 +147,9 @@ function FrictionsBody({
     );
   if (response?.status !== 'ok') {
     return (
-      <>
-        {chipElement}
-        <StatusLine>
-          {response === undefined ? 'Loading…' : UNREACHABLE_MESSAGE}
-        </StatusLine>
-      </>
+      <StatusLine>
+        {response === undefined ? 'Loading…' : UNREACHABLE_MESSAGE}
+      </StatusLine>
     );
   }
   const { frictions: stats } = response;

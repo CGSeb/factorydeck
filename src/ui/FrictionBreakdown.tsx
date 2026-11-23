@@ -206,7 +206,7 @@ export function FrictionBreakdown({
 }: FrictionBreakdownProps): ReactElement {
   return (
     <>
-      {withTables && (
+      {withTables && (stats.role === null || stats.issues.length > 0) && (
         <div className="fd-friction-tables">
           {stats.role === null && <RoleFrictionTable rows={stats.roles} />}
           {stats.issues.length > 0 && (

@@ -192,3 +192,14 @@ export const At1024: Story = {
     await expect(tableHeadings(canvasElement)).toHaveLength(9);
   },
 };
+
+export const LoadingWithFilter: Story = {
+  name: 'Loading a session filter shows no chip yet',
+  args: { loadFrictions: pendingFrictions },
+  parameters: { entry: '/frictions?period=7d&session=s-1' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('Loading…')).toBeVisible();
+    await expect(canvas.queryByText(/^Session:/)).toBeNull();
+  },
+};
