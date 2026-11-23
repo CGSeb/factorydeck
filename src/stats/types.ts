@@ -76,3 +76,49 @@ export type QualityResponse =
       quality: QualityStats;
     }
   | Unreachable;
+
+export interface FlowIssue {
+  leadMs: number;
+  cycleMs: number | null;
+  tokens: number | null;
+}
+
+export interface FlowStripIssue extends FlowIssue {
+  project: string;
+  number: number;
+  title: string;
+}
+
+export interface FlowTokens {
+  total: number;
+  droppedWork: number;
+  noWorkItem: number;
+  inputSide: number;
+  cacheRead: number;
+  apiCalls: number;
+}
+
+export interface FlowPeriod<Issue extends FlowIssue = FlowIssue> {
+  issues: Issue[];
+  tokens: FlowTokens;
+}
+
+export interface FlowWeek {
+  start: string;
+  merged: number;
+}
+
+export interface FlowStats {
+  current: FlowPeriod<FlowStripIssue>;
+  previous?: FlowPeriod;
+  weeks: FlowWeek[];
+}
+
+export type FlowResponse =
+  | {
+      status: 'ok';
+      updatedAt: string | null;
+      refreshSeconds: number;
+      flow: FlowStats;
+    }
+  | Unreachable;

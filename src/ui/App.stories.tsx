@@ -32,6 +32,7 @@ import {
   someSkills,
   writeSpecDetail,
 } from './skill-fixtures.ts';
+import { flowLoaderOf } from './flow-fixtures.ts';
 import { autonomyLoaderOf, qualityLoaderOf } from './stats-fixtures.ts';
 import { frictionsLoaderOf } from './frictions-fixtures.ts';
 
@@ -66,6 +67,7 @@ const loaders = {
   loadAutonomy: autonomyLoaderOf(),
   loadQuality: qualityLoaderOf(),
   loadFrictions: frictionsLoaderOf(),
+  loadFlow: flowLoaderOf(),
 };
 
 export const Home: Story = {
@@ -134,6 +136,9 @@ export const Stats: Story = {
     await canvas.findByRole('heading', { level: 1, name: 'Stats' });
     await expect(
       await canvas.findByRole('heading', { name: 'Autonomy' }),
+    ).toBeVisible();
+    await expect(
+      await canvas.findByRole('heading', { name: 'Flow and cost' }),
     ).toBeVisible();
   },
 };

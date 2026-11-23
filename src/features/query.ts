@@ -6,11 +6,7 @@ import { byCostDescending, periodStart, select } from '../overview/query.ts';
 import { emptyCounts, withTokenCounts } from '../overview/tokens.ts';
 import { projectNames } from '../projects/names.ts';
 import type { WorkflowConfig } from '../roles/config.ts';
-import {
-  type SessionMarkers,
-  loadMarkers,
-  markerSegments,
-} from '../roles/markers.ts';
+import { loadMarkers } from '../roles/markers.ts';
 import { type StateOptions, statedSessions } from '../sessions/query.ts';
 import { isSessionState } from '../sessions/types.ts';
 import {
@@ -21,6 +17,7 @@ import {
   allocate,
 } from './allocate.ts';
 import type { RoleAccumulator, ThreadAccumulator } from './shares.ts';
+import { usageRows } from './usage.ts';
 import { issueKey, text, timestamp } from './values.ts';
 import type {
   FeatureDetail,
@@ -136,41 +133,6 @@ function mergedSummary(
     withoutPerson: withoutPerson / merged.length,
     unknownPriceCalls,
   };
-}
-
-async function usageRows(
-  db: Database,
-  query: FeatureQuery,
-  markers: SessionMarkers,
-): Promise<Row[]> {
-  const startAt = await periodStart(db, query);
-  const project = query.project ?? null;
-  return select(
-    db,
-    sql`select a.session_id, s.project, s.title, s.agent, s.git_branch as session_branch,
-        coalesce(a.sub_agent_id, '') as sub_agent,
-        sa.agent_type, sa.description, sa.git_branch as agent_branch,
-        coalesce(sa.first_at, fc.first_call_at) as agent_first_at, marker.idx as marker, a.model,
-        count(*) as calls,
-        min(a.at) as first_at,
-        max(a.at) as last_at,
-        sum(a.input_tokens) as input,
-        sum(a.cache_write_tokens) as cache_write,
-        sum(a.cache_read_tokens) as cache_read,
-        sum(a.output_tokens) as output
-      from api_call a
-      join session s on s.id = a.session_id
-      left join sub_agent sa on sa.session_id = a.session_id and sa.id = a.sub_agent_id
-      left join (
-        select session_id, sub_agent_id, min(at) as first_call_at from api_call
-        where sub_agent_id is not null group by session_id, sub_agent_id
-      ) fc on fc.session_id = a.session_id and fc.sub_agent_id = a.sub_agent_id
-      ${markerSegments(markers)}
-      where (${project}::text is null or s.project = ${project}::text)
-        and (${startAt}::timestamptz is null or a.at >= ${startAt}::timestamptz)
-      group by a.session_id, s.project, s.title, s.agent, s.git_branch, a.sub_agent_id,
-        sa.agent_type, sa.description, sa.git_branch, sa.first_at, fc.first_call_at, marker.idx, a.model`,
-  );
 }
 
 export async function listFeatures(

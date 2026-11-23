@@ -35,6 +35,7 @@ export const statsRouter: Decorator = (Story, { parameters }) =>
 
 export const AUTONOMY = '.fd-stats-autonomy';
 export const QUALITY = '.fd-stats-quality';
+export const FLOW = '.fd-stats-flow';
 
 export function figureTexts(
   canvasElement: HTMLElement,
@@ -66,4 +67,10 @@ export function panelOf(canvasElement: HTMLElement, name: string): HTMLElement {
   const section = heading.closest('section');
   if (section === null) throw new Error(`No panel ${name}`);
   return section;
+}
+
+export async function flowLoaded(canvasElement: HTMLElement): Promise<void> {
+  await within(canvasElement).findByRole('heading', {
+    name: 'Merged per week',
+  });
 }

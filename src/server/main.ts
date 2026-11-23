@@ -20,6 +20,7 @@ import { listRoles } from '../roles/query.ts';
 import { listSessions, sessionDetail } from '../sessions/query.ts';
 import { listSkills, skillDetail } from '../skills/query.ts';
 import { autonomyStats } from '../stats/autonomy.ts';
+import { flowStats } from '../stats/flow.ts';
 import { qualityStats } from '../stats/quality.ts';
 import { createApp } from './app.ts';
 import { type CollectLoop, startCollectLoop } from './collect-loop.ts';
@@ -126,6 +127,7 @@ async function main(): Promise<void> {
       autonomy: (query) => autonomyStats(db, query, hasFactory),
       quality: (query) => qualityStats(db, query, hasFactory),
       frictions: (query) => frictionStats(db, query, config),
+      flow: (query) => flowStats(db, query, config, hasFactory),
     },
   });
   await listen(app, env.FACTORYDECK_PORT);
