@@ -6,7 +6,7 @@ export interface AutonomyCounts {
   merged: number;
   mergedWithoutPerson: number;
   mergedAfterQuestion: number;
-  answeredWaitsMs: number[];
+  stopWaitsMs: number[];
 }
 
 export interface AutonomyBucket {
@@ -16,11 +16,15 @@ export interface AutonomyBucket {
 }
 
 export interface AutonomyReasons {
-  specQuestion: number;
-  belowThreshold: number;
+  below1To5: number;
+  below6To15: number;
+  below16Plus: number;
   gatesFailed: number;
+  specQuestion: number;
   autoMergeOff: number;
   total: number;
+  roundsSum: number;
+  roundsCount: number;
 }
 
 export interface AutonomyStats {
@@ -47,9 +51,8 @@ export interface QualityCounts {
   firstPassed: number;
   roundsSum: number;
   roundsCount: number;
-  reworked: number;
-  ended: number;
-  closedWithoutMerge: number;
+  gainSum: number;
+  gainCount: number;
 }
 
 export interface QualityBucket {

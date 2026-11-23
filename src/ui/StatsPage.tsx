@@ -27,6 +27,8 @@ import {
   qualityBuckets,
   qualityFigures,
   reasonRows,
+  roundsLine,
+  signedPoints,
   trendTitle,
   waitingNote,
   wholePercent,
@@ -46,14 +48,17 @@ const LOADING = 'Loading…';
 const TREND_BASE = 'Merged without a person';
 const REASONS_TITLE = 'Why a person stepped in';
 const MERGED_NOUN = { one: 'merged issue', other: 'merged issues' };
-const ANSWERED_NOUN = { one: 'answered question', other: 'answered questions' };
+const ANSWERED_NOUN = { one: 'answered stop', other: 'answered stops' };
 const QUALITY_TREND_BASE = 'Right the first time';
 const HISTOGRAM_TITLE = 'First serenity score';
 const REPORTED_NOUN = {
   one: 'merged issue with a report',
   other: 'merged issues with a report',
 };
-const ENDED_NOUN = { one: 'ended issue', other: 'ended issues' };
+const REVIEWED_NOUN = {
+  one: 'merged issue reviewed twice or more',
+  other: 'merged issues reviewed twice or more',
+};
 const HELPED_NOUN = {
   one: 'merged issue helped by a person',
   other: 'merged issues helped by a person',
@@ -94,14 +99,14 @@ function Figures({
         {...compare(before?.specQuestions, previous?.merged)}
       />
       <StatFigure
-        label="Waiting for an answer"
+        label="Waiting for a person"
         value={now.waiting}
         format={formatElapsed}
         kind="amount"
-        n={current.answeredWaitsMs.length}
+        n={current.stopWaitsMs.length}
         noun={ANSWERED_NOUN}
         better="lower"
-        {...compare(before?.waiting, previous?.answeredWaitsMs.length)}
+        {...compare(before?.waiting, previous?.stopWaitsMs.length)}
         {...(note === undefined ? {} : { note })}
       />
     </div>
@@ -139,11 +144,14 @@ function AutonomyContent({
         {autonomy.reasons.total === 0 ? (
           <p className="fd-stats-note">No person had to step in.</p>
         ) : (
-          <CountBars
-            rows={reasonRows(autonomy.reasons)}
-            total={autonomy.reasons.total}
-            noun={HELPED_NOUN}
-          />
+          <>
+            <CountBars
+              rows={reasonRows(autonomy.reasons)}
+              total={autonomy.reasons.total}
+              noun={HELPED_NOUN}
+            />
+            <p className="fd-stats-rounds">{roundsLine(autonomy.reasons)}</p>
+          </>
         )}
       </StatsSection>
     </div>
@@ -162,7 +170,7 @@ function QualityFiguresRow({
   const before = previous === undefined ? undefined : qualityFigures(previous);
   const compare = comparer(period);
   return (
-    <div className="fd-stats-figures fd-stats-figures-four">
+    <div className="fd-stats-figures">
       <StatFigure
         label="Right the first time"
         value={now.firstTime}
@@ -184,24 +192,14 @@ function QualityFiguresRow({
         {...compare(before?.rounds, previous?.roundsCount)}
       />
       <StatFigure
-        label="Reworked"
-        value={now.reworked}
-        format={wholePercent}
-        kind="share"
-        n={current.merged}
-        noun={MERGED_NOUN}
-        better="lower"
-        {...compare(before?.reworked, previous?.merged)}
-      />
-      <StatFigure
-        label="Closed without merge"
-        value={now.closedWithoutMerge}
-        format={wholePercent}
-        kind="share"
-        n={current.ended}
-        noun={ENDED_NOUN}
-        better="lower"
-        {...compare(before?.closedWithoutMerge, previous?.ended)}
+        label="Score gain"
+        value={now.gain}
+        format={signedPoints}
+        kind="points"
+        n={current.gainCount}
+        noun={REVIEWED_NOUN}
+        better="higher"
+        {...compare(before?.gain, previous?.gainCount)}
       />
     </div>
   );

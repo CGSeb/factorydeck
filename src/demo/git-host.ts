@@ -22,6 +22,9 @@ export function reportComments(now: Date, request: DemoRequest): Row[] {
     createdAt: ago(now, hoursAgo * HOUR),
   });
   return [
+    ...(request.firstReport === undefined
+      ? []
+      : [comment(request.firstReport, request.hoursAgo - 0.25)]),
     ...(request.refusedReport === undefined
       ? []
       : [comment(request.refusedReport, request.hoursAgo - 0.5)]),

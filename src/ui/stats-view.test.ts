@@ -9,6 +9,8 @@ import {
   oneDecimal,
   qualityFigures,
   reasonRows,
+  roundsLine,
+  signedPoints,
   stripItems,
   tokenShares,
   waitingNote,
@@ -25,7 +27,7 @@ describe('stats view', () => {
   });
 
   it('sums up the merged issues', () => {
-    const counts = { mergedAfterQuestion: 0, answeredWaitsMs: [] };
+    const counts = { mergedAfterQuestion: 0, stopWaitsMs: [] };
     expect(
       autonomySummary({ ...counts, merged: 1, mergedWithoutPerson: 1 }),
     ).toBe('1 issue merged · 1 without a person');
@@ -43,7 +45,7 @@ describe('stats view', () => {
         merged: 4,
         mergedWithoutPerson: 3,
         mergedAfterQuestion: 1,
-        answeredWaitsMs: [HOUR, 3 * HOUR],
+        stopWaitsMs: [HOUR, 3 * HOUR],
       }),
     ).toEqual({ withoutPerson: 0.75, specQuestions: 0.25, waiting: 2 * HOUR });
     expect(
@@ -51,7 +53,7 @@ describe('stats view', () => {
         merged: 0,
         mergedWithoutPerson: 0,
         mergedAfterQuestion: 0,
-        answeredWaitsMs: [],
+        stopWaitsMs: [],
       }),
     ).toEqual({ withoutPerson: null, specQuestions: null, waiting: null });
     expect(
@@ -59,9 +61,9 @@ describe('stats view', () => {
         merged: 0,
         mergedWithoutPerson: 0,
         mergedAfterQuestion: 0,
-        answeredWaitsMs: [1, 2, 3, 4, 5].map((hours) => hours * HOUR),
+        stopWaitsMs: [1, 2, 3, 4, 5].map((hours) => hours * HOUR),
       }).waiting,
-    ).toBeNull();
+    ).toBe(3 * HOUR);
   });
 
   it('notes the questions still waiting, none at 0', () => {
@@ -69,21 +71,36 @@ describe('stats view', () => {
     expect(waitingNote(0)).toBeUndefined();
   });
 
-  it('lists the four reasons in their order', () => {
-    expect(
-      reasonRows({
-        specQuestion: 1,
-        belowThreshold: 2,
-        gatesFailed: 3,
-        autoMergeOff: 4,
-        total: 7,
-      }),
-    ).toEqual([
-      { label: 'Spec question', count: 1 },
-      { label: 'Score below threshold', count: 2 },
-      { label: 'Gates failed', count: 3 },
-      { label: 'Auto-merge off', count: 4 },
+  const reasons = {
+    below1To5: 1,
+    below6To15: 2,
+    below16Plus: 3,
+    gatesFailed: 4,
+    specQuestion: 5,
+    autoMergeOff: 6,
+    total: 21,
+    roundsSum: 9,
+    roundsCount: 5,
+  };
+
+  it('lists the six rows in their order', () => {
+    expect(reasonRows(reasons)).toEqual([
+      { label: '1–5 pts below threshold', count: 1 },
+      { label: '6–15 pts below threshold', count: 2 },
+      { label: '16+ pts below threshold', count: 3 },
+      { label: 'Gates failed', count: 4 },
+      { label: 'Spec question', count: 5 },
+      { label: 'Auto-merge off', count: 6 },
     ]);
+  });
+
+  it('gives the mean review rounds before a stop from the minimum sample', () => {
+    expect(roundsLine(reasons)).toBe(
+      '1.8 review rounds on average before a stop',
+    );
+    expect(roundsLine({ ...reasons, roundsCount: 4 })).toBe(
+      'Not enough data for review rounds before a stop',
+    );
   });
 });
 
@@ -120,21 +137,28 @@ describe('quality view', () => {
     firstPassed: 3,
     roundsSum: 7,
     roundsCount: 5,
-    reworked: 1,
-    ended: 8,
-    closedWithoutMerge: 3,
+    gainSum: -7,
+    gainCount: 2,
   };
 
-  it('computes the four quality figures', () => {
+  it('computes the three quality figures', () => {
     expect(qualityFigures(counts)).toEqual({
       firstTime: 0.75,
       rounds: 1.4,
-      reworked: 0.2,
-      closedWithoutMerge: 0.375,
+      gain: -3.5,
     });
   });
 
-  it('has no figure without a merged issue, even with issues closed without merge', () => {
+  it('writes the score gain as whole points with a sign', () => {
+    expect(signedPoints(12.4)).toBe('+12 pts');
+    expect(signedPoints(-3.5)).toBe('−3 pts');
+    expect(signedPoints(-3.6)).toBe('−4 pts');
+    expect(signedPoints(-0.4)).toBe('0 pts');
+    expect(signedPoints(0)).toBe('0 pts');
+    expect(signedPoints(1)).toBe('+1 pt');
+  });
+
+  it('has no figure without a merged issue', () => {
     expect(
       qualityFigures({
         ...counts,
@@ -143,14 +167,13 @@ describe('quality view', () => {
         firstPassed: 0,
         roundsSum: 0,
         roundsCount: 0,
-        reworked: 0,
-        ended: 3,
+        gainSum: 0,
+        gainCount: 0,
       }),
     ).toEqual({
       firstTime: null,
       rounds: null,
-      reworked: null,
-      closedWithoutMerge: null,
+      gain: null,
     });
   });
 

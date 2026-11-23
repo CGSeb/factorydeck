@@ -55,7 +55,7 @@ export const RisingMonth: Story = {
     await expect(figureTexts(canvasElement, '[data-sample]')).toEqual([
       'n = 24 merged issues',
       'n = 24 merged issues',
-      'n = 6 answered questions',
+      'n = 6 answered stops',
     ]);
     await expect(figureTexts(canvasElement, '[data-change]')).toEqual([
       '▲up 20 pts vs previous 30 days',
@@ -82,13 +82,15 @@ export const RisingMonth: Story = {
     await expect(rows[10]).toHaveTextContent('86% · 6 of 7');
     const reasons = canvas.getAllByRole('listitem');
     await expect(reasons.map((item) => item.textContent)).toEqual([
+      expect.stringContaining('6–15 pts below threshold'),
+      expect.stringContaining('1–5 pts below threshold'),
       expect.stringContaining('Spec question'),
-      expect.stringContaining('Score below threshold'),
+      expect.stringContaining('16+ pts below threshold'),
       expect.stringContaining('Gates failed'),
       expect.stringContaining('Auto-merge off'),
     ]);
     await expect(
-      canvas.getByText('among 6 merged issues helped by a person'),
+      canvas.getByText('among 10 merged issues helped by a person'),
     ).toBeVisible();
   },
 };
@@ -133,7 +135,7 @@ export const BelowMinimumSample: Story = {
           merged: 3,
           mergedWithoutPerson: 2,
           mergedAfterQuestion: 1,
-          answeredWaitsMs: [3_600_000],
+          stopWaitsMs: [3_600_000],
         },
       }),
     ),

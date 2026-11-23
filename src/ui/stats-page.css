@@ -22,17 +22,9 @@
   gap: var(--fd-space-4) var(--fd-space-6);
 }
 
-.fd-stats-figures-four {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
 @container (max-width: 679.98px) {
   .fd-stats-figures {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .fd-stats-figures-four {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -48,6 +40,13 @@
   font-size: 13px;
   font-weight: 600;
   color: var(--fd-ink);
+}
+
+.fd-stats-rounds {
+  margin: 0;
+  font-size: 12px;
+  color: var(--fd-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .fd-stats-note {

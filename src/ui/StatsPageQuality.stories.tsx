@@ -55,32 +55,27 @@ export const QualityFigures: Story = {
     await expect(figureTexts(canvasElement, 'span', QUALITY)).toEqual([
       'Right the first time',
       'Review rounds',
-      'Reworked',
-      'Closed without merge',
+      'Score gain',
     ]);
     await expect(figureTexts(canvasElement, '[data-value]', QUALITY)).toEqual([
       '68%',
       '1.4',
-      '21%',
-      '14%',
+      '+12 pts',
     ]);
     await expect(figureTexts(canvasElement, '[data-sample]', QUALITY)).toEqual([
       'n = 22 merged issues with a report',
       'n = 22 merged issues',
-      'n = 24 merged issues',
-      'n = 28 ended issues',
+      'n = 9 merged issues reviewed twice or more',
     ]);
     await expect(figureTexts(canvasElement, '[data-change]', QUALITY)).toEqual([
       '▲up 13 pts vs previous 30 days',
       '▼down 21% vs previous 30 days',
-      '▼down 9 pts vs previous 30 days',
-      '▲up 1 pt vs previous 30 days',
+      '▲up 4 pts vs previous 30 days',
     ]);
     await expect(changeColors(canvasElement)).toEqual([
       'var(--fd-success)',
       'var(--fd-success)',
       'var(--fd-success)',
-      'var(--fd-danger)',
     ]);
     const trend = canvas.getByRole('table', {
       name: 'Right the first time, by week',
@@ -124,9 +119,8 @@ export const QualityBelowMinimum: Story = {
           firstPassed: 2,
           roundsSum: 4,
           roundsCount: 3,
-          reworked: 1,
-          ended: 4,
-          closedWithoutMerge: 1,
+          gainSum: 10,
+          gainCount: 3,
         },
         firstReports: qualityOf().firstReports.slice(0, 3),
       }),
@@ -135,7 +129,6 @@ export const QualityBelowMinimum: Story = {
   play: async ({ canvasElement }) => {
     await qualityLoaded(canvasElement);
     await expect(figureTexts(canvasElement, '[data-sample]', QUALITY)).toEqual([
-      'Not enough data',
       'Not enough data',
       'Not enough data',
       'Not enough data',
@@ -155,7 +148,7 @@ export const QualityNoMergedIssue: Story = {
   args: {
     loadQuality: qualityLoaderOf(
       qualityOf({
-        current: { ...noQuality, ended: 6, closedWithoutMerge: 6 },
+        current: noQuality,
         previous: previousMonthQuality,
         buckets: emptyQualityWeeks,
         firstReports: [],
@@ -166,7 +159,6 @@ export const QualityNoMergedIssue: Story = {
     const canvas = within(canvasElement);
     await qualityLoaded(canvasElement);
     await expect(figureTexts(canvasElement, '[data-sample]', QUALITY)).toEqual([
-      'Not enough data',
       'Not enough data',
       'Not enough data',
       'Not enough data',
@@ -236,8 +228,7 @@ export const AutonomyUnreachable: Story = {
     await expect(figureTexts(canvasElement, '[data-value]', QUALITY)).toEqual([
       '68%',
       '1.4',
-      '21%',
-      '14%',
+      '+12 pts',
     ]);
   },
 };
@@ -256,6 +247,6 @@ export const BothPanelsAt1024: Story = {
     await qualityLoaded(canvasElement);
     await expect(
       canvasElement.querySelectorAll(`${QUALITY} .fd-stats-figures > div`),
-    ).toHaveLength(4);
+    ).toHaveLength(3);
   },
 };

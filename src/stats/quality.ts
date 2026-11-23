@@ -16,6 +16,7 @@ import {
   loadIssues,
   mergeTime,
 } from './autonomy.ts';
+import { earliestReport, latestReport, storedReports } from './stops.ts';
 import { type StatsBounds, earliestMerge, statsBounds } from './bounds.ts';
 import type {
   FirstReport,
@@ -29,24 +30,29 @@ export type QualityQuery = AutonomyQuery;
 export interface QualityFacts {
   stage: IssueStage;
   mergedAt: number | null;
-  closedAt: number | null;
   first: (FirstReport & { passed: boolean }) | null;
   rounds: number | null;
-  reworked: boolean;
+  gain: number | null;
 }
 
 export function firstReport(
   requests: readonly Pick<RequestRow, 'reports'>[],
 ): SerenityReport | null {
-  let found: SerenityReport | null = null;
-  for (const request of requests) {
-    for (const report of request.reports) {
-      if (found === null || Date.parse(report.at) < Date.parse(found.at)) {
-        found = report;
-      }
-    }
-  }
-  return found;
+  return earliestReport(storedReports(requests));
+}
+
+export function scoreGain(
+  requests: readonly Pick<RequestRow, 'reports'>[],
+  mergedAt: number | null,
+): number | null {
+  if (mergedAt === null) return null;
+  const reports = storedReports(requests).filter(
+    (report) => Date.parse(report.at) <= mergedAt,
+  );
+  const earliest = earliestReport(reports);
+  const latest = latestReport(reports);
+  if (reports.length < 2 || earliest === null || latest === null) return null;
+  return latest.score - earliest.score;
 }
 
 export function firstPassed(report: SerenityReport): boolean {
@@ -60,13 +66,12 @@ export function qualityFacts(
 ): QualityFacts {
   const outcome = outcomeOf(issue, requests, state);
   const first = firstReport(requests);
+  const mergedAt = MERGED_STAGES.has(outcome.stage)
+    ? mergeTime(requests)
+    : null;
   return {
     stage: outcome.stage,
-    mergedAt: MERGED_STAGES.has(outcome.stage) ? mergeTime(requests) : null,
-    closedAt:
-      outcome.stage === 'closed' && issue.closedAt !== null
-        ? issue.closedAt.getTime()
-        : null,
+    mergedAt,
     first:
       first === null
         ? null
@@ -77,7 +82,7 @@ export function qualityFacts(
             passed: firstPassed(first),
           },
     rounds: outcome.report?.rounds ?? null,
-    reworked: outcome.reworked,
+    gain: scoreGain(requests, mergedAt),
   };
 }
 
@@ -99,9 +104,9 @@ export function qualityCounts(
   const rounds = merged.flatMap((issue) =>
     issue.rounds === null ? [] : [issue.rounds],
   );
-  const closedWithoutMerge = issues.filter(
-    (issue) => issue.closedAt !== null && inside(issue.closedAt, window),
-  ).length;
+  const gains = merged.flatMap((issue) =>
+    issue.gain === null ? [] : [issue.gain],
+  );
   return {
     merged: merged.length,
     mergedWithReport: withReport.length,
@@ -109,9 +114,8 @@ export function qualityCounts(
       .length,
     roundsSum: rounds.reduce((sum, value) => sum + value, 0),
     roundsCount: rounds.length,
-    reworked: merged.filter((issue) => issue.reworked).length,
-    ended: merged.length + closedWithoutMerge,
-    closedWithoutMerge,
+    gainSum: gains.reduce((sum, value) => sum + value, 0),
+    gainCount: gains.length,
   };
 }
 

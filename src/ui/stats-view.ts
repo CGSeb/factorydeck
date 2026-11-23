@@ -13,7 +13,7 @@ import type {
 } from '../stats/types.ts';
 import type { CountRow } from './components/CountBars.tsx';
 import type { RangeItem } from './components/RangeStrip.tsx';
-import { type TrendBucket, median } from './components/stats-math.ts';
+import { type TrendBucket, isEnough, median } from './components/stats-math.ts';
 import { featurePath } from './features-api.ts';
 import { MONTHS, formatBucket } from './format.ts';
 
@@ -57,7 +57,7 @@ export function autonomyFigures(counts: AutonomyCounts): AutonomyFigures {
   return {
     withoutPerson: shareOf(counts.mergedWithoutPerson, counts.merged),
     specQuestions: shareOf(counts.mergedAfterQuestion, counts.merged),
-    waiting: counts.merged === 0 ? null : median(counts.answeredWaitsMs),
+    waiting: median(counts.stopWaitsMs),
   };
 }
 
@@ -145,9 +145,11 @@ export function autonomyBuckets(
 
 export function reasonRows(reasons: AutonomyReasons): CountRow[] {
   return [
-    { label: 'Spec question', count: reasons.specQuestion },
-    { label: 'Score below threshold', count: reasons.belowThreshold },
+    { label: '1–5 pts below threshold', count: reasons.below1To5 },
+    { label: '6–15 pts below threshold', count: reasons.below6To15 },
+    { label: '16+ pts below threshold', count: reasons.below16Plus },
     { label: 'Gates failed', count: reasons.gatesFailed },
+    { label: 'Spec question', count: reasons.specQuestion },
     { label: 'Auto-merge off', count: reasons.autoMergeOff },
   ];
 }
@@ -156,11 +158,27 @@ export function oneDecimal(value: number): string {
   return value.toFixed(1);
 }
 
+export function roundsLine({
+  roundsSum,
+  roundsCount,
+}: AutonomyReasons): string {
+  return isEnough(roundsCount)
+    ? `${oneDecimal(roundsSum / roundsCount)} review rounds on average before a stop`
+    : 'Not enough data for review rounds before a stop';
+}
+
+export function signedPoints(value: number): string {
+  const rounded = Math.round(value);
+  const size = Math.abs(rounded);
+  const unit = size === 1 ? 'pt' : 'pts';
+  if (size === 0) return `0 ${unit}`;
+  return `${rounded > 0 ? '+' : '−'}${String(size)} ${unit}`;
+}
+
 export interface QualityFigures {
   firstTime: number | null;
   rounds: number | null;
-  reworked: number | null;
-  closedWithoutMerge: number | null;
+  gain: number | null;
 }
 
 export function qualityFigures(counts: QualityCounts): QualityFigures {
@@ -168,11 +186,7 @@ export function qualityFigures(counts: QualityCounts): QualityFigures {
     firstTime: shareOf(counts.firstPassed, counts.mergedWithReport),
     rounds:
       counts.roundsCount === 0 ? null : counts.roundsSum / counts.roundsCount,
-    reworked: shareOf(counts.reworked, counts.merged),
-    closedWithoutMerge:
-      counts.merged === 0
-        ? null
-        : shareOf(counts.closedWithoutMerge, counts.ended),
+    gain: counts.gainCount === 0 ? null : counts.gainSum / counts.gainCount,
   };
 }
 

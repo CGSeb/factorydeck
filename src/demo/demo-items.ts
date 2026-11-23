@@ -19,12 +19,18 @@ export interface DemoRequest {
   draft?: boolean;
   report?: string;
   refusedReport?: string;
+  firstReport?: string;
   reportLead?: number;
+}
+
+function reviewText(rounds: number | null): string {
+  if (rounds === null) return '';
+  return ` Review: ${String(rounds)} ${rounds === 1 ? 'round' : 'rounds'}, confidence high.`;
 }
 
 export function serenityReport(
   score: number,
-  rounds: number,
+  rounds: number | null,
   gatesPassed = true,
 ): string {
   return [
@@ -32,6 +38,6 @@ export function serenityReport(
     '',
     '- −10: a demo deduction',
     '',
-    `Gates: ${gatesPassed ? 'all passed' : '1 failed'}. Review: ${String(rounds)} ${rounds === 1 ? 'round' : 'rounds'}, confidence high.`,
+    `Gates: ${gatesPassed ? 'all passed' : '1 failed'}.${reviewText(rounds)}`,
   ].join('\n');
 }

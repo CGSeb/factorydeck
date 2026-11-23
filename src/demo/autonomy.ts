@@ -11,6 +11,8 @@ const REQUEST_OFFSET = 100;
 const OLDEST_MERGE_DAYS = 82.6;
 const MERGE_SPACING_DAYS = 1.39;
 const WAITS_HOURS = [2, 5, 9, 26, 3, 14];
+const BELOW_SCORES = [77, 68, 58];
+export const FALLING_INDEX = 51;
 
 export type HelpKind = 'none' | 'spec' | 'below' | 'gates' | 'spec-below';
 
@@ -49,6 +51,10 @@ export function mergeDaysAgo(index: number): number {
   return OLDEST_MERGE_DAYS - index * MERGE_SPACING_DAYS;
 }
 
+export function refusedScore(index: number): number {
+  return BELOW_SCORES[Math.floor(index / 4) % BELOW_SCORES.length] ?? 68;
+}
+
 function mergedDemo(index: number): Demo {
   const number = mergedIssueNumber(index);
   const mergeDays = mergeDaysAgo(index);
@@ -71,11 +77,18 @@ function mergedDemo(index: number): Demo {
         }
       : {}),
   };
+  const below = refusedScore(index);
   const refused =
     kind === 'below' || kind === 'spec-below'
-      ? serenityReport(68, 1)
+      ? serenityReport(below, index % 4 === 1 ? 1 : 2)
       : kind === 'gates'
-        ? serenityReport(88, 1, false)
+        ? serenityReport(88, null, false)
+        : undefined;
+  const first =
+    kind === 'spec-below'
+      ? serenityReport(below - 6, 1)
+      : index === FALLING_INDEX
+        ? serenityReport(96, 1)
         : undefined;
   const request: DemoRequest = {
     number: number + REQUEST_OFFSET,
@@ -87,6 +100,7 @@ function mergedDemo(index: number): Demo {
     report: serenityReport(90, reviewRounds(index, refused !== undefined)),
     reportLead: 0.25,
     ...(refused === undefined ? {} : { refusedReport: refused }),
+    ...(first === undefined ? {} : { firstReport: first }),
   };
   return { issues: [issue], requests: [request] };
 }

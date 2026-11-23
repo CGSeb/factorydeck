@@ -34,7 +34,7 @@ export const NoMergedIssue: Story = {
   args: {
     loadAutonomy: autonomyLoaderOf(
       autonomyOf({
-        current: { ...noCounts, answeredWaitsMs: [3_600_000] },
+        current: { ...noCounts, stopWaitsMs: [3_600_000] },
         previous: noCounts,
         waitingNow: 0,
         buckets: emptyWeeks,
@@ -156,7 +156,7 @@ export const PreviousWithoutMerge: Story = {
       autonomyOf({
         previous: {
           ...noCounts,
-          answeredWaitsMs: [1, 2, 3, 4, 5].map((hours) => hours * 3_600_000),
+          stopWaitsMs: [1, 2, 3, 4, 5].map((hours) => hours * 3_600_000),
         },
       }),
     ),
@@ -171,7 +171,7 @@ export const PreviousWithoutMerge: Story = {
     await expect(figureTexts(canvasElement, '[data-change]')).toEqual([
       '',
       '',
-      '',
+      '▲up 35% vs previous 30 days',
     ]);
   },
 };
