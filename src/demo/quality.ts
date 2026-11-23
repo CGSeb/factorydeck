@@ -7,7 +7,7 @@ import {
 
 const FIRST_CLOSED = FIRST_ISSUE + AUTONOMY_MERGED + 10;
 const CLOSED_DAYS_AGO = [76, 59, 41, 24, 6];
-const REWORKED_BY_REQUEST = [22, 47];
+const REWORKED_BY_REQUEST = [17, 45];
 export const REOPENED_INDEXES = [33, 56];
 
 function closedIssue(daysAgo: number, index: number): DemoIssue {

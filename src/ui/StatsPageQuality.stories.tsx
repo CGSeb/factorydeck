@@ -169,9 +169,15 @@ export const QualityNoMergedIssue: Story = {
     await expect(
       canvas.getByRole('img', { name: 'Right the first time, by week' }),
     ).toBeInTheDocument();
+    const histogram = canvas.getByRole('img', {
+      name: 'First serenity score',
+    });
+    await expect(histogram.querySelector('[data-empty]')).toHaveTextContent(
+      'Not enough data',
+    );
     await expect(
-      canvas.getByRole('img', { name: 'First serenity score' }),
-    ).toBeInTheDocument();
+      canvas.queryByRole('table', { name: 'First serenity score' }),
+    ).toBeNull();
   },
 };
 
