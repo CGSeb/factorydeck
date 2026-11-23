@@ -7,7 +7,9 @@ import { SplitBar } from './components/SplitBar.tsx';
 import { SplitLegend } from './components/SplitLegend.tsx';
 import { StageBadge } from './components/StageBadge.tsx';
 import { TokenAmount } from './components/TokenAmount.tsx';
-import { MISSING, formatDateTime } from './format.ts';
+import { type RenderLink, renderAnchor } from './components/link.ts';
+import { MISSING, formatCount, formatDateTime } from './format.ts';
+import { frictionsHref } from './frictions-api.ts';
 import { kindSegments } from './session-detail.ts';
 import './sessions.css';
 
@@ -27,11 +29,42 @@ function Outcome({ outcome }: { outcome: IssueOutcome }): ReactElement {
   );
 }
 
+export const NO_FRICTION = 'None';
+
+interface AsideLinks {
+  project?: string | undefined;
+  renderLink?: RenderLink | undefined;
+}
+
+function FrictionsFact({
+  session,
+  project,
+  renderLink = renderAnchor,
+}: AsideLinks & { session: SessionDetail }): ReactElement {
+  return (
+    <div>
+      <dt>Frictions</dt>
+      <dd>
+        {session.frictions === 0
+          ? NO_FRICTION
+          : renderLink({
+              href: frictionsHref({
+                period: 'all',
+                project,
+                session: session.id,
+              }),
+              children: formatCount(session.frictions),
+            })}
+      </dd>
+    </div>
+  );
+}
+
 export function SessionAside({
   session,
-}: {
-  session: SessionDetail;
-}): ReactElement {
+  project,
+  renderLink,
+}: AsideLinks & { session: SessionDetail }): ReactElement {
   const segments = kindSegments(session);
   return (
     <>
@@ -68,6 +101,11 @@ export function SessionAside({
           <dt>Last activity</dt>
           <dd>{formatDateTime(session.lastAt)}</dd>
         </div>
+        <FrictionsFact
+          session={session}
+          project={project}
+          renderLink={renderLink}
+        />
       </dl>
     </>
   );

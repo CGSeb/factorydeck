@@ -31,6 +31,9 @@ const EVERY_TABLE = [
   'Repeated failures',
   'Stop blocked',
   'Compactions',
+  'By role',
+  'Issues with the most frictions',
+  'Context peaks',
 ];
 
 export const AllKinds: Story = {
@@ -119,11 +122,14 @@ export const ShowMoreTools: Story = {
     const canvas = within(canvasElement);
     await frictionsLoaded(canvasElement);
     const table = canvas.getByRole('table', { name: 'By tool' });
+    const panel = table.closest('section') ?? canvasElement;
     await expect(columnTexts(table, 0)).toHaveLength(10);
-    await expect(canvas.getByText('10 of 12')).toBeVisible();
-    await userEvent.click(canvas.getByRole('button', { name: 'Show more' }));
+    await expect(within(panel).getByText('10 of 12')).toBeVisible();
+    await userEvent.click(
+      within(panel).getByRole('button', { name: 'Show more' }),
+    );
     await expect(columnTexts(table, 0)).toHaveLength(12);
-    await expect(canvas.queryByText('10 of 12')).toBeNull();
+    await expect(within(panel).queryByText('10 of 12')).toBeNull();
   },
 };
 

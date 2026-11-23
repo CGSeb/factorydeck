@@ -1,9 +1,18 @@
 import type {
   FrictionStats,
+  FrictionSubject,
   FrictionWeek,
   FrictionsResponse,
   KindCounts,
 } from '../frictions/types.ts';
+import {
+  APP,
+  BUILD_SESSION,
+  LIB,
+  contextPeaks,
+  issueRows,
+  roleRows,
+} from './friction-breakdown-fixtures.ts';
 import type { FrictionFilters, LoadFrictions } from './frictions-api.ts';
 
 const WEEK_STARTS = [
@@ -137,7 +146,65 @@ export const frictionStats: FrictionStats = {
     { trigger: 'auto', compactions: 3, medianPreTokens: 306_000, threads: 2 },
     { trigger: 'manual', compactions: 1, medianPreTokens: null, threads: 1 },
   ],
+  subject: null,
+  roles: roleRows,
+  issues: issueRows,
+  context: contextPeaks,
+  projects: [
+    { project: APP, name: 'app' },
+    { project: LIB, name: 'lib' },
+  ],
 };
+
+export const UNKNOWN_SESSION = 'no-such-session';
+
+function subjectOf(filters: FrictionFilters): FrictionSubject | null {
+  if (filters.session !== undefined) {
+    return {
+      kind: 'session',
+      id: filters.session,
+      title:
+        filters.session === BUILD_SESSION ? 'Build the frictions page' : null,
+      agent: filters.session === BUILD_SESSION ? 'claude-code' : '',
+    };
+  }
+  if (filters.issue !== undefined) {
+    const row = issueRows.find(
+      (issue) =>
+        issue.number === filters.issue && issue.project === filters.project,
+    );
+    return {
+      kind: 'issue',
+      project: filters.project ?? '',
+      number: filters.issue,
+      issue: row?.issue ?? { status: 'not-found' },
+    };
+  }
+  return null;
+}
+
+export function filteredStats(filters: FrictionFilters): FrictionStats {
+  const subject = subjectOf(filters);
+  if (subject === null) return statsFor(filters.kind);
+  const known =
+    subject.kind === 'session'
+      ? subject.title !== null
+      : subject.issue.status !== 'not-found';
+  if (!known) return { ...noActivityStats, subject };
+  const stats = statsFor(filters.kind);
+  return {
+    ...stats,
+    subject,
+    roles: stats.roles.slice(0, 2),
+    issues: subject.kind === 'issue' ? [] : stats.issues.slice(0, 1),
+    context: {
+      threads: stats.context.threads.slice(0, 3),
+      compacted: 1,
+      medianPeak: 142_000,
+      previous: { medianPeak: 120_000, threads: 2 },
+    },
+  };
+}
 
 export function statsFor(
   kind: FrictionFilters['kind'],
@@ -156,6 +223,11 @@ export function statsFor(
     repeated: keep('tool-error', stats.repeated),
     hooks: keep('stop-blocked', stats.hooks),
     compactions: keep('compaction', stats.compactions),
+    roles: stats.roles.map((row) => ({
+      ...row,
+      mainKind: row.mainKind === kind ? kind : null,
+    })),
+    issues: stats.issues.slice(0, 4),
   };
 }
 
@@ -183,12 +255,26 @@ export const noFrictionStats: FrictionStats = {
   kind: null,
   frictions: 0,
   weeks: weeksOf(WEEK_STARTS.map(() => [0, 800])),
+  roles: roleRows.map((row) => ({
+    ...row,
+    frictions: 0,
+    perThread: 0,
+    mainKind: null,
+  })),
+  issues: [],
+  context: { ...contextPeaks, compacted: 0 },
 };
 
 export const noActivityStats: FrictionStats = {
   ...noFrictionStats,
   apiCalls: 0,
+  roles: [],
+  issues: [],
+  context: { threads: [], compacted: 0, medianPeak: null },
 };
+
+export const filteredFrictions: LoadFrictions = (filters) =>
+  Promise.resolve(okFrictions(filteredStats(filters)));
 
 export const pendingFrictions: LoadFrictions = () =>
   new Promise<FrictionsResponse | undefined>(() => undefined);

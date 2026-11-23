@@ -156,3 +156,40 @@ export const WithScorePath: Story = {
     );
   },
 };
+
+export const WithFrictions: Story = {
+  name: 'With frictions',
+  args: {
+    frictions: {
+      count: 7,
+      href: '/frictions?period=7d&project=%2Fwork%2Fapp&issue=57',
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole('link', { name: '7' })).toHaveAttribute(
+      'href',
+      '/frictions?period=7d&project=%2Fwork%2Fapp&issue=57',
+    );
+    await expect(canvas.getByText('Frictions')).toBeVisible();
+  },
+};
+
+export const WithoutFriction: Story = {
+  name: 'Without friction',
+  args: {
+    frictions: { count: 0, href: '/frictions?period=7d' },
+    pullRequest: null,
+    checks: null,
+    labels: null,
+    reworked: null,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('None')).toBeVisible();
+    await expect(
+      canvas.getByText('Frictions').nextElementSibling,
+    ).toHaveTextContent('None');
+    await expect(canvasElement.querySelector('.fd-summary-list a')).toBeNull();
+  },
+};

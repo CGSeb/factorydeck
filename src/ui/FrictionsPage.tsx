@@ -11,15 +11,19 @@ import {
   type FrictionFilters,
   type LoadFrictions,
   useFrictionFilters,
+  withoutFilter,
 } from './frictions-api.ts';
 import {
   ALL_KINDS,
   API_CALL_NOUN,
   type KindChoice,
+  chipText,
   frictionSummary,
   kindOptions,
   weekBuckets,
 } from './frictions-view.ts';
+import { FrictionBreakdown } from './FrictionBreakdown.tsx';
+import { FrictionFilterChip } from './FrictionFilterChip.tsx';
 import { FrictionTables } from './FrictionTables.tsx';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { useRefreshing } from './skills-api.ts';
@@ -48,6 +52,7 @@ function FrictionsContent({
   }
   const { frictions: stats } = response;
   if (stats.apiCalls === 0) return <StatusLine>{NO_ACTIVITY}</StatusLine>;
+  const scope = { project: filters.project, period: filters.period };
   return (
     <>
       <FilterPills<KindChoice>
@@ -77,9 +82,16 @@ function FrictionsContent({
         <FrictionTables
           stats={stats}
           kind={stats.kind ?? undefined}
-          scope={{ project: filters.project, period: filters.period }}
+          scope={scope}
         />
       )}
+      <FrictionBreakdown
+        stats={stats}
+        kind={stats.kind ?? undefined}
+        scope={scope}
+        period={filters.period}
+        withTables={stats.frictions > 0}
+      />
     </>
   );
 }
@@ -92,6 +104,10 @@ export function FrictionsPage({
     JSON.stringify(filters),
     () => loadFrictions(filters),
     'frictions',
+  );
+  const chip = chipText(
+    filters,
+    response?.status === 'ok' ? response.frictions.subject : undefined,
   );
   return (
     <div className="fd-frictions">
@@ -110,6 +126,14 @@ export function FrictionsPage({
           />
         }
       />
+      {chip === null ? null : (
+        <FrictionFilterChip
+          text={chip}
+          onRemove={() => {
+            setFilters(withoutFilter(filters));
+          }}
+        />
+      )}
       <FrictionsContent
         response={response}
         filters={filters}

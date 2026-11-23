@@ -42,6 +42,11 @@ const frictions: FrictionStats = {
     },
   ],
   compactions: [],
+  subject: null,
+  roles: [],
+  issues: [],
+  context: { threads: [], compacted: 0, medianPeak: null },
+  projects: [],
 };
 
 function app(up = true) {
@@ -108,6 +113,31 @@ describe('/api/frictions', () => {
     );
     expect(response.status).toBe(200);
     expect(queries.map((query) => query.kind)).toEqual([kind]);
+  });
+
+  it.each([
+    ['', undefined],
+    ['&session=s-1', { session: 's-1' }],
+    ['&session=', undefined],
+    ['&session=s-1&session=s-2', { session: 's-1' }],
+    ['&issue=12&project=%2Fwork%2Fapp', { issue: 12 }],
+    ['&issue=012&project=%2Fwork%2Fapp', { issue: 12 }],
+    ['&issue=12', undefined],
+    ['&issue=12&project=', undefined],
+    ['&issue=0&project=%2Fwork%2Fapp', undefined],
+    ['&issue=-3&project=%2Fwork%2Fapp', undefined],
+    ['&issue=1.5&project=%2Fwork%2Fapp', undefined],
+    ['&issue=12abc&project=%2Fwork%2Fapp', undefined],
+    ['&issue=&project=%2Fwork%2Fapp', undefined],
+    ['&session=s-1&issue=12&project=%2Fwork%2Fapp', { session: 's-1' }],
+    ['&session=&issue=12&project=%2Fwork%2Fapp', { issue: 12 }],
+  ])('reads the filter of ?…%s as %j', async (suffix, filter) => {
+    const { app: server, queries } = app();
+    const response = await server.request(
+      `/api/frictions?period=7d&tz=UTC${suffix}`,
+    );
+    expect(response.status).toBe(200);
+    expect(queries.map((query) => query.filter)).toEqual([filter]);
   });
 
   it.each([

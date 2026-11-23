@@ -82,3 +82,72 @@
 .fd-panel-heading.fd-friction-heading {
   margin-bottom: var(--fd-space-4);
 }
+
+.fd-friction-chips {
+  display: flex;
+  min-width: 0;
+}
+
+.fd-friction-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fd-space-1);
+  max-width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 0 4px 0 12px;
+  font-size: var(--fd-text-sm);
+  font-weight: 600;
+  color: var(--fd-ink);
+  background: var(--fd-surface-2);
+  border: 1px solid var(--fd-field-border);
+  border-radius: var(--fd-radius-pill);
+}
+
+.fd-friction-chip-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fd-friction-chip-remove.fd-control {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--fd-ink-2);
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+}
+
+.fd-friction-chip-remove.fd-control:hover {
+  color: var(--fd-ink);
+  background: var(--fd-surface);
+}
+
+.fd-friction-peaks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--fd-space-4) var(--fd-space-6);
+  margin-bottom: var(--fd-space-4);
+}
+
+.fd-friction-peaks .fd-friction-note {
+  padding-bottom: 2px;
+}
+
+.fd-friction-issue {
+  display: block;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

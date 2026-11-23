@@ -1,6 +1,8 @@
 import {
   type CompactionTrigger,
   FRICTION_KINDS,
+  type FrictionSubject,
+  type ThreadPeak,
   type FrictionCategory,
   type FrictionKind,
   type FrictionStats,
@@ -9,7 +11,10 @@ import {
 } from '../frictions/types.ts';
 import type { FilterOption } from './components/FilterPills.tsx';
 import type { TrendBucket } from './components/stats-math.ts';
+import { issueTitleText } from './components/IssueCard.tsx';
+import type { FrictionFilters } from './frictions-api.ts';
 import { MISSING, formatBucket, formatCount, formatTokens } from './format.ts';
+import { sessionTitle } from './session-links.ts';
 
 export const ALL_KINDS = 'all';
 
@@ -19,7 +24,7 @@ export const MAX_EXIT_CODES = 5;
 
 export const API_CALL_NOUN = { one: 'API call', other: 'API calls' };
 
-const KIND_LABELS: Record<FrictionKind, string> = {
+export const KIND_LABELS: Record<FrictionKind, string> = {
   'tool-error': 'Tool errors',
   'stop-blocked': 'Stop blocked',
   compaction: 'Compactions',
@@ -123,4 +128,67 @@ export function showsKind(
   wanted: FrictionKind,
 ): boolean {
   return kind === undefined || kind === wanted;
+}
+
+export const THREAD_NOUN = { one: 'thread', other: 'threads' };
+
+export function perThreadText(value: number): string {
+  return value.toFixed(1);
+}
+
+export function mainKindText(kind: FrictionKind | null): string {
+  return kind === null ? MISSING : KIND_LABELS[kind];
+}
+
+export function compactedText(compacted: number, threads: number): string {
+  return `${formatCount(compacted)} of ${plural(threads, 'thread', 'threads')} compacted`;
+}
+
+export function issueText(
+  number: number,
+  issue: Parameters<typeof issueTitleText>[0],
+): string {
+  const title = issueTitleText(issue);
+  return title === null ? `#${String(number)}` : `#${String(number)} ${title}`;
+}
+
+export function peakLabel(thread: ThreadPeak): string {
+  const description = thread.description?.trim() ?? '';
+  if (description !== '') return description;
+  return sessionTitle({
+    title: thread.sessionTitle,
+    id: thread.sessionId,
+    agent: thread.sessionAgent,
+  });
+}
+
+export function chipText(
+  filters: Pick<FrictionFilters, 'session' | 'issue'>,
+  subject: FrictionSubject | null | undefined,
+): string | null {
+  if (filters.session !== undefined) {
+    const known =
+      subject?.kind === 'session' &&
+      subject.id === filters.session &&
+      subject.title !== null
+        ? subject
+        : undefined;
+    return `Session: ${
+      known === undefined
+        ? filters.session
+        : sessionTitle({
+            title: known.title ?? '',
+            id: known.id,
+            agent: known.agent,
+          })
+    }`;
+  }
+  if (filters.issue !== undefined) {
+    const issue =
+      subject?.kind === 'issue' && subject.number === filters.issue
+        ? subject.issue
+        : { status: 'not-collected' as const };
+    return `Issue: ${issueText(filters.issue, issue)}`;
+  }
+  return null;
 }

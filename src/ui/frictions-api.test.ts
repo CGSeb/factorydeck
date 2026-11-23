@@ -3,7 +3,9 @@ import type { FrictionsResponse } from '../frictions/types.ts';
 import {
   frictionFiltersOf,
   frictionParams,
+  frictionsHref,
   frictionsLoader,
+  withoutFilter,
 } from './frictions-api.ts';
 
 describe('frictionFiltersOf', () => {
@@ -33,6 +35,55 @@ describe('frictionFiltersOf', () => {
       project: undefined,
       kind: undefined,
     });
+  });
+});
+
+describe('the session and issue parameters', () => {
+  it.each([
+    ['', undefined, undefined],
+    ['session=abc-123', 'abc-123', undefined],
+    ['session=', undefined, undefined],
+    ['session=%20abc', ' abc', undefined],
+    ['session=a&session=b', 'a', undefined],
+    ['issue=12&project=%2Fwork%2Fapp', undefined, 12],
+    ['issue=0012&project=%2Fwork%2Fapp', undefined, 12],
+    ['issue=12', undefined, undefined],
+    ['issue=12&project=', undefined, undefined],
+    ['issue=0&project=%2Fwork%2Fapp', undefined, undefined],
+    ['issue=-4&project=%2Fwork%2Fapp', undefined, undefined],
+    ['issue=4.5&project=%2Fwork%2Fapp', undefined, undefined],
+    ['issue=%2312&project=%2Fwork%2Fapp', undefined, undefined],
+    ['issue=99999999999999999999&project=%2Fwork%2Fapp', undefined, undefined],
+    ['session=abc&issue=12&project=%2Fwork%2Fapp', 'abc', undefined],
+  ])('reads ?%s as session %s and issue %s', (search, session, issue) => {
+    const filters = frictionFiltersOf(new URLSearchParams(search));
+    expect([filters.session, filters.issue]).toEqual([session, issue]);
+  });
+
+  it('writes them back, and drops them with the chip', () => {
+    const issue = frictionFiltersOf(
+      new URLSearchParams(
+        'period=30d&project=%2Fwork%2Fapp&issue=12&kind=compaction',
+      ),
+    );
+    expect(frictionParams(issue).toString()).toBe(
+      'period=30d&project=%2Fwork%2Fapp&kind=compaction&issue=12',
+    );
+    expect(frictionParams(withoutFilter(issue)).toString()).toBe(
+      'period=30d&project=%2Fwork%2Fapp&kind=compaction',
+    );
+  });
+
+  it('links to the frictions of a session or an issue', () => {
+    expect(frictionsHref({ period: 'all', session: 's 1' })).toBe(
+      '/frictions?period=all&session=s+1',
+    );
+    expect(
+      frictionsHref({ period: '7d', project: '/work/app', session: 's1' }),
+    ).toBe('/frictions?period=7d&project=%2Fwork%2Fapp&session=s1');
+    expect(
+      frictionsHref({ period: '30d', project: '/work/app', issue: 12 }),
+    ).toBe('/frictions?period=30d&project=%2Fwork%2Fapp&issue=12');
   });
 });
 
@@ -73,9 +124,23 @@ describe('frictionsLoader', () => {
       load({ period: '30d', project: '/work/app', kind: 'compaction' }),
     ).resolves.toEqual(body);
     await load({ period: '7d', project: undefined, kind: undefined });
+    await load({
+      period: '7d',
+      project: '/work/app',
+      kind: undefined,
+      issue: 12,
+    });
+    await load({
+      period: 'all',
+      project: undefined,
+      kind: undefined,
+      session: 's-1',
+    });
     expect(urls).toEqual([
       '/api/frictions?period=30d&tz=Europe%2FParis&project=%2Fwork%2Fapp&kind=compaction',
       '/api/frictions?period=7d&tz=Europe%2FParis',
+      '/api/frictions?period=7d&tz=Europe%2FParis&project=%2Fwork%2Fapp&issue=12',
+      '/api/frictions?period=all&tz=Europe%2FParis&session=s-1',
     ]);
   });
 });

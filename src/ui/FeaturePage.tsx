@@ -18,6 +18,7 @@ import { SplitPage } from './components/SplitPage.tsx';
 import { StageBadge } from './components/StageBadge.tsx';
 import { StatusLine } from './components/StatusLine.tsx';
 import { type LoadFeature, featuresPath } from './features-api.ts';
+import { frictionsHref } from './frictions-api.ts';
 import {
   issueActivity,
   issueColors,
@@ -88,9 +89,11 @@ function IssueTitle({ feature }: { feature: FeatureDetail }): ReactElement {
 function IssueAside({
   feature,
   colors,
+  period,
 }: {
   feature: FeatureDetail;
   colors: Map<string, string>;
+  period: Period;
 }): ReactElement {
   const { detail, orchestration } = feature;
   const report = detail?.outcome.report ?? null;
@@ -113,6 +116,15 @@ function IssueAside({
       checks={request?.checks ?? null}
       labels={detail === null ? null : detail.labels.map(({ name }) => name)}
       reworked={detail?.outcome.reworked ?? null}
+      frictions={{
+        count: feature.frictions,
+        href: frictionsHref({
+          period,
+          project: feature.project,
+          issue: feature.number,
+        }),
+      }}
+      renderLink={renderRouterLink}
     />
   );
 }
@@ -131,7 +143,9 @@ function FeatureContent({
   const stage = feature.detail?.outcome.stage;
   const merged = stage !== undefined && MERGED_STAGES.includes(stage);
   return (
-    <SplitPage aside={<IssueAside feature={feature} colors={colors} />}>
+    <SplitPage
+      aside={<IssueAside feature={feature} colors={colors} period={period} />}
+    >
       <div className="fd-issue-page">
         <PageHeader
           back={{

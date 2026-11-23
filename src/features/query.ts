@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
+import { issueFrictionCount } from '../frictions/query.ts';
 import { issueDetail, lookupOutcomes } from '../git-host/query.ts';
 import { detailInPeriod } from '../git-host/milestones.ts';
 import { byCostDescending, periodStart, select } from '../overview/query.ts';
@@ -235,6 +236,7 @@ export async function featureDetail(
     projectNames(db),
     periodStart(db, scoped),
   ]);
+  const frictions = await issueFrictionCount(db, config, key, startAt);
   const issueOf = (found: Row[]): IssueAccumulator | undefined =>
     allocate(config, found, markers).issues.get(
       issueKey(key.project, key.number),
@@ -269,5 +271,6 @@ export async function featureDetail(
     threads: [...(issue?.threads.values() ?? [])]
       .map(threadOf)
       .sort(byFirstCall),
+    frictions,
   };
 }

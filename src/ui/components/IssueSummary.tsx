@@ -1,8 +1,9 @@
 import { Fragment, type ReactElement } from 'react';
 import type { ChecksSummary, RequestState } from '../../git-host/types.ts';
-import { MISSING } from '../format.ts';
+import { MISSING, formatCount } from '../format.ts';
 import { Aside } from './Aside.tsx';
 import { type ChartSegment, wholePercent } from './chart-math.ts';
+import { type RenderLink, renderAnchor } from './link.ts';
 import { CHECKS_TEXT, requestStateText } from './request-text.ts';
 import type { SerenityScore } from './SerenityBadge.tsx';
 import { SplitBar } from './SplitBar.tsx';
@@ -28,6 +29,13 @@ export interface SummaryPullRequest {
   draft: boolean;
 }
 
+export interface SummaryFrictions {
+  count: number;
+  href: string;
+}
+
+export const NO_FRICTION = 'None';
+
 export interface IssueSummaryProps {
   total: SummaryAmount;
   orchestration: SummaryAmount | null;
@@ -38,6 +46,8 @@ export interface IssueSummaryProps {
   checks: ChecksSummary | null;
   labels: string[] | null;
   reworked: boolean | null;
+  frictions?: SummaryFrictions | undefined;
+  renderLink?: RenderLink;
 }
 
 function Amount({
@@ -93,10 +103,12 @@ function Details({
   checks,
   labels,
   reworked,
+  frictions,
+  renderLink,
 }: Pick<
   IssueSummaryProps,
-  'pullRequest' | 'checks' | 'labels' | 'reworked'
->): ReactElement | null {
+  'pullRequest' | 'checks' | 'labels' | 'reworked' | 'frictions'
+> & { renderLink: RenderLink }): ReactElement | null {
   const rows: { term: string; value: ReactElement | string }[] = [];
   if (pullRequest !== null) {
     rows.push({
@@ -119,6 +131,18 @@ function Details({
   }
   if (reworked !== null) {
     rows.push({ term: 'Reworked', value: reworked ? 'Yes' : 'No' });
+  }
+  if (frictions !== undefined) {
+    rows.push({
+      term: 'Frictions',
+      value:
+        frictions.count === 0
+          ? NO_FRICTION
+          : renderLink({
+              href: frictions.href,
+              children: formatCount(frictions.count),
+            }),
+    });
   }
   if (rows.length === 0) return null;
   return (
@@ -143,6 +167,8 @@ export function IssueSummary({
   checks,
   labels,
   reworked,
+  frictions,
+  renderLink = renderAnchor,
 }: IssueSummaryProps): ReactElement {
   return (
     <Aside>
@@ -181,6 +207,8 @@ export function IssueSummary({
         checks={checks}
         labels={labels}
         reworked={reworked}
+        frictions={frictions}
+        renderLink={renderLink}
       />
     </Aside>
   );

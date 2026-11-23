@@ -116,6 +116,7 @@ export interface FeatureDetail {
   orchestration: FeatureRole | null;
   sessions: FeatureSession[];
   threads: FeatureThread[];
+  frictions: number;
 }
 
 interface Refresh {

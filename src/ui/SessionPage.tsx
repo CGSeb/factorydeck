@@ -246,7 +246,15 @@ export function SessionPage({ loadSession }: SessionPageProps): ReactElement {
   const { session } = response;
   return (
     <div className="fd-sessions fd-session-card">
-      <SplitPage aside={<SessionAside session={session} />}>
+      <SplitPage
+        aside={
+          <SessionAside
+            session={session}
+            project={scope.project}
+            renderLink={renderRouterLink}
+          />
+        }
+      >
         <div className="fd-session-main">
           <PageHeader
             title={sessionTitle(session)}
