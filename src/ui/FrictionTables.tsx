@@ -1,4 +1,5 @@
-import type { ReactElement } from 'react';
+import { type ReactElement, useCallback } from 'react';
+import { hookParam } from '../frictions/occurrence-types.ts';
 import type {
   FrictionKind,
   FrictionStats,
@@ -6,7 +7,15 @@ import type {
 } from '../frictions/types.ts';
 import { NUMERIC_CELL } from './components/DataTable.tsx';
 import { formatCount, formatDateTime } from './format.ts';
-import { hookText, showsKind } from './frictions-view.ts';
+import type { FrictionFilters } from './frictions-api.ts';
+import { hookLabel, hookText, showsKind } from './frictions-view.ts';
+import {
+  type OccurrenceControls,
+  OccurrenceRows,
+  OccurrencesProvider,
+  useOpenRows,
+} from './FrictionOccurrences.tsx';
+import type { LoadOccurrences } from './occurrences-api.ts';
 import { PagedTable } from './PagedTable.tsx';
 import type { LinkScope } from './session-links.ts';
 import {
@@ -41,16 +50,28 @@ export function HookTable({
         </>
       }
       renderRow={(row) => (
-        <tr key={row.command}>
-          <th scope="row" className="fd-friction-mono">
+        <OccurrenceRows
+          key={row.command}
+          table="hook"
+          row={hookParam(row)}
+          label={hookLabel(row.command)}
+          colSpan={4}
+          headerClassName="fd-friction-mono"
+          header={
             <span className="fd-friction-hook" title={hookText(row.command)}>
               {hookText(row.command)}
             </span>
-          </th>
-          <td className={NUMERIC_CELL}>{formatCount(row.blocks)}</td>
-          <td className={NUMERIC_CELL}>{formatCount(row.sessions)}</td>
-          <td className="fd-friction-nowrap">{formatDateTime(row.lastAt)}</td>
-        </tr>
+          }
+          cells={
+            <>
+              <td className={NUMERIC_CELL}>{formatCount(row.blocks)}</td>
+              <td className={NUMERIC_CELL}>{formatCount(row.sessions)}</td>
+              <td className="fd-friction-nowrap">
+                {formatDateTime(row.lastAt)}
+              </td>
+            </>
+          }
+        />
       )}
     />
   );
@@ -60,27 +81,48 @@ export interface FrictionTablesProps {
   stats: FrictionStats;
   kind: FrictionKind | undefined;
   scope: LinkScope;
+  filters: FrictionFilters;
+  loadOccurrences: LoadOccurrences;
+}
+
+function useOccurrenceControls(
+  filters: FrictionFilters,
+  scope: LinkScope,
+  loadOccurrences: LoadOccurrences,
+): OccurrenceControls {
+  const filtersKey = JSON.stringify(filters);
+  const { isOpen, toggle } = useOpenRows(filtersKey);
+  const load = useCallback<OccurrenceControls['load']>(
+    (table, row) => loadOccurrences({ filters, table, row }),
+    [loadOccurrences, filtersKey],
+  );
+  return { scope, isOpen, toggle, load };
 }
 
 export function FrictionTables({
   stats,
   kind,
   scope,
+  filters,
+  loadOccurrences,
 }: FrictionTablesProps): ReactElement {
+  const controls = useOccurrenceControls(filters, scope, loadOccurrences);
   const toolErrors = showsKind(kind, 'tool-error');
   const shown = (wanted: FrictionKind, rows: readonly unknown[]): boolean =>
     showsKind(kind, wanted) && rows.length > 0;
   return (
-    <div className="fd-friction-tables">
-      {shown('tool-error', stats.categories) && (
-        <CategoryTable rows={stats.categories} />
-      )}
-      {shown('tool-error', stats.tools) && <ToolTable rows={stats.tools} />}
-      {shown('tool-error', stats.commands) && (
-        <CommandTable rows={stats.commands} />
-      )}
-      {toolErrors && <RepeatedTable rows={stats.repeated} scope={scope} />}
-      {shown('stop-blocked', stats.hooks) && <HookTable rows={stats.hooks} />}
-    </div>
+    <OccurrencesProvider value={controls}>
+      <div className="fd-friction-tables">
+        {shown('tool-error', stats.categories) && (
+          <CategoryTable rows={stats.categories} />
+        )}
+        {shown('tool-error', stats.tools) && <ToolTable rows={stats.tools} />}
+        {shown('tool-error', stats.commands) && (
+          <CommandTable rows={stats.commands} />
+        )}
+        {toolErrors && <RepeatedTable rows={stats.repeated} scope={scope} />}
+        {shown('stop-blocked', stats.hooks) && <HookTable rows={stats.hooks} />}
+      </div>
+    </OccurrencesProvider>
   );
 }

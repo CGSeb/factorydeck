@@ -143,6 +143,14 @@ export function programText(program: string | null): string {
 
 export const hookText = programText;
 
+export function programLabel(program: string | null): string {
+  return program === null || program === '' ? 'no program' : program;
+}
+
+export function hookLabel(command: string): string {
+  return command === '' ? 'no hook command' : command;
+}
+
 export function shortSessionTitle(title: string, id: string): string {
   return title === '' ? id.slice(0, 8) : title;
 }

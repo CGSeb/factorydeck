@@ -66,6 +66,8 @@ export interface RepeatedRow {
   project: string;
   workItem: number | null;
   sessionId: string;
+  subAgentId: string;
+  commandHash: string;
   sessionTitle: string;
   lastAt: string;
 }

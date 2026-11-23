@@ -5,6 +5,7 @@ import { FeaturePage } from './FeaturePage.tsx';
 import type { LoadFeature, LoadFeatures } from './features-api.ts';
 import { FeaturesPage } from './FeaturesPage.tsx';
 import type { LoadFrictions } from './frictions-api.ts';
+import type { LoadOccurrences } from './occurrences-api.ts';
 import { FrictionsPage } from './FrictionsPage.tsx';
 import type { LoadCollection, RefreshCollection } from './git-host-api.ts';
 import { Layout } from './Layout.tsx';
@@ -37,6 +38,7 @@ export interface AppProps {
   loadAutonomy: LoadAutonomy;
   loadQuality: LoadQuality;
   loadFrictions: LoadFrictions;
+  loadOccurrences: LoadOccurrences;
   loadFlow: LoadFlow;
 }
 
@@ -51,6 +53,7 @@ export function App(props: AppProps): ReactElement {
     loadFeatures,
     loadFeature,
     loadFrictions,
+    loadOccurrences,
   } = props;
   return (
     <Routes>
@@ -67,7 +70,12 @@ export function App(props: AppProps): ReactElement {
         <Route path="stats" element={<StatsPage {...props} />} />
         <Route
           path="frictions"
-          element={<FrictionsPage loadFrictions={loadFrictions} />}
+          element={
+            <FrictionsPage
+              loadFrictions={loadFrictions}
+              loadOccurrences={loadOccurrences}
+            />
+          }
         />
         <Route
           path="sessions"

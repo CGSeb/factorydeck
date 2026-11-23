@@ -8,13 +8,14 @@ import {
 } from '../config/env.ts';
 import { type Database, createDatabase } from '../db/client.ts';
 import { featureDetail, listFeatures } from '../features/query.ts';
+import { frictionOccurrences } from '../frictions/occurrences.ts';
 import { frictionStats } from '../frictions/query.ts';
 import { collect } from '../git-host/collect.ts';
 import { collectionStatus } from '../git-host/query.ts';
 import { hasFactory } from '../ingest/factory.ts';
 import { ingest } from '../ingest/ingest.ts';
 import { usageOverview } from '../overview/query.ts';
-import { loadWorkflowConfig } from '../roles/config.ts';
+import { type WorkflowConfig, loadWorkflowConfig } from '../roles/config.ts';
 import { deleteProject, factoryStatus } from '../projects/remove.ts';
 import { listRoles } from '../roles/query.ts';
 import { listSessions, sessionDetail } from '../sessions/query.ts';
@@ -27,6 +28,7 @@ import { type CollectLoop, startCollectLoop } from './collect-loop.ts';
 import { databaseCheck } from './health.ts';
 import { type IngestLoop, startIngestLoop } from './ingest-loop.ts';
 import { HOST, listen } from './listen.ts';
+import type { StatsSource } from './stats-routes.ts';
 import { UI_DIST_DIR } from './paths.ts';
 
 function lazyCollection(
@@ -71,6 +73,16 @@ function startIngestion(
       lastError = message;
     },
   });
+}
+
+function statsSource(db: Database, config: WorkflowConfig): StatsSource {
+  return {
+    autonomy: (query) => autonomyStats(db, query, hasFactory),
+    quality: (query) => qualityStats(db, query, hasFactory),
+    frictions: (query) => frictionStats(db, query, config),
+    occurrences: (query) => frictionOccurrences(db, query, config),
+    flow: (query) => flowStats(db, query, config, hasFactory),
+  };
 }
 
 async function main(): Promise<void> {
@@ -123,12 +135,7 @@ async function main(): Promise<void> {
       status: () => collectionStatus(db, hasFactory),
       refresh: () => collectionLoop().refresh(),
     },
-    stats: {
-      autonomy: (query) => autonomyStats(db, query, hasFactory),
-      quality: (query) => qualityStats(db, query, hasFactory),
-      frictions: (query) => frictionStats(db, query, config),
-      flow: (query) => flowStats(db, query, config, hasFactory),
-    },
+    stats: statsSource(db, config),
   });
   await listen(app, env.FACTORYDECK_PORT);
   console.log(`FactoryDeck on http://${HOST}:${env.FACTORYDECK_PORT}`);

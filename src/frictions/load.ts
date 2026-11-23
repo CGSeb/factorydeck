@@ -80,7 +80,8 @@ async function windowFrictions(db: Database, scope: Scope): Promise<Row[]> {
         sa.agent_type, sa.description, sa.git_branch as agent_branch,
         coalesce(sa.first_at, fc.first_call_at) as agent_first_at,
         f.tool, f.category, f.program, f.exit_code, f.command_hash,
-        f.hook_command, f.trigger, f.pre_tokens
+        f.hook_command, f.trigger, f.pre_tokens,
+        f.id, f.agent, f.source_path, f.record_uuid, f.position
       from friction f
       join session s on s.id = f.session_id
       left join sub_agent sa on sa.session_id = f.session_id and sa.id = f.sub_agent_id

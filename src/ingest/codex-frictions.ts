@@ -39,7 +39,7 @@ const EXIT_CODE_LINES = [
   /^Process exited with code (-?\d+)/m,
 ];
 
-function commandText(value: unknown): string | undefined {
+export function commandText(value: unknown): string | undefined {
   if (typeof value === 'string') return value;
   if (Array.isArray(value) && value.every((part) => typeof part === 'string')) {
     return value.join(' ');
@@ -47,7 +47,7 @@ function commandText(value: unknown): string | undefined {
   return undefined;
 }
 
-function parseJson(text: string): unknown {
+export function parseJson(text: string): unknown {
   try {
     return JSON.parse(text);
   } catch {
@@ -55,7 +55,9 @@ function parseJson(text: string): unknown {
   }
 }
 
-function functionCallOf(payload: unknown): [string, ToolCall] | undefined {
+export function functionCallOf(
+  payload: unknown,
+): [string, ToolCall] | undefined {
   const callId = textAt(payload, 'call_id');
   const name = textAt(payload, 'name');
   if (callId === undefined || name === undefined) return undefined;
@@ -114,7 +116,7 @@ function frictionRow(base: FrictionBase, fields: FrictionFields): FrictionRow {
   return { ...base, ...EMPTY_FIELDS, ...fields, agent: CODEX };
 }
 
-function outputFriction(
+export function outputFriction(
   output: unknown,
   call: ToolCall | undefined,
 ): FrictionFields | undefined {

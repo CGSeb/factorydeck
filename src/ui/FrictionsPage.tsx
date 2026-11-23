@@ -28,12 +28,14 @@ import {
 import { FrictionBreakdown } from './FrictionBreakdown.tsx';
 import { FrictionFilterChip } from './FrictionFilterChip.tsx';
 import { FrictionTables } from './FrictionTables.tsx';
+import type { LoadOccurrences } from './occurrences-api.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { useRefreshing } from './skills-api.ts';
 import './frictions-page.css';
 
 export interface FrictionsPageProps {
   loadFrictions: LoadFrictions;
+  loadOccurrences: LoadOccurrences;
   now?: Date | undefined;
 }
 
@@ -81,10 +83,12 @@ function FrictionsContent({
   stats,
   filters,
   now,
+  loadOccurrences,
 }: {
   stats: FrictionStats;
   filters: FrictionFilters;
   now: Date;
+  loadOccurrences: LoadOccurrences;
 }): ReactElement {
   if (stats.apiCalls === 0) return <StatusLine>{NO_ACTIVITY}</StatusLine>;
   const scope = { project: filters.project, period: filters.period };
@@ -108,6 +112,8 @@ function FrictionsContent({
           stats={stats}
           kind={stats.kind ?? undefined}
           scope={scope}
+          filters={filters}
+          loadOccurrences={loadOccurrences}
         />
       )}
       <FrictionBreakdown
@@ -126,11 +132,13 @@ function FrictionsBody({
   filters,
   onFilters,
   now,
+  loadOccurrences,
 }: {
   response: FrictionsResponse | undefined;
   filters: FrictionFilters;
   onFilters: (next: FrictionFilters) => void;
   now: Date;
+  loadOccurrences: LoadOccurrences;
 }): ReactElement {
   const chip = chipText(
     filters,
@@ -160,13 +168,19 @@ function FrictionsBody({
         <FrictionPills stats={stats} filters={filters} onFilters={onFilters} />
       )}
       {chipElement}
-      <FrictionsContent stats={stats} filters={filters} now={now} />
+      <FrictionsContent
+        stats={stats}
+        filters={filters}
+        now={now}
+        loadOccurrences={loadOccurrences}
+      />
     </>
   );
 }
 
 export function FrictionsPage({
   loadFrictions,
+  loadOccurrences,
   now = new Date(),
 }: FrictionsPageProps): ReactElement {
   const [filters, setFilters] = useFrictionFilters();
@@ -197,6 +211,7 @@ export function FrictionsPage({
         filters={filters}
         onFilters={setFilters}
         now={now}
+        loadOccurrences={loadOccurrences}
       />
     </div>
   );

@@ -5,6 +5,7 @@ import {
   frictionStats,
   frictionsLoaderOf,
 } from './frictions-fixtures.ts';
+import { occurrencesLoaderOf } from './occurrence-fixtures.ts';
 import {
   columnTexts,
   frictionsLoaded,
@@ -15,7 +16,10 @@ import { FrictionsPage } from './FrictionsPage.tsx';
 
 const meta = {
   component: FrictionsPage,
-  args: { loadFrictions: frictionsLoaderOf() },
+  args: {
+    loadFrictions: frictionsLoaderOf(),
+    loadOccurrences: occurrencesLoaderOf(),
+  },
   decorators: [frictionsRouter],
 } satisfies Meta<typeof FrictionsPage>;
 
@@ -161,5 +165,40 @@ export const NoRepeatedFailure: Story = {
       canvas.queryByRole('table', { name: 'Repeated failures' }),
     ).toBeNull();
     await expect(tableHeadings(canvasElement)).toEqual(EVERY_TABLE);
+  },
+};
+
+export const FilterClosesOccurrences: Story = {
+  name: 'Changing a filter closes the open rows',
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await frictionsLoaded(canvasElement);
+    const commands = canvas.getByRole('table', { name: 'Failed commands' });
+    const tools = canvas.getByRole('table', { name: 'By tool' });
+    const git = within(commands).getByRole('button', {
+      name: 'Show occurrences of git',
+    });
+    const bash = within(tools).getByRole('button', {
+      name: 'Show occurrences of Bash',
+    });
+    await userEvent.click(git);
+    await userEvent.click(bash);
+    await expect(
+      await canvas.findAllByRole('heading', { name: 'Latest occurrences' }),
+    ).toHaveLength(2);
+    const kinds = canvas.getByRole('group', { name: 'Kind' });
+    await userEvent.click(
+      within(kinds).getByRole('button', { name: /^Tool errors/ }),
+    );
+    await canvas.findByText('41 frictions · 2.0 per 100 API calls');
+    await expect(
+      canvas.queryAllByRole('heading', { name: 'Latest occurrences' }),
+    ).toEqual([]);
+    await expect(
+      within(canvas.getByRole('table', { name: 'Failed commands' })).getByRole(
+        'button',
+        { name: 'Show occurrences of git' },
+      ),
+    ).toHaveAttribute('aria-expanded', 'false');
   },
 };

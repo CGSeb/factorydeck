@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, within } from 'storybook/test';
 import { surfaceFrame } from './components/story-frame.ts';
 import { LONG_HOOK, frictionStats, statsFor } from './frictions-fixtures.ts';
+import { occurrencesLoaderOf } from './occurrence-fixtures.ts';
 import { columnTexts, tableHeadings, tablesRouter } from './frictions-story.ts';
 import { FrictionTables } from './FrictionTables.tsx';
 
@@ -13,6 +14,8 @@ const meta = {
     stats: frictionStats,
     kind: undefined,
     scope: { project: undefined, period: '30d' },
+    filters: { period: '30d', project: undefined, kind: undefined },
+    loadOccurrences: occurrencesLoaderOf(),
   },
 } satisfies Meta<typeof FrictionTables>;
 

@@ -41,6 +41,15 @@ function filterEntries(filters: FrictionFilters): [string, string][] {
   return entries;
 }
 
+export function frictionsQuery(
+  filters: FrictionFilters,
+  timeZone: string,
+): URLSearchParams {
+  const query = queryOf(filters, timeZone);
+  for (const [key, value] of filterEntries(filters)) query.set(key, value);
+  return query;
+}
+
 export type LoadFrictions = (
   filters: FrictionFilters,
 ) => Promise<FrictionsResponse | undefined>;
@@ -50,11 +59,9 @@ export function frictionsLoader(
   timeZone: () => string = browserTimeZone,
 ): LoadFrictions {
   return async (filters) => {
-    const query = queryOf(filters, timeZone());
-    for (const [key, value] of filterEntries(filters)) query.set(key, value);
     const body = await fetchJson(
       fetchImpl,
-      `/api/frictions?${query.toString()}`,
+      `/api/frictions?${frictionsQuery(filters, timeZone()).toString()}`,
     );
     return isResponse<FrictionsResponse>(body) ? body : undefined;
   };

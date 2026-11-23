@@ -7,6 +7,7 @@ import {
   pendingFrictions,
   unreachableFrictions,
 } from './frictions-fixtures.ts';
+import { occurrencesLoaderOf } from './occurrence-fixtures.ts';
 import {
   frictionsLoaded,
   frictionsRouter,
@@ -16,7 +17,10 @@ import { FrictionsPage } from './FrictionsPage.tsx';
 
 const meta = {
   component: FrictionsPage,
-  args: { loadFrictions: frictionsLoaderOf() },
+  args: {
+    loadFrictions: frictionsLoaderOf(),
+    loadOccurrences: occurrencesLoaderOf(),
+  },
   decorators: [frictionsRouter],
 } satisfies Meta<typeof FrictionsPage>;
 

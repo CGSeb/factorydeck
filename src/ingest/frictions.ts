@@ -21,7 +21,7 @@ export type ToolErrorCategory = (typeof TOOL_ERROR_CATEGORIES)[number];
 
 export const UNKNOWN_TOOL = 'unknown';
 
-const SHELL_TOOLS: ReadonlySet<string> = new Set(['Bash']);
+export const SHELL_TOOLS: ReadonlySet<string> = new Set(['Bash']);
 
 export interface ToolCall {
   name: string;
@@ -87,7 +87,7 @@ export function toolCallsOf(record: LogRecord): [string, ToolCall][] {
   });
 }
 
-function resultText(content: unknown): string {
+export function resultText(content: unknown): string {
   if (typeof content === 'string') return content;
   if (!Array.isArray(content)) return '';
   return content

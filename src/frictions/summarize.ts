@@ -156,6 +156,8 @@ export function repeatedRows<R extends FrictionRow>(
           project: thread.project,
           workItem: thread.workItem,
           sessionId: last.sessionId,
+          subAgentId: last.subAgentId,
+          commandHash: last.commandHash ?? '',
           sessionTitle: last.sessionTitle,
           lastAt: last.at,
         },
