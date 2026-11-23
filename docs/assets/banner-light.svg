@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 360" width="1280" height="360" role="img" aria-labelledby="t-light">
+  <title id="t-light">FactoryDeck: watch your AI software factory run, and make it more autonomous</title>
+  <defs>
+    <linearGradient id="bg-light" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f3f5f4"/>
+      <stop offset="1" stop-color="#e3eeeb"/>
+    </linearGradient>
+    <pattern id="dots-light" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.4" fill="#cfd8d5"/>
+    </pattern>
+    <filter id="shadow-light" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="rgba(16,24,23,0.10)"/>
+    </filter>
+  </defs>
+  <rect width="1280" height="360" rx="24" fill="url(#bg-light)"/>
+  <rect x="760" width="520" height="360" rx="24" fill="url(#dots-light)"/>
+  <g transform="translate(80 58) scale(2.5)">
+    <rect x="2" y="4" width="28" height="24" rx="4" fill="#0f766e"/>
+    <circle cx="6" cy="7" r="1" fill="#ffffff"/>
+    <circle cx="9" cy="7" r="1" fill="#ffffff"/>
+    <circle cx="12" cy="7" r="1" fill="#ffffff"/>
+    <rect x="4" y="10" width="24" height="16" rx="2" fill="#ffffff"/>
+    <path d="M7 24V18l4-2.5V18l4-2.5V18h4v-6h3v12z" fill="#0f766e"/>
+  </g>
+  <text x="180" y="122" font-family="'Space Grotesk','Inter','Segoe UI',Helvetica,Arial,sans-serif" font-size="68" font-weight="700" letter-spacing="-1.5" fill="#17201f">Factory<tspan fill="#0f766e">Deck</tspan></text>
+  <text x="80" y="186" font-family="'Inter','Segoe UI',Helvetica,Arial,sans-serif" font-size="27" font-weight="500" fill="#17201f">Watch your AI software factory run.</text>
+  <text x="80" y="220" font-family="'Inter','Segoe UI',Helvetica,Arial,sans-serif" font-size="27" font-weight="500" fill="#17201f">Fix what blocks it, until it runs on its own.</text>
+  <rect x="80" y="256" width="124.6" height="34" rx="17" fill="#ffffff" stroke="#cfd8d5"/><text x="142.3" y="278" text-anchor="middle" font-family="'Inter','Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="500" fill="#17201f">local-first</text><rect x="214.6" y="256" width="124.6" height="34" rx="17" fill="#ffffff" stroke="#cfd8d5"/><text x="276.9" y="278" text-anchor="middle" font-family="'Inter','Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="500" fill="#17201f">open source</text><rect x="349.2" y="256" width="193.4" height="34" rx="17" fill="#ffffff" stroke="#cfd8d5"/><text x="445.9" y="278" text-anchor="middle" font-family="'Inter','Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="500" fill="#17201f">Claude Code + Codex</text>
+  <g filter="url(#shadow-light)">
+    <rect x="820" y="48" width="380" height="264" rx="16" fill="#ffffff" stroke="#dfe5e3"/>
+  </g>
+  <text x="844" y="84" font-family="'Inter','Segoe UI',Helvetica,Arial,sans-serif" font-size="15" fill="#55625f">Merged without a person</text>
+  <text x="844" y="132" font-family="'Space Grotesk','Inter','Segoe UI',Helvetica,Arial,sans-serif" font-size="44" font-weight="700" fill="#17201f">71%</text>
+  <text x="940" y="130" font-family="'Inter','Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="600" fill="#14593a">▲ 33 pts in 8 weeks</text>
+  <rect x="844" y="216.4" width="34" height="45.599999999999994" rx="4" fill="#9fcfc8"/><rect x="886.6" y="212.8" width="34" height="49.199999999999996" rx="4" fill="#9fcfc8"/><rect x="929.2" y="205.6" width="34" height="56.400000000000006" rx="4" fill="#9fcfc8"/><rect x="971.8" y="208" width="34" height="54" rx="4" fill="#9fcfc8"/><rect x="1014.4" y="197.2" width="34" height="64.80000000000001" rx="4" fill="#9fcfc8"/><rect x="1057" y="190" width="34" height="72" rx="4" fill="#9fcfc8"/><rect x="1099.6" y="182.8" width="34" height="79.19999999999999" rx="4" fill="#9fcfc8"/><rect x="1142.2" y="176.8" width="34" height="85.19999999999999" rx="4" fill="#0f766e"/>
+  <line x1="844" x2="1176" y1="262" y2="262" stroke="#edf1ef"/>
+  <circle cx="849" cy="290" r="5" fill="#c27a12"/>
+  <text x="860" y="295" font-family="'Inter','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" fill="#55625f">Top friction: permission denied · 3 this week</text>
+</svg>
