@@ -21,10 +21,12 @@ A developer who sees that `git` failed 13 times opens that row and reads the lat
 
 ## Rules
 
-- **Reading the log**: the friction's source file and record (spec 040) locate it. Each coding agent's reader finds the failed call and its result as spec 040 (Claude Code) and spec 043 (Codex) identify them. Files are read line by line, stopping at the record.
-- **Call input**: for a shell tool, its command; for any other tool, its input as compact JSON. **Error excerpt**: the result's text (string content, or the text blocks joined), with terminal colour codes removed, the `Exit code <n>` line left out, then its first 3 non-empty lines. **Hook message**: the reason text the log gives for the refusing hook, first 3 non-empty lines.
+- **Reading the log**: the friction's source file and record (spec 040) locate it. Each coding agent's reader finds the failed call and its result as spec 040 (Claude Code) and spec 043 (Codex) identify them. Files are read line by line, stopping at the record, with no size or time limit. For a Codex call reported by several records, the first failing record of that call in the file gives the error text.
+- **Call input**: for a shell tool, its command; for any other tool, its input as compact JSON. **Error excerpt**: the result's text (string content, or the text blocks joined), with terminal colour codes removed, the Claude Code `<tool_use_error>` wrapper tag removed (only its inner text shows), the `Exit code <n>` line left out (for Codex, the output header it writes before the output: `Chunk ID`, `Wall time`, `Process exited with code <n>`, `Original token count`, `Output:`), then its first 3 non-empty lines. **Hook message**: the reason text the log gives for the refusing hook, first 3 non-empty lines.
 - Each text has the person's home folder written `~` and is cut at 300 characters, ending with `…` when cut.
-- The 5 latest are chosen by friction time, then stored order, among the frictions the row counts under spec 041; a `Repeated failures` row is its thread and command.
+- The 5 latest are chosen by friction time, then stored order (latest stored first), among the frictions the row counts under spec 041; a `Repeated failures` row is its thread and command.
+- **Rows of the API**: only a value that cannot name a row of the table answers 400 (a missing `row`, a category outside the five, a `Repeated failures` row not written `<session>/<sub-agent>/<command hash>`); a well-formed row with no friction under the filters answers 200 with an empty list.
+- **Open row**: the chevron and the row label form one button; `Latest occurrences` is an `h3`. A row with no program or no hook command is named `Show occurrences of no program` / `Show occurrences of no hook command`. When the row's frictions are gone it reads `No occurrence in this period.`; an empty error excerpt shows the input alone. Role colours inside an open row come from its own occurrences (a page-wide colour per role is a follow-up).
 
 ## Expected proof
 

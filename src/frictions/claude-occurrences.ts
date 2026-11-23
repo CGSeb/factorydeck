@@ -30,6 +30,13 @@ function callInputs(record: LogRecord, home: string): [string, string][] {
   });
 }
 
+const ERROR_TAG_START = /^\s*<tool_use_error>/;
+const ERROR_TAG_END = /<\/tool_use_error>\s*$/;
+
+export function withoutErrorTag(text: string): string {
+  return text.replace(ERROR_TAG_START, '').replace(ERROR_TAG_END, '');
+}
+
 function hookMessage(entry: unknown): string {
   if (typeof entry !== 'string') return '';
   if (!entry.startsWith('[')) return entry;
@@ -67,7 +74,7 @@ function textsOf(
   return {
     kind: 'tool-error',
     input,
-    error: errorExcerpt(error.text, home),
+    error: errorExcerpt(withoutErrorTag(error.text), home),
   };
 }
 

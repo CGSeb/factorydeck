@@ -1,3 +1,4 @@
+import { stripVTControlCharacters } from 'node:util';
 import { withHomeAsTilde } from '../ingest/frictions.ts';
 
 export const MAX_TEXT_LENGTH = 300;
@@ -6,9 +7,6 @@ export const MAX_TEXT_LINES = 3;
 const HIGH_SURROGATE_START = 0xd8_00;
 const HIGH_SURROGATE_END = 0xdb_ff;
 
-const ANSI_ESCAPE =
-  // eslint-disable-next-line no-control-regex
-  /\u001B(?:\[[0-?]*[ -/]*[@-~]|\][^\u0007\u001B]*(?:\u0007|\u001B\\)|[@-Z\\-_])/g;
 const EXIT_CODE_LINE = /^\s*Exit code:? -?\d+\s*$/;
 
 export function cutText(text: string, home: string): string {
@@ -31,8 +29,7 @@ export function firstLines(text: string): string {
 }
 
 export function errorExcerpt(text: string, home: string): string {
-  const lines = text
-    .replaceAll(ANSI_ESCAPE, '')
+  const lines = stripVTControlCharacters(text)
     .split(/\r?\n/)
     .filter((line) => !EXIT_CODE_LINE.test(line));
   return cutText(firstLines(lines.join('\n')), home);

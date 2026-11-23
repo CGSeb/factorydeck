@@ -145,7 +145,7 @@ describe('Claude Code occurrences', () => {
       [`${uuid}#2`]: {
         kind: 'tool-error',
         input: '{"file_path":"b.ts"}',
-        error: '<tool_use_error>String not found</tool_use_error>',
+        error: 'String not found',
       },
     });
   });
@@ -207,6 +207,39 @@ describe('Claude Code occurrences', () => {
       'r1#1': null,
       'r-missing#1': null,
       's1#4': null,
+    });
+  });
+
+  it('shows the inner text of a tool error wrapper tag', async () => {
+    const log = join(folder, 'claude.jsonl');
+    await writeLog(log, [
+      toolUse('a1', 't1', 'Edit', { file_path: 'a.ts' }),
+      toolUse('a2', 't2', 'Write', { file_path: 'b.ts' }),
+      toolError('r1', [
+        {
+          id: 't1',
+          content:
+            '  <tool_use_error>File has not been read yet.\nRead it first.</tool_use_error>\n',
+        },
+        { id: 't2', content: '<tool_use_error>No closing tag' },
+      ]),
+    ]);
+    expect(
+      await read([
+        at(log, 'r1', { position: 1 }),
+        at(log, 'r1', { position: 2 }),
+      ]),
+    ).toEqual({
+      'r1#1': {
+        kind: 'tool-error',
+        input: '{"file_path":"a.ts"}',
+        error: 'File has not been read yet.\nRead it first.',
+      },
+      'r1#2': {
+        kind: 'tool-error',
+        input: '{"file_path":"b.ts"}',
+        error: 'No closing tag',
+      },
     });
   });
 });
