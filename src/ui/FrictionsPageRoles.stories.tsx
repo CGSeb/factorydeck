@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, within } from 'storybook/test';
+import type { LoadFrictions } from './frictions-api.ts';
 import { frictionsLoaderOf } from './frictions-fixtures.ts';
 import {
   frictionsLoaded,
@@ -148,5 +149,39 @@ export const OneColumnAt1280: Story = {
   ],
   play: async ({ canvasElement }) => {
     await checkOrder(canvasElement);
+  },
+};
+
+function firstThenPending(): LoadFrictions {
+  const load = frictionsLoaderOf();
+  let calls = 0;
+  return (filters) => {
+    calls += 1;
+    return calls === 1 ? load(filters) : new Promise(() => undefined);
+  };
+}
+
+export const ClearRoleKeepsPills: Story = {
+  name: 'Clearing a role with no activity keeps the pills while loading',
+  parameters: { entry: '/frictions?period=30d&role=nobody' },
+  args: { loadFrictions: firstThenPending() },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('No activity in this period.');
+    await userEvent.click(
+      within(roleGroup(canvasElement)).getByRole('button', { name: /^All/ }),
+    );
+    await expect(address(canvasElement)).toHaveTextContent('?period=30d');
+    await expect(address(canvasElement)).not.toHaveTextContent('role');
+    await expect(canvas.getByRole('group', { name: 'Kind' })).toBeVisible();
+    await expect(
+      within(roleGroup(canvasElement)).getByRole('button', {
+        name: 'nobody 0',
+      }),
+    ).toBeVisible();
+    await expect(
+      within(roleGroup(canvasElement)).getByRole('button', { name: /^All/ }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    await expect(canvas.getByText('No activity in this period.')).toBeVisible();
   },
 };

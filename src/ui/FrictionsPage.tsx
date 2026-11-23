@@ -153,7 +153,7 @@ function FrictionsBody({
     );
   }
   const { frictions: stats } = response;
-  const withFilters = stats.apiCalls > 0 || filters.role !== undefined;
+  const withFilters = stats.apiCalls > 0 || stats.role !== null;
   return (
     <>
       {withFilters && (

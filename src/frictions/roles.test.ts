@@ -108,6 +108,16 @@ describe('a role filter', () => {
     const kind = await stats({ role: 'builder', kind: 'stop-blocked' });
     expect(kind.frictions).toBe(1);
     expect(kind.counts).toEqual({ 'tool-error': 4, 'stop-blocked': 1 });
+    const errors = await stats({ role: 'builder', kind: 'tool-error' });
+    expect(errors.frictions).toBe(4);
+    expect(errors.hooks).toEqual([]);
+    expect(errors.tools.map((row) => [row.tool, row.errors])).toEqual([
+      ['Bash', 4],
+    ]);
+    expect(errors.roleOptions.slice(0, 2)).toEqual([
+      { role: 'builder', frictions: 4 },
+      { role: 'main', frictions: 2 },
+    ]);
     const session = await stats({
       role: 'builder',
       filter: { session: 's-mark' },
