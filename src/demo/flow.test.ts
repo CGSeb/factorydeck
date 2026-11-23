@@ -7,7 +7,7 @@ import { ingest } from '../ingest/ingest.ts';
 import { DEFAULT_CONFIG } from '../roles/config.ts';
 import { allocationIn } from '../features/usage.ts';
 import { issueKey } from '../features/values.ts';
-import { loadIssues } from '../stats/autonomy.ts';
+import { issueFacts, loadIssues } from '../stats/autonomy.ts';
 import { firstRefusal, flowStats } from '../stats/flow.ts';
 import { earliestReport, storedReports } from '../stats/stops.ts';
 import { createTestDatabase } from '../test/postgres.ts';
@@ -83,7 +83,8 @@ describe('demo flow', () => {
 
   it('gives merged issues calls after their first refused report, and one issue calls after a first report that passed', async () => {
     const [issues, usage, flow] = await Promise.all([
-      loadIssues(db, undefined, hasFactory, (issue, requests) => ({
+      loadIssues(db, undefined, hasFactory, (issue, requests, state) => ({
+        merged: issueFacts(issue, requests, state).mergedAt !== null,
         key: issueKey(issue.project, issue.number),
         refusedAt: firstRefusal(requests),
         firstAt: earliestReport(storedReports(requests))?.at ?? null,
@@ -101,7 +102,8 @@ describe('demo flow', () => {
       return lastAt === null || lastAt === undefined ? 0 : Date.parse(lastAt);
     };
     const reworked = issues.filter(
-      ({ key, refusedAt }) => refusedAt !== null && lastCall(key) >= refusedAt,
+      ({ merged, key, refusedAt }) =>
+        merged && refusedAt !== null && lastCall(key) >= refusedAt,
     );
     const passedThenWorked = issues.filter(
       ({ key, refusedAt, firstAt }) =>
