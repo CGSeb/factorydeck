@@ -12,10 +12,10 @@ import {
 import { visuallyHidden } from './chart-math.ts';
 import { chartTooltip } from './chart-tooltip.ts';
 import {
-  HELP_GAP,
   HELP_WIDTH,
   VIEWPORT_MARGIN,
   helpLeft,
+  helpTop,
 } from './figure-help.ts';
 import { Icon } from './Icon.tsx';
 import {
@@ -81,8 +81,15 @@ function usePlacement(
       const anchor = button.current?.getBoundingClientRect();
       const tip = tooltip.current;
       if (anchor === undefined || tip === null) return;
-      tip.style.top = `${String(anchor.bottom + HELP_GAP)}px`;
-      tip.style.left = `${String(helpLeft(anchor, tip.offsetWidth, document.documentElement.clientWidth))}px`;
+      const viewport = document.documentElement;
+      const { top, side } = helpTop(
+        anchor,
+        tip.offsetHeight,
+        window.innerHeight,
+      );
+      tip.style.top = `${String(top)}px`;
+      tip.style.left = `${String(helpLeft(anchor, tip.offsetWidth, viewport.clientWidth))}px`;
+      tip.dataset['side'] = side;
     }
     place();
     window.addEventListener('scroll', place, true);

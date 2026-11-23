@@ -274,3 +274,32 @@ export const HelpAt360Dark: Story = {
     await expect(within(canvasElement).getByRole('tooltip')).toBeVisible();
   },
 };
+
+function atBottom(Story: () => ReactElement): ReactElement {
+  return (
+    <div
+      style={{ minHeight: '100vh', display: 'flex', alignItems: 'flex-end' }}
+    >
+      <Story />
+    </div>
+  );
+}
+
+export const HelpNearBottom: Story = {
+  name: 'With help next to the bottom edge, opening above the icon',
+  args: withHelp,
+  decorators: [atBottom],
+  play: async ({ canvasElement }) => {
+    const button = helpButton(canvasElement);
+    const bottom = window.innerHeight - 2;
+    button.getBoundingClientRect = () =>
+      DOMRect.fromRect({ x: 40, y: bottom - 14, width: 14, height: 14 });
+    await userEvent.hover(button);
+    const tooltip = within(canvasElement).getByRole('tooltip');
+    await expect(tooltip.dataset['side']).toBe('above');
+    await expect(parseFloat(tooltip.style.top)).toBeLessThan(bottom - 14);
+    await expect(
+      parseFloat(tooltip.style.top) + tooltip.offsetHeight,
+    ).toBeLessThanOrEqual(window.innerHeight);
+  },
+};
