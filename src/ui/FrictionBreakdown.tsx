@@ -98,7 +98,7 @@ export function IssueFrictionTable({
     <PagedTable
       title={ISSUES_TITLE}
       rows={rows}
-      className="fd-friction-table-wide"
+      className="fd-friction-table-wide fd-friction-issues"
       head={
         <>
           <th scope="col">Issue</th>

@@ -144,10 +144,14 @@
   padding-bottom: 2px;
 }
 
-.fd-friction-issue {
-  display: block;
-  max-width: 320px;
+.fd-friction-issues {
+  min-width: 0;
+}
+
+.fd-friction-issues .fd-friction-issue {
+  display: -webkit-box;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
 }
