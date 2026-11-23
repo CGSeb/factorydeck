@@ -1,69 +1,102 @@
-# <img src="src/ui/public/logo.svg" alt="" width="32" height="32" align="top" /> FactoryDeck
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.svg" />
+    <img src="docs/assets/banner-light.svg" alt="FactoryDeck: watch your AI software factory run, and fix what blocks it until it runs on its own" width="100%" />
+  </picture>
+</p>
 
-A local-first, open-source dashboard for an AI agent software factory.
+<p align="center">
+  <a href="https://github.com/CGSeb/factorydeck/actions/workflows/ci.yml"><img src="https://github.com/CGSeb/factorydeck/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-0f766e" alt="MIT license" /></a>
+  <a href="https://github.com/CGSeb/factorydeck-skills"><img src="https://img.shields.io/badge/factory-factorydeck--skills-0f766e" alt="Built for factorydeck-skills" /></a>
+  <img src="https://img.shields.io/badge/local--first-yes-0f766e" alt="Local-first" />
+</p>
 
-Token dashboards for Claude Code stop at sessions. FactoryDeck links what your agents spend to the work they deliver: cost per issue and per role, review rounds, merge outcomes and the frictions worth fixing in your next retro.
+<p align="center">
+  <a href="#what-you-get">What you get</a> ·
+  <a href="docs/getting-started.md">Getting started</a> ·
+  <a href="docs/how-it-works.md">How it works</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a>
+</p>
 
-It works with any project and any agent workflow. Point it at your own Claude Code sessions and repositories: nothing assumes a particular codebase, set of roles or labelling scheme.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/loop-dark.svg" />
+  <img src="docs/assets/loop-light.svg" alt="The improvement loop: the factory runs, FactoryDeck shows it, you spot blockers and frictions, you tune the factory; each turn, the share of issues merged without a person grows" width="100%" />
+</picture>
 
-> Status: early development. Nothing to install yet.
+FactoryDeck is the dashboard of [**factorydeck-skills**](https://github.com/CGSeb/factorydeck-skills), an AI software factory you install in your projects: agent skills that write specs, build features from issues, review them and merge them.
 
-## How it works
+Once the factory runs, **FactoryDeck shows you how it runs**, so you can make it better, retro after retro, until it runs on its own:
 
-- **Ingest** Claude Code session logs (`~/.claude/projects/**/*.jsonl`, including sub-agents) into a local PostgreSQL database, incrementally.
-- **What is stored**: figures and labels, not conversations: token counts, models and times, session titles, sub-agent descriptions, branches, the skills and slash commands launched, the closing line of each turn, and for each friction its kind, tool, category, program, exit code, a hash of its command and the command of a refusing hook. No prompt, tool output, command text, error message or file content is stored. Opening a row of the Frictions page to read its latest occurrences reads their commands and error messages from the session logs on this computer, for that request only: they are never written to the database, a cache, a file or FactoryDeck's own output.
-- **Only factory projects**: FactoryDeck only reads the sessions of projects where the factory is installed, that is with a `docs/agents/factory.yml` file at their root; your other sessions are skipped. To install it in a project, follow the [factorydeck-skills install steps](https://github.com/CGSeb/factorydeck-skills#install), then run `/setup-factory` in the project. Its earlier sessions are read at the next ingestion.
-- **Project names**: a project shows under the `project.name` of its `docs/agents/factory.yml`, or under its folder name when it has none. Renaming it there renames it on every page at the next ingestion.
-- **One project at a time**: the project select of the sidebar shows one project, or all of them, on every page. The choice lives in the `project` URL parameter, so a link or a reload keeps it.
-- **Collect** issues, pull requests and labels from GitHub with `gh`.
-- **Show** three views: cost per feature, overview by day, project and model, and frictions (tool errors, refusals, failed checks, context peaks).
+- **Follow the flow**: every issue from ready to merged, what is building now, what waits in review and what is blocked.
+- **See where it stalls**: where a person had to step in, and why: a spec question, a score below the threshold, failed checks.
+- **Find the frictions**: tool errors, permission denials, blocked stops and failed commands, by role, tool and day.
+- **Measure the progress**: the share of issues merged without a person, right the first time, review rounds, and what each step costs.
 
-Everything stays on your machine.
+Each turn of the loop should leave fewer issues waiting for a person and fewer frictions per run. FactoryDeck tells you whether it did.
 
-## Your workflow, your vocabulary
+FactoryDeck reads only the projects where the factory is installed, and everything stays on your machine.
 
-Every team splits agent work differently. FactoryDeck reads your workflow from configuration instead of guessing it:
+## What you get
 
-- **Roles**: how to recognise a role (planner, builder, reviewer, shipper, or your own) from a sub-agent's description or type.
-- **Work items**: how to find the issue or pull request a session works on (for example `#52` in a sub-agent description, or a branch name).
-- **Outcomes**: which GitHub labels, checks or comments mean "merged", "needs rework" or a quality score.
+|                      |                                                                                                               |
+| -------------------- | ------------------------------------------------------------------------------------------------------------- |
+| 📈 **Stats**         | Autonomy, quality and flow over time: merged without a person, why a person stepped in, right the first time. |
+| 🗂️ **Overview**      | The factory at a glance: issues ready, building, in review and merged, with their review round and score.     |
+| 🧭 **Issue story**   | How one issue got merged: each agent thread, each review verdict, and the moment a person had to step in.     |
+| ⚠️ **Frictions**     | Tool errors, permission denials, blocked stops and failed commands, to fix the ones that come back.           |
+| 🧩 **Features**      | Every issue with its sessions, review rounds, score and cost, split by role.                                  |
+| 🧵 **Sessions**      | Every session and sub-agent, with its model, its tokens and the issue it worked on.                           |
+| ⚡ **Skills, roles** | Which skills and roles your factory launches, how often, and what each one costs.                             |
 
-Sessions that match no rule still count, under an "unassigned" role, so the totals are always complete.
+<table>
+  <tr>
+    <td width="50%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/assets/screenshots/overview-dark.png" />
+        <img src="docs/assets/screenshots/overview-light.png" alt="Overview page: issues by state, from ready to merged, with their review round and score" />
+      </picture>
+      <p align="center"><b>Overview</b>: the factory at a glance</p>
+    </td>
+    <td width="50%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/assets/screenshots/issue-dark.png" />
+        <img src="docs/assets/screenshots/issue-light.png" alt="Issue page: how issue 28 got merged, from the builder through a refused review, a rework and a second review to the shipper" />
+      </picture>
+      <p align="center"><b>Issue</b>: how it got merged</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/assets/screenshots/frictions-dark.png" />
+        <img src="docs/assets/screenshots/frictions-light.png" alt="Frictions page: frictions per 100 API calls by day, by category and by tool" />
+      </picture>
+      <p align="center"><b>Frictions</b>: what slows your agents down</p>
+    </td>
+    <td width="50%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/assets/screenshots/features-dark.png" />
+        <img src="docs/assets/screenshots/features-light.png" alt="Features page: issues grouped by state, with sessions, rounds, score and cost split by role" />
+      </picture>
+      <p align="center"><b>Features</b>: every issue, its rounds and its cost</p>
+    </td>
+  </tr>
+</table>
 
-Roles and work items come from `factorydeck.yml` at the repository root (or the path in `FACTORYDECK_CONFIG` of `.env`). Without a file, the roles of the `build-feature` workflow of factorydeck-skills apply (builder, reviewer, shipper, reworker, spec-checker, recognised from sub-agent descriptions), and work items are read from `#<number>` in sub-agent descriptions and session titles. The file is only needed to change them: copy `factorydeck.example.yml`, which documents every key and holds the default rules, then restart FactoryDeck.
+<sub>Screenshots show the synthetic data of <code>pnpm demo</code>.</sub>
 
-## Development
+## Get started
 
-Requires Node.js 24+, pnpm and Docker (or any PostgreSQL 16+ server).
+1. Install the factory in your projects: follow the [factorydeck-skills install steps](https://github.com/CGSeb/factorydeck-skills#install), then run `/setup-factory`.
+2. Run FactoryDeck from source: see [Getting started](docs/getting-started.md) for the setup and the configuration.
 
-```bash
-cp .env.example .env    # then set POSTGRES_PASSWORD and DATABASE_URL
-pnpm install
-pnpm db:up              # PostgreSQL 18 in Docker, on 127.0.0.1:5434
-pnpm db:migrate
-pnpm ingest             # read new Claude Code and Codex session logs into the database
-pnpm collect            # read issues and pull or merge requests from each project's git host
-pnpm check
-```
+> [!NOTE]
+> FactoryDeck is in early development. There is no release yet. Want to look around first? `pnpm demo` serves synthetic data.
 
-`pnpm ingest` reads the Claude Code logs of `~/.claude/projects` and the Codex logs of `~/.codex/sessions` by default; set `CLAUDE_PROJECTS_DIR` or `CODEX_SESSIONS_DIR` in `.env` to read another folder. A missing Codex folder is skipped. A second run only reads what is new.
+## Contributing
 
-`pnpm collect` reads, for each project with the factory installed, the issues and pull (GitHub) or merge (GitLab) requests of the repository named in its `docs/agents/factory.yml` and git host commands file, through the `gh` or `glab` CLI (authenticated beforehand). FactoryDeck only reads the git host. The server also collects at start, then every `FACTORYDECK_COLLECT_INTERVAL_MINUTES` (default 5).
-
-Run FactoryDeck on `http://127.0.0.1:4317` (set `FACTORYDECK_PORT` in `.env` to change the port):
-
-```bash
-pnpm build              # builds the UI into dist/ui
-pnpm start              # serves the UI and the JSON API, on 127.0.0.1 only
-```
-
-While working on it, `pnpm dev` runs the API and the Vite dev server together: open `http://127.0.0.1:5173`, which reloads on UI changes and proxies `/api` to the API.
-
-To use your own PostgreSQL server instead of Docker, set `DATABASE_URL` and skip `pnpm db:up`.
-
-Schema changes go in `src/db/schema.ts`, then `pnpm db:generate --name <change>` writes the migration to `drizzle/`.
-
-Commit messages follow `type: :gitmoji: Subject`, for example `feat: :sparkles: Add the cost-per-issue view`.
+Development setup, checks and conventions are in [CONTRIBUTING.md](CONTRIBUTING.md). Feature specs live in [`docs/specs`](docs/specs).
 
 ## License
 

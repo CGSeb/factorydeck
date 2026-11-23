@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Local-first dashboard for an AI agent software factory: tokens, cost per issue and per role, review rounds and frictions.",
+  "description": "Local-first dashboard to watch your AI software factory run, find its blockers and frictions, and make it more autonomous.",
   "license": "MIT",
   "scripts": {
     "dev": "node scripts/dev.ts",
