@@ -22,7 +22,7 @@ Checked by the commit-msg hook (`scripts/check-commit-message.ts`): `type: :gitm
 
 ## Main branch protection
 
-Off while the repository is private (GitHub needs a paid plan). Turn it on, requiring the check job of `.github/workflows/ci.yml`, when the repository goes public. Until then the merge gate is the build-feature skill's prose.
+On, through the `main` ruleset on GitHub. `main` cannot be deleted or force-pushed, and changes reach it only through a pull request whose `Check` and `Audit` jobs of `.github/workflows/ci.yml` passed. No approving review is required, so the shipper can merge a pull request that the person's own account opened. A pull request whose required checks failed or have not finished cannot be merged: fix the cause, never work around the ruleset.
 
 ## Reviewer rules
 
