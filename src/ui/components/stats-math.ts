@@ -207,12 +207,17 @@ export interface TrendBucket {
 
 export type TrendScale = 'share' | 'count';
 
+export type TrendDraw = 'empty' | 'small' | 'full';
+
+export function trendDraw(bucket: TrendBucket): TrendDraw {
+  if (bucket.value === null || bucket.n === 0) return 'empty';
+  return bucket.n !== undefined && !isEnough(bucket.n) ? 'small' : 'full';
+}
+
 export function isDrawn(bucket: TrendBucket): bucket is TrendBucket & {
   value: number;
 } {
-  return (
-    bucket.value !== null && (bucket.n === undefined || isEnough(bucket.n))
-  );
+  return trendDraw(bucket) !== 'empty';
 }
 
 export function trendHeights(

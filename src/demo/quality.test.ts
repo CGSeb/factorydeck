@@ -68,7 +68,7 @@ describe('demo quality', () => {
     expect(quality.current.firstPassed).toBeLessThan(
       quality.current.mergedWithReport,
     );
-    const firstHalf = quality.weeks
+    const firstHalf = quality.buckets
       .slice(0, 6)
       .reduce((sum, week) => sum + week.mergedWithReport, 0);
     expect(firstHalf).toBeGreaterThan(0);

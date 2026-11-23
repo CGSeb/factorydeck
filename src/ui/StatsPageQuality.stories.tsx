@@ -157,7 +157,7 @@ export const QualityNoMergedIssue: Story = {
       qualityOf({
         current: { ...noQuality, ended: 6, closedWithoutMerge: 6 },
         previous: previousMonthQuality,
-        weeks: emptyQualityWeeks,
+        buckets: emptyQualityWeeks,
         firstReports: [],
       }),
     ),
@@ -192,7 +192,8 @@ export const QualityAllTime: Story = {
   args: {
     loadQuality: qualityLoaderOf({
       current: monthQuality,
-      weeks: qualityOf().weeks,
+      unit: 'week',
+      buckets: qualityOf().buckets,
       firstReports: qualityOf().firstReports,
     }),
   },

@@ -1,5 +1,7 @@
 import type { Unreachable } from '../server/api-context.ts';
 
+export type TrendUnit = 'hour' | 'day' | 'week' | 'month' | 'year';
+
 export interface AutonomyCounts {
   merged: number;
   mergedWithoutPerson: number;
@@ -7,7 +9,7 @@ export interface AutonomyCounts {
   answeredWaitsMs: number[];
 }
 
-export interface AutonomyWeek {
+export interface AutonomyBucket {
   start: string;
   merged: number;
   mergedWithoutPerson: number;
@@ -25,7 +27,8 @@ export interface AutonomyStats {
   current: AutonomyCounts;
   previous?: AutonomyCounts;
   waitingNow: number;
-  weeks: AutonomyWeek[];
+  unit: TrendUnit;
+  buckets: AutonomyBucket[];
   reasons: AutonomyReasons;
 }
 
@@ -49,7 +52,7 @@ export interface QualityCounts {
   closedWithoutMerge: number;
 }
 
-export interface QualityWeek {
+export interface QualityBucket {
   start: string;
   mergedWithReport: number;
   firstPassed: number;
@@ -64,7 +67,8 @@ export interface FirstReport {
 export interface QualityStats {
   current: QualityCounts;
   previous?: QualityCounts;
-  weeks: QualityWeek[];
+  unit: TrendUnit;
+  buckets: QualityBucket[];
   firstReports: FirstReport[];
 }
 
@@ -103,7 +107,7 @@ export interface FlowPeriod<Issue extends FlowIssue = FlowIssue> {
   tokens: FlowTokens;
 }
 
-export interface FlowWeek {
+export interface FlowBucket {
   start: string;
   merged: number;
 }
@@ -111,7 +115,8 @@ export interface FlowWeek {
 export interface FlowStats {
   current: FlowPeriod<FlowStripIssue>;
   previous?: FlowPeriod;
-  weeks: FlowWeek[];
+  unit: TrendUnit;
+  buckets: FlowBucket[];
 }
 
 export type FlowResponse =

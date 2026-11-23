@@ -295,15 +295,17 @@ describe('flow stats', () => {
     ).toEqual([`${APP}#1`, `${APP}#4`, `${APP}#2`, `${API}#1`]);
   });
 
-  it('counts the merges of 12 weeks from Monday, across a month change', async () => {
-    const { weeks } = await stats('today', APP);
-    expect(weeks).toHaveLength(12);
-    expect(weeks[0]?.start).toBe('2025-12-29');
-    expect(weeks.slice(-4)).toEqual([
-      { start: '2026-02-23', merged: 1 },
-      { start: '2026-03-02', merged: 1 },
-      { start: '2026-03-09', merged: 3 },
-      { start: '2026-03-16', merged: 0 },
+  it('counts merges by day for 30 days, a merge at midnight in the day it opens', async () => {
+    const { unit, buckets } = await stats('30d', APP);
+    expect([unit, buckets.length, buckets[0]?.start]).toEqual([
+      'day',
+      30,
+      '2026-02-17',
     ]);
+    expect(
+      buckets.flatMap(({ start, merged }) =>
+        merged > 0 ? [`${start} ${String(merged)}`] : [],
+      ),
+    ).toEqual(['2026-03-01 1', '2026-03-07 1', '2026-03-14 1', '2026-03-15 2']);
   });
 });

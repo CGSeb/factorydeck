@@ -119,7 +119,8 @@ export const AllTime: Story = {
   args: {
     response: flowResponse({
       current: flowOf().current,
-      weeks: flowOf().weeks,
+      unit: 'week',
+      buckets: flowOf().buckets,
     }),
     period: 'all',
   },

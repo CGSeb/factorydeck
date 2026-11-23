@@ -9,6 +9,7 @@ import {
   scoreBinIndex,
   scoreBinLabel,
   scoreBins,
+  trendDraw,
   trendHeights,
 } from './stats-math.ts';
 import { labelsOverlap } from './range-strip.ts';
@@ -215,7 +216,7 @@ describe('countText', () => {
 });
 
 describe('trendHeights', () => {
-  it('scales counts to the largest value among the drawn buckets', () => {
+  it('scales counts to the largest value among every bucket with a value, small samples included', () => {
     expect(
       trendHeights(
         [
@@ -223,11 +224,30 @@ describe('trendHeights', () => {
           { label: 'W2', value: 10, text: '10' },
           { label: 'W3', value: 5, n: 6, text: '5' },
           { label: 'W4', value: null, text: '—' },
+          { label: 'W5', value: 80, n: 0, text: '80' },
         ],
         'count',
         40,
       ),
-    ).toEqual([2, 40, 20, 2]);
+    ).toEqual([40, 8, 4, 2, 2]);
+  });
+
+  it('draws a small sample at its value, and n = 0 or a null value as a stub', () => {
+    const buckets = [
+      { label: 'n0', value: 0.5, n: 0, text: '—' },
+      { label: 'n1', value: 0.5, n: 1, text: '50%' },
+      { label: 'n4', value: 0.75, n: 4, text: '75%' },
+      { label: 'n5', value: 1, n: 5, text: '100%' },
+      { label: 'null', value: null, n: 3, text: '—' },
+    ];
+    expect(trendHeights(buckets, 'share', 40)).toEqual([2, 20, 30, 40, 2]);
+    expect(buckets.map(trendDraw)).toEqual([
+      'empty',
+      'small',
+      'small',
+      'full',
+      'empty',
+    ]);
   });
 
   it('scales shares out of 100%', () => {

@@ -3,12 +3,12 @@ import type {
   AutonomyReasons,
   AutonomyResponse,
   AutonomyStats,
-  AutonomyWeek,
+  AutonomyBucket,
   FirstReport,
   QualityCounts,
   QualityResponse,
   QualityStats,
-  QualityWeek,
+  QualityBucket,
 } from '../stats/types.ts';
 import type { LoadAutonomy, LoadQuality } from './stats-api.ts';
 
@@ -31,7 +31,7 @@ const WEEK_STARTS = [
 
 export function weeksOf(
   counts: readonly (readonly [number, number])[],
-): AutonomyWeek[] {
+): AutonomyBucket[] {
   return WEEK_STARTS.map((start, index) => {
     const [merged, mergedWithoutPerson] = counts[index] ?? [0, 0];
     return { start, merged, mergedWithoutPerson };
@@ -99,7 +99,8 @@ export function autonomyOf(
     current: monthCounts,
     previous: previousMonthCounts,
     waitingNow: 2,
-    weeks: risingWeeks,
+    unit: 'week',
+    buckets: risingWeeks,
     reasons: someReasons,
     ...overrides,
   };
@@ -127,7 +128,7 @@ export const pendingAutonomy: LoadAutonomy = () => new Promise(() => undefined);
 
 export function qualityWeeksOf(
   counts: readonly (readonly [number, number])[],
-): QualityWeek[] {
+): QualityBucket[] {
   return WEEK_STARTS.map((start, index) => {
     const [mergedWithReport, firstPassed] = counts[index] ?? [0, 0];
     return { start, mergedWithReport, firstPassed };
@@ -205,7 +206,8 @@ export function qualityOf(overrides: Partial<QualityStats> = {}): QualityStats {
   return {
     current: monthQuality,
     previous: previousMonthQuality,
-    weeks: risingQualityWeeks,
+    unit: 'week',
+    buckets: risingQualityWeeks,
     firstReports: mixedFirstReports,
     ...overrides,
   };

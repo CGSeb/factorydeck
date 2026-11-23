@@ -33,7 +33,8 @@ const autonomy: AutonomyStats = {
     answeredWaitsMs: [3_600_000],
   },
   waitingNow: 2,
-  weeks: [{ start: '2026-01-05', merged: 4, mergedWithoutPerson: 3 }],
+  unit: 'week',
+  buckets: [{ start: '2026-01-05', merged: 4, mergedWithoutPerson: 3 }],
   reasons: {
     specQuestion: 1,
     belowThreshold: 0,
@@ -54,7 +55,8 @@ const quality: QualityStats = {
     ended: 5,
     closedWithoutMerge: 1,
   },
-  weeks: [{ start: '2026-01-05', mergedWithReport: 3, firstPassed: 2 }],
+  unit: 'week',
+  buckets: [{ start: '2026-01-05', mergedWithReport: 3, firstPassed: 2 }],
   firstReports: [{ score: 72, threshold: 80, time: '2026-01-05T08:00:00Z' }],
 };
 
@@ -79,7 +81,8 @@ const flow: FlowStats = {
       apiCalls: 40,
     },
   },
-  weeks: [{ start: '2026-01-05', merged: 1 }],
+  unit: 'week',
+  buckets: [{ start: '2026-01-05', merged: 1 }],
 };
 
 function app(up = true) {

@@ -18,7 +18,7 @@ import {
   type TrendScale,
   alignAt,
   countText,
-  isDrawn,
+  trendDraw,
   trendHeights,
 } from './stats-math.ts';
 
@@ -34,6 +34,9 @@ export interface TrendBarsProps {
 }
 
 const COLUMN_GAP = '6px';
+const SMALL_SAMPLE_OPACITY = 0.4;
+const DIMMED_OPACITY = 0.45;
+export const SMALL_SAMPLE = 'small sample';
 
 const columns: CSSProperties = {
   display: 'flex',
@@ -94,16 +97,17 @@ function Labels({
   );
 }
 
-function sampleText(n: number | undefined, noun: Noun | undefined): string {
+function sampleText(bucket: TrendBucket, noun: Noun | undefined): string {
+  const { n } = bucket;
   if (n === undefined) return '';
-  return `n = ${noun === undefined ? String(n) : countText(n, noun)}`;
+  const count = `n = ${noun === undefined ? String(n) : countText(n, noun)}`;
+  return trendDraw(bucket) === 'small' ? `${count} · ${SMALL_SAMPLE}` : count;
 }
 
 function tooltipLines(bucket: TrendBucket, noun: Noun | undefined): string[] {
-  if (!isDrawn(bucket)) return [bucket.label, 'Not enough data'];
-  return bucket.n === undefined
+  return bucket.n === undefined || trendDraw(bucket) === 'empty'
     ? [bucket.label, bucket.text]
-    : [bucket.label, bucket.text, sampleText(bucket.n, noun)];
+    : [bucket.label, bucket.text, sampleText(bucket, noun)];
 }
 
 export function ColumnTooltip({
@@ -156,6 +160,10 @@ function Column({
   align: TooltipAlign;
   onHover: (hovered: boolean) => void;
 }): ReactElement {
+  const draw = trendDraw(bucket);
+  const opacity =
+    (draw === 'small' ? SMALL_SAMPLE_OPACITY : 1) *
+    (dimmed ? DIMMED_OPACITY : 1);
   return (
     <div
       style={column}
@@ -175,12 +183,13 @@ function Column({
       ) : null}
       <div
         data-column=""
+        data-draw={draw}
         style={{
           width: '100%',
           height: `${String(height)}px`,
           borderRadius: '4px 4px 0 0',
-          background: isDrawn(bucket) ? color : 'var(--fd-line)',
-          opacity: dimmed ? 0.45 : 1,
+          background: draw === 'empty' ? 'var(--fd-line)' : color,
+          opacity,
           transition: 'opacity 120ms ease',
         }}
       />
@@ -229,8 +238,8 @@ export function TrendBars({
               {buckets.map((bucket, index) => (
                 <tr key={`${String(index)} ${bucket.label}`}>
                   <th scope="row">{bucket.label}</th>
-                  <td>{isDrawn(bucket) ? bucket.text : 'Not enough data'}</td>
-                  <td>{sampleText(bucket.n, noun)}</td>
+                  <td>{bucket.text}</td>
+                  <td>{sampleText(bucket, noun)}</td>
                 </tr>
               ))}
             </tbody>

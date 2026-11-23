@@ -3,7 +3,7 @@ const DOLLARS = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
-const MONTHS = [
+export const MONTHS = [
   'Jan',
   'Feb',
   'Mar',

@@ -71,7 +71,7 @@ describe('weekBuckets', () => {
       ]),
     ).toEqual([
       { label: 'Nov 9', value: 2.4, n: 500, text: '2.4 · 12 frictions' },
-      { label: 'Nov 16', value: null, n: 0, text: '— · 1 friction' },
+      { label: 'Nov 16', value: null, n: 0, text: 'Not enough data' },
       { label: 'this week', value: 2.5, n: 40, text: '2.5 · 1 friction' },
     ]);
   });
