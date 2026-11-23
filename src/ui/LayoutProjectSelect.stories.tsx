@@ -23,6 +23,7 @@ import {
 } from './git-host-fixtures.ts';
 import { Layout } from './Layout.tsx';
 import { optionsOf } from './project-fixtures.ts';
+import { SECTION_PATHS } from './components/sidebar-stories.ts';
 
 const APP = '/home/dev/example-app';
 const LIB = '/home/dev/example-lib';
@@ -128,15 +129,6 @@ function sectionHrefs(canvasElement: HTMLElement): (string | null)[] {
     .getAllByRole('link')
     .map((link) => link.getAttribute('href'));
 }
-
-const SECTION_PATHS = [
-  '/',
-  '/features',
-  '/stats',
-  '/sessions',
-  '/skills',
-  '/roles',
-];
 
 export const ProjectSelectAllProjects: Story = {
   args: {

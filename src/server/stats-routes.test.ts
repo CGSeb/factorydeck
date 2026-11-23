@@ -79,6 +79,7 @@ function app(up = true) {
         qualityQueries.push(query);
         return Promise.resolve(quality);
       },
+      frictions: () => Promise.reject(new Error('Not used')),
     },
   });
   return { app: created, queries, qualityQueries };

@@ -144,6 +144,7 @@ const SECTIONS: readonly { path: string; label: string; icon: IconName }[] = [
   { path: '/', label: 'Overview', icon: 'overview' },
   { path: '/features', label: 'Features', icon: 'features' },
   { path: '/stats', label: 'Stats', icon: 'stats' },
+  { path: '/frictions', label: 'Frictions', icon: 'frictions' },
   { path: '/sessions', label: 'Sessions', icon: 'sessions' },
   { path: '/skills', label: 'Skills', icon: 'skills' },
   { path: '/roles', label: 'Roles', icon: 'roles' },

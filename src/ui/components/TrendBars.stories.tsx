@@ -141,3 +141,23 @@ export const Hovered: Story = {
     await expect(bars[6]).toHaveStyle({ opacity: '1' });
   },
 };
+
+export const WithNoun: Story = {
+  name: 'Sample size with its noun',
+  args: {
+    buckets: shareWeeks([6, 1, 7, 9, 5, 10, 8, 12, 9, 11, 10, 14]),
+    noun: { one: 'API call', other: 'API calls' },
+  },
+  play: async ({ canvasElement }) => {
+    const bars = columns(canvasElement);
+    await expect(await tooltipOf(bars[6])).toEqual([
+      'W7',
+      '58%',
+      'n = 8 API calls',
+    ]);
+    const rows = within(canvasElement)
+      .getAllByRole('row')
+      .map((row) => [...row.children].map((cell) => cell.textContent));
+    await expect(rows[1]).toEqual(['W2', 'Not enough data', 'n = 1 API call']);
+  },
+};

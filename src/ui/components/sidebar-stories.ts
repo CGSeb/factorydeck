@@ -203,3 +203,13 @@ export async function cycleThemes(canvasElement: HTMLElement): Promise<void> {
   ).toBeInTheDocument();
   await expect(storedTheme()).toBeNull();
 }
+
+export const SECTION_PATHS = [
+  '/',
+  '/features',
+  '/stats',
+  '/frictions',
+  '/sessions',
+  '/skills',
+  '/roles',
+];

@@ -10,6 +10,7 @@ import {
 } from '../overview/types.ts';
 import { type ApiContext, apiContext, isTimeZone } from './api-context.ts';
 import { type FeatureSource, featureRoutes } from './feature-routes.ts';
+import { frictionRoutes } from './friction-routes.ts';
 import { type GitHostSource, gitHostRoutes } from './git-host-routes.ts';
 import type { DatabaseCheck } from './health.ts';
 import { type ProjectSource, projectRoutes } from './project-routes.ts';
@@ -51,6 +52,7 @@ function mountSections(
   app.route('/api/projects', projectRoutes(options.projects, context));
   app.route('/api/git-host', gitHostRoutes(options.gitHost, context));
   app.route('/api/stats', statsRoutes(options.stats, context));
+  app.route('/api/frictions', frictionRoutes(options.stats, context));
 }
 
 /** The FactoryDeck HTTP app: the JSON API under `/api/`, the UI everywhere else. */

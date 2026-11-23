@@ -33,6 +33,7 @@ import {
   writeSpecDetail,
 } from './skill-fixtures.ts';
 import { autonomyLoaderOf, qualityLoaderOf } from './stats-fixtures.ts';
+import { frictionsLoaderOf } from './frictions-fixtures.ts';
 
 const meta = {
   component: App,
@@ -64,6 +65,7 @@ const loaders = {
   refreshCollection: refresherOf(collectionResponse()),
   loadAutonomy: autonomyLoaderOf(),
   loadQuality: qualityLoaderOf(),
+  loadFrictions: frictionsLoaderOf(),
 };
 
 export const Home: Story = {
@@ -136,6 +138,26 @@ export const Stats: Story = {
   },
 };
 
+export const Frictions: Story = {
+  args: loaders,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const sections = within(
+      canvas.getByRole('navigation', { name: 'Sections' }),
+    );
+    await userEvent.click(sections.getByRole('link', { name: 'Frictions' }));
+    await expect(
+      sections.getByRole('link', { name: 'Frictions' }),
+    ).toHaveAttribute('aria-current', 'page');
+    await canvas.findByRole('heading', { level: 1, name: 'Frictions' });
+    await expect(
+      await canvas.findByRole('heading', {
+        name: 'Frictions per 100 API calls, by week',
+      }),
+    ).toBeVisible();
+  },
+};
+
 export const Roles: Story = {
   args: loaders,
   play: async ({ canvasElement }) => {
@@ -189,6 +211,7 @@ export const NoSessionYet: Story = {
       'Overview',
       'Features',
       'Stats',
+      'Frictions',
       'Sessions',
       'Skills',
       'Roles',
