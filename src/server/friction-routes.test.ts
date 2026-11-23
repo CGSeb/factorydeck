@@ -25,10 +25,13 @@ const sessions: SessionSource = {
 
 const frictions: FrictionStats = {
   kind: null,
+  role: null,
   frictions: 2,
   apiCalls: 40,
-  counts: { 'tool-error': 1, 'stop-blocked': 1, compaction: 0 },
-  weeks: [{ start: '2026-01-05', frictions: 2, apiCalls: 40 }],
+  counts: { 'tool-error': 1, 'stop-blocked': 1 },
+  roleOptions: [{ role: 'builder', frictions: 2 }],
+  unit: 'day',
+  buckets: [{ start: '2026-01-05', frictions: 2, apiCalls: 40 }],
   categories: [{ category: 'other', errors: 1 }],
   tools: [{ tool: 'Read', errors: 1, mainCategory: 'other', threads: 1 }],
   commands: [],
@@ -41,7 +44,6 @@ const frictions: FrictionStats = {
       lastAt: '2026-01-05T08:00:00.000Z',
     },
   ],
-  compactions: [],
   subject: null,
   roles: [],
   issues: [],
@@ -100,12 +102,13 @@ describe('/api/frictions', () => {
   it.each([
     ['', undefined],
     ['&kind=tool-error', 'tool-error'],
-    ['&kind=compaction', 'compaction'],
+    ['&kind=compaction', undefined],
+    ['&kind=stop-blocked&kind=tool-error', 'stop-blocked'],
     ['&kind=', undefined],
     ['&kind=Tool-Error', undefined],
     ['&kind=tool_error', undefined],
     ['&kind=crash', undefined],
-    ['&kind=compaction&kind=tool-error', 'compaction'],
+    ['&kind=compaction&kind=tool-error', undefined],
   ])('reads the kind of ?…%s as %s', async (suffix, kind) => {
     const { app: server, queries } = app();
     const response = await server.request(
@@ -113,6 +116,24 @@ describe('/api/frictions', () => {
     );
     expect(response.status).toBe(200);
     expect(queries.map((query) => query.kind)).toEqual([kind]);
+  });
+
+  it.each([
+    ['', undefined],
+    ['&role=builder', 'builder'],
+    ['&role=', undefined],
+    ['&role=Builder', 'Builder'],
+    ['&role=%20builder', ' builder'],
+    ['&role=unassigned', 'unassigned'],
+    ['&role=reviewer&role=builder', 'reviewer'],
+    ['&role=&role=builder', undefined],
+  ])('reads the role of ?…%s as %j', async (suffix, role) => {
+    const { app: server, queries } = app();
+    const response = await server.request(
+      `/api/frictions?period=7d&tz=UTC${suffix}`,
+    );
+    expect(response.status).toBe(200);
+    expect(queries.map((query) => query.role)).toEqual([role]);
   });
 
   it.each([

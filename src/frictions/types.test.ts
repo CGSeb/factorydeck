@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { categoryOf, parseKind } from './types.ts';
+import { categoryOf, parseKind, parseRole } from './types.ts';
 
 describe('parseKind', () => {
   it.each([
     ['tool-error', 'tool-error'],
     ['stop-blocked', 'stop-blocked'],
-    ['compaction', 'compaction'],
+    ['compaction', undefined],
     ['', undefined],
     [null, undefined],
     [undefined, undefined],
@@ -16,6 +16,20 @@ describe('parseKind', () => {
     ['compactions', undefined],
   ])('reads %j as %j', (value, kind) => {
     expect(parseKind(value)).toBe(kind);
+  });
+});
+
+describe('parseRole', () => {
+  it.each([
+    ['builder', 'builder'],
+    ['unassigned', 'unassigned'],
+    ['Builder', 'Builder'],
+    [' builder', ' builder'],
+    ['', undefined],
+    [null, undefined],
+    [undefined, undefined],
+  ])('reads %j as %j', (value, role) => {
+    expect(parseRole(value)).toBe(role);
   });
 });
 

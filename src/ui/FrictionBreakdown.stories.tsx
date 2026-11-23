@@ -129,3 +129,14 @@ export const ManyRoles: Story = {
     ).toBeNull();
   },
 };
+
+export const RoleSelected: Story = {
+  name: 'A role selected leaves By role out',
+  args: { stats: { ...frictionStats, role: 'builder', roles: [] } },
+  play: async ({ canvasElement }) => {
+    await expect(tableHeadings(canvasElement)).toEqual([
+      'Issues with the most frictions',
+      'Context peaks',
+    ]);
+  },
+};

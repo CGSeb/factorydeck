@@ -29,7 +29,6 @@ export const Every: Story = {
       'Failed commands',
       'Repeated failures',
       'Stop blocked',
-      'Compactions',
     ]);
   },
 };
@@ -67,32 +66,6 @@ export const EmptyHook: Story = {
   },
 };
 
-export const Compactions: Story = {
-  name: 'Compactions only',
-  args: {
-    stats: statsFor('compaction', {
-      ...frictionStats,
-      compactions: [
-        {
-          trigger: 'manual',
-          compactions: 2,
-          medianPreTokens: 92_000,
-          threads: 2,
-        },
-        { trigger: 'other', compactions: 1, medianPreTokens: null, threads: 1 },
-      ],
-    }),
-    kind: 'compaction',
-  },
-  play: async ({ canvasElement }) => {
-    const table = within(canvasElement).getByRole('table', {
-      name: 'Compactions',
-    });
-    await expect(columnTexts(table, 0)).toEqual(['Manual', 'Other']);
-    await expect(columnTexts(table, 2)).toEqual(['92K', '—']);
-  },
-};
-
 export const ToolErrorsWithoutRows: Story = {
   name: 'Tool errors left out when empty',
   args: {
@@ -108,7 +81,6 @@ export const ToolErrorsWithoutRows: Story = {
     await expect(tableHeadings(canvasElement)).toEqual([
       'Repeated failures',
       'Stop blocked',
-      'Compactions',
     ]);
   },
 };

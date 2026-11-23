@@ -21,13 +21,20 @@ import {
   frictionOf,
   onIssue,
 } from './threads.ts';
-import type { FrictionFilter, FrictionKind, FrictionSubject } from './types.ts';
+import {
+  FRICTION_KINDS,
+  type FrictionFilter,
+  type FrictionKind,
+  type FrictionSubject,
+  parseKind,
+} from './types.ts';
 
 export interface FrictionQuery {
   period: Period;
   timeZone: string;
   project?: string | undefined;
   kind?: FrictionKind | undefined;
+  role?: string | undefined;
   filter?: FrictionFilter | undefined;
   now?: Date;
 }
@@ -41,7 +48,8 @@ interface Scope {
 interface CallWindow {
   startAt: string | null;
   previousStart: string | null;
-  weeks: { idx: number; start: string; until: string | null }[];
+  unit: 'hour' | 'day';
+  timeZone: string;
 }
 
 export interface FrictionWindow {
@@ -82,15 +90,12 @@ async function windowFrictions(db: Database, scope: Scope): Promise<Row[]> {
   );
 }
 
-export function weekRanges(bounds: StatsBounds): CallWindow['weeks'] {
-  return bounds.weeks.map((week, index) => ({
-    idx: index,
-    start: new Date(week.start).toISOString(),
-    until:
-      index === bounds.weeks.length - 1
-        ? null
-        : new Date(bounds.weeks[index + 1]?.start ?? 0).toISOString(),
-  }));
+function slotOf(unit: 'hour' | 'day', timeZone: string) {
+  if (unit === 'hour') {
+    return sql`date_trunc('minute', a.at)
+      - extract(minute from a.at at time zone ${timeZone}) * interval '1 minute'`;
+  }
+  return sql`date_trunc('day', a.at at time zone ${timeZone}) at time zone ${timeZone}`;
 }
 
 async function windowCalls(
@@ -110,7 +115,7 @@ async function windowCalls(
         coalesce(${previousStart}::timestamptz is not null
           and a.at >= ${previousStart}::timestamptz
           and a.at < ${startAt}::timestamptz, false) as in_previous,
-        w.idx as week,
+        ${slotOf(window.unit, window.timeZone)} as slot,
         count(*) as calls,
         max(a.input_tokens + a.cache_write_tokens + a.cache_read_tokens) as peak
       from api_call a
@@ -118,14 +123,11 @@ async function windowCalls(
       left join sub_agent sa on sa.session_id = a.session_id and sa.id = a.sub_agent_id
       ${FIRST_CALLS}
       ${markerSegments(markers)}
-      left join jsonb_to_recordset(${JSON.stringify(window.weeks)}::jsonb)
-        as w(idx int, start timestamptz, until timestamptz)
-        on a.at >= w.start and (w.until is null or a.at < w.until)
       where ${inScope(scope)}
         and (${scope.windowStart}::timestamptz is null or a.at >= ${scope.windowStart}::timestamptz)
       group by a.session_id, a.sub_agent_id, s.project, s.title, s.agent, s.git_branch,
         sa.agent_type, sa.description, sa.git_branch, sa.first_at, fc.first_call_at,
-        marker.idx, in_period, in_previous, w.idx`,
+        marker.idx, in_period, in_previous, slot`,
   );
 }
 
@@ -167,14 +169,19 @@ async function subjectOf(
   };
 }
 
-function callWindow(startAt: string | null, bounds: StatsBounds): CallWindow {
+function callWindow(
+  startAt: string | null,
+  bounds: StatsBounds,
+  query: FrictionQuery,
+): CallWindow {
   return {
     startAt,
     previousStart:
       bounds.previousStart === null
         ? null
         : new Date(bounds.previousStart).toISOString(),
-    weeks: weekRanges(bounds),
+    unit: query.period === 'today' ? 'hour' : 'day',
+    timeZone: query.timeZone,
   };
 }
 
@@ -195,13 +202,7 @@ export async function loadWindow(
     project,
     sessionId,
     windowStart:
-      startMs === null
-        ? null
-        : earliest([
-            startMs,
-            bounds.previousStart,
-            bounds.weeks[0]?.start ?? null,
-          ]),
+      startMs === null ? null : earliest([startMs, bounds.previousStart]),
   };
   const markers = await loadMarkers(db, config, {
     project: query.project,
@@ -209,7 +210,7 @@ export async function loadWindow(
   });
   const [frictionSource, callSource, names, subject] = await Promise.all([
     windowFrictions(db, scope),
-    windowCalls(db, scope, callWindow(startAt, bounds), markers),
+    windowCalls(db, scope, callWindow(startAt, bounds, query), markers),
     projectNames(db),
     subjectOf(db, filter, project),
   ]);
@@ -244,8 +245,11 @@ export async function issueFrictionCount(
     windowStart: startAt,
   });
   const keep = onIssue({ issue: key.number }, key.project);
-  return rows.filter((row) => keep(frictionOf(config, markers, row).thread))
-    .length;
+  return rows.filter(
+    (row) =>
+      parseKind(row['kind']) !== undefined &&
+      keep(frictionOf(config, markers, row).thread),
+  ).length;
 }
 
 export async function sessionFrictionCount(
@@ -254,7 +258,11 @@ export async function sessionFrictionCount(
 ): Promise<number> {
   const [row] = await select(
     db,
-    sql`select count(*) as frictions from friction where session_id = ${id}`,
+    sql`select count(*) as frictions from friction
+      where session_id = ${id} and kind in (${sql.join(
+        FRICTION_KINDS.map((kind) => sql`${kind}`),
+        sql`, `,
+      )})`,
   );
   return Number(row?.['frictions'] ?? 0);
 }

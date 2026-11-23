@@ -1,24 +1,28 @@
 import {
-  type CompactionTrigger,
   FRICTION_KINDS,
+  type FrictionBucket,
   type FrictionSubject,
   type ThreadPeak,
   type FrictionCategory,
   type FrictionKind,
   type FrictionStats,
-  type FrictionWeek,
   type KindCounts,
+  type RoleOption,
 } from '../frictions/types.ts';
+import type { TrendUnit } from '../stats/types.ts';
 import type { FilterOption } from './components/FilterPills.tsx';
 import type { TrendBucket } from './components/stats-math.ts';
 import { issueTitleText } from './components/IssueCard.tsx';
 import type { FrictionFilters } from './frictions-api.ts';
-import { MISSING, formatBucket, formatCount, formatTokens } from './format.ts';
+import { MISSING, formatCount, formatTokens } from './format.ts';
 import { sessionTitle } from './session-links.ts';
+import { type Trend, trendLabels, trendTitle } from './stats-view.ts';
 
 export const ALL_KINDS = 'all';
 
 export type KindChoice = FrictionKind | typeof ALL_KINDS;
+
+export const ALL_ROLES = '';
 
 export const MAX_EXIT_CODES = 5;
 
@@ -27,7 +31,6 @@ export const API_CALL_NOUN = { one: 'API call', other: 'API calls' };
 export const KIND_LABELS: Record<FrictionKind, string> = {
   'tool-error': 'Tool errors',
   'stop-blocked': 'Stop blocked',
-  compaction: 'Compactions',
 };
 
 export const CATEGORY_LABELS: Record<FrictionCategory, string> = {
@@ -35,12 +38,6 @@ export const CATEGORY_LABELS: Record<FrictionCategory, string> = {
   'hook-blocked': 'Blocked by a hook',
   'tool-misuse': 'Tool misuse',
   'command-failed': 'Command failed',
-  other: 'Other',
-};
-
-export const TRIGGER_LABELS: Record<CompactionTrigger, string> = {
-  auto: 'Auto',
-  manual: 'Manual',
   other: 'Other',
 };
 
@@ -83,18 +80,42 @@ export function kindOptions(counts: KindCounts): FilterOption<KindChoice>[] {
   ];
 }
 
-export function weekBuckets(weeks: readonly FrictionWeek[]): TrendBucket[] {
-  return weeks.map((week, index) => {
-    const value = perHundred(week.frictions, week.apiCalls);
+export function roleOptions(
+  options: readonly RoleOption[],
+): FilterOption<string>[] {
+  return [
+    {
+      value: ALL_ROLES,
+      label: 'All',
+      count: options.reduce((sum, option) => sum + option.frictions, 0),
+    },
+    ...options.map((option) => ({
+      value: option.role,
+      label: option.role,
+      count: option.frictions,
+    })),
+  ];
+}
+
+export function frictionTrendTitle(unit: TrendUnit): string {
+  return trendTitle('Frictions per 100 API calls', unit);
+}
+
+export function frictionBuckets(
+  trend: Trend<FrictionBucket>,
+  now: Date,
+): TrendBucket[] {
+  const labels = trendLabels(trend, now);
+  return trend.buckets.map((bucket, index) => {
+    const value = perHundred(bucket.frictions, bucket.apiCalls);
     return {
-      label:
-        index === weeks.length - 1 ? 'this week' : formatBucket(week.start),
+      label: labels[index] ?? '',
       value,
-      n: week.apiCalls,
+      n: bucket.apiCalls,
       text:
         value === null
           ? 'Not enough data'
-          : `${rateText(value)} · ${frictionCount(week.frictions)}`,
+          : `${rateText(value)} · ${frictionCount(bucket.frictions)}`,
     };
   });
 }

@@ -84,7 +84,6 @@ export interface IssueTally {
   number: number;
   frictions: number;
   repeated: number;
-  compactions: number;
 }
 
 function issueKey(project: string, number: number): string {
@@ -93,7 +92,6 @@ function issueKey(project: string, number: number): string {
 
 export function issueTallies(
   ofKind: readonly AttributedFriction[],
-  all: readonly AttributedFriction[],
   repeated: readonly RepeatedRow[],
 ): IssueTally[] {
   const tallies = new Map<string, IssueTally>();
@@ -106,16 +104,9 @@ export function issueTallies(
       number: workItem,
       frictions: 0,
       repeated: 0,
-      compactions: 0,
     };
     tally.frictions += 1;
     tallies.set(key, tally);
-  }
-  for (const row of all) {
-    const { project, workItem } = row.thread;
-    if (row.kind !== 'compaction' || workItem === null) continue;
-    const tally = tallies.get(issueKey(project, workItem));
-    if (tally !== undefined) tally.compactions += 1;
   }
   for (const row of repeated) {
     if (row.workItem === null) continue;

@@ -25,7 +25,6 @@ import {
   mainKindText,
   peakLabel,
   perThreadText,
-  showsKind,
 } from './frictions-view.ts';
 import { PagedTable } from './PagedTable.tsx';
 import { type LinkScope, issueHref, sessionHref } from './session-links.ts';
@@ -107,7 +106,6 @@ export function IssueFrictionTable({
           <th scope="col">Stage</th>
           <Numeric label="Frictions" />
           <Numeric label="Repeated failures" />
-          <Numeric label="Compactions" />
         </>
       }
       renderRow={(row) => {
@@ -137,7 +135,6 @@ export function IssueFrictionTable({
             </td>
             <td className={NUMERIC_CELL}>{formatCount(row.frictions)}</td>
             <td className={NUMERIC_CELL}>{formatCount(row.repeated)}</td>
-            <td className={NUMERIC_CELL}>{formatCount(row.compactions)}</td>
           </tr>
         );
       }}
@@ -211,7 +208,7 @@ export function FrictionBreakdown({
     <>
       {withTables && (
         <div className="fd-friction-tables">
-          <RoleFrictionTable rows={stats.roles} />
+          {stats.role === null && <RoleFrictionTable rows={stats.roles} />}
           {stats.issues.length > 0 && (
             <IssueFrictionTable
               rows={stats.issues}
@@ -221,7 +218,7 @@ export function FrictionBreakdown({
           )}
         </div>
       )}
-      {showsKind(kind, 'compaction') && (
+      {kind === undefined && (
         <ContextPeaksPanel
           context={stats.context}
           scope={scope}

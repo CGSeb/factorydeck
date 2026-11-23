@@ -24,13 +24,12 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const EVERY_TABLE = [
-  'Frictions per 100 API calls, by week',
+  'Frictions per 100 API calls, by day',
   'By category',
   'By tool',
   'Failed commands',
   'Repeated failures',
   'Stop blocked',
-  'Compactions',
   'By role',
   'Issues with the most frictions',
   'Context peaks',
@@ -42,17 +41,33 @@ export const AllKinds: Story = {
     const canvas = within(canvasElement);
     await frictionsLoaded(canvasElement);
     await expect(
-      canvas.getByText('50 frictions · 2.4 per 100 API calls'),
+      canvas.getByText('46 frictions · 2.2 per 100 API calls'),
     ).toBeVisible();
     const kinds = canvas.getByRole('group', { name: 'Kind' });
     await expect(
       within(kinds)
         .getAllByRole('button')
         .map((button) => button.textContent),
-    ).toEqual(['All50', 'Tool errors41', 'Stop blocked5', 'Compactions4']);
+    ).toEqual(['All46', 'Tool errors41', 'Stop blocked5']);
     await expect(
-      within(kinds).getByRole('button', { name: 'All 50' }),
+      within(kinds).getByRole('button', { name: 'All 46' }),
     ).toHaveAttribute('aria-pressed', 'true');
+    const roles = canvas.getByRole('group', { name: 'Role' });
+    await expect(
+      within(roles)
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual([
+      'All46',
+      'builder26',
+      'reviewer9',
+      'main8',
+      'shipper0',
+      'unassigned3',
+    ]);
+    await expect(
+      kinds.compareDocumentPosition(roles) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     await expect(tableHeadings(canvasElement)).toEqual(EVERY_TABLE);
     const categories = canvas.getByRole('table', { name: 'By category' });
     await expect(columnTexts(categories, 2)).toEqual([
@@ -68,8 +83,6 @@ export const AllKinds: Story = {
       '1',
       '—',
     ]);
-    const compactions = canvas.getByRole('table', { name: 'Compactions' });
-    await expect(columnTexts(compactions, 2)).toEqual(['306K', '—']);
   },
 };
 

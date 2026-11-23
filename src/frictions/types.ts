@@ -2,12 +2,9 @@ import { issueNumber } from '../features/types.ts';
 import type { IssueStage, WorkItemIssue } from '../git-host/types.ts';
 import type { ProjectOption } from '../projects/label.ts';
 import type { Unreachable } from '../server/api-context.ts';
+import type { TrendUnit } from '../stats/types.ts';
 
-export const FRICTION_KINDS = [
-  'tool-error',
-  'stop-blocked',
-  'compaction',
-] as const;
+export const FRICTION_KINDS = ['tool-error', 'stop-blocked'] as const;
 
 export type FrictionKind = (typeof FRICTION_KINDS)[number];
 
@@ -21,14 +18,14 @@ export const FRICTION_CATEGORIES = [
 
 export type FrictionCategory = (typeof FRICTION_CATEGORIES)[number];
 
-export const COMPACTION_TRIGGERS = ['auto', 'manual', 'other'] as const;
-
-export type CompactionTrigger = (typeof COMPACTION_TRIGGERS)[number];
-
 export const REPEATED_FAILURES = 3;
 
 export function parseKind(value: unknown): FrictionKind | undefined {
   return FRICTION_KINDS.find((kind) => kind === value);
+}
+
+export function parseRole(value: unknown): string | undefined {
+  return typeof value === 'string' && value !== '' ? value : undefined;
 }
 
 export function categoryOf(value: unknown): FrictionCategory {
@@ -37,7 +34,7 @@ export function categoryOf(value: unknown): FrictionCategory {
 
 export type KindCounts = Record<FrictionKind, number>;
 
-export interface FrictionWeek {
+export interface FrictionBucket {
   start: string;
   frictions: number;
   apiCalls: number;
@@ -78,13 +75,6 @@ export interface HookRow {
   blocks: number;
   sessions: number;
   lastAt: string;
-}
-
-export interface CompactionRow {
-  trigger: CompactionTrigger;
-  compactions: number;
-  medianPreTokens: number | null;
-  threads: number;
 }
 
 export type FrictionFilter =
@@ -136,7 +126,6 @@ export interface IssueFrictionRow {
   stage: IssueStage | null;
   frictions: number;
   repeated: number;
-  compactions: number;
 }
 
 export interface ThreadPeak {
@@ -154,18 +143,25 @@ export interface ContextPeaks {
   previous?: { medianPeak: number | null; threads: number };
 }
 
+export interface RoleOption {
+  role: string;
+  frictions: number;
+}
+
 export interface FrictionStats {
   kind: FrictionKind | null;
+  role: string | null;
   frictions: number;
   apiCalls: number;
   counts: KindCounts;
-  weeks: FrictionWeek[];
+  roleOptions: RoleOption[];
+  unit: TrendUnit;
+  buckets: FrictionBucket[];
   categories: CategoryRow[];
   tools: ToolRow[];
   commands: CommandRow[];
   repeated: RepeatedRow[];
   hooks: HookRow[];
-  compactions: CompactionRow[];
   subject: FrictionSubject | null;
   roles: RoleFrictionRow[];
   issues: IssueFrictionRow[];

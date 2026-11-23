@@ -33,11 +33,16 @@ export interface CallGroup extends ThreadCalls {
   project: string;
   inPeriod: boolean;
   inPrevious: boolean;
-  week: number | null;
+  slot: number | null;
 }
 
 function numberOrNull(value: unknown): number | null {
   return value === null || value === undefined ? null : Number(value);
+}
+
+function slotOf(value: unknown): number | null {
+  const at = timestamp(value);
+  return at === null ? null : Date.parse(at);
 }
 
 function textOrNull(value: unknown): string | null {
@@ -136,7 +141,7 @@ export function callGroupOf(
     peak: Number(row['peak'] ?? 0),
     inPeriod: row['in_period'] === true,
     inPrevious: row['in_previous'] === true,
-    week: numberOrNull(row['week']),
+    slot: slotOf(row['slot']),
     source: row,
   };
 }

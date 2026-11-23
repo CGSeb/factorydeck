@@ -4,6 +4,7 @@ import {
   type FrictionsResponse,
   frictionFilterOf,
   parseKind,
+  parseRole,
 } from '../frictions/types.ts';
 import { DEFAULT_PERIOD, type Period, isPeriod } from '../overview/types.ts';
 import { PROJECT_PARAM, projectOf } from './project-param.ts';
@@ -15,6 +16,7 @@ import {
 } from './skills-api.ts';
 
 export const KIND_PARAM = 'kind';
+export const ROLE_PARAM = 'role';
 export const SESSION_PARAM = 'session';
 export const ISSUE_PARAM = 'issue';
 
@@ -22,6 +24,7 @@ export interface FrictionFilters {
   period: Period;
   project: string | undefined;
   kind: FrictionKind | undefined;
+  role?: string | undefined;
   session?: string | undefined;
   issue?: number | undefined;
 }
@@ -29,6 +32,7 @@ export interface FrictionFilters {
 function filterEntries(filters: FrictionFilters): [string, string][] {
   const entries: [string, string][] = [];
   if (filters.kind !== undefined) entries.push([KIND_PARAM, filters.kind]);
+  if (filters.role !== undefined) entries.push([ROLE_PARAM, filters.role]);
   if (filters.session !== undefined) {
     entries.push([SESSION_PARAM, filters.session]);
   } else if (filters.issue !== undefined && filters.project !== undefined) {
@@ -68,6 +72,7 @@ export function frictionFiltersOf(params: URLSearchParams): FrictionFilters {
     period: isPeriod(period) ? period : DEFAULT_PERIOD,
     project,
     kind: parseKind(params.get(KIND_PARAM)),
+    role: parseRole(params.get(ROLE_PARAM)),
     session: filter?.session,
     issue: filter?.issue,
   };

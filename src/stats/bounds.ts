@@ -24,7 +24,6 @@ export interface TrendCut {
 export interface StatsBounds {
   start: number | null;
   previousStart: number | null;
-  weeks: { start: number; day: string }[];
   unit: TrendUnit;
   buckets: TrendCut[];
 }
@@ -193,15 +192,11 @@ export async function statsBounds(
           at time zone 'UTC', ${UTC_FORMAT}) as previous
       from t`,
   );
-  const [weeks, cut] = await Promise.all([
-    calendar(db, { now, timeZone }, 'week', null),
-    trendCut(db, { ...query, now }),
-  ]);
+  const cut = await trendCut(db, { ...query, now });
   return {
     start: period === 'all' ? null : Date.parse(text(periods?.['start'])),
     previousStart:
       period === 'all' ? null : Date.parse(text(periods?.['previous'])),
-    weeks: cuts(weeks).map(({ start, key }) => ({ start, day: key })),
     ...cut,
   };
 }

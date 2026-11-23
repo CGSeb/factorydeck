@@ -32,15 +32,14 @@ describe('frictionStats', () => {
     expect(result.counts).toEqual({
       'tool-error': 22,
       'stop-blocked': 4,
-      compaction: 6,
     });
-    expect(result.frictions).toBe(32);
+    expect(result.frictions).toBe(26);
     expect(result.apiCalls).toBe(100);
   });
 
   it('counts the frictions and calls of every project with All projects', async () => {
     const result = await stats({ project: undefined });
-    expect(result.frictions).toBe(33);
+    expect(result.frictions).toBe(27);
     expect(result.apiCalls).toBe(110);
   });
 
@@ -50,30 +49,64 @@ describe('frictionStats', () => {
     expect(all.apiCalls).toBe(130);
   });
 
-  it('gives 12 weeks of frictions of the kind and API calls', async () => {
+  it('cuts the trend by day for the last 7 days, frictions of the kind and API calls', async () => {
     const result = await stats({ kind: 'stop-blocked' });
-    expect(result.weeks).toHaveLength(12);
-    expect(result.weeks.at(-1)).toEqual({
-      start: '2026-03-16',
+    expect(result.unit).toBe('day');
+    expect(result.buckets.map((bucket) => bucket.start)).toEqual([
+      '2026-03-12',
+      '2026-03-13',
+      '2026-03-14',
+      '2026-03-15',
+      '2026-03-16',
+      '2026-03-17',
+      '2026-03-18',
+    ]);
+    expect(result.buckets.slice(4)).toEqual([
+      { start: '2026-03-16', frictions: 2, apiCalls: 60 },
+      { start: '2026-03-17', frictions: 2, apiCalls: 40 },
+      { start: '2026-03-18', frictions: 0, apiCalls: 0 },
+    ]);
+    const all = await stats();
+    expect(all.buckets[3]).toEqual({
+      start: '2026-03-15',
       frictions: 4,
-      apiCalls: 100,
-    });
-    expect(result.weeks.at(-3)).toEqual({
-      start: '2026-03-02',
-      frictions: 0,
       apiCalls: 0,
     });
-    const all = await stats();
-    expect(all.weeks.at(-4)).toEqual({
+  });
+
+  it('cuts the trend by hour for today', async () => {
+    const result = await stats({
+      period: 'today',
+      now: new Date('2026-03-17T23:00:00Z'),
+    });
+    expect(result.unit).toBe('hour');
+    expect(result.buckets).toHaveLength(24);
+    expect(result.buckets[0]?.start).toBe('2026-03-17T00:00');
+    expect(result.buckets[9]).toEqual({
+      start: '2026-03-17T09:00',
+      frictions: 4,
+      apiCalls: 40,
+    });
+    expect(result.buckets[8]?.frictions).toBe(5);
+    expect(result.buckets[8]?.apiCalls).toBe(0);
+  });
+
+  it('starts the All time trend on the week of the earliest API call', async () => {
+    const result = await stats({ period: 'all' });
+    expect(result.unit).toBe('week');
+    expect(result.buckets.map((bucket) => bucket.start)).toEqual([
+      '2026-02-23',
+      '2026-03-02',
+      '2026-03-09',
+      '2026-03-16',
+    ]);
+    expect(result.buckets[0]).toEqual({
       start: '2026-02-23',
       frictions: 1,
       apiCalls: 30,
     });
-    expect(all.weeks.at(-2)).toEqual({
-      start: '2026-03-09',
-      frictions: 4,
-      apiCalls: 0,
-    });
+    const api = await stats({ period: 'all', project: API });
+    expect(api.buckets.map((bucket) => bucket.start)).toEqual(['2026-03-16']);
   });
 
   it('sorts the categories by errors, ties in the category order', async () => {
@@ -168,18 +201,16 @@ describe('frictionStats', () => {
     expect(result.tools).toEqual([]);
     expect(result.commands).toEqual([]);
     expect(result.repeated).toEqual([]);
-    expect(result.compactions).toEqual([]);
   });
 
-  it('gives the compactions by trigger with the median tokens before', async () => {
-    const result = await stats({ kind: 'compaction' });
-    expect(result.compactions).toEqual([
-      { trigger: 'auto', compactions: 4, medianPreTokens: 306_000, threads: 1 },
-      { trigger: 'manual', compactions: 1, medianPreTokens: null, threads: 1 },
-      { trigger: 'other', compactions: 1, medianPreTokens: null, threads: 1 },
-    ]);
-    expect(result.hooks).toEqual([]);
-    expect(result.tools).toEqual([]);
+  it('leaves the compactions out of every count, table and bucket', async () => {
+    const result = await stats();
+    expect(Object.keys(result.counts)).toEqual(['tool-error', 'stop-blocked']);
+    expect(
+      result.buckets.reduce((sum, bucket) => sum + bucket.frictions, 0),
+    ).toBe(26);
+    expect(result.roles.map((row) => row.mainKind)).not.toContain('compaction');
+    expect(result).not.toHaveProperty('compactions');
   });
 
   it('counts the frictions of another project apart', async () => {
@@ -187,7 +218,6 @@ describe('frictionStats', () => {
     expect(result.counts).toEqual({
       'tool-error': 1,
       'stop-blocked': 0,
-      compaction: 0,
     });
     expect(result.apiCalls).toBe(10);
     expect(result.repeated).toEqual([]);

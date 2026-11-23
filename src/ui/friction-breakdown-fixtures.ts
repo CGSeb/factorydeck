@@ -33,9 +33,9 @@ export const roleRows: RoleFrictionRow[] = [
   {
     role: 'unassigned',
     threads: 3,
-    frictions: 4,
-    perThread: 1.3,
-    mainKind: 'compaction',
+    frictions: 3,
+    perThread: 1,
+    mainKind: 'tool-error',
   },
   { role: 'shipper', threads: 2, frictions: 0, perThread: 0, mainKind: null },
 ];
@@ -80,7 +80,6 @@ export const issueRows: IssueFrictionRow[] = ISSUE_TITLES.map(
             : 'merged',
     frictions: Math.max(1, 12 - index * 2),
     repeated: index === 0 ? 2 : 0,
-    compactions: index === 1 ? 2 : 0,
   }),
 );
 
