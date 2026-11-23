@@ -34,6 +34,7 @@ export const codexSessionDetail: SessionDetail = {
   ...codexSession,
   issueDetail: null,
   projects: sessionWithoutSubAgents.projects,
+  frictions: 0,
   cwd: '/home/dev/example-app',
   tokens: { input: 6_000, cacheWrite: 0, cacheRead: 84_000, output: 6_000 },
   skills: [

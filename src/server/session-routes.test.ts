@@ -48,6 +48,7 @@ const detail: SessionDetail = {
   costUsd: 0.5,
   subAgents: [],
   skills: [],
+  frictions: 0,
   projects: [{ project: '/work/app', name: 'app' }],
 };
 

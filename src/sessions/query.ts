@@ -1,5 +1,6 @@
 import { type SQL, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
+import { sessionFrictionCount } from '../frictions/load.ts';
 import { issueDetail, withIssues } from '../git-host/query.ts';
 import { periodStart, select } from '../overview/query.ts';
 import { totalTokens } from '../overview/tokens.ts';
@@ -254,7 +255,7 @@ export async function sessionDetail(
   options: StateOptions,
   config: WorkflowConfig = DEFAULT_CONFIG,
 ): Promise<SessionDetail | undefined> {
-  const [sessionRows, agentRows, usageRows, skills, names, markers] =
+  const [sessionRows, agentRows, usageRows, skills, names, markers, frictions] =
     await Promise.all([
       select(
         db,
@@ -278,6 +279,7 @@ export async function sessionDetail(
       sessionSkills(db, id),
       projectNames(db),
       loadMarkers(db, config, { sessionIds: [id] }),
+      sessionFrictionCount(db, id),
     ]);
   const [row] = sessionRows;
   if (row === undefined) return undefined;
@@ -303,6 +305,7 @@ export async function sessionDetail(
     tokens: usage.tokens,
     subAgents,
     skills,
+    frictions,
     projects: names.options(),
   };
 }

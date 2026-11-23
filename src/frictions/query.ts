@@ -1,22 +1,19 @@
-import { sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
-import { subAgentWorkItem } from '../features/allocate.ts';
-import { text, timestamp } from '../features/values.ts';
-import { periodStart, select } from '../overview/query.ts';
-import type { Period } from '../overview/types.ts';
+import { lookupOutcomes } from '../git-host/query.ts';
+import type { WorkflowConfig } from '../roles/config.ts';
+import type { SessionMarkers } from '../roles/markers.ts';
+import { summarizeRoles } from '../roles/query.ts';
+import type { StatsBounds } from '../stats/bounds.ts';
 import {
-  MAIN_ROLE,
-  type WorkflowConfig,
-  roleOf,
-  rulesFor,
-  workItemOf,
-} from '../roles/config.ts';
-import {
-  type SessionMarkers,
-  loadMarkers,
-  markerAt,
-} from '../roles/markers.ts';
-import { type StatsBounds, statsBounds } from '../stats/bounds.ts';
+  type IssueTally,
+  compactedThreads,
+  distinctThreads,
+  issueTallies,
+  medianPeak,
+  roleRows,
+  threadPeaks,
+} from './breakdown.ts';
+import { type FrictionQuery, type FrictionWindow, loadWindow } from './load.ts';
 import {
   type FrictionRow,
   type ThreadInfo,
@@ -25,164 +22,169 @@ import {
   compactionRows,
   hookRows,
   kindCounts,
-  latestFirst,
   repeatedRows,
   toolRows,
 } from './summarize.ts';
-import type { FrictionKind, FrictionStats, FrictionWeek } from './types.ts';
+import type { CallGroup, LoadedRow } from './threads.ts';
+import type {
+  ContextPeaks,
+  FrictionKind,
+  FrictionStats,
+  FrictionWeek,
+  IssueFrictionRow,
+} from './types.ts';
 
-export interface FrictionQuery {
-  period: Period;
-  timeZone: string;
-  project?: string | undefined;
-  kind?: FrictionKind | undefined;
-  now?: Date;
+export type { FrictionQuery } from './load.ts';
+export { issueFrictionCount } from './load.ts';
+
+function weekIndex(bounds: StatsBounds, at: string): number | null {
+  const moment = Date.parse(at);
+  let found: number | null = null;
+  bounds.weeks.forEach((week, index) => {
+    if (week.start <= moment) found = index;
+  });
+  return found;
 }
 
-type Row = Record<string, unknown>;
-
-interface LoadedRow extends FrictionRow {
-  source: Row;
+function weekCounts(
+  bounds: StatsBounds,
+  frictions: readonly LoadedRow[],
+  calls: readonly CallGroup[],
+): FrictionWeek[] {
+  const weeks = frictions.map((row) => weekIndex(bounds, row.at));
+  return bounds.weeks.map((week, index) => ({
+    start: week.day,
+    frictions: weeks.filter((value) => value === index).length,
+    apiCalls: calls
+      .filter((group) => group.week === index)
+      .reduce((sum, group) => sum + group.calls, 0),
+  }));
 }
 
-function numberOrNull(value: unknown): number | null {
-  return value === null || value === undefined ? null : Number(value);
+function ofKind<R extends FrictionRow>(
+  rows: readonly R[],
+  kind: FrictionKind | undefined,
+  wanted: FrictionKind,
+): R[] {
+  if (kind !== undefined && kind !== wanted) return [];
+  return rows.filter((row) => row.kind === wanted);
 }
 
-function textOrNull(value: unknown): string | null {
-  return typeof value === 'string' ? value : null;
+function roleThreads(
+  config: WorkflowConfig,
+  markers: SessionMarkers,
+  groups: readonly CallGroup[],
+  byIssue: boolean,
+): Map<string, number> {
+  if (byIssue) return distinctThreads(groups);
+  const rows = groups.map((group) => ({
+    ...group.source,
+    model: '',
+    calls: group.calls,
+    input: 0,
+    cache_write: 0,
+    cache_read: 0,
+    output: 0,
+  }));
+  return new Map(
+    summarizeRoles(config, rows, markers).map((row) => [row.role, row.threads]),
+  );
 }
 
-function frictionOf(row: Row): LoadedRow {
+function contextOf(
+  period: readonly CallGroup[],
+  previous: readonly CallGroup[] | undefined,
+  frictions: readonly FrictionRow[],
+): ContextPeaks {
+  const threads = threadPeaks(period);
+  const context: ContextPeaks = {
+    threads,
+    compacted: compactedThreads(period, frictions),
+    medianPeak: medianPeak(threads),
+  };
+  if (previous === undefined) return context;
+  const before = threadPeaks(previous);
   return {
-    at: timestamp(row['at']) ?? '',
-    kind: text(row['kind']),
-    sessionId: text(row['session_id']),
-    subAgentId: text(row['sub_agent']),
-    sessionTitle: text(row['title']),
-    tool: textOrNull(row['tool']),
-    category: textOrNull(row['category']),
-    program: textOrNull(row['program']),
-    exitCode: numberOrNull(row['exit_code']),
-    commandHash: textOrNull(row['command_hash']),
-    hookCommand: textOrNull(row['hook_command']),
-    trigger: textOrNull(row['trigger']),
-    preTokens: numberOrNull(row['pre_tokens']),
-    source: row,
+    ...context,
+    previous: { medianPeak: medianPeak(before), threads: before.length },
   };
 }
 
-async function periodFrictions(
+async function issueRows(
   db: Database,
-  startAt: string | null,
-  project: string | null,
-): Promise<LoadedRow[]> {
-  const rows = await select(
-    db,
-    sql`select f.at, f.kind, f.session_id, coalesce(f.sub_agent_id, '') as sub_agent,
-        s.project, s.title, s.git_branch as session_branch,
-        sa.agent_type, sa.description, sa.git_branch as agent_branch,
-        sa.first_at as agent_first_at,
-        f.tool, f.category, f.program, f.exit_code, f.command_hash,
-        f.hook_command, f.trigger, f.pre_tokens
-      from friction f
-      join session s on s.id = f.session_id
-      left join sub_agent sa on sa.session_id = f.session_id and sa.id = f.sub_agent_id
-      where (${project}::text is null or s.project = ${project}::text)
-        and (${startAt}::timestamptz is null or f.at >= ${startAt}::timestamptz)`,
-  );
-  return latestFirst(rows.map(frictionOf));
-}
-
-async function periodCalls(
-  db: Database,
-  startAt: string | null,
-  project: string | null,
-): Promise<number> {
-  const [row] = await select(
-    db,
-    sql`select count(*) as calls
-      from api_call a join session s on s.id = a.session_id
-      where (${project}::text is null or s.project = ${project}::text)
-        and (${startAt}::timestamptz is null or a.at >= ${startAt}::timestamptz)`,
-  );
-  return Number(row?.['calls'] ?? 0);
-}
-
-async function weekCounts(
-  db: Database,
-  bounds: StatsBounds,
-  { project, kind }: { project: string | null; kind: string | null },
-): Promise<FrictionWeek[]> {
-  const weeks = bounds.weeks.map((week, index) => ({
-    idx: index,
-    start: new Date(week.start).toISOString(),
-    until:
-      index === bounds.weeks.length - 1
-        ? null
-        : new Date(bounds.weeks[index + 1]?.start ?? 0).toISOString(),
-  }));
-  const rows = await select(
-    db,
-    sql`select w.idx,
-        (select count(*) from api_call a join session s on s.id = a.session_id
-          where a.at >= w.start and (w.until is null or a.at < w.until)
-            and (${project}::text is null or s.project = ${project}::text)) as calls,
-        (select count(*) from friction f join session s on s.id = f.session_id
-          where f.at >= w.start and (w.until is null or f.at < w.until)
-            and (${project}::text is null or s.project = ${project}::text)
-            and (${kind}::text is null or f.kind = ${kind}::text)) as frictions
-      from jsonb_to_recordset(${JSON.stringify(weeks)}::jsonb)
-        as w(idx int, start timestamptz, until timestamptz)
-      order by w.idx`,
-  );
-  return bounds.weeks.map((week, index) => {
-    const row = rows.find((candidate) => Number(candidate['idx']) === index);
+  tallies: IssueTally[],
+  label: (project: string) => string,
+): Promise<IssueFrictionRow[]> {
+  if (tallies.length === 0) return [];
+  const outcomeOf = await lookupOutcomes(db, tallies);
+  return tallies.map((tally) => {
+    const { issue, outcome } = outcomeOf(tally);
     return {
-      start: week.day,
-      frictions: Number(row?.['frictions'] ?? 0),
-      apiCalls: Number(row?.['calls'] ?? 0),
+      ...tally,
+      projectName: label(tally.project),
+      issue,
+      stage: outcome?.stage ?? null,
     };
   });
 }
 
-export function threadOf(
-  config: WorkflowConfig,
-  markers: SessionMarkers,
-  row: LoadedRow,
-): ThreadInfo {
-  const project = text(row.source['project']);
-  const rules = rulesFor(config, project);
-  if (row.subAgentId !== '') {
-    return {
-      project,
-      role: roleOf(rules, {
-        agentType: text(row.source['agent_type']),
-        description: text(row.source['description']),
-      }),
-      workItem: subAgentWorkItem(rules, row.source, markers.get(row.sessionId)),
-    };
-  }
-  const marker = markerAt(markers.get(row.sessionId), row.at);
+const threadOf = (row: LoadedRow): ThreadInfo => row.thread;
+
+function tables(
+  rows: readonly LoadedRow[],
+  kind: FrictionKind | undefined,
+): Pick<
+  FrictionStats,
+  'categories' | 'tools' | 'commands' | 'repeated' | 'hooks' | 'compactions'
+> {
+  const errors = ofKind(rows, kind, 'tool-error');
+  const failed = errors.filter((row) => row.category === 'command-failed');
   return {
-    project,
-    role: marker?.role ?? MAIN_ROLE,
-    workItem:
-      marker?.workItem ??
-      workItemOf(rules, {
-        branch: text(row.source['session_branch']),
-        title: row.sessionTitle,
-      }),
+    categories: categoryRows(errors),
+    tools: toolRows(errors),
+    commands: commandRows(failed),
+    repeated: repeatedRows(failed, threadOf),
+    hooks: hookRows(ofKind(rows, kind, 'stop-blocked')),
+    compactions: compactionRows(ofKind(rows, kind, 'compaction')),
   };
 }
 
-function ofKind(
+async function breakdown(
+  db: Database,
+  {
+    query,
+    config,
+    loaded,
+  }: { query: FrictionQuery; config: WorkflowConfig; loaded: FrictionWindow },
   rows: readonly LoadedRow[],
-  kind: FrictionKind | undefined,
-  wanted: FrictionKind,
-): LoadedRow[] {
-  if (kind !== undefined && kind !== wanted) return [];
-  return rows.filter((row) => row.kind === wanted);
+): Promise<Pick<FrictionStats, 'roles' | 'issues' | 'context'>> {
+  const kind = query.kind ?? null;
+  const selected =
+    kind === null ? rows : rows.filter((row) => row.kind === kind);
+  const byIssue = query.filter?.issue !== undefined;
+  const periodCalls = loaded.calls.filter((group) => group.inPeriod);
+  const repeated = repeatedRows(
+    rows.filter((row) => row.category === 'command-failed'),
+    threadOf,
+  );
+  return {
+    roles: roleRows(
+      selected,
+      roleThreads(config, loaded.markers, periodCalls, byIssue),
+    ),
+    issues: byIssue
+      ? []
+      : await issueRows(db, issueTallies(selected, rows, repeated), (root) =>
+          loaded.names.label(root),
+        ),
+    context: contextOf(
+      periodCalls,
+      loaded.startMs === null
+        ? undefined
+        : loaded.calls.filter((group) => group.inPrevious),
+      rows,
+    ),
+  };
 }
 
 export async function frictionStats(
@@ -190,34 +192,26 @@ export async function frictionStats(
   query: FrictionQuery,
   config: WorkflowConfig,
 ): Promise<FrictionStats> {
-  const project = query.project ?? null;
   const kind = query.kind ?? null;
-  const [startAt, bounds] = await Promise.all([
-    periodStart(db, query),
-    statsBounds(db, query),
-  ]);
-  const [rows, apiCalls, weeks] = await Promise.all([
-    periodFrictions(db, startAt, project),
-    periodCalls(db, startAt, project),
-    weekCounts(db, bounds, { project, kind }),
-  ]);
-  const errors = ofKind(rows, query.kind, 'tool-error');
-  const failed = errors.filter((row) => row.category === 'command-failed');
-  const markers = await loadMarkers(db, config, {
-    sessionIds: [...new Set(failed.map((row) => row.sessionId))],
-  });
-  const counts = kindCounts(rows);
+  const loaded = await loadWindow(db, query, config);
+  const { startMs, frictions } = loaded;
+  const rows =
+    startMs === null
+      ? frictions
+      : frictions.filter((row) => Date.parse(row.at) >= startMs);
+  const ofSelected = (list: readonly LoadedRow[]): LoadedRow[] =>
+    kind === null ? [...list] : list.filter((row) => row.kind === kind);
   return {
     kind,
-    frictions: kind === null ? rows.length : counts[kind],
-    apiCalls,
-    counts,
-    weeks,
-    categories: categoryRows(errors),
-    tools: toolRows(errors),
-    commands: commandRows(failed),
-    repeated: repeatedRows(failed, (row) => threadOf(config, markers, row)),
-    hooks: hookRows(ofKind(rows, query.kind, 'stop-blocked')),
-    compactions: compactionRows(ofKind(rows, query.kind, 'compaction')),
+    frictions: ofSelected(rows).length,
+    apiCalls: loaded.calls
+      .filter((group) => group.inPeriod)
+      .reduce((sum, group) => sum + group.calls, 0),
+    counts: kindCounts(rows),
+    weeks: weekCounts(loaded.bounds, ofSelected(frictions), loaded.calls),
+    ...tables(rows, query.kind),
+    subject: loaded.subject,
+    ...(await breakdown(db, { query, config, loaded }, rows)),
+    projects: loaded.names.options(),
   };
 }

@@ -3,6 +3,7 @@ import type { FrictionQuery } from '../frictions/query.ts';
 import {
   type FrictionStats,
   type FrictionsResponse,
+  frictionFilterOf,
   parseKind,
 } from '../frictions/types.ts';
 import type { ApiContext } from './api-context.ts';
@@ -21,8 +22,13 @@ export function frictionRoutes(
     const query = skillQuery((name) => c.req.query(name));
     if (query === undefined) return c.json(INVALID_QUERY, 400);
     const kind = parseKind(c.req.query('kind'));
+    const filter = frictionFilterOf({
+      session: c.req.query('session'),
+      issue: c.req.query('issue'),
+      project: query.project,
+    });
     const body: FrictionsResponse = await fromDatabase(async () => {
-      const frictions = await source.frictions({ ...query, kind });
+      const frictions = await source.frictions({ ...query, kind, filter });
       return {
         status: 'ok',
         updatedAt: updatedAt(),

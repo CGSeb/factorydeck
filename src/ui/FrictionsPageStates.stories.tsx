@@ -31,6 +31,8 @@ const TOOL_TABLES = [
   'By tool',
   'Failed commands',
   'Repeated failures',
+  'By role',
+  'Issues with the most frictions',
 ];
 
 function address(canvasElement: HTMLElement): HTMLElement {
@@ -58,18 +60,29 @@ export const SelectEachKind: Story = {
       '?period=30d&kind=stop-blocked',
     );
     await canvas.findByText('5 frictions · 0.2 per 100 API calls');
-    await expect(tableHeadings(canvasElement)).toEqual([TREND, 'Stop blocked']);
+    await expect(tableHeadings(canvasElement)).toEqual([
+      TREND,
+      'Stop blocked',
+      'By role',
+      'Issues with the most frictions',
+    ]);
     await pick(canvasElement, /^Compactions/);
     await expect(address(canvasElement)).toHaveTextContent(
       '?period=30d&kind=compaction',
     );
     await canvas.findByText('4 frictions · 0.2 per 100 API calls');
-    await expect(tableHeadings(canvasElement)).toEqual([TREND, 'Compactions']);
+    await expect(tableHeadings(canvasElement)).toEqual([
+      TREND,
+      'Compactions',
+      'By role',
+      'Issues with the most frictions',
+      'Context peaks',
+    ]);
     await pick(canvasElement, /^All/);
     await expect(address(canvasElement)).toHaveTextContent('?period=30d');
     await expect(address(canvasElement)).not.toHaveTextContent('kind');
     await canvas.findByText('50 frictions · 2.4 per 100 API calls');
-    await expect(tableHeadings(canvasElement)).toHaveLength(7);
+    await expect(tableHeadings(canvasElement)).toHaveLength(10);
   },
 };
 
@@ -98,7 +111,7 @@ export const UnknownKind: Story = {
     await expect(
       within(kinds).getByRole('button', { name: /^All/ }),
     ).toHaveAttribute('aria-pressed', 'true');
-    await expect(tableHeadings(canvasElement)).toHaveLength(7);
+    await expect(tableHeadings(canvasElement)).toHaveLength(10);
   },
 };
 
@@ -126,7 +139,10 @@ export const NoFriction: Story = {
     ).toBeVisible();
     await expect(canvas.getByText('No friction in this period.')).toBeVisible();
     await expect(canvas.getByRole('group', { name: 'Kind' })).toBeVisible();
-    await expect(tableHeadings(canvasElement)).toEqual([TREND]);
+    await expect(tableHeadings(canvasElement)).toEqual([
+      TREND,
+      'Context peaks',
+    ]);
   },
 };
 
@@ -177,6 +193,6 @@ export const At1024: Story = {
   ],
   play: async ({ canvasElement }) => {
     await frictionsLoaded(canvasElement);
-    await expect(tableHeadings(canvasElement)).toHaveLength(7);
+    await expect(tableHeadings(canvasElement)).toHaveLength(10);
   },
 };

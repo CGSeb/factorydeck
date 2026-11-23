@@ -62,6 +62,7 @@ const feature: FeatureDetail = {
   orchestration: null,
   sessions: [],
   threads: [],
+  frictions: 0,
 };
 
 const queries: unknown[] = [];

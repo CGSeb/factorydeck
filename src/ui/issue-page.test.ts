@@ -54,6 +54,7 @@ function feature(
     orchestration,
     sessions: [],
     threads,
+    frictions: 0,
   };
 }
 

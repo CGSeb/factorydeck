@@ -144,6 +144,7 @@ export const sessionWithSubAgents: SessionDetail = {
   ...workingSession,
   issueDetail: githubIssue,
   projects: optionsOf(PROJECTS),
+  frictions: 12,
   cwd: '/home/dev/example-app/packages/web',
   tokens: {
     input: 120_400,
@@ -231,6 +232,7 @@ export const sessionWithoutSubAgents: SessionDetail = {
   ...waitingSession,
   issueDetail: null,
   projects: optionsOf(PROJECTS),
+  frictions: 0,
   cwd: null,
   tokens: { input: 2_400, cacheWrite: 30_000, cacheRead: 150_000, output: 0 },
   skills: [

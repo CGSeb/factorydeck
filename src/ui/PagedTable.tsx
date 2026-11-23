@@ -13,6 +13,7 @@ export interface PagedTableProps<T> {
   renderRow: (row: T, index: number) => ReactElement;
   className?: string;
   empty?: string;
+  paged?: boolean;
 }
 
 export function PagedTable<T>({
@@ -22,9 +23,10 @@ export function PagedTable<T>({
   renderRow,
   className,
   empty,
+  paged = true,
 }: PagedTableProps<T>): ReactElement {
   const [all, setAll] = useState(false);
-  const shown = all ? rows : rows.slice(0, PAGE_ROWS);
+  const shown = all || !paged ? rows : rows.slice(0, PAGE_ROWS);
   return (
     <Panel>
       <h2 className="fd-panel-heading fd-friction-heading">{title}</h2>

@@ -95,3 +95,28 @@ export const WithoutWorkItem: Story = {
     await expect(canvas.getByText('—', { selector: 'dd' })).toBeVisible();
   },
 };
+
+export const WithFrictions: Story = {
+  name: 'With frictions',
+  args: { session: sessionWithSubAgents, project: '/work/app' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const link = canvas.getByRole('link', { name: '12' });
+    await expect(link).toHaveAttribute(
+      'href',
+      `/frictions?period=all&project=%2Fwork%2Fapp&session=${sessionWithSubAgents.id}`,
+    );
+    await expect(link.closest('div')).toHaveTextContent('Frictions12');
+  },
+};
+
+export const WithoutFriction: Story = {
+  name: 'Without friction',
+  args: { session: sessionWithoutSubAgents },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const term = canvas.getByText('Frictions');
+    await expect(term.closest('div')).toHaveTextContent('FrictionsNone');
+    await expect(term.closest('div')?.querySelector('a')).toBeNull();
+  },
+};

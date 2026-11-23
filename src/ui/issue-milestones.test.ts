@@ -50,6 +50,7 @@ function feature(
     orchestration: withOrchestration ? orchestration : null,
     sessions: [],
     threads,
+    frictions: 0,
   };
 }
 

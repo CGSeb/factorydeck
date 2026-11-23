@@ -87,6 +87,7 @@ export interface SessionDetail extends Omit<
   issueDetail: IssueDetail | null;
   subAgents: SubAgentSummary[];
   skills: SkillUsage[];
+  frictions: number;
   projects: ProjectOption[];
 }
 

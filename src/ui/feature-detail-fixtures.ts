@@ -173,6 +173,7 @@ const exportFeature: FeatureDetail = {
       costUsd: 0.8,
     }),
   ],
+  frictions: 7,
 };
 
 export const uncollectedFeature: FeatureDetail = {
@@ -185,6 +186,7 @@ export const uncollectedFeature: FeatureDetail = {
   orchestration: null,
   sessions: [],
   threads: [],
+  frictions: 0,
 };
 
 export const reviewFeature: FeatureDetail = {
@@ -206,6 +208,11 @@ export const reviewFeature: FeatureDetail = {
   roles: [exportFeature.roles[0]].filter((role) => role !== undefined),
   orchestration: null,
   threads: exportFeature.threads.slice(0, 2),
+};
+
+const REVIEWED_REQUEST = {
+  number: 58,
+  url: 'https://github.com/example-org/example-app/pull/58',
 };
 
 export const afterPersonFeature: FeatureDetail = {
@@ -230,10 +237,7 @@ export const afterPersonFeature: FeatureDetail = {
       {
         kind: 'report',
         at: new Date(Date.UTC(2026, 10, 20, 13)).toISOString(),
-        request: {
-          number: 58,
-          url: 'https://github.com/example-org/example-app/pull/58',
-        },
+        request: REVIEWED_REQUEST,
         score: 64,
         threshold: 80,
         refused: true,
@@ -242,10 +246,7 @@ export const afterPersonFeature: FeatureDetail = {
       {
         kind: 'report',
         at: new Date(Date.UTC(2026, 10, 22, 13)).toISOString(),
-        request: {
-          number: 58,
-          url: 'https://github.com/example-org/example-app/pull/58',
-        },
+        request: REVIEWED_REQUEST,
         score: 88,
         threshold: 80,
         refused: false,
