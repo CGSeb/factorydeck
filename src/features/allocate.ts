@@ -34,7 +34,7 @@ import { addCost, issueKey, latest, text, timestamp } from './values.ts';
 
 export type Row = Record<string, unknown>;
 
-interface CallGroup {
+export interface CallGroup {
   sessionId: string;
   sessionTitle: string;
   sessionAgent: string;
@@ -104,7 +104,7 @@ export function subAgentWorkItem(
     : (markerAt(sessionMarkers, row['agent_first_at'])?.workItem ?? null);
 }
 
-function groupOf(
+export function groupOf(
   config: WorkflowConfig,
   markers: SessionMarkers,
   row: Row,

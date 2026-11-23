@@ -5,7 +5,11 @@ import { collect } from '../git-host/collect.ts';
 import { hasFactory } from '../ingest/factory.ts';
 import { ingest } from '../ingest/ingest.ts';
 import { DEFAULT_CONFIG } from '../roles/config.ts';
-import { flowStats } from '../stats/flow.ts';
+import { allocationIn } from '../features/usage.ts';
+import { issueKey } from '../features/values.ts';
+import { issueFacts, loadIssues } from '../stats/autonomy.ts';
+import { firstRefusal, flowStats } from '../stats/flow.ts';
+import { earliestReport, storedReports } from '../stats/stops.ts';
 import { createTestDatabase } from '../test/postgres.ts';
 import { sessionsFolder } from '../test/session-logs.ts';
 import { mergedIssueNumber } from './autonomy.ts';
@@ -75,5 +79,40 @@ describe('demo flow', () => {
       'reviewer',
     ]);
     expect(detail?.orchestration).not.toBeNull();
+  });
+
+  it('gives merged issues calls after their first refused report, and one issue calls after a first report that passed', async () => {
+    const [issues, usage, flow] = await Promise.all([
+      loadIssues(db, undefined, hasFactory, (issue, requests, state) => ({
+        merged: issueFacts(issue, requests, state).mergedAt !== null,
+        key: issueKey(issue.project, issue.number),
+        refusedAt: firstRefusal(requests),
+        firstAt: earliestReport(storedReports(requests))?.at ?? null,
+      })),
+      allocationIn(db, DEFAULT_CONFIG, { startAt: null }),
+      flowStats(
+        db,
+        { period: 'all', timeZone: 'UTC', now: NOW },
+        DEFAULT_CONFIG,
+        hasFactory,
+      ),
+    ]);
+    const lastCall = (key: string): number => {
+      const lastAt = usage.issues.get(key)?.lastAt;
+      return lastAt === null || lastAt === undefined ? 0 : Date.parse(lastAt);
+    };
+    const reworked = issues.filter(
+      ({ merged, key, refusedAt }) =>
+        merged && refusedAt !== null && lastCall(key) >= refusedAt,
+    );
+    const passedThenWorked = issues.filter(
+      ({ key, refusedAt, firstAt }) =>
+        refusedAt === null &&
+        firstAt !== null &&
+        lastCall(key) > Date.parse(firstAt),
+    );
+    expect(reworked.length).toBeGreaterThanOrEqual(3);
+    expect(passedThenWorked.length).toBeGreaterThanOrEqual(1);
+    expect(flow.current.tokens.rework).toBeGreaterThan(0);
   });
 });

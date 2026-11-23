@@ -100,8 +100,7 @@ export interface FlowTokens {
   total: number;
   droppedWork: number;
   noWorkItem: number;
-  inputSide: number;
-  cacheRead: number;
+  rework: number;
   apiCalls: number;
 }
 

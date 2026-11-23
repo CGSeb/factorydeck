@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, within } from 'storybook/test';
+import type { ReactElement } from 'react';
+import { expect, userEvent, within } from 'storybook/test';
 import { StatFigure } from './StatFigure.tsx';
 import { surfaceFrame } from './story-frame.ts';
 
@@ -167,5 +168,138 @@ export const OneItem: Story = {
   args: { n: 1, value: 1, note: '1 still waiting' },
   play: async ({ canvasElement }) => {
     await expect(text(canvasElement, '[data-note]')).toBe('1 still waiting');
+  },
+};
+
+const LEAD_HELP =
+  "Median time from an issue's creation to its merge, including the time it waited before any agent started.";
+
+const withHelp = {
+  label: 'Lead time',
+  value: 5.2,
+  format: hours,
+  kind: 'amount',
+  previous: 6.5,
+  previousN: 11,
+  better: 'lower',
+  help: LEAD_HELP,
+} as const;
+
+function helpButton(canvasElement: HTMLElement): HTMLElement {
+  return within(canvasElement).getByRole('button', { name: 'About Lead time' });
+}
+
+export const HelpClosed: Story = {
+  name: 'With help, closed',
+  args: withHelp,
+  play: async ({ canvasElement }) => {
+    const button = helpButton(canvasElement);
+    await expect(button).toHaveAttribute('type', 'button');
+    await expect(button).not.toHaveAttribute('aria-describedby');
+    await expect(within(canvasElement).queryByRole('tooltip')).toBeNull();
+  },
+};
+
+export const HelpHover: Story = {
+  name: 'With help, on hover',
+  args: withHelp,
+  play: async ({ canvasElement }) => {
+    const button = helpButton(canvasElement);
+    await userEvent.hover(button);
+    const tooltip = within(canvasElement).getByRole('tooltip');
+    await expect(tooltip).toHaveTextContent(LEAD_HELP);
+    await expect(button).toHaveAttribute('aria-describedby', tooltip.id);
+    await userEvent.unhover(button);
+    await expect(within(canvasElement).queryByRole('tooltip')).toBeNull();
+  },
+};
+
+export const HelpKeyboard: Story = {
+  name: 'With help, keyboard focus then Escape',
+  args: withHelp,
+  play: async ({ canvasElement }) => {
+    const button = helpButton(canvasElement);
+    await userEvent.tab();
+    await expect(button).toHaveFocus();
+    const tooltip = within(canvasElement).getByRole('tooltip');
+    await expect(tooltip).toHaveTextContent(LEAD_HELP);
+    await expect(button).toHaveAttribute('aria-describedby', tooltip.id);
+    await userEvent.keyboard('{Escape}');
+    await expect(within(canvasElement).queryByRole('tooltip')).toBeNull();
+    await expect(button).not.toHaveAttribute('aria-describedby');
+    await userEvent.tab();
+    await expect(within(canvasElement).queryByRole('tooltip')).toBeNull();
+  },
+};
+
+export const HelpTap: Story = {
+  name: 'With help, a tap opens and a second tap closes',
+  args: withHelp,
+  play: async ({ canvasElement }) => {
+    const button = helpButton(canvasElement);
+    const touch = userEvent.setup();
+    await touch.pointer({ keys: '[TouchA]', target: button });
+    await expect(within(canvasElement).getByRole('tooltip')).toBeVisible();
+    await touch.pointer({ keys: '[TouchA]', target: button });
+    await expect(within(canvasElement).queryByRole('tooltip')).toBeNull();
+  },
+};
+
+function narrow(Story: () => ReactElement): ReactElement {
+  return (
+    <div style={{ width: 360, maxWidth: '100%' }}>
+      <Story />
+    </div>
+  );
+}
+
+export const HelpAt360Light: Story = {
+  name: 'With help open at 360 px, light',
+  args: withHelp,
+  globals: { theme: 'light' },
+  decorators: [narrow],
+  play: async ({ canvasElement }) => {
+    await userEvent.hover(helpButton(canvasElement));
+    await expect(within(canvasElement).getByRole('tooltip')).toBeVisible();
+  },
+};
+
+export const HelpAt360Dark: Story = {
+  name: 'With help open at 360 px, dark',
+  args: withHelp,
+  globals: { theme: 'dark' },
+  decorators: [narrow],
+  play: async ({ canvasElement }) => {
+    await userEvent.hover(helpButton(canvasElement));
+    await expect(within(canvasElement).getByRole('tooltip')).toBeVisible();
+  },
+};
+
+function atBottom(Story: () => ReactElement): ReactElement {
+  return (
+    <div
+      style={{ minHeight: '100vh', display: 'flex', alignItems: 'flex-end' }}
+    >
+      <Story />
+    </div>
+  );
+}
+
+export const HelpNearBottom: Story = {
+  name: 'With help next to the bottom edge, opening above the icon',
+  args: withHelp,
+  decorators: [atBottom],
+  play: async ({ canvasElement }) => {
+    const button = helpButton(canvasElement);
+    const bottom = window.innerHeight - 2;
+    button.getBoundingClientRect = () =>
+      DOMRect.fromRect({ x: 40, y: bottom - 14, width: 14, height: 14 });
+    await userEvent.hover(button);
+    const tooltip = within(canvasElement).getByRole('tooltip');
+    await expect(tooltip.dataset['side']).toBe('above');
+    await expect(parseFloat(tooltip.style.top)).toBeLessThan(bottom - 14);
+    await expect(
+      parseFloat(tooltip.style.top) + tooltip.offsetHeight,
+    ).toBeLessThanOrEqual(window.innerHeight);
   },
 };

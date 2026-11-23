@@ -251,14 +251,14 @@ export function flowFigures(issues: readonly FlowIssue[]): FlowFigures {
 export interface TokenShares {
   droppedWork: number | null;
   noWorkItem: number | null;
-  cacheReads: number | null;
+  rework: number | null;
 }
 
 export function tokenShares(tokens: FlowTokens): TokenShares {
   return {
     droppedWork: shareOf(tokens.droppedWork, tokens.total),
     noWorkItem: shareOf(tokens.noWorkItem, tokens.total),
-    cacheReads: shareOf(tokens.cacheRead, tokens.inputSide),
+    rework: shareOf(tokens.rework, tokens.total),
   };
 }
 
