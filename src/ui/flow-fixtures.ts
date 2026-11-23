@@ -4,7 +4,7 @@ import type {
   FlowStats,
   FlowStripIssue,
   FlowTokens,
-  FlowWeek,
+  FlowBucket,
 } from '../stats/types.ts';
 import type { LoadFlow } from './stats-api.ts';
 import { risingWeeks } from './stats-fixtures.ts';
@@ -82,7 +82,7 @@ export const noTokens: FlowTokens = {
   apiCalls: 0,
 };
 
-export const flowWeeks: FlowWeek[] = risingWeeks.map(({ start, merged }) => ({
+export const flowWeeks: FlowBucket[] = risingWeeks.map(({ start, merged }) => ({
   start,
   merged,
 }));
@@ -91,7 +91,8 @@ export function flowOf(overrides: Partial<FlowStats> = {}): FlowStats {
   return {
     current: { issues: monthFlowIssues, tokens: monthTokens },
     previous: { issues: previousFlowIssues, tokens: previousMonthTokens },
-    weeks: flowWeeks,
+    unit: 'week',
+    buckets: flowWeeks,
     ...overrides,
   };
 }

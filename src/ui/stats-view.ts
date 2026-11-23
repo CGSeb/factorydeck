@@ -2,19 +2,20 @@ import type { Period } from '../overview/types.ts';
 import type {
   AutonomyCounts,
   AutonomyReasons,
-  AutonomyWeek,
+  AutonomyBucket,
+  FlowBucket,
   FlowIssue,
   FlowStripIssue,
   FlowTokens,
-  FlowWeek,
+  QualityBucket,
   QualityCounts,
-  QualityWeek,
+  TrendUnit,
 } from '../stats/types.ts';
 import type { CountRow } from './components/CountBars.tsx';
 import type { RangeItem } from './components/RangeStrip.tsx';
 import { type TrendBucket, median } from './components/stats-math.ts';
 import { featurePath } from './features-api.ts';
-import { formatBucket } from './format.ts';
+import { MONTHS, formatBucket } from './format.ts';
 
 const COMPARISONS: Record<Exclude<Period, 'all'>, string> = {
   today: 'yesterday',
@@ -64,18 +65,80 @@ export function waitingNote(waiting: number): string | undefined {
   return waiting === 0 ? undefined : `${String(waiting)} still waiting`;
 }
 
-export function weekBuckets(weeks: readonly AutonomyWeek[]): TrendBucket[] {
-  return weeks.map((week, index) => {
-    const value = shareOf(week.mergedWithoutPerson, week.merged);
+export interface Trend<Bucket> {
+  unit: TrendUnit;
+  buckets: readonly Bucket[];
+}
+
+const CURRENT_LABELS: Record<TrendUnit, string> = {
+  hour: 'this hour',
+  day: 'today',
+  week: 'this week',
+  month: 'this month',
+  year: 'this year',
+};
+
+function twoDigits(value: number): string {
+  return String(value).padStart(2, '0');
+}
+
+export function hourKey(now: Date): string {
+  return `${String(now.getFullYear())}-${twoDigits(now.getMonth() + 1)}-${twoDigits(now.getDate())}T${twoDigits(now.getHours())}:00`;
+}
+
+export function trendTitle(base: string, unit: TrendUnit): string {
+  return `${base}, by ${unit}`;
+}
+
+export function mergedTitle(unit: TrendUnit): string {
+  return `Merged per ${unit}`;
+}
+
+function bucketLabel(unit: TrendUnit, start: string): string {
+  const [year = '', month = 1] = start.split('-');
+  if (unit === 'year') return year;
+  if (unit === 'month') {
+    return `${MONTHS[Number(month) - 1] ?? ''} ${year}`;
+  }
+  return formatBucket(start);
+}
+
+function currentIndex(
+  { unit, buckets }: Trend<{ start: string }>,
+  now: Date,
+): number {
+  if (unit !== 'hour') return buckets.length - 1;
+  const key = hourKey(now);
+  return buckets.findLastIndex((bucket) => bucket.start === key);
+}
+
+export function trendLabels(
+  trend: Trend<{ start: string }>,
+  now: Date,
+): string[] {
+  const current = currentIndex(trend, now);
+  return trend.buckets.map((bucket, index) =>
+    index === current
+      ? CURRENT_LABELS[trend.unit]
+      : bucketLabel(trend.unit, bucket.start),
+  );
+}
+
+export function autonomyBuckets(
+  trend: Trend<AutonomyBucket>,
+  now: Date,
+): TrendBucket[] {
+  const labels = trendLabels(trend, now);
+  return trend.buckets.map((bucket, index) => {
+    const value = shareOf(bucket.mergedWithoutPerson, bucket.merged);
     return {
-      label:
-        index === weeks.length - 1 ? 'this week' : formatBucket(week.start),
+      label: labels[index] ?? '',
       value,
-      n: week.merged,
+      n: bucket.merged,
       text:
         value === null
           ? 'No issue merged'
-          : `${wholePercent(value)} · ${String(week.mergedWithoutPerson)} of ${String(week.merged)}`,
+          : `${wholePercent(value)} · ${String(bucket.mergedWithoutPerson)} of ${String(bucket.merged)}`,
     };
   });
 }
@@ -113,29 +176,34 @@ export function qualityFigures(counts: QualityCounts): QualityFigures {
   };
 }
 
-export function qualityWeekBuckets(
-  weeks: readonly QualityWeek[],
+export function qualityBuckets(
+  trend: Trend<QualityBucket>,
+  now: Date,
 ): TrendBucket[] {
-  return weeks.map((week, index) => {
-    const value = shareOf(week.firstPassed, week.mergedWithReport);
+  const labels = trendLabels(trend, now);
+  return trend.buckets.map((bucket, index) => {
+    const value = shareOf(bucket.firstPassed, bucket.mergedWithReport);
     return {
-      label:
-        index === weeks.length - 1 ? 'this week' : formatBucket(week.start),
+      label: labels[index] ?? '',
       value,
-      n: week.mergedWithReport,
+      n: bucket.mergedWithReport,
       text:
         value === null
           ? 'No merged issue with a report'
-          : `${wholePercent(value)} · ${String(week.firstPassed)} of ${String(week.mergedWithReport)}`,
+          : `${wholePercent(value)} · ${String(bucket.firstPassed)} of ${String(bucket.mergedWithReport)}`,
     };
   });
 }
 
-export function mergedWeekBuckets(weeks: readonly FlowWeek[]): TrendBucket[] {
-  return weeks.map((week, index) => ({
-    label: index === weeks.length - 1 ? 'this week' : formatBucket(week.start),
-    value: week.merged,
-    text: plural(week.merged, 'issue', 'issues'),
+export function mergedBuckets(
+  trend: Trend<FlowBucket>,
+  now: Date,
+): TrendBucket[] {
+  const labels = trendLabels(trend, now);
+  return trend.buckets.map((bucket, index) => ({
+    label: labels[index] ?? '',
+    value: bucket.merged,
+    text: plural(bucket.merged, 'issue', 'issues'),
   }));
 }
 

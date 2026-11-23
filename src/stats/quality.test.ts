@@ -293,19 +293,27 @@ describe('quality stats', () => {
     expect(quality.firstReports).toEqual([]);
   });
 
-  it('counts 12 weeks from Monday, the current one last', async () => {
-    const { weeks } = await stats('today');
-    expect(weeks).toHaveLength(12);
-    expect(weeks[0]?.start).toBe('2025-12-29');
-    expect(weeks.find((week) => week.start === '2026-02-09')).toEqual({
+  it('counts all time by week, from the week of the first merge, the current one last', async () => {
+    const { unit, buckets } = await stats('all');
+    expect(unit).toBe('week');
+    expect(buckets.find((bucket) => bucket.start === '2026-02-09')).toEqual({
       start: '2026-02-09',
       mergedWithReport: 1,
       firstPassed: 0,
     });
-    expect(weeks.slice(-3)).toEqual([
+    expect(buckets.slice(-3)).toEqual([
       { start: '2026-03-02', mergedWithReport: 1, firstPassed: 1 },
       { start: '2026-03-09', mergedWithReport: 4, firstPassed: 2 },
       { start: '2026-03-16', mergedWithReport: 0, firstPassed: 0 },
     ]);
+  });
+
+  it('counts today by hour, from midnight', async () => {
+    const { unit, buckets } = await stats('today');
+    expect(unit).toBe('hour');
+    expect(buckets).toHaveLength(24);
+    expect(buckets[0]?.start).toBe('2026-03-18T00:00');
+    expect(buckets.at(-1)?.start).toBe('2026-03-18T23:00');
+    expect(buckets.every((bucket) => bucket.mergedWithReport === 0)).toBe(true);
   });
 });

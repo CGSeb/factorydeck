@@ -4,7 +4,7 @@ import { collect } from '../git-host/collect.ts';
 import { hasFactory } from '../ingest/factory.ts';
 import { ingest } from '../ingest/ingest.ts';
 import { autonomyStats } from '../stats/autonomy.ts';
-import type { AutonomyWeek } from '../stats/types.ts';
+import type { AutonomyBucket } from '../stats/types.ts';
 import { createTestDatabase } from '../test/postgres.ts';
 import { sessionsFolder } from '../test/session-logs.ts';
 import { AUTONOMY_MERGED, helpKind } from './autonomy.ts';
@@ -27,7 +27,7 @@ afterEach(async () => {
   await close();
 });
 
-function share(weeks: readonly AutonomyWeek[]): number {
+function share(weeks: readonly AutonomyBucket[]): number {
   const merged = weeks.reduce((sum, week) => sum + week.merged, 0);
   const alone = weeks.reduce((sum, week) => sum + week.mergedWithoutPerson, 0);
   return alone / merged;
@@ -55,9 +55,9 @@ describe('demo autonomy', () => {
       hasFactory,
     );
     expect(autonomy.current.merged).toBeGreaterThanOrEqual(AUTONOMY_MERGED);
-    expect(autonomy.weeks.every((week) => week.merged > 0)).toBe(true);
-    expect(share(autonomy.weeks.slice(6))).toBeGreaterThan(
-      share(autonomy.weeks.slice(0, 6)),
+    expect(autonomy.buckets.every((week) => week.merged > 0)).toBe(true);
+    expect(share(autonomy.buckets.slice(6))).toBeGreaterThan(
+      share(autonomy.buckets.slice(0, 6)),
     );
     const { specQuestion, belowThreshold, gatesFailed, autoMergeOff, total } =
       autonomy.reasons;
@@ -70,5 +70,21 @@ describe('demo autonomy', () => {
     ).toBeGreaterThan(total);
     expect(autonomy.waitingNow).toBe(2);
     expect(autonomy.current.answeredWaitsMs.length).toBeGreaterThan(5);
+  });
+
+  it('merges at least 5 issues on one of the last 7 days and 3 in one hour of today', async () => {
+    const stats = (period: '7d' | 'today') =>
+      autonomyStats(db, { period, timeZone: 'UTC', now: NOW }, hasFactory);
+    const [week, today] = await Promise.all([stats('7d'), stats('today')]);
+    expect(week.unit).toBe('day');
+    expect(
+      Math.max(...week.buckets.map((bucket) => bucket.merged)),
+    ).toBeGreaterThanOrEqual(5);
+    expect(today.unit).toBe('hour');
+    const hour = today.buckets.find(
+      (bucket) => bucket.start === '2026-03-12T15:00',
+    );
+    expect(hour?.merged).toBeGreaterThanOrEqual(3);
+    expect(hour?.mergedWithoutPerson).toBeLessThan(hour?.merged ?? 0);
   });
 });

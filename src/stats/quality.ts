@@ -16,12 +16,12 @@ import {
   loadIssues,
   mergeTime,
 } from './autonomy.ts';
-import { type StatsBounds, statsBounds } from './bounds.ts';
+import { type StatsBounds, earliestMerge, statsBounds } from './bounds.ts';
 import type {
   FirstReport,
   QualityCounts,
   QualityStats,
-  QualityWeek,
+  QualityBucket,
 } from './types.ts';
 
 export type QualityQuery = AutonomyQuery;
@@ -115,17 +115,17 @@ export function qualityCounts(
   };
 }
 
-export function qualityWeeks(
+export function qualityBuckets(
   issues: readonly QualityFacts[],
-  weeks: StatsBounds['weeks'],
-): QualityWeek[] {
-  return weeks.map((week, index) => {
+  buckets: StatsBounds['buckets'],
+): QualityBucket[] {
+  return buckets.map((bucket, index) => {
     const withReport = mergedIn(issues, {
-      from: week.start,
-      to: weeks[index + 1]?.start ?? null,
+      from: bucket.start,
+      to: buckets[index + 1]?.start ?? null,
     }).filter((issue) => issue.first !== null);
     return {
-      start: week.day,
+      start: bucket.key,
       mergedWithReport: withReport.length,
       firstPassed: withReport.filter((issue) => issue.first?.passed === true)
         .length,
@@ -148,7 +148,8 @@ export function summarizeQuality(
             to: bounds.start,
           }),
         }),
-    weeks: qualityWeeks(issues, bounds.weeks),
+    unit: bounds.unit,
+    buckets: qualityBuckets(issues, bounds.buckets),
     firstReports: mergedIn(issues, current)
       .flatMap((issue) => (issue.first === null ? [] : [issue.first]))
       .sort((a, b) => Date.parse(a.time) - Date.parse(b.time))
@@ -161,9 +162,10 @@ export async function qualityStats(
   query: QualityQuery,
   hasFactory: FactoryFilter,
 ): Promise<QualityStats> {
-  const [issues, bounds] = await Promise.all([
-    loadIssues(db, query.project, hasFactory, qualityFacts),
-    statsBounds(db, query),
-  ]);
+  const issues = await loadIssues(db, query.project, hasFactory, qualityFacts);
+  const bounds = await statsBounds(db, {
+    ...query,
+    earliestMerge: earliestMerge(issues),
+  });
   return summarizeQuality(issues, bounds);
 }

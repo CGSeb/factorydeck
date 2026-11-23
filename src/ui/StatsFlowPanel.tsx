@@ -12,7 +12,8 @@ import { StatsSection } from './StatsSection.tsx';
 import {
   comparer,
   flowFigures,
-  mergedWeekBuckets,
+  mergedBuckets,
+  mergedTitle,
   stripItems,
   tokenShares,
   wholePercent,
@@ -25,7 +26,6 @@ const WORKED_NOUN = {
   other: 'merged issues with agent work',
 };
 const CALL_NOUN = { one: 'API call', other: 'API calls' };
-const MERGED_WEEKS_TITLE = 'Merged per week';
 const LEAD_TITLE = 'Lead time';
 const TOKENS_TITLE = 'Tokens per merged issue';
 const WENT_TITLE = 'Where the tokens went';
@@ -129,9 +129,11 @@ function TokenFigures({
 function FlowContent({
   response,
   period,
+  now,
 }: {
   response: FlowResponse | undefined;
   period: Period;
+  now: Date;
 }): ReactElement {
   if (response === undefined) return <StatusLine>{LOADING}</StatusLine>;
   if (response.status === 'unreachable') {
@@ -139,12 +141,13 @@ function FlowContent({
   }
   const { flow } = response;
   const { issues } = flow.current;
+  const merged = mergedTitle(flow.unit);
   return (
     <div className="fd-stats-flow">
-      <StatsSection title={MERGED_WEEKS_TITLE}>
+      <StatsSection title={merged}>
         <TrendBars
-          label={MERGED_WEEKS_TITLE}
-          buckets={mergedWeekBuckets(flow.weeks)}
+          label={merged}
+          buckets={mergedBuckets(flow, now)}
           scale="count"
           color="var(--fd-stage-merged)"
           height={64}
@@ -175,13 +178,15 @@ function FlowContent({
 export function StatsFlowPanel({
   response,
   period,
+  now = new Date(),
 }: {
   response: FlowResponse | undefined;
   period: Period;
+  now?: Date | undefined;
 }): ReactElement {
   return (
     <Panel heading="Flow and cost">
-      <FlowContent response={response} period={period} />
+      <FlowContent response={response} period={period} now={now} />
     </Panel>
   );
 }

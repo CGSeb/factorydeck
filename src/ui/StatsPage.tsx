@@ -23,11 +23,12 @@ import {
   autonomySummary,
   comparer,
   oneDecimal,
+  autonomyBuckets,
+  qualityBuckets,
   qualityFigures,
-  qualityWeekBuckets,
   reasonRows,
+  trendTitle,
   waitingNote,
-  weekBuckets,
   wholePercent,
 } from './stats-view.ts';
 import { StatsFlowPanel } from './StatsFlowPanel.tsx';
@@ -38,14 +39,15 @@ export interface StatsPageProps {
   loadAutonomy: LoadAutonomy;
   loadQuality: LoadQuality;
   loadFlow: LoadFlow;
+  now?: Date | undefined;
 }
 
 const LOADING = 'Loading…';
-const TREND_TITLE = 'Merged without a person, by week';
+const TREND_BASE = 'Merged without a person';
 const REASONS_TITLE = 'Why a person stepped in';
 const MERGED_NOUN = { one: 'merged issue', other: 'merged issues' };
 const ANSWERED_NOUN = { one: 'answered question', other: 'answered questions' };
-const QUALITY_TREND_TITLE = 'Right the first time, by week';
+const QUALITY_TREND_BASE = 'Right the first time';
 const HISTOGRAM_TITLE = 'First serenity score';
 const REPORTED_NOUN = {
   one: 'merged issue with a report',
@@ -109,22 +111,25 @@ function Figures({
 function AutonomyContent({
   response,
   period,
+  now,
 }: {
   response: AutonomyResponse | undefined;
   period: Period;
+  now: Date;
 }): ReactElement {
   if (response === undefined) return <StatusLine>{LOADING}</StatusLine>;
   if (response.status === 'unreachable') {
     return <StatusLine>{UNREACHABLE_MESSAGE}</StatusLine>;
   }
   const { autonomy } = response;
+  const trend = trendTitle(TREND_BASE, autonomy.unit);
   return (
     <div className="fd-stats-autonomy">
       <Figures autonomy={autonomy} period={period} />
-      <StatsSection title={TREND_TITLE}>
+      <StatsSection title={trend}>
         <TrendBars
-          label={TREND_TITLE}
-          buckets={weekBuckets(autonomy.weeks)}
+          label={trend}
+          buckets={autonomyBuckets(autonomy, now)}
           scale="share"
           color="var(--fd-stage-merged)"
           height={64}
@@ -205,22 +210,25 @@ function QualityFiguresRow({
 function QualityContent({
   response,
   period,
+  now,
 }: {
   response: QualityResponse | undefined;
   period: Period;
+  now: Date;
 }): ReactElement {
   if (response === undefined) return <StatusLine>{LOADING}</StatusLine>;
   if (response.status === 'unreachable') {
     return <StatusLine>{UNREACHABLE_MESSAGE}</StatusLine>;
   }
   const { quality } = response;
+  const trend = trendTitle(QUALITY_TREND_BASE, quality.unit);
   return (
     <div className="fd-stats-quality">
       <QualityFiguresRow quality={quality} period={period} />
-      <StatsSection title={QUALITY_TREND_TITLE}>
+      <StatsSection title={trend}>
         <TrendBars
-          label={QUALITY_TREND_TITLE}
-          buckets={qualityWeekBuckets(quality.weeks)}
+          label={trend}
+          buckets={qualityBuckets(quality, now)}
           scale="share"
           color="var(--fd-stage-merged)"
           height={64}
@@ -240,6 +248,7 @@ export function StatsPage({
   loadAutonomy,
   loadQuality,
   loadFlow,
+  now = new Date(),
 }: StatsPageProps): ReactElement {
   const [filters, setFilters] = useSkillFilters();
   const key = JSON.stringify(filters);
@@ -262,12 +271,16 @@ export function StatsPage({
         }
       />
       <Panel heading="Autonomy">
-        <AutonomyContent response={response} period={filters.period} />
+        <AutonomyContent
+          response={response}
+          period={filters.period}
+          now={now}
+        />
       </Panel>
       <Panel heading="Quality">
-        <QualityContent response={quality} period={filters.period} />
+        <QualityContent response={quality} period={filters.period} now={now} />
       </Panel>
-      <StatsFlowPanel response={flow} period={filters.period} />
+      <StatsFlowPanel response={flow} period={filters.period} now={now} />
     </div>
   );
 }

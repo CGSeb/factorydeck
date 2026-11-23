@@ -234,11 +234,10 @@ describe('autonomy stats', () => {
     expect(autonomy.previous?.answeredWaitsMs).toEqual([24 * HOUR]);
   });
 
-  it('counts 12 weeks from Monday, across a month change, the current one last', async () => {
-    const { weeks } = await stats('today');
-    expect(weeks).toHaveLength(12);
-    expect(weeks[0]?.start).toBe('2025-12-29');
-    expect(weeks.slice(-4)).toEqual([
+  it('counts all time by week, from the week of the first merge, the current one last', async () => {
+    const { unit, buckets } = await stats('all');
+    expect(unit).toBe('week');
+    expect(buckets).toEqual([
       { start: '2026-02-23', merged: 1, mergedWithoutPerson: 1 },
       { start: '2026-03-02', merged: 1, mergedWithoutPerson: 1 },
       { start: '2026-03-09', merged: 5, mergedWithoutPerson: 2 },
@@ -246,7 +245,21 @@ describe('autonomy stats', () => {
     ]);
   });
 
-  it('places the period and the weeks in the browser time zone', async () => {
+  it('counts the last 7 days by day, today last', async () => {
+    const { unit, buckets } = await stats('7d');
+    expect(unit).toBe('day');
+    expect(buckets).toEqual([
+      { start: '2026-03-12', merged: 0, mergedWithoutPerson: 0 },
+      { start: '2026-03-13', merged: 1, mergedWithoutPerson: 0 },
+      { start: '2026-03-14', merged: 1, mergedWithoutPerson: 0 },
+      { start: '2026-03-15', merged: 3, mergedWithoutPerson: 2 },
+      { start: '2026-03-16', merged: 1, mergedWithoutPerson: 1 },
+      { start: '2026-03-17', merged: 0, mergedWithoutPerson: 0 },
+      { start: '2026-03-18', merged: 0, mergedWithoutPerson: 0 },
+    ]);
+  });
+
+  it('places the period and the days in the browser time zone', async () => {
     const bounds = await statsBounds(db, {
       period: '7d',
       timeZone: 'Europe/Paris',
@@ -258,8 +271,8 @@ describe('autonomy stats', () => {
     expect(new Date(bounds.previousStart ?? 0).toISOString()).toBe(
       '2026-03-04T23:00:00.000Z',
     );
-    expect(new Date(bounds.weeks.at(-1)?.start ?? 0).toISOString()).toBe(
-      '2026-03-15T23:00:00.000Z',
+    expect(new Date(bounds.buckets.at(-1)?.start ?? 0).toISOString()).toBe(
+      '2026-03-17T23:00:00.000Z',
     );
   });
 });

@@ -1,6 +1,6 @@
 # 044 · Stats trends follow the period
 
-Status: ready
+Status: done
 Depends on: 039
 Checked: 2026-11-23
 
@@ -10,15 +10,15 @@ A developer who picks `Today`, `Last 7 days`, `Last 30 days` or `All time` on th
 
 ## Acceptance criteria
 
-- [ ] The three trend charts of `/stats` (specs 037, 038 and 039) share one cut, set by the period (rules): `Today` one bucket per hour of the local day (00:00 to 23:00), `Last 7 days` one per day (7 buckets), `Last 30 days` one per day (30 buckets), `All time` one per week, or one per month when that gives more than 26 weeks (or per year, rules). The current bucket is last.
-- [ ] Their titles name the unit: `Merged without a person, by hour` (`by day`, `by week`, `by month`, `by year`), `Right the first time, by hour` (…), and `Merged per hour` (`per day`, `per week`, `per month`, `per year`).
-- [ ] A bucket's label is `14:00` for an hour, `Nov 16` for a day or a week (its Monday), `Nov 2026` for a month. The current bucket reads `this hour`, `today`, `this week` or `this month`. The rule of spec 036 for which labels show (every label with 7 buckets or fewer, else the two ends) stays.
-- [ ] Each bucket's value, `n` and tooltip value are those of spec 037 (`75% · 3 of 4`), spec 038 (`60% · 3 of 5`) and spec 039 (`4 issues`), over the issues merged in that bucket. Hours of today still to come are empty buckets (`No issue merged`, `No merged issue with a report`, `0 issues`).
-- [ ] `TrendBars` (spec 036) changes its small-sample rule: a bucket with an `n` from 1 to `MIN_SAMPLE − 1` draws its bar at its value in its colour at 40% opacity, and its tooltip adds `small sample` after `n = 3` (`n = 3 · small sample`); its line in the visually hidden table reads its value's text, its `n` and `small sample`. A bucket with `n` = 0 or a `null` value keeps the 2 px stub in `--fd-line` and its tooltip text. With the `count` scale, the largest value is taken among every bucket with a value. Its stories gain one with mixed small and full samples, in both themes.
-- [ ] `All time` with no merged issue shows the 12 weeks ending with the current one, every bucket empty, as today.
-- [ ] `GET /api/stats/autonomy`, `/api/stats/quality` and `/api/stats/flow` (specs 037 to 039) replace `weeks` with `unit` (`hour`, `day`, `week`, `month` or `year`) and `buckets`, each with its local start (`2026-11-16` for a day, week, month or year, `2026-11-23T14:00` for an hour) and the counts each `weeks` item held. Parameters and their refusals stay as spec 037 says. The figures, previous period and the other fields do not change.
-- [ ] While the period changes, the charts keep their last buckets on screen until the new ones arrive (`useRefreshing`, AGENTS.md), and the chart height does not change between periods. From 1024 px wide, 30 buckets and 24 buckets fit without horizontal scroll.
-- [ ] The demo data (`pnpm demo`) gives at least 5 merges on one day of the last 7 days and at least 3 merges in one hour of the current day relative to the demo's time, so `Last 7 days` and `Today` show full and small-sample bars. The other demo data stays as it is.
+- [x] The three trend charts of `/stats` (specs 037, 038 and 039) share one cut, set by the period (rules): `Today` one bucket per hour of the local day (00:00 to 23:00), `Last 7 days` one per day (7 buckets), `Last 30 days` one per day (30 buckets), `All time` one per week, or one per month when that gives more than 26 weeks (or per year, rules). The current bucket is last.
+- [x] Their titles name the unit: `Merged without a person, by hour` (`by day`, `by week`, `by month`, `by year`), `Right the first time, by hour` (…), and `Merged per hour` (`per day`, `per week`, `per month`, `per year`).
+- [x] A bucket's label is `14:00` for an hour, `Nov 16` for a day or a week (its Monday), `Nov 2026` for a month. The current bucket reads `this hour`, `today`, `this week` or `this month`. The rule of spec 036 for which labels show (every label with 7 buckets or fewer, else the two ends) stays.
+- [x] Each bucket's value, `n` and tooltip value are those of spec 037 (`75% · 3 of 4`), spec 038 (`60% · 3 of 5`) and spec 039 (`4 issues`), over the issues merged in that bucket. Hours of today still to come are empty buckets (`No issue merged`, `No merged issue with a report`, `0 issues`).
+- [x] `TrendBars` (spec 036) changes its small-sample rule: a bucket with an `n` from 1 to `MIN_SAMPLE − 1` draws its bar at its value in its colour at 40% opacity, and its tooltip adds `small sample` after `n = 3` (`n = 3 · small sample`); its line in the visually hidden table reads its value's text, its `n` and `small sample`. A bucket with `n` = 0 or a `null` value keeps the 2 px stub in `--fd-line` and its tooltip text. With the `count` scale, the largest value is taken among every bucket with a value. Its stories gain one with mixed small and full samples, in both themes.
+- [x] `All time` with no merged issue shows the 12 weeks ending with the current one, every bucket empty, as today.
+- [x] `GET /api/stats/autonomy`, `/api/stats/quality` and `/api/stats/flow` (specs 037 to 039) replace `weeks` with `unit` (`hour`, `day`, `week`, `month` or `year`) and `buckets`, each with its local start (`2026-11-16` for a day, week, month or year, `2026-11-23T14:00` for an hour) and the counts each `weeks` item held. Parameters and their refusals stay as spec 037 says. The figures, previous period and the other fields do not change.
+- [x] While the period changes, the charts keep their last buckets on screen until the new ones arrive (`useRefreshing`, AGENTS.md), and the chart height does not change between periods. From 1024 px wide, 30 buckets and 24 buckets fit without horizontal scroll.
+- [x] The demo data (`pnpm demo`) gives at least 5 merges on one day of the last 7 days and at least 3 merges in one hour of the current day relative to the demo's time, so `Last 7 days` and `Today` show full and small-sample bars. The other demo data stays as it is.
 
 ## Rules
 

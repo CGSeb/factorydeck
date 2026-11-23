@@ -102,15 +102,71 @@ export const SomeBelowMinimum: Story = {
   },
   play: async ({ canvasElement }) => {
     const bars = columns(canvasElement);
-    await expect(bars[1]).toHaveStyle({ height: '2px' });
-    await expect(bars[1]?.style.background).toBe('var(--fd-line)');
-    await expect(bars[2]?.style.background).toBe('var(--fd-success)');
+    await expect(bars[1]).toHaveStyle({ height: '28.8px', opacity: '0.4' });
+    await expect(bars[1]?.style.background).toBe('var(--fd-success)');
+    await expect(bars[4]).toHaveStyle({ height: '2px' });
+    await expect(bars[4]?.style.background).toBe('var(--fd-line)');
+    await expect(bars[2]).toHaveStyle({ opacity: '1' });
     const rows = within(canvasElement)
       .getAllByRole('row')
       .map((row) => [...row.children].map((cell) => cell.textContent));
-    await expect(rows[1]).toEqual(['W2', 'Not enough data', 'n = 2']);
+    await expect(rows[1]).toEqual(['W2', '45%', 'n = 2 · small sample']);
     await expect(rows[2]).toEqual(['W3', '50%', 'n = 7']);
   },
+};
+
+const MIXED: TrendBucket[] = [
+  { label: 'Nov 17', value: null, n: 0, text: 'No issue merged' },
+  { label: 'Nov 18', value: 1, n: 1, text: '100% · 1 of 1' },
+  { label: 'Nov 19', value: 0.6, n: 5, text: '60% · 3 of 5' },
+  { label: 'Nov 20', value: 0.75, n: 4, text: '75% · 3 of 4' },
+  { label: 'Nov 21', value: 0.5, n: 2, text: '50% · 1 of 2' },
+  { label: 'Nov 22', value: 0.83, n: 6, text: '83% · 5 of 6' },
+  { label: 'today', value: 0.67, n: 3, text: '67% · 2 of 3' },
+];
+
+async function mixedPlay(canvasElement: HTMLElement): Promise<void> {
+  const bars = columns(canvasElement);
+  await expect(bars.map((bar) => bar.dataset['draw'])).toEqual([
+    'empty',
+    'small',
+    'full',
+    'small',
+    'small',
+    'full',
+    'small',
+  ]);
+  await expect(bars[3]).toHaveStyle({ height: '48px', opacity: '0.4' });
+  await expect(await tooltipOf(bars[3])).toEqual([
+    'Nov 20',
+    '75% · 3 of 4',
+    'n = 4 · small sample',
+  ]);
+  await expect(await tooltipOf(bars[0])).toEqual(['Nov 17', 'No issue merged']);
+  await expect(await tooltipOf(bars[2])).toEqual([
+    'Nov 19',
+    '60% · 3 of 5',
+    'n = 5',
+  ]);
+}
+
+export const MixedSamples: Story = {
+  name: 'Mixed small and full samples',
+  args: {
+    label: 'Merged without a person, by day',
+    buckets: MIXED,
+    color: 'var(--fd-stage-merged)',
+  },
+  globals: { theme: 'light' },
+  play: async ({ canvasElement }) => {
+    await mixedPlay(canvasElement);
+  },
+};
+
+export const MixedSamplesDark: Story = {
+  ...MixedSamples,
+  name: 'Mixed small and full samples, dark',
+  globals: { theme: 'dark' },
 };
 
 export const AllZero: Story = {
@@ -135,7 +191,11 @@ export const Hovered: Story = {
   },
   play: async ({ canvasElement }) => {
     const bars = columns(canvasElement);
-    await expect(await tooltipOf(bars[1])).toEqual(['W2', 'Not enough data']);
+    await expect(await tooltipOf(bars[1])).toEqual([
+      'W2',
+      '45%',
+      'n = 2 · small sample',
+    ]);
     await expect(await tooltipOf(bars[6])).toEqual(['W7', '58%', 'n = 8']);
     await expect(bars[0]).toHaveStyle({ opacity: '0.45' });
     await expect(bars[6]).toHaveStyle({ opacity: '1' });
@@ -158,6 +218,10 @@ export const WithNoun: Story = {
     const rows = within(canvasElement)
       .getAllByRole('row')
       .map((row) => [...row.children].map((cell) => cell.textContent));
-    await expect(rows[1]).toEqual(['W2', 'Not enough data', 'n = 1 API call']);
+    await expect(rows[1]).toEqual([
+      'W2',
+      '45%',
+      'n = 1 API call · small sample',
+    ]);
   },
 };

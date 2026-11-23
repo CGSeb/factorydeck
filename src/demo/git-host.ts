@@ -1,4 +1,5 @@
 import { autonomyDemo } from './autonomy.ts';
+import { burstDemo } from './burst.ts';
 import { qualityDemo } from './quality.ts';
 import {
   type DemoIssue,
@@ -251,11 +252,18 @@ const GITHUB_REQUESTS: DemoRequest[] = [
 export function demoGitHub(now: Date): FakeGitHostData {
   const autonomy = autonomyDemo();
   const quality = qualityDemo();
-  const issues = [...GITHUB_ISSUES, ...autonomy.issues, ...quality.issues];
+  const burst = burstDemo(now);
+  const issues = [
+    ...GITHUB_ISSUES,
+    ...autonomy.issues,
+    ...quality.issues,
+    ...burst.issues,
+  ];
   const requests = [
     ...GITHUB_REQUESTS,
     ...autonomy.requests,
     ...quality.requests,
+    ...burst.requests,
   ];
   return {
     host: 'github',

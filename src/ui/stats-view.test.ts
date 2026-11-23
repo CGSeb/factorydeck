@@ -6,15 +6,12 @@ import {
   comparisonText,
   flowFigures,
   issueLabel,
-  mergedWeekBuckets,
   oneDecimal,
   qualityFigures,
-  qualityWeekBuckets,
   reasonRows,
   stripItems,
   tokenShares,
   waitingNote,
-  weekBuckets,
 } from './stats-view.ts';
 
 const HOUR = 3_600_000;
@@ -70,20 +67,6 @@ describe('stats view', () => {
   it('notes the questions still waiting, none at 0', () => {
     expect(waitingNote(2)).toBe('2 still waiting');
     expect(waitingNote(0)).toBeUndefined();
-  });
-
-  it('labels the weeks by their Monday, the current one last', () => {
-    expect(
-      weekBuckets([
-        { start: '2026-10-26', merged: 4, mergedWithoutPerson: 3 },
-        { start: '2026-11-02', merged: 0, mergedWithoutPerson: 0 },
-        { start: '2026-11-16', merged: 2, mergedWithoutPerson: 1 },
-      ]),
-    ).toEqual([
-      { label: 'Oct 26', value: 0.75, n: 4, text: '75% · 3 of 4' },
-      { label: 'Nov 2', value: null, n: 0, text: 'No issue merged' },
-      { label: 'this week', value: 0.5, n: 2, text: '50% · 1 of 2' },
-    ]);
   });
 
   it('lists the four reasons in their order', () => {
@@ -176,25 +159,6 @@ describe('quality view', () => {
     expect(oneDecimal(1)).toBe('1.0');
     expect(oneDecimal(1.25)).toBe('1.3');
   });
-
-  it('labels the weeks by their Monday with the share passed the first time', () => {
-    expect(
-      qualityWeekBuckets([
-        { start: '2026-11-02', mergedWithReport: 5, firstPassed: 3 },
-        { start: '2026-11-09', mergedWithReport: 0, firstPassed: 0 },
-        { start: '2026-11-16', mergedWithReport: 2, firstPassed: 2 },
-      ]),
-    ).toEqual([
-      { label: 'Nov 2', value: 0.6, n: 5, text: '60% · 3 of 5' },
-      {
-        label: 'Nov 9',
-        value: null,
-        n: 0,
-        text: 'No merged issue with a report',
-      },
-      { label: 'this week', value: 1, n: 2, text: '100% · 2 of 2' },
-    ]);
-  });
 });
 
 describe('quality API', () => {
@@ -257,20 +221,6 @@ describe('quality API', () => {
         apiCalls: 0,
       }),
     ).toEqual({ droppedWork: null, noWorkItem: null, cacheReads: null });
-  });
-
-  it('counts the merges of each week', () => {
-    expect(
-      mergedWeekBuckets([
-        { start: '2026-11-09', merged: 1 },
-        { start: '2026-11-16', merged: 0 },
-        { start: '2026-11-23', merged: 4 },
-      ]),
-    ).toEqual([
-      { label: 'Nov 9', value: 1, text: '1 issue' },
-      { label: 'Nov 16', value: 0, text: '0 issues' },
-      { label: 'this week', value: 4, text: '4 issues' },
-    ]);
   });
 
   it('labels and links each issue of a strip, skipping missing values', () => {

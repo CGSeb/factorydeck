@@ -12,9 +12,9 @@ import {
   inside,
   issueFacts,
   loadIssues,
-  weekCounts,
+  bucketCounts,
 } from './autonomy.ts';
-import { type StatsBounds, statsBounds } from './bounds.ts';
+import { type StatsBounds, earliestMerge, statsBounds } from './bounds.ts';
 import type {
   FlowIssue,
   FlowPeriod,
@@ -127,9 +127,10 @@ export function summarizeFlow(
   return {
     current,
     ...(previous === undefined ? {} : { previous }),
-    weeks: weekCounts(
+    unit: bounds.unit,
+    buckets: bucketCounts(
       issues.map(({ facts }) => facts),
-      bounds.weeks,
+      bounds.buckets,
     ).map(({ start, merged: count }) => ({ start, merged: count })),
   };
 }
@@ -145,13 +146,19 @@ export async function flowStats(
   hasFactory: FactoryFilter,
 ): Promise<FlowStats> {
   const { project } = query;
-  const [issues, bounds] = await Promise.all([
-    loadIssues(db, project, hasFactory, (issue, requests, state) => ({
+  const issues = await loadIssues(
+    db,
+    project,
+    hasFactory,
+    (issue, requests, state) => ({
       issue,
       facts: issueFacts(issue, requests, state),
-    })),
-    statsBounds(db, query),
-  ]);
+    }),
+  );
+  const bounds = await statsBounds(db, {
+    ...query,
+    earliestMerge: earliestMerge(issues.map(({ facts }) => facts)),
+  });
   const window = (
     startAt: number | null,
     endAt: number | null,

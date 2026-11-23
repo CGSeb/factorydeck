@@ -169,7 +169,8 @@ export const AllTime: Story = {
     loadAutonomy: autonomyLoaderOf({
       current: monthCounts,
       waitingNow: 1,
-      weeks: autonomyOf().weeks,
+      unit: 'week',
+      buckets: autonomyOf().buckets,
       reasons: autonomyOf().reasons,
     }),
   },

@@ -37,7 +37,7 @@ export const NoMergedIssue: Story = {
         current: { ...noCounts, answeredWaitsMs: [3_600_000] },
         previous: noCounts,
         waitingNow: 0,
-        weeks: emptyWeeks,
+        buckets: emptyWeeks,
         reasons: noReasons,
       }),
     ),
@@ -45,7 +45,9 @@ export const NoMergedIssue: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await loaded(canvasElement);
-    await expect(canvas.getByText('No issue merged')).toBeVisible();
+    await expect(
+      canvas.getByText('No issue merged', { selector: 'p' }),
+    ).toBeVisible();
     await expect(figureTexts(canvasElement, '[data-sample]')).toEqual([
       'Not enough data',
       'Not enough data',

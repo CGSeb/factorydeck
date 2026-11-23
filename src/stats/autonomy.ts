@@ -14,9 +14,9 @@ import type {
   AutonomyCounts,
   AutonomyReasons,
   AutonomyStats,
-  AutonomyWeek,
+  AutonomyBucket,
 } from './types.ts';
-import { type StatsBounds, statsBounds } from './bounds.ts';
+import { type StatsBounds, earliestMerge, statsBounds } from './bounds.ts';
 
 export interface AutonomyQuery {
   period: Period;
@@ -178,17 +178,17 @@ export function reasonCounts(
   };
 }
 
-export function weekCounts(
+export function bucketCounts(
   issues: readonly IssueFacts[],
-  weeks: StatsBounds['weeks'],
-): AutonomyWeek[] {
-  return weeks.map((week, index) => {
+  buckets: StatsBounds['buckets'],
+): AutonomyBucket[] {
+  return buckets.map((bucket, index) => {
     const merged = mergedIn(issues, {
-      from: week.start,
-      to: weeks[index + 1]?.start ?? null,
+      from: bucket.start,
+      to: buckets[index + 1]?.start ?? null,
     });
     return {
-      start: week.day,
+      start: bucket.key,
       merged: merged.length,
       mergedWithoutPerson: merged.filter((issue) => issue.stage === 'merged')
         .length,
@@ -212,7 +212,8 @@ export function summarize(
           }),
         }),
     waitingNow: waitingNow(issues),
-    weeks: weekCounts(issues, bounds.weeks),
+    unit: bounds.unit,
+    buckets: bucketCounts(issues, bounds.buckets),
     reasons: reasonCounts(issues, current),
   };
 }
@@ -295,9 +296,10 @@ export async function autonomyStats(
   query: AutonomyQuery,
   hasFactory: FactoryFilter,
 ): Promise<AutonomyStats> {
-  const [issues, bounds] = await Promise.all([
-    loadIssueFacts(db, query.project, hasFactory),
-    statsBounds(db, query),
-  ]);
+  const issues = await loadIssueFacts(db, query.project, hasFactory);
+  const bounds = await statsBounds(db, {
+    ...query,
+    earliestMerge: earliestMerge(issues),
+  });
   return summarize(issues, bounds);
 }
