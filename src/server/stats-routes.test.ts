@@ -111,6 +111,7 @@ function app(up = true) {
         return Promise.resolve(quality);
       },
       frictions: () => Promise.reject(new Error('Not used')),
+      occurrences: () => Promise.reject(new Error('Not used')),
       flow: (query) => {
         flowQueries.push(query);
         return Promise.resolve(flow);

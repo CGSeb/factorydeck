@@ -1,4 +1,10 @@
-import { Hono } from 'hono';
+import { type Context, Hono } from 'hono';
+import {
+  type FrictionOccurrence,
+  type OccurrencesResponse,
+  parseOccurrenceRow,
+} from '../frictions/occurrence-types.ts';
+import type { OccurrenceQuery } from '../frictions/occurrences.ts';
 import type { FrictionQuery } from '../frictions/query.ts';
 import {
   type FrictionStats,
@@ -12,6 +18,26 @@ import { INVALID_QUERY, skillQuery } from './skill-routes.ts';
 
 export interface FrictionSource {
   frictions: (query: FrictionQuery) => Promise<FrictionStats>;
+  occurrences: (query: OccurrenceQuery) => Promise<FrictionOccurrence[]>;
+}
+
+export const INVALID_OCCURRENCE_ROW = {
+  error: 'Expected a table and one of its rows',
+};
+
+function frictionQuery(c: Context): FrictionQuery | undefined {
+  const query = skillQuery((name) => c.req.query(name));
+  if (query === undefined) return undefined;
+  return {
+    ...query,
+    kind: parseKind(c.req.query('kind')),
+    role: parseRole(c.req.query('role')),
+    filter: frictionFilterOf({
+      session: c.req.query('session'),
+      issue: c.req.query('issue'),
+      project: query.project,
+    }),
+  };
 }
 
 export function frictionRoutes(
@@ -20,22 +46,10 @@ export function frictionRoutes(
 ): Hono {
   const routes = new Hono();
   routes.get('/', async (c) => {
-    const query = skillQuery((name) => c.req.query(name));
+    const query = frictionQuery(c);
     if (query === undefined) return c.json(INVALID_QUERY, 400);
-    const kind = parseKind(c.req.query('kind'));
-    const role = parseRole(c.req.query('role'));
-    const filter = frictionFilterOf({
-      session: c.req.query('session'),
-      issue: c.req.query('issue'),
-      project: query.project,
-    });
     const body: FrictionsResponse = await fromDatabase(async () => {
-      const frictions = await source.frictions({
-        ...query,
-        kind,
-        role,
-        filter,
-      });
+      const frictions = await source.frictions(query);
       return {
         status: 'ok',
         updatedAt: updatedAt(),
@@ -43,6 +57,17 @@ export function frictionRoutes(
         frictions,
       };
     });
+    return c.json(body, body.status === 'ok' ? 200 : 503);
+  });
+  routes.get('/occurrences', async (c) => {
+    const query = frictionQuery(c);
+    if (query === undefined) return c.json(INVALID_QUERY, 400);
+    const row = parseOccurrenceRow(c.req.query('table'), c.req.query('row'));
+    if (row === undefined) return c.json(INVALID_OCCURRENCE_ROW, 400);
+    const body: OccurrencesResponse = await fromDatabase(async () => ({
+      status: 'ok',
+      occurrences: await source.occurrences({ ...query, row }),
+    }));
     return c.json(body, body.status === 'ok' ? 200 : 503);
   });
   return routes;

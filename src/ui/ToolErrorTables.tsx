@@ -6,6 +6,12 @@ import type {
   RepeatedRow,
   ToolRow,
 } from '../frictions/types.ts';
+import {
+  categoryParam,
+  commandParam,
+  repeatedParam,
+  toolParam,
+} from '../frictions/occurrence-types.ts';
 import { NUMERIC_CELL } from './components/DataTable.tsx';
 import { RoleTag } from './components/RoleTag.tsx';
 import { roleColors } from './design/palette.ts';
@@ -17,6 +23,7 @@ import {
   shareText,
   shortSessionTitle,
 } from './frictions-view.ts';
+import { OccurrenceRows } from './FrictionOccurrences.tsx';
 import { PagedTable } from './PagedTable.tsx';
 import { type LinkScope, issueHref, sessionHref } from './session-links.ts';
 
@@ -53,11 +60,20 @@ export function CategoryTable({
         </>
       }
       renderRow={(row) => (
-        <tr key={row.category}>
-          <th scope="row">{CATEGORY_LABELS[row.category]}</th>
-          <td className={NUMERIC_CELL}>{formatCount(row.errors)}</td>
-          <td className={NUMERIC_CELL}>{shareText(row.errors, total)}</td>
-        </tr>
+        <OccurrenceRows
+          key={row.category}
+          table="category"
+          row={categoryParam(row.category)}
+          label={CATEGORY_LABELS[row.category]}
+          colSpan={3}
+          header={CATEGORY_LABELS[row.category]}
+          cells={
+            <>
+              <td className={NUMERIC_CELL}>{formatCount(row.errors)}</td>
+              <td className={NUMERIC_CELL}>{shareText(row.errors, total)}</td>
+            </>
+          }
+        />
       )}
     />
   );
@@ -82,14 +98,22 @@ export function ToolTable({
         </>
       }
       renderRow={(row) => (
-        <tr key={row.tool}>
-          <th scope="row" className={MONO}>
-            {row.tool}
-          </th>
-          <td className={NUMERIC_CELL}>{formatCount(row.errors)}</td>
-          <td>{CATEGORY_LABELS[row.mainCategory]}</td>
-          <td className={NUMERIC_CELL}>{formatCount(row.threads)}</td>
-        </tr>
+        <OccurrenceRows
+          key={row.tool}
+          table="tool"
+          row={toolParam(row)}
+          label={row.tool}
+          colSpan={4}
+          headerClassName={MONO}
+          header={row.tool}
+          cells={
+            <>
+              <td className={NUMERIC_CELL}>{formatCount(row.errors)}</td>
+              <td>{CATEGORY_LABELS[row.mainCategory]}</td>
+              <td className={NUMERIC_CELL}>{formatCount(row.threads)}</td>
+            </>
+          }
+        />
       )}
     />
   );
@@ -114,14 +138,24 @@ export function CommandTable({
         </>
       }
       renderRow={(row) => (
-        <tr key={row.program ?? ''}>
-          <th scope="row" className={MONO}>
-            {programText(row.program)}
-          </th>
-          <td className={NUMERIC_CELL}>{formatCount(row.failures)}</td>
-          <td>{exitCodesText(row.exitCodes)}</td>
-          <td className={NUMERIC_CELL}>{formatCount(row.distinctCommands)}</td>
-        </tr>
+        <OccurrenceRows
+          key={row.program ?? ''}
+          table="command"
+          row={commandParam(row)}
+          label={programText(row.program)}
+          colSpan={4}
+          headerClassName={MONO}
+          header={programText(row.program)}
+          cells={
+            <>
+              <td className={NUMERIC_CELL}>{formatCount(row.failures)}</td>
+              <td>{exitCodesText(row.exitCodes)}</td>
+              <td className={NUMERIC_CELL}>
+                {formatCount(row.distinctCommands)}
+              </td>
+            </>
+          }
+        />
       )}
     />
   );
@@ -137,10 +171,29 @@ function RepeatedLine({
   scope: LinkScope;
 }): ReactElement {
   return (
-    <tr>
-      <th scope="row" className={MONO}>
-        {programText(row.program)}
-      </th>
+    <OccurrenceRows
+      table="repeated"
+      row={repeatedParam(row)}
+      label={programText(row.program)}
+      colSpan={6}
+      headerClassName={MONO}
+      header={programText(row.program)}
+      cells={<RepeatedCells row={row} color={color} scope={scope} />}
+    />
+  );
+}
+
+function RepeatedCells({
+  row,
+  color,
+  scope,
+}: {
+  row: RepeatedRow;
+  color: string;
+  scope: LinkScope;
+}): ReactElement {
+  return (
+    <>
       <td className={NUMERIC_CELL}>{formatCount(row.failures)}</td>
       <td>
         <RoleTag role={row.role} color={color} />
@@ -160,7 +213,7 @@ function RepeatedLine({
         </Link>
       </td>
       <td className="fd-friction-nowrap">{formatDateTime(row.lastAt)}</td>
-    </tr>
+    </>
   );
 }
 
@@ -190,7 +243,7 @@ export function RepeatedTable({
       }
       renderRow={(row, index) => (
         <RepeatedLine
-          key={`${String(index)} ${row.sessionId} ${row.lastAt}`}
+          key={`${String(index)} ${repeatedParam(row)}`}
           row={row}
           color={colors.get(row.role) ?? 'var(--fd-line)'}
           scope={scope}

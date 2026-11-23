@@ -25,6 +25,7 @@ import {
   repeatedRows,
   toolRows,
 } from './summarize.ts';
+import { inPeriodOf, roleFrictionsOf, tableSources } from './selection.ts';
 import type { CallGroup, LoadedRow } from './threads.ts';
 import {
   type ContextPeaks,
@@ -112,15 +113,6 @@ export function roleOptions(
     );
 }
 
-function ofKind<R extends FrictionRow>(
-  rows: readonly R[],
-  kind: FrictionKind | undefined,
-  wanted: FrictionKind,
-): R[] {
-  if (kind !== undefined && kind !== wanted) return [];
-  return rows.filter((row) => row.kind === wanted);
-}
-
 function roleThreads(
   config: WorkflowConfig,
   markers: SessionMarkers,
@@ -188,14 +180,13 @@ function tables(
   FrictionStats,
   'categories' | 'tools' | 'commands' | 'repeated' | 'hooks'
 > {
-  const errors = ofKind(rows, kind, 'tool-error');
-  const failed = errors.filter((row) => row.category === 'command-failed');
+  const { errors, failed, blocks } = tableSources(rows, kind);
   return {
     categories: categoryRows(errors),
     tools: toolRows(errors),
     commands: commandRows(failed),
     repeated: repeatedRows(failed, threadOf),
-    hooks: hookRows(ofKind(rows, kind, 'stop-blocked')),
+    hooks: hookRows(blocks),
   };
 }
 
@@ -256,9 +247,7 @@ export async function frictionStats(
   const kind = query.kind ?? null;
   const { role } = query;
   const loaded = await loadWindow(db, query, config);
-  const { startMs } = loaded;
-  const inPeriod = (row: LoadedRow): boolean =>
-    startMs === null || Date.parse(row.at) >= startMs;
+  const inPeriod = inPeriodOf(loaded);
   const ofSelected = (list: readonly LoadedRow[]): LoadedRow[] =>
     kind === null ? [...list] : list.filter((row) => row.kind === kind);
   const ofRole = <T>(list: readonly T[], roleOf: (item: T) => string): T[] =>
@@ -270,7 +259,7 @@ export async function frictionStats(
   );
   const periodCalls = loaded.calls.filter((group) => group.inPeriod);
   const calls = ofRole(loaded.calls, (group) => group.role);
-  const roleFrictions = ofRole(frictions, (row) => row.thread.role);
+  const roleFrictions = roleFrictionsOf(loaded, role);
   const rows = roleFrictions.filter(inPeriod);
   const compactions = ofRole(
     loaded.frictions.filter((row) => row.kind === COMPACTION && inPeriod(row)),

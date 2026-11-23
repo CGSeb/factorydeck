@@ -154,3 +154,135 @@
   -webkit-line-clamp: 2;
   overflow-wrap: anywhere;
 }
+
+.fd-occurrence-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fd-space-2);
+  max-width: 100%;
+  min-width: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: none;
+  border: 0;
+}
+
+.fd-friction-hooks .fd-occurrence-toggle {
+  display: flex;
+  width: 100%;
+}
+
+.fd-occurrence-toggle:focus-visible {
+  outline: 2px solid var(--fd-accent);
+  outline-offset: 2px;
+}
+
+.fd-occurrence-label {
+  min-width: 0;
+}
+
+.fd-occurrence-chevron {
+  flex: none;
+  color: var(--fd-muted);
+  transform: rotate(-90deg);
+  transition: transform 120ms ease;
+}
+
+.fd-occurrence-toggle[aria-expanded='true'] .fd-occurrence-chevron {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fd-occurrence-chevron {
+    transition: none;
+  }
+}
+
+.fd-table-scroll .fd-occurrences > td {
+  padding-top: var(--fd-space-3);
+  padding-bottom: var(--fd-space-4);
+  background: var(--fd-surface-2);
+  white-space: normal;
+}
+
+.fd-occurrences-title {
+  margin: 0 0 var(--fd-space-3);
+  font-size: var(--fd-text-xs);
+  font-weight: 600;
+  color: var(--fd-ink-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.fd-occurrence-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fd-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fd-occurrence {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fd-space-1);
+  min-width: 0;
+}
+
+.fd-occurrence-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fd-space-1) var(--fd-space-3);
+  font-size: var(--fd-text-sm);
+  color: var(--fd-ink);
+}
+
+.fd-occurrence-meta time {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fd-occurrence-meta a {
+  color: var(--fd-ink);
+  overflow-wrap: anywhere;
+}
+
+.fd-occurrence-meta a:hover {
+  color: var(--fd-link-hover);
+}
+
+.fd-occurrence-meta a:focus-visible {
+  outline: 2px solid var(--fd-accent);
+  outline-offset: 2px;
+}
+
+.fd-occurrence-text {
+  margin: 0;
+  font-family: var(--fd-font-mono);
+  font-size: var(--fd-text-sm);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.fd-occurrence-error,
+.fd-occurrence-gone,
+.fd-occurrence-status {
+  color: var(--fd-ink-2);
+}
+
+.fd-occurrence-gone,
+.fd-occurrence-status {
+  margin: 0;
+  font-size: var(--fd-text-sm);
+}
+
+.fd-friction-hooks .fd-occurrence-label {
+  flex: 1;
+  overflow: hidden;
+}

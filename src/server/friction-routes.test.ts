@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import type { FrictionOccurrence } from '../frictions/occurrence-types.ts';
+import type { OccurrenceQuery } from '../frictions/occurrences.ts';
 import type { FrictionQuery } from '../frictions/query.ts';
 import type { FrictionStats } from '../frictions/types.ts';
 import {
@@ -51,8 +53,21 @@ const frictions: FrictionStats = {
   projects: [],
 };
 
+const occurrences: FrictionOccurrence[] = [
+  {
+    at: '2026-01-05T08:00:00.000Z',
+    role: 'builder',
+    project: '/work/app',
+    workItem: 12,
+    sessionId: 's-1',
+    sessionTitle: 'Fix login',
+    texts: { kind: 'tool-error', input: 'git push', error: 'rejected' },
+  },
+];
+
 function app(up = true) {
   const queries: FrictionQuery[] = [];
+  const occurrenceQueries: OccurrenceQuery[] = [];
   const created = createApp({
     checkDatabase: () => Promise.resolve(up),
     uiDir: '/nonexistent/factorydeck-ui',
@@ -71,9 +86,13 @@ function app(up = true) {
         queries.push(query);
         return Promise.resolve(frictions);
       },
+      occurrences: (query) => {
+        occurrenceQueries.push(query);
+        return Promise.resolve(occurrences);
+      },
     },
   });
-  return { app: created, queries };
+  return { app: created, queries, occurrenceQueries };
 }
 
 describe('/api/frictions', () => {
@@ -174,6 +193,102 @@ describe('/api/frictions', () => {
   it('answers unreachable when the database is down', async () => {
     const response = await app(false).app.request(
       '/api/frictions?period=7d&tz=UTC',
+    );
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      status: 'unreachable',
+      refreshSeconds: 10,
+    });
+  });
+});
+
+describe('/api/frictions/occurrences', () => {
+  it('answers the occurrences of a row under the filters of /api/frictions', async () => {
+    const { app: server, occurrenceQueries } = app();
+    const response = await server.request(
+      '/api/frictions/occurrences?period=30d&tz=Europe/Paris&project=%2Fwork%2Fapp&kind=tool-error&role=builder&issue=12&table=command&row=git',
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ status: 'ok', occurrences });
+    expect(occurrenceQueries).toEqual([
+      {
+        period: '30d',
+        timeZone: 'Europe/Paris',
+        project: '/work/app',
+        kind: 'tool-error',
+        role: 'builder',
+        filter: { issue: 12 },
+        row: { table: 'command', program: 'git' },
+      },
+    ]);
+  });
+
+  it.each([
+    ['category', 'permission-denied', { category: 'permission-denied' }],
+    ['tool', 'mcp__docs__search', { tool: 'mcp__docs__search' }],
+    ['tool', '', { tool: '' }],
+    ['command', 'pnpm', { program: 'pnpm' }],
+    ['command', '', { program: null }],
+    ['hook', 'node ~/hooks/stop.ts', { command: 'node ~/hooks/stop.ts' }],
+    ['hook', '', { command: '' }],
+    [
+      'repeated',
+      's-1/agent-a/abc123',
+      { sessionId: 's-1', subAgentId: 'agent-a', commandHash: 'abc123' },
+    ],
+    [
+      'repeated',
+      's-1//abc123',
+      { sessionId: 's-1', subAgentId: '', commandHash: 'abc123' },
+    ],
+  ])('reads the %s row %j', async (table, row, expected) => {
+    const { app: server, occurrenceQueries } = app();
+    const response = await server.request(
+      `/api/frictions/occurrences?period=7d&tz=UTC&table=${table}&row=${encodeURIComponent(row)}`,
+    );
+    expect(response.status).toBe(200);
+    expect(occurrenceQueries.map((query) => query.row)).toEqual([
+      { table, ...expected },
+    ]);
+  });
+
+  it.each([
+    'table=command',
+    'row=git',
+    'table=commands&row=git',
+    'table=Command&row=git',
+    'table=&row=git',
+    'table=context&row=auto',
+    'table=role&row=builder',
+    'table=category&row=crash',
+    'table=category&row=Permission%20denied',
+    'table=category&row=',
+    'table=repeated&row=s-1',
+    'table=repeated&row=s-1/abc123',
+    'table=repeated&row=/agent-a/abc123',
+    'table=repeated&row=s-1/agent-a/',
+  ])('refuses an unknown table or row: %s', async (suffix) => {
+    const { app: server, occurrenceQueries } = app();
+    const response = await server.request(
+      `/api/frictions/occurrences?period=7d&tz=UTC&${suffix}`,
+    );
+    expect(response.status).toBe(400);
+    expect(occurrenceQueries).toEqual([]);
+  });
+
+  it.each([
+    '/api/frictions/occurrences?tz=UTC&table=tool&row=Bash',
+    '/api/frictions/occurrences?period=year&tz=UTC&table=tool&row=Bash',
+    '/api/frictions/occurrences?period=7d&table=tool&row=Bash',
+    '/api/frictions/occurrences?period=7d&tz=Mars/Base&table=tool&row=Bash',
+  ])('refuses %s like /api/frictions', async (url) => {
+    const response = await app().app.request(url);
+    expect(response.status).toBe(400);
+  });
+
+  it('answers unreachable when the database is down', async () => {
+    const response = await app(false).app.request(
+      '/api/frictions/occurrences?period=7d&tz=UTC&table=tool&row=Bash',
     );
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({

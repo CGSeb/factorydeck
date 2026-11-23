@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, within } from 'storybook/test';
 import { BUILD_SESSION } from './friction-breakdown-fixtures.ts';
 import { UNKNOWN_SESSION, filteredFrictions } from './frictions-fixtures.ts';
+import { occurrencesLoaderOf } from './occurrence-fixtures.ts';
 import {
   columnTexts,
   frictionsLoaded,
@@ -12,7 +13,10 @@ import { FrictionsPage } from './FrictionsPage.tsx';
 
 const meta = {
   component: FrictionsPage,
-  args: { loadFrictions: filteredFrictions },
+  args: {
+    loadFrictions: filteredFrictions,
+    loadOccurrences: occurrencesLoaderOf(),
+  },
   decorators: [frictionsRouter],
 } satisfies Meta<typeof FrictionsPage>;
 

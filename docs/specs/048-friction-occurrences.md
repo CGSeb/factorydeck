@@ -1,6 +1,6 @@
 # 048 · Friction occurrences from the session logs
 
-Status: ready
+Status: done
 Depends on: 047
 Checked: 2026-11-23
 
@@ -10,14 +10,14 @@ A developer who sees that `git` failed 13 times opens that row and reads the lat
 
 ## Acceptance criteria
 
-- [ ] Each row of `By category`, `By tool`, `Failed commands`, `Repeated failures` and `Stop blocked` (spec 041) starts with a disclosure button (a chevron, `aria-expanded`, accessible name `Show occurrences of <row label>`, such as `Show occurrences of git`). Opening it inserts, right under the row and across every column, `Latest occurrences`: the 5 latest frictions of that row (or fewer) under the page's filters (period, project, kind, role, session, issue), latest first. Opening it again closes it. Several rows can be open at once; changing a filter closes them all.
-- [ ] Each occurrence shows on one line its local date and time (`22 Nov, 17:33`), its role (`RoleTag`, spec 016), its issue (`#<n>` linked to its issue page with the current period, or `—`) and its session (title, or its id's first 8 characters, linked to its session page, spec 027); under it, in `--fd-font-mono`, wrapping, with no horizontal scroll:
+- [x] Each row of `By category`, `By tool`, `Failed commands`, `Repeated failures` and `Stop blocked` (spec 041) starts with a disclosure button (a chevron, `aria-expanded`, accessible name `Show occurrences of <row label>`, such as `Show occurrences of git`). Opening it inserts, right under the row and across every column, `Latest occurrences`: the 5 latest frictions of that row (or fewer) under the page's filters (period, project, kind, role, session, issue), latest first. Opening it again closes it. Several rows can be open at once; changing a filter closes them all.
+- [x] Each occurrence shows on one line its local date and time (`22 Nov, 17:33`), its role (`RoleTag`, spec 016), its issue (`#<n>` linked to its issue page with the current period, or `—`) and its session (title, or its id's first 8 characters, linked to its session page, spec 027); under it, in `--fd-font-mono`, wrapping, with no horizontal scroll:
   - for a tool error: the call's input (rules), then the error excerpt (rules), in `--fd-ink-2`;
   - for a stop block: the hook's message (rules).
-- [ ] While the occurrences load, the inserted row reads `Loading…`; if the API does not answer, the unreachable message of `StatusLine` (spec 024). An occurrence whose log file is gone, or whose record or call is no longer found in it, shows its line and, in place of the texts, `The session log is no longer on this computer.`
-- [ ] `GET /api/frictions/occurrences` takes the parameters of `/api/frictions` (spec 047), plus the table and the row, and returns at most 5 occurrences with their time, role, issue, session and texts (or that the log is gone). Parameters are read and refused like `/api/frictions`; an unknown table or row answers 400.
-- [ ] The texts are read from the log at each request and are never written to the database, a cache, a file or the server's own output. The README's section on what FactoryDeck stores says so.
-- [ ] From 360 px wide, an open row never makes the page scroll horizontally.
+- [x] While the occurrences load, the inserted row reads `Loading…`; if the API does not answer, the unreachable message of `StatusLine` (spec 024). An occurrence whose log file is gone, or whose record or call is no longer found in it, shows its line and, in place of the texts, `The session log is no longer on this computer.`
+- [x] `GET /api/frictions/occurrences` takes the parameters of `/api/frictions` (spec 047), plus the table and the row, and returns at most 5 occurrences with their time, role, issue, session and texts (or that the log is gone). Parameters are read and refused like `/api/frictions`; an unknown table or row answers 400.
+- [x] The texts are read from the log at each request and are never written to the database, a cache, a file or the server's own output. The README's section on what FactoryDeck stores says so.
+- [x] From 360 px wide, an open row never makes the page scroll horizontally.
 
 ## Rules
 
