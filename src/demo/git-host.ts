@@ -1,4 +1,5 @@
 import { autonomyDemo } from './autonomy.ts';
+import { qualityDemo } from './quality.ts';
 import {
   type DemoIssue,
   type DemoRequest,
@@ -249,13 +250,19 @@ const GITHUB_REQUESTS: DemoRequest[] = [
 
 export function demoGitHub(now: Date): FakeGitHostData {
   const autonomy = autonomyDemo();
-  const issues = [...GITHUB_ISSUES, ...autonomy.issues];
-  const requests = [...GITHUB_REQUESTS, ...autonomy.requests];
+  const quality = qualityDemo();
+  const issues = [...GITHUB_ISSUES, ...autonomy.issues, ...quality.issues];
+  const requests = [
+    ...GITHUB_REQUESTS,
+    ...autonomy.requests,
+    ...quality.requests,
+  ];
   return {
     host: 'github',
     repository: GITHUB_REPOSITORY,
     issues: issues.map((issue) => githubIssueRow(now, issue)),
     requests: requests.map((request) => githubRequestRow(now, request)),
+    reopened: quality.reopened,
     labelEvents: Object.fromEntries(
       issues.map((issue) => [
         String(issue.number),

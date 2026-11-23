@@ -1,4 +1,4 @@
-import type { AutonomyResponse } from '../stats/types.ts';
+import type { AutonomyResponse, QualityResponse } from '../stats/types.ts';
 import {
   type SkillFilters,
   browserTimeZone,
@@ -22,5 +22,23 @@ export function autonomyLoader(
       `/api/stats/autonomy?${query.toString()}`,
     );
     return isResponse<AutonomyResponse>(body) ? body : undefined;
+  };
+}
+
+export type LoadQuality = (
+  filters: SkillFilters,
+) => Promise<QualityResponse | undefined>;
+
+export function qualityLoader(
+  fetchImpl: typeof fetch = (...args) => fetch(...args),
+  timeZone: () => string = browserTimeZone,
+): LoadQuality {
+  return async (filters) => {
+    const query = queryOf(filters, timeZone());
+    const body = await fetchJson(
+      fetchImpl,
+      `/api/stats/quality?${query.toString()}`,
+    );
+    return isResponse<QualityResponse>(body) ? body : undefined;
   };
 }

@@ -48,7 +48,7 @@ export interface Window {
   to: number | null;
 }
 
-const MERGED_STAGES: ReadonlySet<IssueStage> = new Set([
+export const MERGED_STAGES: ReadonlySet<IssueStage> = new Set([
   'merged',
   'merged-after-person',
   'merged-by-person',
@@ -58,7 +58,7 @@ function time(value: string): number {
   return Date.parse(value);
 }
 
-function mergeTime(requests: readonly RequestRow[]): number | null {
+export function mergeTime(requests: readonly RequestRow[]): number | null {
   let found: number | null = null;
   for (const request of requests) {
     if (request.state !== 'merged') continue;
@@ -119,7 +119,7 @@ export function issueFacts(
   };
 }
 
-function inside(at: number, { from, to }: Window): boolean {
+export function inside(at: number, { from, to }: Window): boolean {
   return (from === null || at >= from) && (to === null || at < to);
 }
 
@@ -242,11 +242,14 @@ async function factoryProjects(
   return kept;
 }
 
-export async function loadIssueFacts(
+export type ProjectState = Parameters<typeof issueFacts>[2];
+
+export async function loadIssues<T>(
   db: Database,
   project: string | undefined,
   hasFactory: FactoryFilter,
-): Promise<IssueFacts[]> {
+  build: (issue: IssueRow, requests: RequestRow[], state: ProjectState) => T,
+): Promise<T[]> {
   const projects = await factoryProjects(db, project, hasFactory);
   if (projects.length === 0) return [];
   const names = projects.map((row) => row.project);
@@ -255,7 +258,8 @@ export async function loadIssueFacts(
     db
       .select()
       .from(gitHostRequest)
-      .where(inArray(gitHostRequest.project, names)),
+      .where(inArray(gitHostRequest.project, names))
+      .orderBy(gitHostRequest.project, gitHostRequest.number),
   ]);
   const stateOf = new Map(projects.map((row) => [row.project, row]));
   const requestsOf = new Map<string, RequestRow[]>();
@@ -269,13 +273,21 @@ export async function loadIssueFacts(
     const state = stateOf.get(issue.project);
     if (state === undefined) return [];
     return [
-      issueFacts(
+      build(
         issue,
         requestsOf.get(`${String(issue.number)} ${issue.project}`) ?? [],
         state,
       ),
     ];
   });
+}
+
+export function loadIssueFacts(
+  db: Database,
+  project: string | undefined,
+  hasFactory: FactoryFilter,
+): Promise<IssueFacts[]> {
+  return loadIssues(db, project, hasFactory, issueFacts);
 }
 
 export async function autonomyStats(

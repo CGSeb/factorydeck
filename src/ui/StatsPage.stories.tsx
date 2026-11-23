@@ -5,13 +5,14 @@ import {
   autonomyOf,
   monthCounts,
   previousMonthCounts,
+  qualityLoaderOf,
 } from './stats-fixtures.ts';
 import { figureTexts, loaded, statsRouter } from './stats-story.ts';
 import { StatsPage } from './StatsPage.tsx';
 
 const meta = {
   component: StatsPage,
-  args: { loadAutonomy: autonomyLoaderOf() },
+  args: { loadAutonomy: autonomyLoaderOf(), loadQuality: qualityLoaderOf() },
   decorators: [statsRouter],
 } satisfies Meta<typeof StatsPage>;
 
@@ -22,7 +23,7 @@ type Story = StoryObj<typeof meta>;
 function changeColors(canvasElement: HTMLElement): string[] {
   return [
     ...canvasElement.querySelectorAll<HTMLElement>(
-      '.fd-stats-figures [data-change]',
+      '.fd-stats-autonomy .fd-stats-figures [data-change]',
     ),
   ].map((line) => line.style.color);
 }
@@ -111,7 +112,9 @@ export const FallingMonth: Story = {
       'var(--fd-danger)',
     ]);
     await expect(
-      canvasElement.querySelector('.fd-stats-figures [data-note]'),
+      canvasElement.querySelector(
+        '.fd-stats-autonomy .fd-stats-figures [data-note]',
+      ),
     ).toBeNull();
   },
 };
@@ -147,7 +150,9 @@ export const BelowMinimumSample: Story = {
       'Not enough data',
     ]);
     await expect(
-      canvasElement.querySelector('.fd-stats-figures [data-change]'),
+      canvasElement.querySelector(
+        '.fd-stats-autonomy .fd-stats-figures [data-change]',
+      ),
     ).toBeNull();
   },
 };
@@ -171,7 +176,9 @@ export const AllTime: Story = {
       '4 h 03 min',
     ]);
     await expect(
-      canvasElement.querySelector('.fd-stats-figures [data-change]'),
+      canvasElement.querySelector(
+        '.fd-stats-autonomy .fd-stats-figures [data-change]',
+      ),
     ).toBeNull();
     await expect(figureTexts(canvasElement, '[data-note]')).toEqual([
       '',

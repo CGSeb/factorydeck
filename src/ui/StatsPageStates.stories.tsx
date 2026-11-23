@@ -8,14 +8,15 @@ import {
   noCounts,
   noReasons,
   pendingAutonomy,
+  qualityLoaderOf,
   unreachableAutonomy,
 } from './stats-fixtures.ts';
-import { figureTexts, loaded, statsRouter } from './stats-story.ts';
+import { figureTexts, loaded, panelOf, statsRouter } from './stats-story.ts';
 import { StatsPage } from './StatsPage.tsx';
 
 const meta = {
   component: StatsPage,
-  args: { loadAutonomy: autonomyLoaderOf() },
+  args: { loadAutonomy: autonomyLoaderOf(), loadQuality: qualityLoaderOf() },
   decorators: [statsRouter],
 } satisfies Meta<typeof StatsPage>;
 
@@ -66,7 +67,9 @@ export const NoPersonSteppedIn: Story = {
     const canvas = within(canvasElement);
     await loaded(canvasElement);
     await expect(canvas.getByText('No person had to step in.')).toBeVisible();
-    await expect(canvas.queryByRole('list')).toBeNull();
+    await expect(
+      within(panelOf(canvasElement, 'Autonomy')).queryByRole('list'),
+    ).toBeNull();
   },
 };
 
@@ -80,15 +83,20 @@ export const Loading: Story = {
     await expect(
       canvas.getByRole('heading', { name: 'Autonomy' }),
     ).toBeVisible();
-    await expect(canvas.getByText('Loading…')).toBeVisible();
+    await expect(
+      within(panelOf(canvasElement, 'Autonomy')).getByText('Loading…'),
+    ).toBeVisible();
   },
 };
 
 export const Unreachable: Story = {
   args: { loadAutonomy: unreachableAutonomy },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await expect(await canvas.findByText(/Database unreachable/)).toBeVisible();
+    await expect(
+      await within(panelOf(canvasElement, 'Autonomy')).findByText(
+        /Database unreachable/,
+      ),
+    ).toBeVisible();
   },
 };
 
@@ -104,7 +112,9 @@ export const At1024: Story = {
   play: async ({ canvasElement }) => {
     await loaded(canvasElement);
     await expect(
-      canvasElement.querySelectorAll('.fd-stats-figures > div'),
+      canvasElement.querySelectorAll(
+        '.fd-stats-autonomy .fd-stats-figures > div',
+      ),
     ).toHaveLength(3);
   },
 };
@@ -118,11 +128,14 @@ export const ChangePeriod: Story = {
     await expect(
       canvas.getByRole('status', { name: 'Address' }),
     ).toHaveTextContent('?period=7d');
+    const autonomy = within(panelOf(canvasElement, 'Autonomy'));
     await expect(
-      (await canvas.findAllByText(/vs previous 7 days$/)).length,
+      (await autonomy.findAllByText(/vs previous 7 days$/)).length,
     ).toBe(3);
     await userEvent.click(canvas.getByRole('button', { name: 'Today' }));
-    await expect((await canvas.findAllByText(/vs yesterday$/)).length).toBe(3);
+    await expect((await autonomy.findAllByText(/vs yesterday$/)).length).toBe(
+      3,
+    );
     await expect(
       canvas.getByRole('status', { name: 'Address' }),
     ).toHaveTextContent('?period=today');

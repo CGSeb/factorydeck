@@ -37,3 +37,42 @@ export type AutonomyResponse =
       autonomy: AutonomyStats;
     }
   | Unreachable;
+
+export interface QualityCounts {
+  merged: number;
+  mergedWithReport: number;
+  firstPassed: number;
+  roundsSum: number;
+  roundsCount: number;
+  reworked: number;
+  ended: number;
+  closedWithoutMerge: number;
+}
+
+export interface QualityWeek {
+  start: string;
+  mergedWithReport: number;
+  firstPassed: number;
+}
+
+export interface FirstReport {
+  score: number;
+  threshold: number;
+  time: string;
+}
+
+export interface QualityStats {
+  current: QualityCounts;
+  previous?: QualityCounts;
+  weeks: QualityWeek[];
+  firstReports: FirstReport[];
+}
+
+export type QualityResponse =
+  | {
+      status: 'ok';
+      updatedAt: string | null;
+      refreshSeconds: number;
+      quality: QualityStats;
+    }
+  | Unreachable;

@@ -32,7 +32,7 @@ import {
   someSkills,
   writeSpecDetail,
 } from './skill-fixtures.ts';
-import { autonomyLoaderOf } from './stats-fixtures.ts';
+import { autonomyLoaderOf, qualityLoaderOf } from './stats-fixtures.ts';
 
 const meta = {
   component: App,
@@ -63,6 +63,7 @@ const loaders = {
   loadCollection: collectionLoaderOf(collectionResponse()),
   refreshCollection: refresherOf(collectionResponse()),
   loadAutonomy: autonomyLoaderOf(),
+  loadQuality: qualityLoaderOf(),
 };
 
 export const Home: Story = {

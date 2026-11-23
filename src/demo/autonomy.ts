@@ -6,7 +6,7 @@ import {
 
 export const AUTONOMY_MERGED = 60;
 
-const FIRST_ISSUE = 101;
+export const FIRST_ISSUE = 101;
 const REQUEST_OFFSET = 100;
 const OLDEST_MERGE_DAYS = 82.6;
 const MERGE_SPACING_DAYS = 1.39;
@@ -30,6 +30,15 @@ export function helpKind(index: number): HelpKind {
 interface Demo {
   issues: DemoIssue[];
   requests: DemoRequest[];
+}
+
+export function mergedHoursAgo(index: number): number {
+  return (OLDEST_MERGE_DAYS - index * MERGE_SPACING_DAYS) * 24 + 1;
+}
+
+export function reviewRounds(index: number, refused: boolean): number {
+  if (!refused) return 1;
+  return index % 3 === 0 ? 3 : 2;
 }
 
 function mergedDemo(index: number): Demo {
@@ -66,8 +75,8 @@ function mergedDemo(index: number): Demo {
     state: 'merged',
     closes: [number],
     checks: 'passing',
-    hoursAgo: mergeDays * 24 + 1,
-    report: serenityReport(90, refused === undefined ? 1 : 2),
+    hoursAgo: mergedHoursAgo(index),
+    report: serenityReport(90, reviewRounds(index, refused !== undefined)),
     reportLead: 0.25,
     ...(refused === undefined ? {} : { refusedReport: refused }),
   };

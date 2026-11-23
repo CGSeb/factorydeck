@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { autonomyLoader } from './stats-api.ts';
+import { autonomyLoader, qualityLoader } from './stats-api.ts';
 import {
   autonomyFigures,
   autonomySummary,
   comparisonText,
+  oneDecimal,
+  qualityFigures,
+  qualityWeekBuckets,
   reasonRows,
   waitingNote,
   weekBuckets,
@@ -115,6 +118,99 @@ describe('autonomy API', () => {
   it('gives nothing for an unexpected answer', async () => {
     await expect(
       autonomyLoader(
+        () => Promise.resolve(Response.json({ error: 'nope' })),
+        () => 'UTC',
+      )({ period: '7d', project: undefined }),
+    ).resolves.toBeUndefined();
+  });
+});
+
+describe('quality view', () => {
+  const counts = {
+    merged: 5,
+    mergedWithReport: 4,
+    firstPassed: 3,
+    roundsSum: 7,
+    roundsCount: 5,
+    reworked: 1,
+    ended: 8,
+    closedWithoutMerge: 3,
+  };
+
+  it('computes the four quality figures', () => {
+    expect(qualityFigures(counts)).toEqual({
+      firstTime: 0.75,
+      rounds: 1.4,
+      reworked: 0.2,
+      closedWithoutMerge: 0.375,
+    });
+  });
+
+  it('has no figure without a merged issue, even with issues closed without merge', () => {
+    expect(
+      qualityFigures({
+        ...counts,
+        merged: 0,
+        mergedWithReport: 0,
+        firstPassed: 0,
+        roundsSum: 0,
+        roundsCount: 0,
+        reworked: 0,
+        ended: 3,
+      }),
+    ).toEqual({
+      firstTime: null,
+      rounds: null,
+      reworked: null,
+      closedWithoutMerge: null,
+    });
+  });
+
+  it('shows the review rounds with one decimal', () => {
+    expect(oneDecimal(1.4)).toBe('1.4');
+    expect(oneDecimal(1)).toBe('1.0');
+    expect(oneDecimal(1.25)).toBe('1.3');
+  });
+
+  it('labels the weeks by their Monday with the share passed the first time', () => {
+    expect(
+      qualityWeekBuckets([
+        { start: '2026-11-02', mergedWithReport: 5, firstPassed: 3 },
+        { start: '2026-11-09', mergedWithReport: 0, firstPassed: 0 },
+        { start: '2026-11-16', mergedWithReport: 2, firstPassed: 2 },
+      ]),
+    ).toEqual([
+      { label: 'Nov 2', value: 0.6, n: 5, text: '60% · 3 of 5' },
+      {
+        label: 'Nov 9',
+        value: null,
+        n: 0,
+        text: 'No merged issue with a report',
+      },
+      { label: 'this week', value: 1, n: 2, text: '100% · 2 of 2' },
+    ]);
+  });
+});
+
+describe('quality API', () => {
+  it('asks for the quality figures of the period and project', async () => {
+    const urls: string[] = [];
+    const response = await qualityLoader(
+      (input) => {
+        urls.push(typeof input === 'string' ? input : '');
+        return Promise.resolve(Response.json({ status: 'unreachable' }));
+      },
+      () => 'UTC',
+    )({ period: '7d', project: '/work/app' });
+    expect(response).toEqual({ status: 'unreachable' });
+    expect(urls).toEqual([
+      '/api/stats/quality?period=7d&tz=UTC&project=%2Fwork%2Fapp',
+    ]);
+  });
+
+  it('gives nothing for an unexpected answer', async () => {
+    await expect(
+      qualityLoader(
         () => Promise.resolve(Response.json({ error: 'nope' })),
         () => 'UTC',
       )({ period: '7d', project: undefined }),

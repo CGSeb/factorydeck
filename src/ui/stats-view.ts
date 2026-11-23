@@ -3,6 +3,8 @@ import type {
   AutonomyCounts,
   AutonomyReasons,
   AutonomyWeek,
+  QualityCounts,
+  QualityWeek,
 } from '../stats/types.ts';
 import type { CountRow } from './components/CountBars.tsx';
 import { type TrendBucket, median } from './components/stats-math.ts';
@@ -79,4 +81,46 @@ export function reasonRows(reasons: AutonomyReasons): CountRow[] {
     { label: 'Gates failed', count: reasons.gatesFailed },
     { label: 'Auto-merge off', count: reasons.autoMergeOff },
   ];
+}
+
+export function oneDecimal(value: number): string {
+  return value.toFixed(1);
+}
+
+export interface QualityFigures {
+  firstTime: number | null;
+  rounds: number | null;
+  reworked: number | null;
+  closedWithoutMerge: number | null;
+}
+
+export function qualityFigures(counts: QualityCounts): QualityFigures {
+  return {
+    firstTime: shareOf(counts.firstPassed, counts.mergedWithReport),
+    rounds:
+      counts.roundsCount === 0 ? null : counts.roundsSum / counts.roundsCount,
+    reworked: shareOf(counts.reworked, counts.merged),
+    closedWithoutMerge:
+      counts.merged === 0
+        ? null
+        : shareOf(counts.closedWithoutMerge, counts.ended),
+  };
+}
+
+export function qualityWeekBuckets(
+  weeks: readonly QualityWeek[],
+): TrendBucket[] {
+  return weeks.map((week, index) => {
+    const value = shareOf(week.firstPassed, week.mergedWithReport);
+    return {
+      label:
+        index === weeks.length - 1 ? 'this week' : formatBucket(week.start),
+      value,
+      n: week.mergedWithReport,
+      text:
+        value === null
+          ? 'No merged issue with a report'
+          : `${wholePercent(value)} · ${String(week.firstPassed)} of ${String(week.mergedWithReport)}`,
+    };
+  });
 }
