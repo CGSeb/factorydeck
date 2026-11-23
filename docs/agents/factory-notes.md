@@ -33,4 +33,4 @@ On, through the `main` ruleset on GitHub. `main` cannot be deleted or force-push
 - No real session data, costs or project names in code, tests, fixtures or docs; only small synthetic examples.
 - Data that matches no configuration rule is still counted, as "unassigned", never dropped.
 - Imports use the `.ts` extension, and only erasable TypeScript syntax is used (no enums, no namespaces).
-- A story renders a small data set, a few dozen rows at most: each story renders and runs axe within the 5-second test timeout on a slower CI runner. A case that needs hundreds of items is proven by a unit test of the logic the component calls, not by a story.
+- A story renders a small data set, a few dozen rows at most: each story renders and runs axe within the 5-second test timeout on a slower CI runner. A case that needs hundreds of items is proven by a unit test of the logic the component calls, not by a story. Exception: a story the spec asks for in so many words keeps the size the spec gives, as long as it stays well within that timeout; the builder states its measured time in the pull request body, and the reviewer does not raise its size as a finding.
