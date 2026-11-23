@@ -1,4 +1,4 @@
-import { type ReactElement, useId } from 'react';
+import type { ReactElement } from 'react';
 import type { Period } from '../overview/types.ts';
 import type {
   AutonomyResponse,
@@ -17,11 +17,11 @@ import { TrendBars } from './components/TrendBars.tsx';
 import { formatElapsed } from './format.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { useRefreshing, useSkillFilters } from './skills-api.ts';
-import type { LoadAutonomy, LoadQuality } from './stats-api.ts';
+import type { LoadAutonomy, LoadFlow, LoadQuality } from './stats-api.ts';
 import {
   autonomyFigures,
   autonomySummary,
-  comparisonText,
+  comparer,
   oneDecimal,
   qualityFigures,
   qualityWeekBuckets,
@@ -30,11 +30,14 @@ import {
   weekBuckets,
   wholePercent,
 } from './stats-view.ts';
+import { StatsFlowPanel } from './StatsFlowPanel.tsx';
+import { StatsSection } from './StatsSection.tsx';
 import './stats-page.css';
 
 export interface StatsPageProps {
   loadAutonomy: LoadAutonomy;
   loadQuality: LoadQuality;
+  loadFlow: LoadFlow;
 }
 
 const LOADING = 'Loading…';
@@ -53,23 +56,6 @@ const HELPED_NOUN = {
   one: 'merged issue helped by a person',
   other: 'merged issues helped by a person',
 };
-
-type Compare = (
-  value: number | null | undefined,
-  n: number | undefined,
-) => {
-  previous?: number | null;
-  previousN?: number;
-  comparison?: string;
-};
-
-function comparer(period: Period): Compare {
-  const comparison = comparisonText(period);
-  return (value, n) =>
-    comparison === undefined || value === undefined || n === undefined
-      ? {}
-      : { previous: value, previousN: n, comparison };
-}
 
 function Figures({
   autonomy,
@@ -120,24 +106,6 @@ function Figures({
   );
 }
 
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactElement;
-}): ReactElement {
-  const id = useId();
-  return (
-    <section className="fd-stats-section" aria-labelledby={id}>
-      <h3 id={id} className="fd-stats-section-title">
-        {title}
-      </h3>
-      {children}
-    </section>
-  );
-}
-
 function AutonomyContent({
   response,
   period,
@@ -153,7 +121,7 @@ function AutonomyContent({
   return (
     <div className="fd-stats-autonomy">
       <Figures autonomy={autonomy} period={period} />
-      <Section title={TREND_TITLE}>
+      <StatsSection title={TREND_TITLE}>
         <TrendBars
           label={TREND_TITLE}
           buckets={weekBuckets(autonomy.weeks)}
@@ -161,8 +129,8 @@ function AutonomyContent({
           color="var(--fd-stage-merged)"
           height={64}
         />
-      </Section>
-      <Section title={REASONS_TITLE}>
+      </StatsSection>
+      <StatsSection title={REASONS_TITLE}>
         {autonomy.reasons.total === 0 ? (
           <p className="fd-stats-note">No person had to step in.</p>
         ) : (
@@ -172,7 +140,7 @@ function AutonomyContent({
             noun={HELPED_NOUN}
           />
         )}
-      </Section>
+      </StatsSection>
     </div>
   );
 }
@@ -249,7 +217,7 @@ function QualityContent({
   return (
     <div className="fd-stats-quality">
       <QualityFiguresRow quality={quality} period={period} />
-      <Section title={QUALITY_TREND_TITLE}>
+      <StatsSection title={QUALITY_TREND_TITLE}>
         <TrendBars
           label={QUALITY_TREND_TITLE}
           buckets={qualityWeekBuckets(quality.weeks)}
@@ -257,13 +225,13 @@ function QualityContent({
           color="var(--fd-stage-merged)"
           height={64}
         />
-      </Section>
-      <Section title={HISTOGRAM_TITLE}>
+      </StatsSection>
+      <StatsSection title={HISTOGRAM_TITLE}>
         <ScoreHistogram
           label={HISTOGRAM_TITLE}
           reports={quality.firstReports}
         />
-      </Section>
+      </StatsSection>
     </div>
   );
 }
@@ -271,11 +239,13 @@ function QualityContent({
 export function StatsPage({
   loadAutonomy,
   loadQuality,
+  loadFlow,
 }: StatsPageProps): ReactElement {
   const [filters, setFilters] = useSkillFilters();
   const key = JSON.stringify(filters);
   const response = useRefreshing(key, () => loadAutonomy(filters), 'stats');
   const quality = useRefreshing(key, () => loadQuality(filters), 'stats');
+  const flow = useRefreshing(key, () => loadFlow(filters), 'stats');
   return (
     <div className="fd-stats">
       <PageHeader
@@ -297,6 +267,7 @@ export function StatsPage({
       <Panel heading="Quality">
         <QualityContent response={quality} period={filters.period} />
       </Panel>
+      <StatsFlowPanel response={flow} period={filters.period} />
     </div>
   );
 }

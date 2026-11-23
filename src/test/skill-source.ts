@@ -34,4 +34,5 @@ export const unusedStats: StatsSource = {
   autonomy: () => Promise.reject(new Error('Not used')),
   quality: () => Promise.reject(new Error('Not used')),
   frictions: () => Promise.reject(new Error('Not used')),
+  flow: () => Promise.reject(new Error('Not used')),
 };

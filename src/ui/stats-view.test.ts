@@ -1,13 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { autonomyLoader, qualityLoader } from './stats-api.ts';
+import { autonomyLoader, flowLoader, qualityLoader } from './stats-api.ts';
 import {
   autonomyFigures,
   autonomySummary,
   comparisonText,
+  flowFigures,
+  issueLabel,
+  mergedWeekBuckets,
   oneDecimal,
   qualityFigures,
   qualityWeekBuckets,
   reasonRows,
+  stripItems,
+  tokenShares,
   waitingNote,
   weekBuckets,
 } from './stats-view.ts';
@@ -215,5 +220,92 @@ describe('quality API', () => {
         () => 'UTC',
       )({ period: '7d', project: undefined }),
     ).resolves.toBeUndefined();
+  });
+  it('reads the flow figures from the merged issues', () => {
+    expect(
+      flowFigures([
+        { leadMs: 3 * HOUR, cycleMs: null, tokens: null },
+        { leadMs: 1 * HOUR, cycleMs: 1 * HOUR, tokens: 100 },
+        { leadMs: 2 * HOUR, cycleMs: 3 * HOUR, tokens: 300 },
+      ]),
+    ).toEqual({
+      lead: { value: 2 * HOUR, n: 3 },
+      cycle: { value: 2 * HOUR, n: 2 },
+      tokens: { value: 200, n: 2 },
+    });
+    expect(flowFigures([]).lead).toEqual({ value: null, n: 0 });
+  });
+
+  it('shares the tokens of the period', () => {
+    expect(
+      tokenShares({
+        total: 200,
+        droppedWork: 20,
+        noWorkItem: 50,
+        inputSide: 100,
+        cacheRead: 75,
+        apiCalls: 9,
+      }),
+    ).toEqual({ droppedWork: 0.1, noWorkItem: 0.25, cacheReads: 0.75 });
+    expect(
+      tokenShares({
+        total: 0,
+        droppedWork: 0,
+        noWorkItem: 0,
+        inputSide: 0,
+        cacheRead: 0,
+        apiCalls: 0,
+      }),
+    ).toEqual({ droppedWork: null, noWorkItem: null, cacheReads: null });
+  });
+
+  it('counts the merges of each week', () => {
+    expect(
+      mergedWeekBuckets([
+        { start: '2026-11-09', merged: 1 },
+        { start: '2026-11-16', merged: 0 },
+        { start: '2026-11-23', merged: 4 },
+      ]),
+    ).toEqual([
+      { label: 'Nov 9', value: 1, text: '1 issue' },
+      { label: 'Nov 16', value: 0, text: '0 issues' },
+      { label: 'this week', value: 4, text: '4 issues' },
+    ]);
+  });
+
+  it('labels and links each issue of a strip, skipping missing values', () => {
+    const issue = {
+      project: '/work/my app',
+      number: 7,
+      title: 'Export',
+      leadMs: HOUR,
+      cycleMs: null,
+      tokens: null,
+    };
+    expect(issueLabel(issue)).toBe('#7 Export');
+    expect(issueLabel({ ...issue, title: ' ' })).toBe('#7');
+    expect(stripItems([issue], (row) => row.leadMs, '7d')).toEqual([
+      {
+        label: '#7 Export',
+        value: HOUR,
+        href: '/features/7?project=%2Fwork%2Fmy+app&period=7d',
+      },
+    ]);
+    expect(stripItems([issue], (row) => row.tokens, '7d')).toEqual([]);
+  });
+
+  it('asks the flow figures of the period and project', async () => {
+    const urls: string[] = [];
+    const response = await flowLoader(
+      (input) => {
+        urls.push(typeof input === 'string' ? input : '');
+        return Promise.resolve(Response.json({ status: 'unreachable' }));
+      },
+      () => 'UTC',
+    )({ period: 'all', project: '/work/app' });
+    expect(response).toEqual({ status: 'unreachable' });
+    expect(urls).toEqual([
+      '/api/stats/flow?period=all&tz=UTC&project=%2Fwork%2Fapp',
+    ]);
   });
 });

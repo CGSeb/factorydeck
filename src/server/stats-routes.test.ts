@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { AutonomyQuery } from '../stats/autonomy.ts';
+import type { FlowQuery } from '../stats/flow.ts';
 import type { QualityQuery } from '../stats/quality.ts';
-import type { AutonomyStats, QualityStats } from '../stats/types.ts';
+import type { AutonomyStats, FlowStats, QualityStats } from '../stats/types.ts';
 import {
   unusedFeatures,
   unusedGitHost,
@@ -57,9 +58,34 @@ const quality: QualityStats = {
   firstReports: [{ score: 72, threshold: 80, time: '2026-01-05T08:00:00Z' }],
 };
 
+const flow: FlowStats = {
+  current: {
+    issues: [
+      {
+        project: '/work/app',
+        number: 7,
+        title: 'Export',
+        leadMs: 7_200_000,
+        cycleMs: 3_600_000,
+        tokens: 1_200_000,
+      },
+    ],
+    tokens: {
+      total: 2_000_000,
+      droppedWork: 100_000,
+      noWorkItem: 300_000,
+      inputSide: 1_800_000,
+      cacheRead: 1_500_000,
+      apiCalls: 40,
+    },
+  },
+  weeks: [{ start: '2026-01-05', merged: 1 }],
+};
+
 function app(up = true) {
   const queries: AutonomyQuery[] = [];
   const qualityQueries: QualityQuery[] = [];
+  const flowQueries: FlowQuery[] = [];
   const created = createApp({
     checkDatabase: () => Promise.resolve(up),
     uiDir: '/nonexistent/factorydeck-ui',
@@ -80,9 +106,13 @@ function app(up = true) {
         return Promise.resolve(quality);
       },
       frictions: () => Promise.reject(new Error('Not used')),
+      flow: (query) => {
+        flowQueries.push(query);
+        return Promise.resolve(flow);
+      },
     },
   });
-  return { app: created, queries, qualityQueries };
+  return { app: created, queries, qualityQueries, flowQueries };
 }
 
 describe('/api/stats/autonomy', () => {
@@ -156,6 +186,46 @@ describe('/api/stats/quality', () => {
   it('answers unreachable when the database is down', async () => {
     const response = await app(false).app.request(
       '/api/stats/quality?period=7d&tz=UTC',
+    );
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      status: 'unreachable',
+      refreshSeconds: 10,
+    });
+  });
+});
+
+describe('/api/stats/flow', () => {
+  it('answers the flow figures of the period and project', async () => {
+    const { app: server, flowQueries } = app();
+    const response = await server.request(
+      '/api/stats/flow?period=7d&tz=Europe/Paris&project=%2Fwork%2Fapp',
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      status: 'ok',
+      updatedAt: '2026-01-05T09:00:00.000Z',
+      refreshSeconds: 10,
+      flow,
+    });
+    expect(flowQueries).toEqual([
+      { period: '7d', timeZone: 'Europe/Paris', project: '/work/app' },
+    ]);
+  });
+
+  it.each([
+    '/api/stats/flow?tz=UTC',
+    '/api/stats/flow?period=year&tz=UTC',
+    '/api/stats/flow?period=7d',
+    '/api/stats/flow?period=7d&tz=Mars/Base',
+  ])('refuses %s', async (url) => {
+    const response = await app().app.request(url);
+    expect(response.status).toBe(400);
+  });
+
+  it('answers unreachable when the database is down', async () => {
+    const response = await app(false).app.request(
+      '/api/stats/flow?period=all&tz=UTC',
     );
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({

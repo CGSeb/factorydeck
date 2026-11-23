@@ -1,6 +1,6 @@
 # 039 · Stats flow and cost
 
-Status: ready
+Status: done
 Depends on: 037
 Checked: 2026-11-22
 
@@ -10,21 +10,21 @@ A developer reads on the `Stats` page how fast and how cheaply their factory del
 
 ## Acceptance criteria
 
-- [ ] On `/stats` (spec 037), after the `Quality` panel of spec 038 (or after `Autonomy` when it is not there), a `Panel` `Flow and cost` starts with `Merged per week`: a `TrendBars` (spec 036, `count` scale, 64 px high, `--fd-stage-merged`, buckets without `n`) of the 12 weeks of spec 037, each week's value the number of issues merged that week, tooltip value `4 issues` (`1 issue`).
-- [ ] Under it, three `StatFigure`s (spec 036) side by side, wrapping below 680 px, each with the change line of spec 037 (`amount` changes), lower being better for all three:
+- [x] On `/stats` (spec 037), after the `Quality` panel of spec 038 (or after `Autonomy` when it is not there), a `Panel` `Flow and cost` starts with `Merged per week`: a `TrendBars` (spec 036, `count` scale, 64 px high, `--fd-stage-merged`, buckets without `n`) of the 12 weeks of spec 037, each week's value the number of issues merged that week, tooltip value `4 issues` (`1 issue`).
+- [x] Under it, three `StatFigure`s (spec 036) side by side, wrapping below 680 px, each with the change line of spec 037 (`amount` changes), lower being better for all three:
   - `Lead time`: the median time from an issue's creation to its merge, formatted like `formatDuration` of `src/ui/format.ts` (`2 d 5 h`); n = merged issues.
   - `Cycle time`: the median time from the first agent call on the issue to its merge, same format; n = merged issues with at least one call (`merged issue with agent work` / `merged issues with agent work`).
   - `Tokens per merged issue`: the median of the merged issues' tokens (rules), compact like `formatTokens` (`1.2M`); n = merged issues with at least one call.
-- [ ] Then two `RangeStrip`s (spec 036), titled `Lead time` and `Tokens per merged issue`, with one dot per merged issue of the period (for tokens, those with at least one call), labelled `#<n> <title>` (`#<n>` alone when the title is unknown), valued and formatted as the figures above, each dot linking to the issue page `/features/<n>?project=<root>&period=<period>` (spec 010) with the current period.
-- [ ] Then a sub-heading `Where the tokens went` (`h3`) and three `StatFigure`s over the calls of the period, whatever their issue, with n = API calls of the period (`API call` / `API calls`) and the change line of spec 037 (`share` changes):
+- [x] Then two `RangeStrip`s (spec 036), titled `Lead time` and `Tokens per merged issue`, with one dot per merged issue of the period (for tokens, those with at least one call), labelled `#<n> <title>` (`#<n>` alone when the title is unknown), valued and formatted as the figures above, each dot linking to the issue page `/features/<n>?project=<root>&period=<period>` (spec 010) with the current period.
+- [x] Then a sub-heading `Where the tokens went` (`h3`) and three `StatFigure`s over the calls of the period, whatever their issue, with n = API calls of the period (`API call` / `API calls`) and the change line of spec 037 (`share` changes):
   - `Tokens on dropped work`: the share of the period's tokens that went to issues now at stage `Closed without merge`, orchestration share included; lower is better.
   - `No work item`: the share of the period's tokens in the `No work item` row of spec 010; lower is better.
   - `Cache reads`: cache read tokens over the input-side tokens (input, cache write and cache read) of the period's calls; higher is better.
-- [ ] With no merged issue in the period, the first three figures and both strips show `Not enough data` or `No data` as spec 036 says; with no call in the period, the last three show `Not enough data`; `Merged per week` always shows.
-- [ ] `GET /api/stats/flow?period=<period>&tz=<time zone>&project=<root>` returns the 12 weekly merge counts; for the period and its previous one (left out for `all`), the lead time, cycle time and tokens of each merged issue (cycle time and tokens `null` without a call), and the period's tokens in total, on issues closed without merge and in `No work item`, the input-side and cache read tokens, and the number of API calls. For the period only, each merged issue's number, title and project for the strips. Parameters are read and refused like `/api/stats/autonomy` (spec 037).
-- [ ] The demo data (`pnpm demo`) gives about 20 of the merged issues added by spec 037 one short synthetic session each, started before their merge: a main thread and a few calls in two sub-agent threads whose descriptions the default roles recognise (spec 011) as a builder and a reviewer, with one issue using about 8 times the tokens of the others. The other demo issues and sessions stay as they are.
-- [ ] The panel loads and fails on its own, like the other panels of `/stats`.
-- [ ] Figures refresh with each re-ingestion (spec 003) and collection (spec 008), without a reload. From 1024 px wide, nothing scrolls horizontally.
+- [x] With no merged issue in the period, the first three figures and both strips show `Not enough data` or `No data` as spec 036 says; with no call in the period, the last three show `Not enough data`; `Merged per week` always shows.
+- [x] `GET /api/stats/flow?period=<period>&tz=<time zone>&project=<root>` returns the 12 weekly merge counts; for the period and its previous one (left out for `all`), the lead time, cycle time and tokens of each merged issue (cycle time and tokens `null` without a call), and the period's tokens in total, on issues closed without merge and in `No work item`, the input-side and cache read tokens, and the number of API calls. For the period only, each merged issue's number, title and project for the strips. Parameters are read and refused like `/api/stats/autonomy` (spec 037).
+- [x] The demo data (`pnpm demo`) gives about 20 of the merged issues added by spec 037 one short synthetic session each, started before their merge: a main thread and a few calls in two sub-agent threads whose descriptions the default roles recognise (spec 011) as a builder and a reviewer, with one issue using about 8 times the tokens of the others. The other demo issues and sessions stay as they are.
+- [x] The panel loads and fails on its own, like the other panels of `/stats`.
+- [x] Figures refresh with each re-ingestion (spec 003) and collection (spec 008), without a reload. From 1024 px wide, nothing scrolls horizontally.
 
 ## Rules
 

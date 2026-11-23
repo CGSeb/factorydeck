@@ -59,6 +59,7 @@ function app(up = true) {
     stats: {
       autonomy: () => Promise.reject(new Error('Not used')),
       quality: () => Promise.reject(new Error('Not used')),
+      flow: () => Promise.reject(new Error('Not used')),
       frictions: (query) => {
         queries.push(query);
         return Promise.resolve(frictions);

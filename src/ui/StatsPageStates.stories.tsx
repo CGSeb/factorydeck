@@ -12,11 +12,16 @@ import {
   unreachableAutonomy,
 } from './stats-fixtures.ts';
 import { figureTexts, loaded, panelOf, statsRouter } from './stats-story.ts';
+import { flowLoaderOf } from './flow-fixtures.ts';
 import { StatsPage } from './StatsPage.tsx';
 
 const meta = {
   component: StatsPage,
-  args: { loadAutonomy: autonomyLoaderOf(), loadQuality: qualityLoaderOf() },
+  args: {
+    loadAutonomy: autonomyLoaderOf(),
+    loadQuality: qualityLoaderOf(),
+    loadFlow: flowLoaderOf(),
+  },
   decorators: [statsRouter],
 } satisfies Meta<typeof StatsPage>;
 
