@@ -229,21 +229,19 @@ describe('quality API', () => {
         total: 200,
         droppedWork: 20,
         noWorkItem: 50,
-        inputSide: 100,
-        cacheRead: 75,
+        rework: 30,
         apiCalls: 9,
       }),
-    ).toEqual({ droppedWork: 0.1, noWorkItem: 0.25, cacheReads: 0.75 });
+    ).toEqual({ droppedWork: 0.1, noWorkItem: 0.25, rework: 0.15 });
     expect(
       tokenShares({
         total: 0,
         droppedWork: 0,
         noWorkItem: 0,
-        inputSide: 0,
-        cacheRead: 0,
+        rework: 0,
         apiCalls: 0,
       }),
-    ).toEqual({ droppedWork: null, noWorkItem: null, cacheReads: null });
+    ).toEqual({ droppedWork: null, noWorkItem: null, rework: null });
   });
 
   it('labels and links each issue of a strip, skipping missing values', () => {

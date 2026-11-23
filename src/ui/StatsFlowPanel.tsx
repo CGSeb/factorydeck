@@ -4,6 +4,7 @@ import type { FlowResponse, FlowStats } from '../stats/types.ts';
 import { Panel } from './components/Panel.tsx';
 import { RangeStrip } from './components/RangeStrip.tsx';
 import { StatFigure } from './components/StatFigure.tsx';
+import { FIGURE_HELP } from './stats-help.ts';
 import { StatusLine } from './components/StatusLine.tsx';
 import { TrendBars } from './components/TrendBars.tsx';
 import { formatElapsed, formatTokens } from './format.ts';
@@ -45,6 +46,7 @@ function FlowFigures({
     <div className="fd-stats-figures">
       <StatFigure
         label="Lead time"
+        help={FIGURE_HELP['Lead time']}
         value={now.lead.value}
         format={formatElapsed}
         kind="amount"
@@ -55,6 +57,7 @@ function FlowFigures({
       />
       <StatFigure
         label="Cycle time"
+        help={FIGURE_HELP['Cycle time']}
         value={now.cycle.value}
         format={formatElapsed}
         kind="amount"
@@ -65,6 +68,7 @@ function FlowFigures({
       />
       <StatFigure
         label="Tokens per merged issue"
+        help={FIGURE_HELP['Tokens per merged issue']}
         value={now.tokens.value}
         format={formatTokens}
         kind="amount"
@@ -94,6 +98,7 @@ function TokenFigures({
     <div className="fd-stats-figures">
       <StatFigure
         label="Tokens on dropped work"
+        help={FIGURE_HELP['Tokens on dropped work']}
         value={now.droppedWork}
         format={wholePercent}
         kind="share"
@@ -104,6 +109,7 @@ function TokenFigures({
       />
       <StatFigure
         label="No work item"
+        help={FIGURE_HELP['No work item']}
         value={now.noWorkItem}
         format={wholePercent}
         kind="share"
@@ -113,14 +119,15 @@ function TokenFigures({
         {...compare(before?.noWorkItem, calls)}
       />
       <StatFigure
-        label="Cache reads"
-        value={now.cacheReads}
+        label="Tokens on rework"
+        help={FIGURE_HELP['Tokens on rework']}
+        value={now.rework}
         format={wholePercent}
         kind="share"
         n={tokens.apiCalls}
         noun={CALL_NOUN}
-        better="higher"
-        {...compare(before?.cacheReads, calls)}
+        better="lower"
+        {...compare(before?.rework, calls)}
       />
     </div>
   );

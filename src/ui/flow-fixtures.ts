@@ -59,8 +59,7 @@ export const monthTokens: FlowTokens = {
   total: 40_000_000,
   droppedWork: 2_000_000,
   noWorkItem: 6_000_000,
-  inputSide: 38_000_000,
-  cacheRead: 30_400_000,
+  rework: 4_400_000,
   apiCalls: 1_200,
 };
 
@@ -68,8 +67,7 @@ export const previousMonthTokens: FlowTokens = {
   total: 32_000_000,
   droppedWork: 3_200_000,
   noWorkItem: 3_840_000,
-  inputSide: 30_000_000,
-  cacheRead: 21_000_000,
+  rework: 5_120_000,
   apiCalls: 900,
 };
 
@@ -77,8 +75,7 @@ export const noTokens: FlowTokens = {
   total: 0,
   droppedWork: 0,
   noWorkItem: 0,
-  inputSide: 0,
-  cacheRead: 0,
+  rework: 0,
   apiCalls: 0,
 };
 

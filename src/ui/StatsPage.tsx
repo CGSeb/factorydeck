@@ -12,6 +12,7 @@ import { Panel } from './components/Panel.tsx';
 import { PeriodPills } from './components/PeriodPills.tsx';
 import { ScoreHistogram } from './components/ScoreHistogram.tsx';
 import { StatFigure } from './components/StatFigure.tsx';
+import { FIGURE_HELP } from './stats-help.ts';
 import { StatusLine } from './components/StatusLine.tsx';
 import { TrendBars } from './components/TrendBars.tsx';
 import { formatElapsed } from './format.ts';
@@ -80,6 +81,7 @@ function Figures({
     <div className="fd-stats-figures">
       <StatFigure
         label="Merged without a person"
+        help={FIGURE_HELP['Merged without a person']}
         value={now.withoutPerson}
         format={wholePercent}
         kind="share"
@@ -90,6 +92,7 @@ function Figures({
       />
       <StatFigure
         label="Spec questions"
+        help={FIGURE_HELP['Spec questions']}
         value={now.specQuestions}
         format={wholePercent}
         kind="share"
@@ -100,6 +103,7 @@ function Figures({
       />
       <StatFigure
         label="Waiting for a person"
+        help={FIGURE_HELP['Waiting for a person']}
         value={now.waiting}
         format={formatElapsed}
         kind="amount"
@@ -173,6 +177,7 @@ function QualityFiguresRow({
     <div className="fd-stats-figures">
       <StatFigure
         label="Right the first time"
+        help={FIGURE_HELP['Right the first time']}
         value={now.firstTime}
         format={wholePercent}
         kind="share"
@@ -183,6 +188,7 @@ function QualityFiguresRow({
       />
       <StatFigure
         label="Review rounds"
+        help={FIGURE_HELP['Review rounds']}
         value={now.rounds}
         format={oneDecimal}
         kind="amount"
@@ -193,6 +199,7 @@ function QualityFiguresRow({
       />
       <StatFigure
         label="Score gain"
+        help={FIGURE_HELP['Score gain']}
         value={now.gain}
         format={signedPoints}
         kind="points"

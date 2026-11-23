@@ -1,8 +1,12 @@
 import type { Database } from '../db/client.ts';
 import type { Allocation, IssueAccumulator } from '../features/allocate.ts';
-import { type UsageWindow, allocationIn } from '../features/usage.ts';
+import {
+  type UsageWindow,
+  allocationIn,
+  tokensSince,
+} from '../features/usage.ts';
 import { issueKey } from '../features/values.ts';
-import type { IssueRow } from '../git-host/query.ts';
+import type { IssueRow, RequestRow } from '../git-host/query.ts';
 import type { WorkflowConfig } from '../roles/config.ts';
 import {
   type AutonomyQuery,
@@ -15,6 +19,7 @@ import {
   bucketCounts,
 } from './autonomy.ts';
 import { type StatsBounds, earliestMerge, statsBounds } from './bounds.ts';
+import { earliestReport, refusing, storedReports } from './stops.ts';
 import type {
   FlowIssue,
   FlowPeriod,
@@ -28,12 +33,21 @@ export type FlowQuery = AutonomyQuery;
 export interface LoadedIssue {
   issue: IssueRow;
   facts: IssueFacts;
+  refusedAt: number | null;
 }
 
 export interface FlowUsage {
   lifetime: Allocation;
   current: Allocation;
   previous?: Allocation;
+  rework: { current: number; previous?: number };
+}
+
+export function firstRefusal(
+  requests: readonly Pick<RequestRow, 'reports'>[],
+): number | null {
+  const first = earliestReport(storedReports(requests).filter(refusing));
+  return first === null ? null : Date.parse(first.at);
 }
 
 function firstCall(usage: IssueAccumulator | undefined): number | null {
@@ -67,8 +81,9 @@ export function flowIssue(
 export function periodTokens(
   allocation: Allocation,
   dropped: ReadonlySet<string>,
+  rework: number,
 ): FlowTokens {
-  const { tokens, tokenCounts, apiCalls } = allocation.totals;
+  const { tokens, apiCalls } = allocation.totals;
   let droppedWork = 0;
   for (const [key, issue] of allocation.issues) {
     if (dropped.has(key)) droppedWork += issue.tokens;
@@ -77,9 +92,7 @@ export function periodTokens(
     total: tokens,
     droppedWork,
     noWorkItem: allocation.noWorkItem?.tokens ?? 0,
-    inputSide:
-      tokenCounts.input + tokenCounts.cacheWrite + tokenCounts.cacheRead,
-    cacheRead: tokenCounts.cacheRead,
+    rework,
     apiCalls,
   };
 }
@@ -110,19 +123,20 @@ export function summarizeFlow(
       .map(({ flow }) => flow);
   const current: FlowPeriod<FlowStripIssue> = {
     issues: mergedIn({ from: bounds.start, to: null }),
-    tokens: periodTokens(usage.current, dropped),
+    tokens: periodTokens(usage.current, dropped, usage.rework.current),
   };
   const previous: FlowPeriod | undefined =
     bounds.start === null ||
     bounds.previousStart === null ||
-    usage.previous === undefined
+    usage.previous === undefined ||
+    usage.rework.previous === undefined
       ? undefined
       : {
           issues: mergedIn({
             from: bounds.previousStart,
             to: bounds.start,
           }).map(withoutKey),
-          tokens: periodTokens(usage.previous, dropped),
+          tokens: periodTokens(usage.previous, dropped, usage.rework.previous),
         };
   return {
     current,
@@ -139,6 +153,36 @@ function iso(at: number | null): string | null {
   return at === null ? null : new Date(at).toISOString();
 }
 
+interface ReworkWindows {
+  current: UsageWindow;
+  previous: UsageWindow | null;
+}
+
+async function reworkTokens(
+  db: Database,
+  config: WorkflowConfig,
+  issues: readonly LoadedIssue[],
+  { current, previous }: ReworkWindows,
+): Promise<FlowUsage['rework']> {
+  const refusals = new Map(
+    issues.flatMap(({ issue, refusedAt }) =>
+      refusedAt === null
+        ? []
+        : [[issueKey(issue.project, issue.number), refusedAt] as const],
+    ),
+  );
+  const [now, before] = await Promise.all([
+    tokensSince(db, config, current, refusals),
+    previous === null
+      ? Promise.resolve(undefined)
+      : tokensSince(db, config, previous, refusals),
+  ]);
+  return {
+    current: now,
+    ...(before === undefined ? {} : { previous: before }),
+  };
+}
+
 export async function flowStats(
   db: Database,
   query: FlowQuery,
@@ -153,6 +197,7 @@ export async function flowStats(
     (issue, requests, state) => ({
       issue,
       facts: issueFacts(issue, requests, state),
+      refusedAt: firstRefusal(requests),
     }),
   );
   const bounds = await statsBounds(db, {
@@ -167,16 +212,26 @@ export async function flowStats(
     startAt: iso(startAt),
     endAt: iso(endAt),
   });
-  const [lifetime, current, previous] = await Promise.all([
-    allocationIn(db, config, window(null, null)),
-    allocationIn(db, config, window(bounds.start, null)),
+  const previousWindow =
     bounds.start === null || bounds.previousStart === null
+      ? null
+      : window(bounds.previousStart, bounds.start);
+  const currentWindow = window(bounds.start, null);
+  const [lifetime, current, previous, rework] = await Promise.all([
+    allocationIn(db, config, window(null, null)),
+    allocationIn(db, config, currentWindow),
+    previousWindow === null
       ? Promise.resolve(undefined)
-      : allocationIn(db, config, window(bounds.previousStart, bounds.start)),
+      : allocationIn(db, config, previousWindow),
+    reworkTokens(db, config, issues, {
+      current: currentWindow,
+      previous: previousWindow,
+    }),
   ]);
   return summarizeFlow(issues, bounds, {
     lifetime,
     current,
     ...(previous === undefined ? {} : { previous }),
+    rework,
   });
 }

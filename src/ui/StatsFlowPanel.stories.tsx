@@ -44,7 +44,7 @@ async function expectFigures(canvasElement: HTMLElement): Promise<void> {
     '1.2M',
     '5%',
     '15%',
-    '80%',
+    '11%',
   ]);
   await expect(figureTexts(canvasElement, '[data-sample]', FLOW)).toEqual([
     'n = 10 merged issues',
@@ -63,7 +63,7 @@ async function expectChanges(canvasElement: HTMLElement): Promise<void> {
     '▼down 20% vs previous 30 days',
     '▼down 5 pts vs previous 30 days',
     '▲up 3 pts vs previous 30 days',
-    '▲up 10 pts vs previous 30 days',
+    '▼down 5 pts vs previous 30 days',
   ]);
   await expect(
     [

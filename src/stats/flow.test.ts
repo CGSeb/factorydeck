@@ -243,8 +243,7 @@ describe('flow stats', () => {
       total: 5_160_000,
       droppedWork: 500_000,
       noWorkItem: 1_060_000,
-      inputSide: 5_150_000,
-      cacheRead: 900_000,
+      rework: 0,
       apiCalls: 5,
     });
   });
@@ -259,7 +258,6 @@ describe('flow stats', () => {
       expect(current.tokens.total).toBe(
         counts.input + counts.cacheWrite + counts.cacheRead + counts.output,
       );
-      expect(current.tokens.cacheRead).toBe(counts.cacheRead);
       expect(current.tokens.apiCalls).toBe(overview.totals.apiCalls);
     }
   });
@@ -272,8 +270,7 @@ describe('flow stats', () => {
         total: 1_400_000,
         droppedWork: 0,
         noWorkItem: 0,
-        inputSide: 1_400_000,
-        cacheRead: 0,
+        rework: 0,
         apiCalls: 2,
       },
     });

@@ -23,7 +23,7 @@ import {
   linesOf,
   subAgentLines,
 } from './session-lines.ts';
-import { flowSessions } from './flow-sessions.ts';
+import { flowSessions, reworkSessions } from './flow-sessions.ts';
 import { helpSession } from './help-sessions.ts';
 import { markerSessions } from './marker-sessions.ts';
 import { demoGitHub } from './git-host.ts';
@@ -118,6 +118,7 @@ export const DEMO_SESSIONS: readonly DemoSession[] = [
   },
   ...markerSessions(EXAMPLE_APP, DAY, SPEC_SKILL),
   ...flowSessions(EXAMPLE_APP),
+  ...reworkSessions(EXAMPLE_APP),
   ...[7, 2].map((days, index) => ({
     id: `demo-api-${String(index + 1)}`,
     folder: '-demo-example-api',

@@ -64,6 +64,7 @@ export const EveryIcon: Story = {
       'sun',
       'moon',
       'refresh',
+      'info',
     ]);
     for (const svg of canvasElement.querySelectorAll('svg')) {
       await expect(svg).toHaveAttribute('aria-hidden', 'true');

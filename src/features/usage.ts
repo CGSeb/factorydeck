@@ -1,4 +1,4 @@
-import { sql } from 'drizzle-orm';
+import { type SQL, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import { periodStart, select } from '../overview/query.ts';
 import type { WorkflowConfig } from '../roles/config.ts';
@@ -7,7 +7,8 @@ import {
   loadMarkers,
   markerSegments,
 } from '../roles/markers.ts';
-import { type Allocation, type Row, allocate } from './allocate.ts';
+import { type Allocation, type Row, allocate, groupOf } from './allocate.ts';
+import { issueKey } from './values.ts';
 import type { FeatureQuery } from './types.ts';
 
 export interface UsageWindow {
@@ -37,12 +38,43 @@ export async function allocationIn(
   return allocate(config, await windowRows(db, window, markers), markers);
 }
 
+export async function tokensSince(
+  db: Database,
+  config: WorkflowConfig,
+  window: UsageWindow,
+  since: ReadonlyMap<string, number>,
+): Promise<number> {
+  const times = [...new Set(since.values())].sort((a, b) => a - b);
+  if (times.length === 0) return 0;
+  const markers = await loadMarkers(db, config, { project: window.project });
+  const rows = await windowRows(db, window, markers, times);
+  let tokens = 0;
+  for (const row of rows) {
+    const group = groupOf(config, markers, row);
+    if (group.workItem === null) continue;
+    const from = since.get(issueKey(group.project, group.workItem));
+    const reached = times[Number(row['split']) - 1];
+    if (from !== undefined && reached !== undefined && reached >= from) {
+      tokens += group.tokens;
+    }
+  }
+  return tokens;
+}
+
+function splitOf(times: readonly number[]): SQL {
+  if (times.length === 0) return sql`0`;
+  const list = times.map((at) => new Date(at).toISOString()).join(',');
+  return sql`(select count(*) from unnest(string_to_array(${list}::text, ',')::timestamptz[]) t where t <= a.at)`;
+}
+
 async function windowRows(
   db: Database,
   { project: scope, startAt, endAt = null }: UsageWindow,
   markers: SessionMarkers,
+  splits: readonly number[] = [],
 ): Promise<Row[]> {
   const project = scope ?? null;
+  const split = splitOf(splits);
   return select(
     db,
     sql`select a.session_id, s.project, s.title, s.agent, s.git_branch as session_branch,
@@ -55,7 +87,8 @@ async function windowRows(
         sum(a.input_tokens) as input,
         sum(a.cache_write_tokens) as cache_write,
         sum(a.cache_read_tokens) as cache_read,
-        sum(a.output_tokens) as output
+        sum(a.output_tokens) as output,
+        ${split} as split
       from api_call a
       join session s on s.id = a.session_id
       left join sub_agent sa on sa.session_id = a.session_id and sa.id = a.sub_agent_id
@@ -68,6 +101,6 @@ async function windowRows(
         and (${startAt}::timestamptz is null or a.at >= ${startAt}::timestamptz)
         and (${endAt}::timestamptz is null or a.at < ${endAt}::timestamptz)
       group by a.session_id, s.project, s.title, s.agent, s.git_branch, a.sub_agent_id,
-        sa.agent_type, sa.description, sa.git_branch, sa.first_at, fc.first_call_at, marker.idx, a.model`,
+        sa.agent_type, sa.description, sa.git_branch, sa.first_at, fc.first_call_at, marker.idx, a.model, split`,
   );
 }

@@ -1,5 +1,6 @@
 import {
   AUTONOMY_MERGED,
+  helpKind,
   mergeDaysAgo,
   mergedIssueNumber,
 } from './autonomy.ts';
@@ -10,6 +11,10 @@ const DAY = 24 * HOUR;
 
 export const FLOW_SESSIONS = 20;
 export const FLOW_OUTLIER = 10;
+export const REWORKED = 4;
+const MINUTE = 60_000;
+const AFTER_REFUSAL_MINUTES = 27;
+const AFTER_PASS_MINUTES = 12;
 
 function repeated(call: Call, count: number): Call[] {
   return Array.from({ length: count }, () => call);
@@ -50,4 +55,56 @@ export function flowSessions(project: string): DemoSession[] {
       ],
     };
   });
+}
+
+function refusedFirst(index: number): boolean {
+  const kind = helpKind(index);
+  return kind === 'below' || kind === 'gates' || kind === 'spec-below';
+}
+
+export function reworkIndexes(): { refused: number[]; passed: number } {
+  const [first, ...rest] = flowIndexes();
+  const outlier = flowIndexes()[FLOW_OUTLIER];
+  const candidates = rest.filter(
+    (index) => index !== outlier && index !== first,
+  );
+  return {
+    refused: candidates.filter(refusedFirst).slice(0, REWORKED),
+    passed: candidates.find((index) => !refusedFirst(index)) ?? 0,
+  };
+}
+
+function lateSession(
+  project: string,
+  index: number,
+  minutesBeforeMerge: number,
+): DemoSession {
+  const number = String(mergedIssueNumber(index));
+  return {
+    id: `demo-flow-${number}-late`,
+    folder: '-demo-example-app',
+    project,
+    gitBranch: 'main',
+    startsAgo: mergeDaysAgo(index) * DAY + minutesBeforeMerge * MINUTE,
+    prompt: 'Address the review',
+    calls: [],
+    subAgents: [
+      {
+        id: 'builder',
+        agentType: 'general-purpose',
+        description: `Build #${number}`,
+        calls: [haiku, haiku],
+      },
+    ],
+  };
+}
+
+export function reworkSessions(project: string): DemoSession[] {
+  const { refused, passed } = reworkIndexes();
+  return [
+    ...refused.map((index) =>
+      lateSession(project, index, AFTER_REFUSAL_MINUTES),
+    ),
+    lateSession(project, passed, AFTER_PASS_MINUTES),
+  ];
 }
