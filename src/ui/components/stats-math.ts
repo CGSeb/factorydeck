@@ -5,9 +5,6 @@ export const MIN_SAMPLE = 5;
 export const SCORE_BIN_COUNT = 20;
 export const SCORE_BIN_WIDTH = 5;
 
-export const DOT_STACK_DISTANCE_PX = 8;
-export const DOT_STACK_MAX_LEVELS = 5;
-
 export interface Noun {
   one: string;
   other: string;
@@ -51,32 +48,6 @@ export interface ScoreBins {
   bins: ScoreBin[];
   latestThreshold: number | null;
   varied: boolean;
-}
-
-export interface DotStack {
-  x: number;
-  items: number[];
-}
-
-export interface PlacedDot {
-  item: number;
-  stack: number;
-  x: number;
-  level: number;
-  folded: boolean;
-}
-
-export interface StackPill {
-  stack: number;
-  x: number;
-  level: number;
-  hidden: number;
-  items: number[];
-}
-
-export interface StackLayout {
-  dots: PlacedDot[];
-  pills: StackPill[];
 }
 
 export function isEnough(n: number): boolean {
@@ -217,48 +188,6 @@ export function scoreBins(reports: readonly ScoreReport[]): ScoreBins {
       latest !== null &&
       reports.some((report) => report.threshold !== latest.threshold),
   };
-}
-
-export function dotStacks(xs: readonly number[]): DotStack[] {
-  const stacks: DotStack[] = [];
-  xs.forEach((x, item) => {
-    const last = stacks.at(-1);
-    if (last !== undefined && Math.abs(x - last.x) < DOT_STACK_DISTANCE_PX) {
-      last.items.push(item);
-    } else {
-      stacks.push({ x, items: [item] });
-    }
-  });
-  return stacks;
-}
-
-export function stackLayout(xs: readonly number[]): StackLayout {
-  const dots: PlacedDot[] = [];
-  const pills: StackPill[] = [];
-  dotStacks(xs).forEach((stack, index) => {
-    const folds = stack.items.length > DOT_STACK_MAX_LEVELS;
-    const shown = folds ? DOT_STACK_MAX_LEVELS - 1 : stack.items.length;
-    stack.items.forEach((item, level) => {
-      dots.push({
-        item,
-        stack: index,
-        x: stack.x,
-        level: Math.min(level, DOT_STACK_MAX_LEVELS - 1),
-        folded: level >= shown,
-      });
-    });
-    if (folds) {
-      const items = stack.items.slice(shown);
-      pills.push({
-        stack: index,
-        x: stack.x,
-        level: DOT_STACK_MAX_LEVELS - 1,
-        hidden: items.length,
-        items,
-      });
-    }
-  });
-  return { dots, pills };
 }
 
 export type TooltipAlign = 'start' | 'center' | 'end';

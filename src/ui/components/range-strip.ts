@@ -7,7 +7,11 @@ import {
 import { visuallyHidden } from './chart-math.ts';
 import {
   type PlacedDot,
+  type StackLayout,
   type StackPill,
+  columnLayout,
+} from './dot-columns.ts';
+import {
   type TooltipAlign,
   alignAt,
   isEnough,
@@ -43,6 +47,7 @@ export const DOT_PX = 8;
 export const LEVEL_PX = 10;
 export const LINE_PX = 2;
 export const PILL_HEIGHT_PX = 16;
+export const PILL_INSET_PX = 1;
 export const DOTS_AREA_PX = 52;
 export const LINE_Y_PX = 48;
 export const MARK_ROW_PX = 16;
@@ -86,6 +91,26 @@ export function centreAt(
 ): number {
   if (largest <= 0) return DOT_PX / 2;
   return DOT_PX / 2 + (value / largest) * (width - DOT_PX);
+}
+
+export function positionAt(
+  value: number,
+  largest: number,
+  width: number,
+): number {
+  if (largest <= 0) return 0;
+  return (value / largest) * width;
+}
+
+export function stripLayout(
+  ordered: readonly { value: number }[],
+  largest: number,
+  width: number,
+): StackLayout {
+  return columnLayout(
+    ordered.map((item) => positionAt(item.value, largest, width)),
+    width,
+  );
 }
 
 export function levelCentre(level: number): number {
@@ -190,11 +215,13 @@ export function pillStyle(pill: StackPill, active: boolean): CSSProperties {
     ...small,
     position: 'absolute',
     zIndex: 1,
-    left: `${String(pill.x)}px`,
+    left: `${String(pill.left + PILL_INSET_PX)}px`,
     top: `${String(levelCentre(pill.level) - PILL_HEIGHT_PX / 2)}px`,
-    transform: 'translateX(-50%)',
+    width: `${String(Math.max(0, pill.width - 2 * PILL_INSET_PX))}px`,
     height: `${String(PILL_HEIGHT_PX)}px`,
-    padding: '0 6px',
+    boxSizing: 'border-box',
+    overflow: 'hidden',
+    textAlign: 'center',
     borderRadius: 'var(--fd-radius-pill)',
     color: 'var(--fd-ink-2)',
     background: 'var(--fd-surface-2)',

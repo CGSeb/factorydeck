@@ -190,3 +190,60 @@ export const FocusedDot: Story = {
     ).toContain('var(--fd-accent)');
   },
 };
+
+const CROWDED = [
+  ...Array.from(
+    { length: 220 },
+    (_, index) => 1_000_000 + ((index * 37) % 101) * 4_000,
+  ),
+  ...Array.from({ length: 34 }, (_, index) => 100_000 + index * 90_000),
+  4_000_000,
+];
+
+function pillsOverlap(canvasElement: HTMLElement): boolean {
+  const boxes = [...canvasElement.querySelectorAll<HTMLElement>('[data-pill]')]
+    .map((pill) => ({
+      left: Number.parseFloat(pill.style.left),
+      width: Number.parseFloat(pill.style.width),
+    }))
+    .sort((a, b) => a.left - b.left);
+  return boxes.some((box, index) => {
+    const next = boxes[index + 1];
+    return next !== undefined && box.left + box.width > next.left;
+  });
+}
+
+async function expectCrowded(canvasElement: HTMLElement): Promise<void> {
+  await expectFixedHeight(canvasElement);
+  await expect(within(canvasElement).getAllByRole('link')).toHaveLength(255);
+  await expect(
+    canvasElement.querySelectorAll('[data-pill]').length,
+  ).toBeGreaterThan(1);
+  await expect(pillsOverlap(canvasElement)).toBe(false);
+}
+
+export const CrowdedAt360: Story = {
+  name: '255 items crowded near the median at 360 px',
+  args: { items: issues(CROWDED) },
+  render: (args) => (
+    <div style={{ width: 360 }}>
+      <RangeStrip {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await expectCrowded(canvasElement);
+  },
+};
+
+export const CrowdedAt1024: Story = {
+  name: '255 items crowded near the median at 1024 px',
+  args: { items: issues(CROWDED) },
+  render: (args) => (
+    <div style={{ width: 1024 }}>
+      <RangeStrip {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await expectCrowded(canvasElement);
+  },
+};

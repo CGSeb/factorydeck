@@ -4,13 +4,11 @@ import {
   type ChangeInput,
   changeText,
   countText,
-  dotStacks,
   median,
   percentile,
   scoreBinIndex,
   scoreBinLabel,
   scoreBins,
-  stackLayout,
   trendHeights,
 } from './stats-math.ts';
 import { labelsOverlap } from './range-strip.ts';
@@ -195,41 +193,6 @@ describe('score bins', () => {
       latestThreshold: null,
       varied: false,
     });
-  });
-});
-
-describe('dot stacking', () => {
-  it('stacks equal values', () => {
-    expect(dotStacks([10, 10, 10])).toEqual([{ x: 10, items: [0, 1, 2] }]);
-  });
-
-  it('stacks a dot 7 px away and not one 9 px away', () => {
-    expect(dotStacks([0, 7, 16])).toEqual([
-      { x: 0, items: [0, 1] },
-      { x: 16, items: [2] },
-    ]);
-  });
-
-  it('keeps a stack of 5 whole', () => {
-    const { dots, pills } = stackLayout([5, 5, 5, 5, 5]);
-    expect(dots.map((dot) => [dot.level, dot.folded])).toEqual([
-      [0, false],
-      [1, false],
-      [2, false],
-      [3, false],
-      [4, false],
-    ]);
-    expect(pills).toEqual([]);
-  });
-
-  it('folds a stack of 8 into 4 dots and a +4 pill', () => {
-    const { dots, pills } = stackLayout([5, 5, 5, 5, 5, 5, 5, 5]);
-    expect(dots.filter((dot) => !dot.folded).map((dot) => dot.level)).toEqual([
-      0, 1, 2, 3,
-    ]);
-    expect(pills).toEqual([
-      { stack: 0, x: 5, level: 4, hidden: 4, items: [4, 5, 6, 7] },
-    ]);
   });
 });
 

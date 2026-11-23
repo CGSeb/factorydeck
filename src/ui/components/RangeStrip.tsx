@@ -12,7 +12,7 @@ import {
   STRIP_HEIGHT_PX,
   type Mark,
   PILL_HEIGHT_PX,
-  centreAt,
+  stripLayout,
   axisStyle,
   dotStyle,
   footerRow,
@@ -28,12 +28,8 @@ import {
   tooltipPosition,
   useWidth,
 } from './range-strip.ts';
-import {
-  type PlacedDot,
-  type StackPill,
-  isEnough,
-  stackLayout,
-} from './stats-math.ts';
+import type { PlacedDot, StackPill } from './dot-columns.ts';
+import { isEnough } from './stats-math.ts';
 
 export interface RangeItem {
   label: string;
@@ -102,7 +98,7 @@ function Pill({
 }): ReactElement {
   return (
     <span data-pill="" aria-hidden="true" style={pillStyle(pill, active)}>
-      +{pill.hidden}
+      {pill.text}
     </span>
   );
 }
@@ -201,9 +197,7 @@ function Dots({
   const [hovered, setHovered] = useState<number | null>(null);
   const [focused, setFocused] = useState<number | null>(null);
   const active = hovered ?? focused;
-  const { dots, pills } = stackLayout(
-    ordered.map((item) => centreAt(item.value, largest, width)),
-  );
+  const { dots, pills } = stripLayout(ordered, largest, width);
   const activeDot = active === null ? undefined : dots[active];
   const activeItem =
     activeDot === undefined ? undefined : ordered[activeDot.item];
