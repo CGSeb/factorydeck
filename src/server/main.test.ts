@@ -137,6 +137,7 @@ describe('pnpm start', () => {
       DATABASE_URL: scratch.url,
       FACTORYDECK_PORT: String(port),
       CLAUDE_PROJECTS_DIR: folder,
+      CODEX_SESSIONS_DIR: join(folder, 'codex'),
       FACTORYDECK_INGEST_INTERVAL_SECONDS: '1',
     });
     running.push(run);

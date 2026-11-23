@@ -9,6 +9,7 @@ import {
   sessionWithSubAgents,
   sessionWithoutSubAgents,
 } from './session-fixtures.ts';
+import { codexSessionDetail } from './codex-session-fixtures.ts';
 import type { LoadSession } from './sessions-api.ts';
 import { SessionPage } from './SessionPage.tsx';
 
@@ -155,6 +156,35 @@ export const WithoutSubAgents: Story = {
       canvas.queryByText(/^Work item/, { selector: 'span' }),
     ).toBeNull();
     await expect(canvas.queryByText('Outcome')).toBeNull();
+  },
+};
+
+export const CodexSession: Story = {
+  args: { loadSession: detailLoader(detailResponse(codexSessionDetail)) },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole('heading', {
+      level: 1,
+      name: 'Codex session d0d0cafe',
+    });
+    const line = canvasElement.querySelector('.fd-session-line');
+    const tags = [...(line?.children ?? [])].map((tag) => tag.textContent);
+    await expect(tags.slice(0, 2)).toEqual(['Waiting for you', 'Codex']);
+    const subAgents = canvas.getByRole('region', { name: 'Sub-agents' });
+    await expect(
+      within(subAgents).getByText('/root/import_worker'),
+    ).toBeVisible();
+    await expect(within(subAgents).getAllByText('worker')).not.toHaveLength(0);
+  },
+};
+
+export const ClaudeCodeSession: Story = {
+  args: { loadSession: detailLoader(detailResponse(sessionWithoutSubAgents)) },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole('heading', { level: 1, name: 'b81e44d0' });
+    const line = canvasElement.querySelector('.fd-session-line');
+    await expect(line?.children[1]).toHaveTextContent('Claude Code');
   },
 };
 

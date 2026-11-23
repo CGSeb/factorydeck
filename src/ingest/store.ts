@@ -13,6 +13,7 @@ import {
   userPrompt,
 } from '../db/schema.ts';
 import { STATE_ID } from '../projects/remove.ts';
+import { CLAUDE_CODE } from './frictions.ts';
 import { resolveProjects } from './project.ts';
 import { turnEnded } from './records.ts';
 import type { SkillLaunchRow, ThreadRows } from './thread.ts';
@@ -45,14 +46,18 @@ export async function startRun(tx: Transaction): Promise<Run> {
 }
 
 /** The session row, created if needed, kept in the run until `saveSessions`. */
-export async function loadSession(run: Run, id: string): Promise<SessionRow> {
+export async function loadSession(
+  run: Run,
+  id: string,
+  agent: string = CLAUDE_CODE,
+): Promise<SessionRow> {
   const cached = run.sessions.get(id);
   if (cached !== undefined) {
     return cached;
   }
   const [row] = await run.tx
     .insert(session)
-    .values({ id })
+    .values({ id, agent })
     .onConflictDoUpdate({ target: session.id, set: { id } })
     .returning();
   if (row === undefined) {
@@ -67,13 +72,14 @@ export async function loadSubAgent(
   run: Run,
   sessionId: string,
   id: string,
+  agent: string = CLAUDE_CODE,
 ): Promise<SubAgentRow> {
   const key = `${sessionId}/${id}`;
   const cached = run.subAgents.get(key);
   if (cached !== undefined) {
     return cached;
   }
-  await loadSession(run, sessionId);
+  await loadSession(run, sessionId, agent);
   const [row] = await run.tx
     .insert(subAgent)
     .values({ sessionId, id })
@@ -92,9 +98,18 @@ export async function loadSubAgent(
 export async function saveOffset(
   run: Run,
   path: string,
-  sizes: { sizeBytes: number; readOffset: number },
+  sizes: {
+    sizeBytes: number;
+    readOffset: number;
+    readerState?: Record<string, unknown>;
+  },
 ): Promise<void> {
-  const row = { path, ...sizes, ingestedAt: new Date() };
+  const row = {
+    path,
+    readerState: null,
+    ...sizes,
+    ingestedAt: new Date(),
+  };
   await run.tx
     .insert(sourceFile)
     .values(row)
@@ -148,7 +163,7 @@ export function resetSession(row: SessionRow): void {
     lastStopReason: null,
     userAfterLastAssistant: false,
     lastUserInterrupted: false,
-  } satisfies Omit<SessionRow, 'id'>);
+  } satisfies Omit<SessionRow, 'id' | 'agent'>);
 }
 
 export async function insertChunks<T>(

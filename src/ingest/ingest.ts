@@ -9,6 +9,8 @@ import {
   cachedFactoryCheck,
   hasFactory,
 } from './factory.ts';
+import { findCodexFiles } from './codex-files.ts';
+import { ingestCodexFile } from './codex.ts';
 import { type LogFile, findLogFiles, readRange } from './files.ts';
 import {
   readFrictionsAgainOnce,
@@ -31,22 +33,16 @@ import {
 } from './store.ts';
 import { selectFactorySessions } from './select.ts';
 import { readThread } from './thread.ts';
+import { type FileCounts, type IngestCounts, unreadRange } from './range.ts';
+import { runsUnderWsl } from './wsl.ts';
 
-/** What one ingestion stored, as its summary line shows it. */
-export interface IngestCounts {
-  files: number;
-  sessions: number;
-  subAgents: number;
-  apiCalls: number;
-  skillLaunches: number;
-  frictions: number;
-  linesSkipped: number;
-  sessionsSkipped: number;
-}
+export type { IngestCounts } from './range.ts';
 
 export interface IngestOptions {
   hasFactory?: FactoryCheck;
   home?: string;
+  codexFolder?: string;
+  wsl?: boolean;
 }
 
 export type IngestResult =
@@ -64,13 +60,9 @@ export class SessionsFolderNotFoundError extends Error {
 
 export { LOCK_KEY } from './lock.ts';
 
-type FileCounts = Pick<
-  IngestCounts,
-  'files' | 'apiCalls' | 'skillLaunches' | 'frictions' | 'linesSkipped'
->;
-
 /**
- * Reads what is new in the Claude Code session logs of `sessionsFolder` into the database, in
+ * Reads what is new in the Claude Code session logs of `sessionsFolder`, and in the Codex rollouts
+ * of `options.codexFolder`, into the database, in
  * one transaction. Returns `already-running`, without waiting, while another ingestion runs.
  */
 export async function ingest(
@@ -83,7 +75,7 @@ export async function ingest(
   if (folder?.isDirectory() !== true) {
     throw new SessionsFolderNotFoundError(sessionsFolder);
   }
-  const files = await findLogFiles(sessionsFolder);
+  const files = await findFiles(sessionsFolder, options);
   return db.transaction(async (tx): Promise<IngestResult> => {
     const lock = await tx.execute(
       sql`select pg_try_advisory_xact_lock(${LOCK_KEY}) as locked`,
@@ -101,12 +93,20 @@ export async function ingest(
       files: 0,
       apiCalls: 0,
       skillLaunches: 0,
-      frictions: await readFrictionsAgainOnce(run, selection.files, home),
+      frictions: await readFrictionsAgainOnce(
+        run,
+        selection.files.filter((file) => file.codex === undefined),
+        home,
+      ),
       linesSkipped: 0,
     };
     for (const file of selection.files) {
-      await ingestFile(run, file, home, counts);
-      await ingestMeta(run, file, counts);
+      if (file.codex === undefined) {
+        await ingestFile(run, file, home, counts);
+        await ingestMeta(run, file, counts);
+      } else {
+        await ingestCodexFile(run, file, counts);
+      }
     }
     await saveSubAgents(run);
     await saveSessions(run);
@@ -119,6 +119,18 @@ export async function ingest(
       sessionsSkipped: selection.skippedSessions,
     };
   });
+}
+
+async function findFiles(
+  sessionsFolder: string,
+  { codexFolder, wsl }: IngestOptions,
+): Promise<LogFile[]> {
+  return [
+    ...(await findLogFiles(sessionsFolder)),
+    ...(codexFolder === undefined
+      ? []
+      : await findCodexFiles(codexFolder, { wsl: wsl ?? runsUnderWsl() })),
+  ];
 }
 
 /** The line the command prints at the end of a run. */
@@ -140,29 +152,6 @@ function lockTaken(result: unknown): boolean {
   const rows: unknown = isObject(result) ? result['rows'] : result;
   const row: unknown = Array.isArray(rows) ? rows.at(0) : undefined;
   return isObject(row) && row['locked'] === true;
-}
-
-/** The part of a file not read yet: from the stored offset, or from the start if it shrank. */
-async function unreadRange(
-  run: Run,
-  path: string,
-): Promise<{ start: number; size: number; reset: boolean } | undefined> {
-  const size = await stat(path).then(
-    (stats) => stats.size,
-    () => undefined,
-  );
-  if (size === undefined) {
-    return undefined;
-  }
-  const stored = run.storedFiles.get(path);
-  if (stored === undefined) {
-    return { start: 0, size, reset: false };
-  }
-  if (stored.sizeBytes === size) {
-    return undefined;
-  }
-  const reset = size < stored.readOffset;
-  return { start: reset ? 0 : stored.readOffset, size, reset };
 }
 
 async function forgetFile(

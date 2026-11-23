@@ -43,29 +43,35 @@ export const SYNTHETIC_MODEL = '<synthetic>';
 const NEWLINE = 0x0a;
 
 /** Records of the complete lines of a chunk; a last line without a newline is left unread. */
-export function parseLines(chunk: Buffer): {
-  records: { record: LogRecord; offset: number }[];
+export function parseLines(
+  chunk: Buffer,
+  parse: (line: string) => LogRecord | undefined = parseRecord,
+): {
+  records: { record: LogRecord; offset: number; line: number }[];
   skipped: number;
   consumed: number;
+  lines: number;
 } {
   const consumed = chunk.lastIndexOf(NEWLINE) + 1;
-  const records: { record: LogRecord; offset: number }[] = [];
+  const records: { record: LogRecord; offset: number; line: number }[] = [];
   let skipped = 0;
   let start = 0;
+  let lines = 0;
   while (start < consumed) {
     const end = chunk.indexOf(NEWLINE, start);
     const line = chunk.toString('utf8', start, end).trim();
     if (line !== '') {
-      const record = parseRecord(line);
+      const record = parse(line);
       if (record === undefined) {
         skipped += 1;
       } else {
-        records.push({ record, offset: start });
+        records.push({ record, offset: start, line: lines });
       }
     }
+    lines += 1;
     start = end + 1;
   }
-  return { records, skipped, consumed };
+  return { records, skipped, consumed, lines };
 }
 
 export function parseRecord(line: string): LogRecord | undefined {
@@ -197,8 +203,11 @@ export function closingLineOf(record: LogRecord): string | undefined {
       ? [block['text']]
       : [],
   );
-  const line = texts
-    .join('\n')
+  return closingLineOfText(texts.join('\n'));
+}
+
+export function closingLineOfText(text: string): string | undefined {
+  const line = text
     .split('\n')
     .map((candidate) => candidate.trim())
     .findLast((candidate) => candidate !== '');

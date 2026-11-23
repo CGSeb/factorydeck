@@ -62,7 +62,7 @@ export function statedSessions({
   now = new Date(),
 }: StateOptions): SQL {
   return sql`(
-    select s.id, s.title, s.project, s.cwd, s.git_branch, s.git_branches,
+    select s.id, s.agent, s.title, s.project, s.cwd, s.git_branch, s.git_branches,
       least(s.first_at, sa.first_at) as first_at,
       greatest(s.last_at, sa.last_at) as last_at,
       case
@@ -98,6 +98,7 @@ function summaryOf(
   const id = text(row['id']);
   return {
     id,
+    agent: text(row['agent']),
     title,
     project,
     projectName: names.label(project),
@@ -175,7 +176,7 @@ export async function listSessions(
     where (${project}::text is null or t.project = ${project}::text)
       and (${startAt}::timestamptz is null or t.last_at >= ${startAt}::timestamptz)`;
   const state = query.state ?? null;
-  const [countRows, totalRows, pageRows, names] = await Promise.all([
+  const [countRows, totalRows, pageRows, agentRows, names] = await Promise.all([
     select(
       db,
       sql`select f.state, count(*) as sessions from (${filtered}) f group by f.state`,
@@ -192,6 +193,10 @@ export async function listSessions(
         order by f.last_at desc nulls last, f.id
         limit ${query.limit}`,
     ),
+    select(
+      db,
+      sql`select distinct f.agent from (${filtered}) f order by f.agent`,
+    ),
     projectNames(db),
   ]);
   const counts: StateCounts = { working: 0, waiting: 0, inactive: 0 };
@@ -201,6 +206,7 @@ export async function listSessions(
     sessions: await pageSummaries(db, pageRows, config, names),
     total: Number(totalRows[0]?.['sessions'] ?? 0),
     counts,
+    agents: agentRows.map((row) => text(row['agent'])),
     projects: names.options(),
   };
 }

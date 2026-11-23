@@ -1,5 +1,6 @@
 import {
   type Env,
+  codexSessionsFolder,
   loadRootEnvFile,
   sessionsFolder,
   validateEnv,
@@ -47,13 +48,15 @@ function lazyCollection(
 function startIngestion(
   db: Database,
   folder: string,
-  env: Pick<Env, 'FACTORYDECK_INGEST_INTERVAL_SECONDS'>,
+  env: Pick<Env, 'FACTORYDECK_INGEST_INTERVAL_SECONDS' | 'CODEX_SESSIONS_DIR'>,
   afterRun: () => void,
 ): IngestLoop {
   let lastError = '';
   return startIngestLoop({
     run: async () => {
-      const result = await ingest(db, folder).finally(afterRun);
+      const result = await ingest(db, folder, {
+        codexFolder: codexSessionsFolder(env),
+      }).finally(afterRun);
       lastError = '';
       return result.status === 'done';
     },

@@ -7,6 +7,7 @@ import type { RenderLink } from './components/link.ts';
 import { PageHeader } from './components/PageHeader.tsx';
 import { ProjectTag } from './components/ProjectTag.tsx';
 import { RoleTag } from './components/RoleTag.tsx';
+import { AgentTag } from './components/AgentTag.tsx';
 import { SessionStateBadge } from './components/SessionStateBadge.tsx';
 import { SplitPage } from './components/SplitPage.tsx';
 import { StatusLine } from './components/StatusLine.tsx';
@@ -195,6 +196,7 @@ function SessionLine({
   return (
     <span className="fd-session-line">
       <SessionStateBadge state={session.state} />
+      <AgentTag agent={session.agent} />
       <ProjectTag
         project={session.project}
         name={session.projectName}

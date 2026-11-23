@@ -15,8 +15,21 @@ export const SESSION_PAGE_SIZE = 50;
 
 export const SESSION_MAX_ROWS = 500;
 
+export const CLAUDE_CODE_AGENT = 'claude-code';
+export const CODEX_AGENT = 'codex';
+
+const AGENT_LABELS: Readonly<Record<string, string>> = {
+  [CLAUDE_CODE_AGENT]: 'Claude Code',
+  [CODEX_AGENT]: 'Codex',
+};
+
+export function agentLabel(agent: string): string {
+  return AGENT_LABELS[agent] ?? agent;
+}
+
 export interface SessionSummary {
   id: string;
+  agent: string;
   title: string;
   project: string;
   projectName: string;
@@ -38,6 +51,7 @@ export interface SessionList {
   sessions: SessionSummary[];
   total: number;
   counts: StateCounts;
+  agents: string[];
   projects: ProjectOption[];
 }
 

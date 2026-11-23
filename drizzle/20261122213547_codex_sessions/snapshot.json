@@ -1,0 +1,81 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "d0baef5f-a37c-46cd-9acd-d145c9682db2",
+  "prevIds": [
+    "19c8e688-f424-443b-bf02-8513839f464e"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "session",
+        "agent"
+      ],
+      "writes": [
+        "s|col|public.session.agent",
+        "n|col|public.session.agent",
+        "e|col|public.session.agent"
+      ],
+      "reads": [
+        "n|tbl|public.session",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "source_file",
+        "reader_state"
+      ],
+      "writes": [
+        "s|col|public.source_file.reader_state",
+        "n|col|public.source_file.reader_state",
+        "e|col|public.source_file.reader_state"
+      ],
+      "reads": [
+        "n|tbl|public.source_file",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "session",
+        "name": "agent",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'claude-code'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "source_file",
+        "name": "reader_state",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

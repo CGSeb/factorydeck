@@ -27,6 +27,7 @@ function thread(
   return {
     sessionId: `session-${role}-${String(day)}`,
     sessionTitle: `Session of ${role}`,
+    sessionAgent: 'claude-code',
     threadId: `agent-${role}-${String(day)}`,
     role,
     description: `${role} on day ${String(day)}`,
@@ -210,6 +211,19 @@ describe('threadTitle', () => {
         }),
       ),
     ).toBe('7f3a9c21');
+  });
+
+  it('names an untitled Codex session by its agent and short id', () => {
+    expect(
+      threadTitle(
+        thread('builder', 18, {
+          description: null,
+          sessionTitle: '',
+          sessionAgent: 'codex',
+          sessionId: 'd0d0cafe-0000-4000-8000-000000000004',
+        }),
+      ),
+    ).toBe('Codex session d0d0cafe');
   });
 });
 

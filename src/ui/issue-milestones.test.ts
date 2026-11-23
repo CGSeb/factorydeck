@@ -15,6 +15,7 @@ function thread(role: string, day: number): FeatureThread {
   return {
     sessionId: `session-${role}-${String(day)}`,
     sessionTitle: `Session of ${role}`,
+    sessionAgent: 'claude-code',
     threadId: `agent-${role}-${String(day)}`,
     role,
     description: null,

@@ -27,6 +27,11 @@ async function inChunks<T>(
   }
 }
 
+function readerSession(state: Record<string, unknown> | null): string {
+  const id = state?.['sessionId'];
+  return typeof id === 'string' ? id : '';
+}
+
 export async function forgetProjects(
   tx: Transaction,
   projects: readonly string[],
@@ -42,9 +47,16 @@ export async function forgetProjects(
         .returning({ id: session.id })
     ).map((row) => row.id),
   );
-  const paths = (await tx.select({ path: sourceFile.path }).from(sourceFile))
-    .map((row) => row.path)
-    .filter((path) => ids.has(sessionIdOfPath(path)));
+  const paths = (
+    await tx
+      .select({ path: sourceFile.path, state: sourceFile.readerState })
+      .from(sourceFile)
+  )
+    .filter(
+      ({ path, state }) =>
+        ids.has(sessionIdOfPath(path)) || ids.has(readerSession(state)),
+    )
+    .map((row) => row.path);
   await inChunks(paths, (chunk) =>
     tx.delete(sourceFile).where(inArray(sourceFile.path, chunk)),
   );

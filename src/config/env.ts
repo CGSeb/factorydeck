@@ -26,6 +26,11 @@ const EnvSchema = z.object({
       typeof value === 'string' && value.trim() === '' ? undefined : value,
     z.string().trim().min(1).optional(),
   ),
+  CODEX_SESSIONS_DIR: z.preprocess(
+    (value) =>
+      typeof value === 'string' && value.trim() === '' ? undefined : value,
+    z.string().trim().min(1).optional(),
+  ),
   FACTORYDECK_CONFIG: z.preprocess(
     (value) =>
       typeof value === 'string' && value.trim() === '' ? undefined : value,
@@ -61,6 +66,16 @@ export function sessionsFolder(env: Pick<Env, 'CLAUDE_PROJECTS_DIR'>): string {
   const configured = env.CLAUDE_PROJECTS_DIR;
   if (configured === undefined) {
     return join(homedir(), '.claude', 'projects');
+  }
+  return expandHome(configured);
+}
+
+export function codexSessionsFolder(
+  env: Pick<Env, 'CODEX_SESSIONS_DIR'>,
+): string {
+  const configured = env.CODEX_SESSIONS_DIR;
+  if (configured === undefined) {
+    return join(homedir(), '.codex', 'sessions');
   }
   return expandHome(configured);
 }

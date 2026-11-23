@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { sessionsFolder, validateEnv, workflowConfigPath } from './env.ts';
+import {
+  codexSessionsFolder,
+  sessionsFolder,
+  validateEnv,
+  workflowConfigPath,
+} from './env.ts';
 
 describe('validateEnv', () => {
   it('accepts a PostgreSQL URL', () => {
@@ -37,6 +42,23 @@ describe('sessionsFolder', () => {
       CLAUDE_PROJECTS_DIR: ' ',
     });
     expect(sessionsFolder(env)).toBe(join(homedir(), '.claude', 'projects'));
+  });
+});
+
+describe('codexSessionsFolder', () => {
+  const DATABASE_URL = 'postgres://user:secret@localhost:5434/factorydeck';
+
+  it('defaults to ~/.codex/sessions, also for an empty value', () => {
+    expect(codexSessionsFolder({})).toBe(join(homedir(), '.codex', 'sessions'));
+    const env = validateEnv({ DATABASE_URL, CODEX_SESSIONS_DIR: '' });
+    expect(codexSessionsFolder(env)).toBe(
+      join(homedir(), '.codex', 'sessions'),
+    );
+  });
+
+  it('uses CODEX_SESSIONS_DIR, expanding a leading ~', () => {
+    const env = validateEnv({ DATABASE_URL, CODEX_SESSIONS_DIR: '~/codex' });
+    expect(codexSessionsFolder(env)).toBe(join(homedir(), 'codex'));
   });
 });
 

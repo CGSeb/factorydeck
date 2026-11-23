@@ -23,6 +23,11 @@ import {
   writeDemoConfig,
   writeDemoSessions,
 } from './sessions.ts';
+import {
+  CODEX_BUILD_CALLS,
+  CODEX_DEMO_CALLS,
+  writeDemoCodexSessions,
+} from './codex-sessions.ts';
 
 const NOW = new Date('2026-03-12T15:30:00Z');
 
@@ -33,9 +38,15 @@ let projects: string;
 beforeEach(async () => {
   ({ db, close } = await createTestDatabase());
   const folder = await sessionsFolder();
+  const codexFolder = await sessionsFolder();
   projects = await sessionsFolder();
   await writeDemoSessions(folder, NOW, projects);
-  await ingest(db, folder);
+  await writeDemoCodexSessions(
+    codexFolder,
+    NOW,
+    demoProjectRoot(projects, EXAMPLE_APP),
+  );
+  await ingest(db, folder, { codexFolder, wsl: false });
 });
 
 afterEach(async () => {
@@ -61,7 +72,7 @@ describe('demo sessions', () => {
       [demoProjectRoot(projects, EXAMPLE_API)]: EXAMPLE_API,
       [demoProjectRoot(projects, EXAMPLE_APP)]: EXAMPLE_APP_NAME,
     });
-    expect(all.totals.unknownPriceCalls).toBe(4);
+    expect(all.totals.unknownPriceCalls).toBe(4 + CODEX_DEMO_CALLS);
     expect(all.models.map((row) => row.model)).toEqual(
       expect.arrayContaining(['', 'example-model-x', 'claude-haiku-demo']),
     );
@@ -80,7 +91,7 @@ describe('demo sessions', () => {
       timeZone: 'UTC',
       now: NOW,
     });
-    expect(today.totals.apiCalls).toBe(3);
+    expect(today.totals.apiCalls).toBe(3 + CODEX_BUILD_CALLS);
   });
 
   it('cover roles, work items, a project override and a branch rule with the demo configuration', async () => {
@@ -96,10 +107,12 @@ describe('demo sessions', () => {
       'Explore',
       'api-builder',
       'builder',
+      'explorer',
       'main',
       'reviewer',
       'spec-writer',
       'unassigned',
+      'worker',
     ]);
     const overview = await usageOverview(db, {
       period: 'all',

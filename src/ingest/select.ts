@@ -2,6 +2,7 @@ import { stat } from 'node:fs/promises';
 import { inArray } from 'drizzle-orm';
 import { UNASSIGNED_PROJECT, session, skippedFile } from '../db/schema.ts';
 import { type FactoryCheck, sessionCwd } from './factory.ts';
+import { codexSessionCwd } from './codex-files.ts';
 import type { LogFile } from './files.ts';
 import { resolveProjects } from './project.ts';
 import type { Run } from './store.ts';
@@ -85,7 +86,9 @@ async function chooseNew(choices: Choices, group: Group): Promise<void> {
     }
     return;
   }
-  const cwd = await sessionCwd(logsOf(group.files));
+  const cwd = group.files.some((file) => file.codex !== undefined)
+    ? codexSessionCwd(group.files)
+    : await sessionCwd(logsOf(group.files));
   if (cwd !== undefined) choices.toResolve.push({ group, cwd });
 }
 

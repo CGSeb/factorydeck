@@ -12,6 +12,7 @@ export interface Share {
 export interface ThreadAccumulator {
   sessionId: string;
   sessionTitle: string;
+  sessionAgent: string;
   threadId: string;
   role: string;
   description: string | null;
@@ -34,6 +35,7 @@ export interface RoleAccumulator {
 interface ThreadGroup {
   sessionId: string;
   sessionTitle: string;
+  sessionAgent: string;
   subAgent: string;
   role: string;
   description: string | null;
@@ -58,6 +60,7 @@ export function addToThread(
   const thread = threads.get(key) ?? {
     sessionId: group.sessionId,
     sessionTitle: group.sessionTitle,
+    sessionAgent: group.sessionAgent,
     threadId: group.subAgent === '' ? group.sessionId : group.subAgent,
     role: group.role,
     description: group.description,
