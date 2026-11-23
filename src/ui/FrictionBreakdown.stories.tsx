@@ -105,3 +105,27 @@ export const WithoutTables: Story = {
     await expect(tableHeadings(canvasElement)).toEqual(['Context peaks']);
   },
 };
+
+export const ManyRoles: Story = {
+  name: 'Every role, without paging',
+  args: {
+    stats: {
+      ...frictionStats,
+      roles: Array.from({ length: 12 }, (_, index) => ({
+        role: `role-${String(index + 1)}`,
+        threads: 1,
+        frictions: 12 - index,
+        perThread: 12 - index,
+        mainKind: 'tool-error' as const,
+      })),
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const roles = within(canvasElement).getByRole('table', { name: 'By role' });
+    await expect(columnTexts(roles, 0)).toHaveLength(12);
+    const panel = roles.closest('section') ?? canvasElement;
+    await expect(
+      within(panel).queryByRole('button', { name: 'Show more' }),
+    ).toBeNull();
+  },
+};

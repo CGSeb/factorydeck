@@ -53,6 +53,7 @@ export function RoleFrictionTable({
     <PagedTable
       title={ROLES_TITLE}
       rows={rows}
+      paged={false}
       className="fd-friction-table"
       head={
         <>

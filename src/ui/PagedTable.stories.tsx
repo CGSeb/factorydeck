@@ -19,14 +19,17 @@ function items(count: number): Item[] {
 function ItemTable({
   rows,
   empty,
+  paged = true,
 }: {
   rows: Item[];
   empty?: string;
+  paged?: boolean;
 }): React.ReactElement {
   return (
     <PagedTable
       title="Items"
       rows={rows}
+      paged={paged}
       className="fd-friction-table"
       {...(empty === undefined ? {} : { empty })}
       head={
@@ -79,6 +82,19 @@ export const MoreRows: Story = {
     await expect(canvas.getByText('10 of 13')).toBeVisible();
     await userEvent.click(canvas.getByRole('button', { name: 'Show more' }));
     await expect(columnTexts(table, 0)).toHaveLength(13);
+  },
+};
+
+export const Unpaged: Story = {
+  name: 'Every row, without paging',
+  args: { rows: items(13), paged: false },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const table = canvas.getByRole('table', { name: 'Items' });
+    await expect(columnTexts(table, 0)).toHaveLength(13);
+    await expect(
+      canvas.queryByRole('button', { name: 'Show more' }),
+    ).toBeNull();
   },
 };
 
