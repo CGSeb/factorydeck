@@ -1,0 +1,84 @@
+.fd-frictions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fd-space-5);
+  min-width: 0;
+}
+
+.fd-friction-tables {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 560px), 1fr));
+  gap: var(--fd-space-5);
+  align-items: start;
+}
+
+.fd-friction-tables > * {
+  min-width: 0;
+}
+
+.fd-friction-note {
+  margin: 0;
+  font-size: var(--fd-text-sm);
+  color: var(--fd-ink-2);
+}
+
+.fd-friction-table {
+  min-width: 420px;
+}
+
+.fd-friction-table-wide {
+  min-width: 560px;
+}
+
+.fd-friction-table .fd-friction-mono,
+.fd-friction-table-wide .fd-friction-mono {
+  font-family: var(--fd-font-mono);
+  font-size: var(--fd-text-sm);
+  overflow-wrap: anywhere;
+}
+
+.fd-friction-table tbody th,
+.fd-friction-table-wide tbody th {
+  font-weight: 500;
+}
+
+.fd-friction-table-wide a {
+  color: var(--fd-ink);
+}
+
+.fd-friction-table-wide a:hover {
+  color: var(--fd-link-hover);
+}
+
+.fd-friction-table-wide a:focus-visible {
+  outline: 2px solid var(--fd-accent);
+  outline-offset: 2px;
+}
+
+.fd-friction-hooks {
+  table-layout: fixed;
+}
+
+.fd-friction-hooks .fd-friction-hook {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+.fd-friction-hooks .fd-friction-count-col {
+  width: 88px;
+}
+
+.fd-friction-hooks .fd-friction-last-col {
+  width: 128px;
+}
+
+.fd-friction-nowrap {
+  white-space: nowrap;
+}
+
+.fd-panel-heading.fd-friction-heading {
+  margin-bottom: var(--fd-space-4);
+}

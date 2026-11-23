@@ -71,6 +71,7 @@ export const RolesActive: Story = {
       'Overview',
       'Features',
       'Stats',
+      'Frictions',
       'Sessions',
       'Skills',
       'Roles',

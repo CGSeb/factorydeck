@@ -8,9 +8,10 @@ import type {
   QualityStats,
 } from '../stats/types.ts';
 import type { ApiContext } from './api-context.ts';
+import type { FrictionSource } from './friction-routes.ts';
 import { INVALID_QUERY, skillQuery } from './skill-routes.ts';
 
-export interface StatsSource {
+export interface StatsSource extends FrictionSource {
   autonomy: (query: AutonomyQuery) => Promise<AutonomyStats>;
   quality: (query: QualityQuery) => Promise<QualityStats>;
 }

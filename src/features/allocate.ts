@@ -85,7 +85,7 @@ export interface Allocation {
   totals: FeatureTotals;
 }
 
-function subAgentWorkItem(
+export function subAgentWorkItem(
   rules: WorkflowRules,
   row: Row,
   sessionMarkers: Marker[] | undefined,

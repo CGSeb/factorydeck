@@ -8,6 +8,7 @@ import {
 } from '../config/env.ts';
 import { type Database, createDatabase } from '../db/client.ts';
 import { featureDetail, listFeatures } from '../features/query.ts';
+import { frictionStats } from '../frictions/query.ts';
 import { collect } from '../git-host/collect.ts';
 import { collectionStatus } from '../git-host/query.ts';
 import { hasFactory } from '../ingest/factory.ts';
@@ -124,6 +125,7 @@ async function main(): Promise<void> {
     stats: {
       autonomy: (query) => autonomyStats(db, query, hasFactory),
       quality: (query) => qualityStats(db, query, hasFactory),
+      frictions: (query) => frictionStats(db, query, config),
     },
   });
   await listen(app, env.FACTORYDECK_PORT);

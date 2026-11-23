@@ -12,10 +12,12 @@ import {
   tooltipAlign,
 } from './chart-tooltip.ts';
 import {
+  type Noun,
   type TooltipAlign,
   type TrendBucket,
   type TrendScale,
   alignAt,
+  countText,
   isDrawn,
   trendHeights,
 } from './stats-math.ts';
@@ -28,6 +30,7 @@ export interface TrendBarsProps {
   scale: TrendScale;
   color: string;
   height: number;
+  noun?: Noun | undefined;
 }
 
 const COLUMN_GAP = '6px';
@@ -91,11 +94,16 @@ function Labels({
   );
 }
 
-function tooltipLines(bucket: TrendBucket): string[] {
+function sampleText(n: number | undefined, noun: Noun | undefined): string {
+  if (n === undefined) return '';
+  return `n = ${noun === undefined ? String(n) : countText(n, noun)}`;
+}
+
+function tooltipLines(bucket: TrendBucket, noun: Noun | undefined): string[] {
   if (!isDrawn(bucket)) return [bucket.label, 'Not enough data'];
   return bucket.n === undefined
     ? [bucket.label, bucket.text]
-    : [bucket.label, bucket.text, `n = ${String(bucket.n)}`];
+    : [bucket.label, bucket.text, sampleText(bucket.n, noun)];
 }
 
 export function ColumnTooltip({
@@ -133,6 +141,7 @@ function Column({
   bucket,
   height,
   color,
+  noun,
   hovered,
   dimmed,
   align,
@@ -141,6 +150,7 @@ function Column({
   bucket: TrendBucket;
   height: number;
   color: string;
+  noun: Noun | undefined;
   hovered: boolean;
   dimmed: boolean;
   align: TooltipAlign;
@@ -158,7 +168,7 @@ function Column({
     >
       {hovered ? (
         <ColumnTooltip
-          lines={tooltipLines(bucket)}
+          lines={tooltipLines(bucket, noun)}
           bottom={height}
           align={align}
         />
@@ -184,6 +194,7 @@ export function TrendBars({
   scale,
   color,
   height,
+  noun,
 }: TrendBarsProps): ReactElement {
   const [hovered, setHovered] = useState<number | null>(null);
   const heights = trendHeights(buckets, scale, height);
@@ -197,6 +208,7 @@ export function TrendBars({
               bucket={bucket}
               height={heights[index] ?? COLUMN_STUB_PX}
               color={color}
+              noun={noun}
               hovered={hovered === index}
               dimmed={hovered !== null && hovered !== index}
               align={alignAt((index + 0.5) / buckets.length)}
@@ -218,9 +230,7 @@ export function TrendBars({
                 <tr key={`${String(index)} ${bucket.label}`}>
                   <th scope="row">{bucket.label}</th>
                   <td>{isDrawn(bucket) ? bucket.text : 'Not enough data'}</td>
-                  <td>
-                    {bucket.n === undefined ? '' : `n = ${String(bucket.n)}`}
-                  </td>
+                  <td>{sampleText(bucket.n, noun)}</td>
                 </tr>
               ))}
             </tbody>

@@ -7,6 +7,7 @@ import { BrowserRouter } from 'react-router';
 import { App } from './App.tsx';
 import { factoryLoader, projectDeleter } from './factory-api.ts';
 import { featureLoader, featuresLoader } from './features-api.ts';
+import { frictionsLoader } from './frictions-api.ts';
 import { collectionLoader, collectionRefresher } from './git-host-api.ts';
 import { overviewLoader } from './overview-api.ts';
 import { rolesLoader } from './roles-api.ts';
@@ -28,6 +29,7 @@ const loadCollection = collectionLoader();
 const refreshCollection = collectionRefresher();
 const loadAutonomy = autonomyLoader();
 const loadQuality = qualityLoader();
+const loadFrictions = frictionsLoader();
 const root = document.querySelector('#root');
 if (root) {
   createRoot(root).render(
@@ -47,6 +49,7 @@ if (root) {
         refreshCollection={refreshCollection}
         loadAutonomy={loadAutonomy}
         loadQuality={loadQuality}
+        loadFrictions={loadFrictions}
       />
     </BrowserRouter>,
   );

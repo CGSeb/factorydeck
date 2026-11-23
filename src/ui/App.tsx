@@ -4,6 +4,8 @@ import type { DeleteProject, LoadFactory } from './factory-api.ts';
 import { FeaturePage } from './FeaturePage.tsx';
 import type { LoadFeature, LoadFeatures } from './features-api.ts';
 import { FeaturesPage } from './FeaturesPage.tsx';
+import type { LoadFrictions } from './frictions-api.ts';
+import { FrictionsPage } from './FrictionsPage.tsx';
 import type { LoadCollection, RefreshCollection } from './git-host-api.ts';
 import { Layout } from './Layout.tsx';
 import type { LoadOverview } from './overview-api.ts';
@@ -34,6 +36,7 @@ export interface AppProps {
   refreshCollection: RefreshCollection;
   loadAutonomy: LoadAutonomy;
   loadQuality: LoadQuality;
+  loadFrictions: LoadFrictions;
 }
 
 export function App(props: AppProps): ReactElement {
@@ -48,6 +51,7 @@ export function App(props: AppProps): ReactElement {
     loadFeature,
     loadAutonomy,
     loadQuality,
+    loadFrictions,
   } = props;
   return (
     <Routes>
@@ -66,6 +70,10 @@ export function App(props: AppProps): ReactElement {
           element={
             <StatsPage loadAutonomy={loadAutonomy} loadQuality={loadQuality} />
           }
+        />
+        <Route
+          path="frictions"
+          element={<FrictionsPage loadFrictions={loadFrictions} />}
         />
         <Route
           path="sessions"
