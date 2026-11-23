@@ -1,6 +1,6 @@
 # 038 · Stats quality
 
-Status: ready
+Status: done
 Depends on: 037
 Checked: 2026-11-22
 
@@ -10,18 +10,18 @@ A developer reads on the `Stats` page whether their agents deliver good work the
 
 ## Acceptance criteria
 
-- [ ] On `/stats` (spec 037), under the `Autonomy` panel, a `Panel` `Quality` shows four `StatFigure`s (spec 036) side by side, wrapping below 680 px, each with the change line of spec 037:
+- [x] On `/stats` (spec 037), under the `Autonomy` panel, a `Panel` `Quality` shows four `StatFigure`s (spec 036) side by side, wrapping below 680 px, each with the change line of spec 037:
   - `Right the first time`: the share of merged issues whose first serenity report passed (rules), as a whole percent; n = merged issues with at least one report (`merged issue with a report` / `merged issues with a report`); higher is better.
   - `Review rounds`: the mean review rounds of the report that counts (spec 009) of each merged issue, with one decimal (`1.4`, `1.0`); n = merged issues whose report that counts has rounds (`merged issue` / `merged issues`); lower is better; its change is an `amount`.
   - `Reworked`: the share of merged issues that were reworked (spec 009); n = merged issues; lower is better.
   - `Closed without merge`: the share of ended issues (rules) at stage `Closed without merge`; n = ended issues (`ended issue` / `ended issues`); lower is better.
-- [ ] Under the figures, `Right the first time, by week`: a `TrendBars` (spec 036, `share` scale, 64 px high, `--fd-stage-merged`) of the same 12 weeks as spec 037, each week's value the share of the issues merged that week whose first report passed, n = those of them with a report, tooltip value `60% · 3 of 5`.
-- [ ] Then `First serenity score`: a `ScoreHistogram` (spec 036) of the first report of each merged issue of the period that has one, each with its own score, threshold and time.
-- [ ] With no merged issue in the period, the figures show `Not enough data` (spec 036) and the histogram its own `Not enough data`; the weekly trend still shows.
-- [ ] `GET /api/stats/quality?period=<period>&tz=<time zone>&project=<root>` returns, for the period and its previous one (left out for `all`), the counts behind each figure (merged issues, those with a report, those whose first report passed, the sum and number of rounds, reworked merged issues, ended issues, closed without merge), the 12 weeks (start date, merged issues with a report, those whose first report passed), and the first report of each merged issue of the period (score, threshold, time). Parameters are read and refused like `/api/stats/autonomy` (spec 037).
-- [ ] The panel loads and fails on its own, like the `Autonomy` panel (spec 037); a failing quality API leaves the autonomy panel on screen, and the other way round.
-- [ ] The demo data of spec 037 holds, among its merged issues, first reports that failed for their score and for their gates, issues with 1, 2 and 3 review rounds, reworked issues (two requests, and a reopened issue), and about 5 issues closed without merge spread over the 12 weeks.
-- [ ] Figures refresh with each collection (spec 008), without a reload. From 1024 px wide, nothing scrolls horizontally.
+- [x] Under the figures, `Right the first time, by week`: a `TrendBars` (spec 036, `share` scale, 64 px high, `--fd-stage-merged`) of the same 12 weeks as spec 037, each week's value the share of the issues merged that week whose first report passed, n = those of them with a report, tooltip value `60% · 3 of 5`.
+- [x] Then `First serenity score`: a `ScoreHistogram` (spec 036) of the first report of each merged issue of the period that has one, each with its own score, threshold and time.
+- [x] With no merged issue in the period, the figures show `Not enough data` (spec 036) and the histogram its own `Not enough data`; the weekly trend still shows.
+- [x] `GET /api/stats/quality?period=<period>&tz=<time zone>&project=<root>` returns, for the period and its previous one (left out for `all`), the counts behind each figure (merged issues, those with a report, those whose first report passed, the sum and number of rounds, reworked merged issues, ended issues, closed without merge), the 12 weeks (start date, merged issues with a report, those whose first report passed), and the first report of each merged issue of the period (score, threshold, time). Parameters are read and refused like `/api/stats/autonomy` (spec 037).
+- [x] The panel loads and fails on its own, like the `Autonomy` panel (spec 037); a failing quality API leaves the autonomy panel on screen, and the other way round.
+- [x] The demo data of spec 037 holds, among its merged issues, first reports that failed for their score and for their gates, issues with 1, 2 and 3 review rounds, reworked issues (two requests, and a reopened issue), and about 5 issues closed without merge spread over the 12 weeks.
+- [x] Figures refresh with each collection (spec 008), without a reload. From 1024 px wide, nothing scrolls horizontally.
 
 ## Rules
 

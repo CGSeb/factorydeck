@@ -33,17 +33,37 @@ export const statsRouter: Decorator = (Story, { parameters }) =>
     ),
   );
 
+export const AUTONOMY = '.fd-stats-autonomy';
+export const QUALITY = '.fd-stats-quality';
+
 export function figureTexts(
   canvasElement: HTMLElement,
   selector: string,
+  panel: string = AUTONOMY,
 ): string[] {
-  return [...canvasElement.querySelectorAll('.fd-stats-figures > div')].map(
-    (figure) => figure.querySelector(selector)?.textContent ?? '',
-  );
+  return [
+    ...canvasElement.querySelectorAll(`${panel} .fd-stats-figures > div`),
+  ].map((figure) => figure.querySelector(selector)?.textContent ?? '');
 }
 
 export async function loaded(canvasElement: HTMLElement): Promise<void> {
   await within(canvasElement).findByRole('heading', {
     name: 'Merged without a person, by week',
   });
+}
+
+export async function qualityLoaded(canvasElement: HTMLElement): Promise<void> {
+  await within(canvasElement).findByRole('heading', {
+    name: 'Right the first time, by week',
+  });
+}
+
+export function panelOf(canvasElement: HTMLElement, name: string): HTMLElement {
+  const heading = within(canvasElement).getByRole('heading', {
+    level: 2,
+    name,
+  });
+  const section = heading.closest('section');
+  if (section === null) throw new Error(`No panel ${name}`);
+  return section;
 }

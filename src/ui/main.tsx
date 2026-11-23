@@ -12,7 +12,7 @@ import { overviewLoader } from './overview-api.ts';
 import { rolesLoader } from './roles-api.ts';
 import { sessionLoader, sessionsLoader } from './sessions-api.ts';
 import { skillLoader, skillsLoader } from './skills-api.ts';
-import { autonomyLoader } from './stats-api.ts';
+import { autonomyLoader, qualityLoader } from './stats-api.ts';
 
 const loadOverview = overviewLoader();
 const loadSessions = sessionsLoader();
@@ -27,6 +27,7 @@ const deleteProject = projectDeleter();
 const loadCollection = collectionLoader();
 const refreshCollection = collectionRefresher();
 const loadAutonomy = autonomyLoader();
+const loadQuality = qualityLoader();
 const root = document.querySelector('#root');
 if (root) {
   createRoot(root).render(
@@ -45,6 +46,7 @@ if (root) {
         loadCollection={loadCollection}
         refreshCollection={refreshCollection}
         loadAutonomy={loadAutonomy}
+        loadQuality={loadQuality}
       />
     </BrowserRouter>,
   );

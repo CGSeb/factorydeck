@@ -16,7 +16,7 @@ import { SessionsPage } from './SessionsPage.tsx';
 import type { LoadSkill, LoadSkills } from './skills-api.ts';
 import { SkillPage } from './SkillPage.tsx';
 import { SkillsPage } from './SkillsPage.tsx';
-import type { LoadAutonomy } from './stats-api.ts';
+import type { LoadAutonomy, LoadQuality } from './stats-api.ts';
 import { StatsPage } from './StatsPage.tsx';
 
 export interface AppProps {
@@ -33,6 +33,7 @@ export interface AppProps {
   loadCollection: LoadCollection;
   refreshCollection: RefreshCollection;
   loadAutonomy: LoadAutonomy;
+  loadQuality: LoadQuality;
 }
 
 export function App(props: AppProps): ReactElement {
@@ -46,6 +47,7 @@ export function App(props: AppProps): ReactElement {
     loadFeatures,
     loadFeature,
     loadAutonomy,
+    loadQuality,
   } = props;
   return (
     <Routes>
@@ -61,7 +63,9 @@ export function App(props: AppProps): ReactElement {
         />
         <Route
           path="stats"
-          element={<StatsPage loadAutonomy={loadAutonomy} />}
+          element={
+            <StatsPage loadAutonomy={loadAutonomy} loadQuality={loadQuality} />
+          }
         />
         <Route
           path="sessions"
