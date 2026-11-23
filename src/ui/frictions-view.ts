@@ -91,7 +91,10 @@ export function weekBuckets(weeks: readonly FrictionWeek[]): TrendBucket[] {
         index === weeks.length - 1 ? 'this week' : formatBucket(week.start),
       value,
       n: week.apiCalls,
-      text: `${rateText(value)} · ${frictionCount(week.frictions)}`,
+      text:
+        value === null
+          ? 'Not enough data'
+          : `${rateText(value)} · ${frictionCount(week.frictions)}`,
     };
   });
 }
