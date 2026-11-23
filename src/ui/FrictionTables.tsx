@@ -8,7 +8,7 @@ import type {
 import { NUMERIC_CELL } from './components/DataTable.tsx';
 import { formatCount, formatDateTime } from './format.ts';
 import type { FrictionFilters } from './frictions-api.ts';
-import { hookText, showsKind } from './frictions-view.ts';
+import { hookLabel, hookText, showsKind } from './frictions-view.ts';
 import {
   type OccurrenceControls,
   OccurrenceRows,
@@ -54,7 +54,7 @@ export function HookTable({
           key={row.command}
           table="hook"
           row={hookParam(row)}
-          label={hookText(row.command)}
+          label={hookLabel(row.command)}
           colSpan={4}
           headerClassName="fd-friction-mono"
           header={

@@ -19,6 +19,7 @@ import { MISSING, formatCount, formatDateTime } from './format.ts';
 import {
   CATEGORY_LABELS,
   exitCodesText,
+  programLabel,
   programText,
   shareText,
   shortSessionTitle,
@@ -142,7 +143,7 @@ export function CommandTable({
           key={row.program ?? ''}
           table="command"
           row={commandParam(row)}
-          label={programText(row.program)}
+          label={programLabel(row.program)}
           colSpan={4}
           headerClassName={MONO}
           header={programText(row.program)}
@@ -174,7 +175,7 @@ function RepeatedLine({
     <OccurrenceRows
       table="repeated"
       row={repeatedParam(row)}
-      label={programText(row.program)}
+      label={programLabel(row.program)}
       colSpan={6}
       headerClassName={MONO}
       header={programText(row.program)}

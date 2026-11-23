@@ -160,4 +160,29 @@ describe('Codex occurrences', () => {
       [`${offset}#0`]: null,
     });
   });
+
+  it('leaves out the header Codex writes before a command output', async () => {
+    const log = join(folder, 'rollout.jsonl');
+    await writeLog(log, [
+      item(1, {
+        type: 'function_call',
+        name: 'exec_command',
+        call_id: 'c1',
+        arguments: JSON.stringify({ cmd: 'pnpm lint' }),
+      }),
+      item(2, {
+        type: 'function_call_output',
+        call_id: 'c1',
+        output:
+          'Chunk ID: 4f2a\nWall time: 1.2 seconds\nProcess exited with code 1\nOriginal token count: 40\nOutput:\nsrc/a.ts: 2 problems\nWall time: kept in the body',
+      }),
+    ]);
+    expect(await read([at(log, 'call:c1', { agent: CODEX })])).toEqual({
+      'call:c1#0': {
+        kind: 'tool-error',
+        input: 'pnpm lint',
+        error: 'src/a.ts: 2 problems\nWall time: kept in the body',
+      },
+    });
+  });
 });

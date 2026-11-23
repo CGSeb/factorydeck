@@ -181,8 +181,10 @@ function OccurrencesRow({
   return (
     <tr className="fd-occurrences" id={id}>
       <td colSpan={colSpan}>
-        <h3 className="fd-occurrences-title">{LATEST_OCCURRENCES}</h3>
-        <OccurrenceBody response={response} scope={controls.scope} />
+        <div className="fd-occurrences-box">
+          <h3 className="fd-occurrences-title">{LATEST_OCCURRENCES}</h3>
+          <OccurrenceBody response={response} scope={controls.scope} />
+        </div>
       </td>
     </tr>
   );

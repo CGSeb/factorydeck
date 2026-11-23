@@ -286,3 +286,15 @@
   flex: 1;
   overflow: hidden;
 }
+
+.fd-friction-tables .fd-table-scroll {
+  container-type: inline-size;
+}
+
+.fd-occurrences-box {
+  position: sticky;
+  left: var(--fd-space-3);
+  box-sizing: border-box;
+  width: calc(100cqi - 2 * var(--fd-space-3));
+  max-width: 100%;
+}

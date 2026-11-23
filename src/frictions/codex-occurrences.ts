@@ -221,6 +221,15 @@ function matches(target: LogTarget, result: Result, offset: number): boolean {
   );
 }
 
+const OUTPUT_HEADER =
+  /^\s*(?:Exit code:? -?\d+|Process exited with code -?\d+|Wall time: .*|Chunk ID: .*|Original token count: \d+|Output:)\s*$/;
+
+export function withoutOutputHeader(text: string): string {
+  const lines = text.split(/\r?\n/);
+  const start = lines.findIndex((line) => !OUTPUT_HEADER.test(line));
+  return start === -1 ? '' : lines.slice(start).join('\n');
+}
+
 function textsOf(
   result: Result,
   known: CodexCalls,
@@ -231,7 +240,11 @@ function textsOf(
       ? undefined
       : known.inputs.get(result.callId)) ?? result.input;
   if (input === undefined) return null;
-  return { kind: 'tool-error', input, error: errorExcerpt(result.error, home) };
+  return {
+    kind: 'tool-error',
+    input,
+    error: errorExcerpt(withoutOutputHeader(result.error), home),
+  };
 }
 
 export function readCodexLine(

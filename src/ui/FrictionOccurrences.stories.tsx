@@ -229,7 +229,7 @@ export const EveryTable: Story = {
     for (const [table, label] of [
       ['By category', 'Permission denied'],
       ['By tool', 'Bash'],
-      ['Failed commands', '—'],
+      ['Failed commands', 'no program'],
       ['Repeated failures', 'pnpm'],
     ] as const) {
       await expect(
