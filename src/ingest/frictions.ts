@@ -161,7 +161,7 @@ export function programOf(command: string): string | null {
       .filter((word) => word !== '' && !GROUPING.has(word));
     const word = words.find((candidate) => !ASSIGNMENT.test(candidate));
     if (word === undefined || word === 'cd') continue;
-    return word.split('/').findLast((segment) => segment !== '') ?? word;
+    return word.split(/[\\/]/).findLast((segment) => segment !== '') ?? word;
   }
   return null;
 }

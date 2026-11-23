@@ -177,6 +177,24 @@ export function execEnd(
   });
 }
 
+export function commandItem(
+  at: number,
+  id: string,
+  command: string[],
+  exitCode: number,
+): Line {
+  return event(at, {
+    type: 'item_completed',
+    item: {
+      type: 'CommandExecution',
+      id,
+      command,
+      status: exitCode === 0 ? 'completed' : 'failed',
+      exit_code: exitCode,
+    },
+  });
+}
+
 export function failedMcpCall(at: number, id: string): Line {
   return event(at, {
     type: 'item_completed',

@@ -54,6 +54,7 @@ describe('shell program', () => {
     ['(cd x && pnpm test)', 'pnpm'],
     ['{ cd x; make; }', 'make'],
     ['echo $(date)', 'echo'],
+    ['C:\\tools\\pwsh.exe -Command pnpm test', 'pwsh.exe'],
   ])('of %j is %j', (command, program) => {
     expect(programOf(command)).toBe(program);
   });

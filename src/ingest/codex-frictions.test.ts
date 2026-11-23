@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   chunkOf,
+  commandItem,
   compacted,
   execEnd,
   failedMcpCall,
@@ -42,6 +43,29 @@ describe('readCodexChunk frictions', () => {
         exitCode: 2,
         commandHash: commandHash('pnpm test --run'),
         recordUuid: 'call:call_1',
+      }),
+    ]);
+  });
+
+  it('stores a failed command execution item, and nothing for one that exits with 0', () => {
+    const { rows } = readLines([
+      commandItem(1, 'item_1', ['pwsh.exe', '-Command', 'pnpm lint'], 0),
+      commandItem(
+        2,
+        'item_2',
+        ['C:\\tools\\pwsh.exe', '-Command', 'pnpm test'],
+        1,
+      ),
+    ]);
+    expect(codexFrictionRows(rows)).toEqual([
+      expect.objectContaining({
+        kind: 'tool-error',
+        tool: 'exec_command',
+        category: 'command-failed',
+        program: 'pwsh.exe',
+        exitCode: 1,
+        commandHash: commandHash('C:\\tools\\pwsh.exe -Command pnpm test'),
+        recordUuid: 'call:item_2',
       }),
     ]);
   });
@@ -103,11 +127,19 @@ describe('readCodexChunk records', () => {
         { timestamp: minute(1), type: 'future_record', payload: {} },
         'not json',
         turnContext(1, 'gpt-test-1'),
+        {
+          timestamp: minute(1),
+          type: 'inter_agent_communication_metadata',
+          payload: { trigger_turn: true },
+        },
       ]),
       parseCodexRecord,
     );
     expect(skipped).toBe(2);
-    expect(records.map(({ record }) => record.type)).toEqual(['turn_context']);
+    expect(records.map(({ record }) => record.type)).toEqual([
+      'turn_context',
+      'inter_agent_communication_metadata',
+    ]);
   });
 
   it('leaves a last line without newline for the next run', () => {

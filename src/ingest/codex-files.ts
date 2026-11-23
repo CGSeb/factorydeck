@@ -14,6 +14,7 @@ export const CODEX_RECORD_TYPES: ReadonlySet<string> = new Set([
   'compacted',
   'token_usage_record',
   'world_state',
+  'inter_agent_communication_metadata',
 ]);
 
 export interface CodexMeta {

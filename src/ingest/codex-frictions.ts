@@ -180,9 +180,25 @@ function execCommandEnd(reading: Reading, entry: Entry): void {
   );
 }
 
-function mcpItemCompleted(reading: Reading, entry: Entry): void {
+function commandExecution(reading: Reading, entry: Entry, item: unknown): void {
+  const exitCode = field(item, 'exit_code');
+  if (typeof exitCode !== 'number' || exitCode === 0) return;
+  pushFriction(
+    reading,
+    entry,
+    callKey(textAt(item, 'id'), entry),
+    shellFailure(EXEC_COMMAND, commandText(field(item, 'command')), exitCode),
+  );
+}
+
+function itemCompleted(reading: Reading, entry: Entry): void {
   const item = field(entry.payload, 'item');
-  if (textAt(item, 'type') !== 'McpToolCall') return;
+  const type = textAt(item, 'type');
+  if (type === 'CommandExecution') {
+    commandExecution(reading, entry, item);
+    return;
+  }
+  if (type !== 'McpToolCall') return;
   const failed =
     field(item, 'result', 'isError') === true ||
     textAt(item, 'status') === 'failed';
@@ -227,7 +243,7 @@ const EVENT_FRICTIONS: ReadonlyMap<
   (reading: Reading, entry: Entry) => void
 > = new Map([
   ['exec_command_end', execCommandEnd],
-  ['item_completed', mcpItemCompleted],
+  ['item_completed', itemCompleted],
   ['mcp_tool_call_end', mcpToolCallEnd],
   ['patch_apply_end', patchApplyEnd],
 ]);
