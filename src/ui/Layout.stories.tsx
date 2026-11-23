@@ -70,6 +70,7 @@ export const RolesActive: Story = {
     await expect(links.map((link) => link.textContent)).toEqual([
       'Overview',
       'Features',
+      'Stats',
       'Sessions',
       'Skills',
       'Roles',

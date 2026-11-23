@@ -32,6 +32,7 @@ import {
   someSkills,
   writeSpecDetail,
 } from './skill-fixtures.ts';
+import { autonomyLoaderOf } from './stats-fixtures.ts';
 
 const meta = {
   component: App,
@@ -61,6 +62,7 @@ const loaders = {
   deleteProject: deleterOf('deleted'),
   loadCollection: collectionLoaderOf(collectionResponse()),
   refreshCollection: refresherOf(collectionResponse()),
+  loadAutonomy: autonomyLoaderOf(),
 };
 
 export const Home: Story = {
@@ -111,6 +113,25 @@ export const Skills: Story = {
     );
     await canvas.findByRole('heading', { name: 'kit:write-spec' });
     await expect(canvas.getByText('Launches per day')).toBeVisible();
+  },
+};
+
+export const Stats: Story = {
+  args: loaders,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const sections = within(
+      canvas.getByRole('navigation', { name: 'Sections' }),
+    );
+    await userEvent.click(sections.getByRole('link', { name: 'Stats' }));
+    await expect(sections.getByRole('link', { name: 'Stats' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    await canvas.findByRole('heading', { level: 1, name: 'Stats' });
+    await expect(
+      await canvas.findByRole('heading', { name: 'Autonomy' }),
+    ).toBeVisible();
   },
 };
 
@@ -166,6 +187,7 @@ export const NoSessionYet: Story = {
     for (const section of [
       'Overview',
       'Features',
+      'Stats',
       'Sessions',
       'Skills',
       'Roles',

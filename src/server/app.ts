@@ -8,7 +8,7 @@ import {
   type UsageOverview,
   isPeriod,
 } from '../overview/types.ts';
-import { apiContext, isTimeZone } from './api-context.ts';
+import { type ApiContext, apiContext, isTimeZone } from './api-context.ts';
 import { type FeatureSource, featureRoutes } from './feature-routes.ts';
 import { type GitHostSource, gitHostRoutes } from './git-host-routes.ts';
 import type { DatabaseCheck } from './health.ts';
@@ -16,6 +16,7 @@ import { type ProjectSource, projectRoutes } from './project-routes.ts';
 import { type RoleSource, roleRoutes } from './role-routes.ts';
 import { type SessionSource, sessionRoutes } from './session-routes.ts';
 import { type SkillSource, skillRoutes } from './skill-routes.ts';
+import { type StatsSource, statsRoutes } from './stats-routes.ts';
 
 export interface OverviewSource {
   load: (query: OverviewQuery) => Promise<UsageOverview>;
@@ -35,20 +36,26 @@ export interface AppOptions {
   features: FeatureSource;
   projects: ProjectSource;
   gitHost: GitHostSource;
+  stats: StatsSource;
+}
+
+function mountSections(
+  app: Hono,
+  options: AppOptions,
+  context: ApiContext,
+): void {
+  app.route('/api/sessions', sessionRoutes(options.sessions, context));
+  app.route('/api/skills', skillRoutes(options.skills, context));
+  app.route('/api/roles', roleRoutes(options.roles, context));
+  app.route('/api/features', featureRoutes(options.features, context));
+  app.route('/api/projects', projectRoutes(options.projects, context));
+  app.route('/api/git-host', gitHostRoutes(options.gitHost, context));
+  app.route('/api/stats', statsRoutes(options.stats, context));
 }
 
 /** The FactoryDeck HTTP app: the JSON API under `/api/`, the UI everywhere else. */
-export function createApp({
-  checkDatabase,
-  uiDir,
-  overview,
-  sessions,
-  skills,
-  roles,
-  features,
-  projects,
-  gitHost,
-}: AppOptions): Hono {
+export function createApp(options: AppOptions): Hono {
+  const { checkDatabase, uiDir, overview } = options;
   const app = new Hono();
   const context = apiContext(
     checkDatabase,
@@ -84,12 +91,7 @@ export function createApp({
     });
     return c.json(body, body.status === 'ok' ? 200 : 503);
   });
-  app.route('/api/sessions', sessionRoutes(sessions, context));
-  app.route('/api/skills', skillRoutes(skills, context));
-  app.route('/api/roles', roleRoutes(roles, context));
-  app.route('/api/features', featureRoutes(features, context));
-  app.route('/api/projects', projectRoutes(projects, context));
-  app.route('/api/git-host', gitHostRoutes(gitHost, context));
+  mountSections(app, options, context);
   app.all('/api/*', (c) => c.json({ error: 'Not found' }, 404));
 
   if (!existsSync(join(uiDir, 'index.html'))) {

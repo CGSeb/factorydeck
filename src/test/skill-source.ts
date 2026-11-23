@@ -3,6 +3,7 @@ import type { GitHostSource } from '../server/git-host-routes.ts';
 import type { ProjectSource } from '../server/project-routes.ts';
 import type { RoleSource } from '../server/role-routes.ts';
 import type { SkillSource } from '../server/skill-routes.ts';
+import type { StatsSource } from '../server/stats-routes.ts';
 
 export const unusedSkills: SkillSource = {
   list: () => Promise.reject(new Error('Not used')),
@@ -27,4 +28,8 @@ export const unusedGitHost: GitHostSource = {
 export const unusedFeatures: FeatureSource = {
   list: () => Promise.reject(new Error('Not used')),
   detail: () => Promise.reject(new Error('Not used')),
+};
+
+export const unusedStats: StatsSource = {
+  autonomy: () => Promise.reject(new Error('Not used')),
 };

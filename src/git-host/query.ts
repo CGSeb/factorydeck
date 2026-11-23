@@ -113,11 +113,11 @@ export async function withIssues<T extends { workItem: number | null }>(
   }));
 }
 
-type RequestRow = typeof gitHostRequest.$inferSelect;
+export type RequestRow = typeof gitHostRequest.$inferSelect;
 
-type IssueRow = typeof gitHostIssue.$inferSelect;
+export type IssueRow = typeof gitHostIssue.$inferSelect;
 
-function outcomeOf(
+export function outcomeOf(
   issue: IssueRow,
   requests: RequestRow[],
   state: { stageLabels: StageLabels | null; autoMerge: boolean | null },

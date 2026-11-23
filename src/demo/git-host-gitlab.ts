@@ -1,14 +1,17 @@
 import {
   DAY,
-  type DemoIssue,
-  type DemoRequest,
   HOUR,
   type Row,
   ago,
+  closedDaysAgo,
   reportComments,
-  serenityReport,
 } from './git-host.ts';
-import type { FakeGitHostData } from './fake-git-host.ts';
+import {
+  type DemoIssue,
+  type DemoRequest,
+  serenityReport,
+} from './demo-items.ts';
+import { FACTORY_WORKFLOW, type FakeGitHostData } from './fake-git-host.ts';
 
 const GITLAB_PROJECT = 'example-group/example-api';
 
@@ -28,8 +31,8 @@ function gitlabIssueRow(now: Date, issue: DemoIssue): Row {
     labels: issue.labels,
     web_url: `https://gitlab.com/${GITLAB_PROJECT}/-/issues/${String(issue.number)}`,
     created_at: ago(now, issue.daysAgo * DAY),
-    closed_at: issue.closed ? ago(now, (issue.daysAgo - 1) * DAY) : null,
-    updated_at: ago(now, (issue.daysAgo - 1) * DAY),
+    closed_at: issue.closed ? ago(now, closedDaysAgo(issue) * DAY) : null,
+    updated_at: ago(now, closedDaysAgo(issue) * DAY),
   };
 }
 
@@ -77,6 +80,7 @@ export function demoGitLab(now: Date): FakeGitHostData {
   return {
     host: 'gitlab',
     repository: GITLAB_PROJECT,
+    factory: FACTORY_WORKFLOW.replace('auto_merge: true', 'auto_merge: false'),
     labels: [
       { name: 'backend', color: '#428bca' },
       { name: 'priority::high', color: '#dc143c' },

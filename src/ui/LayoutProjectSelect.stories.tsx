@@ -129,7 +129,14 @@ function sectionHrefs(canvasElement: HTMLElement): (string | null)[] {
     .map((link) => link.getAttribute('href'));
 }
 
-const SECTION_PATHS = ['/', '/features', '/sessions', '/skills', '/roles'];
+const SECTION_PATHS = [
+  '/',
+  '/features',
+  '/stats',
+  '/sessions',
+  '/skills',
+  '/roles',
+];
 
 export const ProjectSelectAllProjects: Story = {
   args: {

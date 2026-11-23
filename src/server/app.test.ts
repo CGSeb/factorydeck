@@ -14,6 +14,7 @@ import {
   unusedProjects,
   unusedGitHost,
   unusedFeatures,
+  unusedStats,
 } from '../test/skill-source.ts';
 import { databaseCheck } from './health.ts';
 
@@ -24,6 +25,15 @@ writeFileSync(join(builtUi, 'assets', 'app.js'), 'console.log(1);');
 const missingUi = join(builtUi, 'missing');
 
 afterAll(() => rmSync(builtUi, { recursive: true, force: true }));
+
+const unused = {
+  skills: unusedSkills,
+  roles: unusedRoles,
+  features: unusedFeatures,
+  projects: unusedProjects,
+  gitHost: unusedGitHost,
+  stats: unusedStats,
+};
 
 const up = (): Promise<boolean> => Promise.resolve(true);
 const down = (): Promise<boolean> => Promise.resolve(false);
@@ -66,11 +76,7 @@ describe('GET /api/health', () => {
       uiDir: builtUi,
       overview: source,
       sessions: sessionSource,
-      skills: unusedSkills,
-      roles: unusedRoles,
-      features: unusedFeatures,
-      projects: unusedProjects,
-      gitHost: unusedGitHost,
+      ...unused,
     }).request('/api/health');
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ status: 'ok', database: 'ok' });
@@ -82,11 +88,7 @@ describe('GET /api/health', () => {
       uiDir: builtUi,
       overview: source,
       sessions: sessionSource,
-      skills: unusedSkills,
-      roles: unusedRoles,
-      features: unusedFeatures,
-      projects: unusedProjects,
-      gitHost: unusedGitHost,
+      ...unused,
     }).request('/api/health');
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({
@@ -105,11 +107,7 @@ describe('other API paths', () => {
         uiDir: builtUi,
         overview: source,
         sessions: sessionSource,
-        skills: unusedSkills,
-        roles: unusedRoles,
-        features: unusedFeatures,
-        projects: unusedProjects,
-        gitHost: unusedGitHost,
+        ...unused,
       }).request(path);
       expect(response.status).toBe(404);
       expect(await response.json()).toEqual({ error: 'Not found' });
@@ -122,11 +120,7 @@ describe('other API paths', () => {
       uiDir: missingUi,
       overview: source,
       sessions: sessionSource,
-      skills: unusedSkills,
-      roles: unusedRoles,
-      features: unusedFeatures,
-      projects: unusedProjects,
-      gitHost: unusedGitHost,
+      ...unused,
     }).request('/api/nope');
     expect(response.status).toBe(404);
     expect(await response.json()).toEqual({ error: 'Not found' });
@@ -139,11 +133,7 @@ describe('UI', () => {
     uiDir: builtUi,
     overview: source,
     sessions: sessionSource,
-    skills: unusedSkills,
-    roles: unusedRoles,
-    features: unusedFeatures,
-    projects: unusedProjects,
-    gitHost: unusedGitHost,
+    ...unused,
   });
 
   it('serves the built index page at /', async () => {
@@ -171,11 +161,7 @@ describe('UI', () => {
       uiDir: missingUi,
       overview: source,
       sessions: sessionSource,
-      skills: unusedSkills,
-      roles: unusedRoles,
-      features: unusedFeatures,
-      projects: unusedProjects,
-      gitHost: unusedGitHost,
+      ...unused,
     }).request('/');
     expect(response.headers.get('content-type')).toContain('text/plain');
     expect(await response.text()).toBe('UI not built. Run pnpm build.');
@@ -189,11 +175,7 @@ describe('GET /api/overview', () => {
       uiDir: builtUi,
       overview: source,
       sessions: sessionSource,
-      skills: unusedSkills,
-      roles: unusedRoles,
-      features: unusedFeatures,
-      projects: unusedProjects,
-      gitHost: unusedGitHost,
+      ...unused,
     }).request('/api/overview?period=30d&tz=Europe/Paris');
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
@@ -212,11 +194,7 @@ describe('GET /api/overview', () => {
       uiDir: builtUi,
       overview: source,
       sessions: sessionSource,
-      skills: unusedSkills,
-      roles: unusedRoles,
-      features: unusedFeatures,
-      projects: unusedProjects,
-      gitHost: unusedGitHost,
+      ...unused,
     });
     await app.request('/api/overview?period=7d&tz=UTC&project=%2Fwork%2Fapp');
     expect(queries.at(-1)).toStrictEqual({
@@ -238,11 +216,7 @@ describe('GET /api/overview', () => {
       uiDir: builtUi,
       overview: source,
       sessions: sessionSource,
-      skills: unusedSkills,
-      roles: unusedRoles,
-      features: unusedFeatures,
-      projects: unusedProjects,
-      gitHost: unusedGitHost,
+      ...unused,
     });
     for (const query of [
       '',
@@ -260,11 +234,7 @@ describe('GET /api/overview', () => {
       uiDir: builtUi,
       overview: source,
       sessions: sessionSource,
-      skills: unusedSkills,
-      roles: unusedRoles,
-      features: unusedFeatures,
-      projects: unusedProjects,
-      gitHost: unusedGitHost,
+      ...unused,
     }).request('/api/overview?period=7d&tz=UTC');
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({
@@ -289,11 +259,7 @@ describe('GET /api/overview', () => {
       uiDir: builtUi,
       overview: { ...source, load: (query) => usageOverview(db, query) },
       sessions: sessionSource,
-      skills: unusedSkills,
-      roles: unusedRoles,
-      features: unusedFeatures,
-      projects: unusedProjects,
-      gitHost: unusedGitHost,
+      ...unused,
     });
     try {
       const started = Date.now();
