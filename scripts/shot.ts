@@ -1,10 +1,8 @@
 import { mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { parseArgs } from 'node:util';
-import { chromium } from 'playwright';
+import { launchBrowser, openPage } from './browser.ts';
 import { shotTargets } from './shot-targets.ts';
-
-const LOAD_TIMEOUT_MS = 30_000;
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -27,12 +25,7 @@ const targets = shotTargets({
   out: values.out,
 });
 
-const browser = await chromium.launch().catch((error: unknown) => {
-  throw new Error(
-    'Could not start headless Chromium. Install it once with `pnpm exec playwright install --with-deps chromium-headless-shell` (asks for sudo for the system libraries).',
-    { cause: error },
-  );
-});
+const browser = await launchBrowser();
 try {
   for (const target of targets) {
     const context = await browser.newContext({
@@ -42,21 +35,7 @@ try {
     const tab = await context.newPage();
     const errors: string[] = [];
     tab.on('pageerror', (error) => errors.push(error.message));
-    let response;
-    try {
-      response = await tab.goto(target.url, {
-        waitUntil: 'networkidle',
-        timeout: LOAD_TIMEOUT_MS,
-      });
-    } catch (error) {
-      throw new Error(
-        `Could not load ${target.url}: is the server running (pnpm demo --port <n>)?`,
-        { cause: error },
-      );
-    }
-    if (response !== null && !response.ok()) {
-      throw new Error(`${target.url} answered ${String(response.status())}`);
-    }
+    await openPage(tab, target.url);
     const { innerWidth, scrollWidth } = await tab.evaluate(() => ({
       innerWidth: window.innerWidth,
       scrollWidth: document.documentElement.scrollWidth,
