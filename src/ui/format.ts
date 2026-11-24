@@ -74,6 +74,22 @@ export function formatAgo(at: string | null, now: Date): string {
   return `${Math.floor(elapsed / DAY_MS)} d ago`;
 }
 
+function sameLocalDay(left: Date, right: Date): boolean {
+  return (
+    left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth() &&
+    left.getDate() === right.getDate()
+  );
+}
+
+export function formatActivity(at: string, now: Date): string {
+  const elapsed = now.getTime() - new Date(at).getTime();
+  if (elapsed < MINUTE_MS) return 'just now';
+  if (elapsed < HOUR_MS) return `${Math.floor(elapsed / MINUTE_MS)} min ago`;
+  if (sameLocalDay(new Date(at), now)) return `Today, ${formatTime(at)}`;
+  return formatDateTime(at);
+}
+
 export function formatDuration(
   firstAt: string | null,
   lastAt: string | null,

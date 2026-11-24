@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, within } from 'storybook/test';
-import { countsOf } from './chart-fixtures.ts';
 import { StageColumn } from './StageColumn.tsx';
 import { card } from './work-fixtures.ts';
 
@@ -23,8 +22,6 @@ const meta = {
   args: {
     group: 'in-review',
     count: 3,
-    counts: countsOf(6_400_000),
-    costUsd: 16.2,
     cards: [
       card(42, 'Export the session table as CSV', {
         badge: { kind: 'rounds', rounds: 2, inReview: true },
@@ -56,7 +53,7 @@ export const ThreeCards: Story = {
     await expect(
       canvas.getByRole('region', { name: 'In review 3' }),
     ).toHaveClass('fd-stage-column');
-    await expect(canvas.getByText('6.4M')).toBeInTheDocument();
+    await expect(canvas.queryByText(/tokens/)).not.toBeInTheDocument();
     await expect(canvas.getAllByRole('article')).toHaveLength(3);
     await expect(canvas.queryByText(/more$/)).not.toBeInTheDocument();
   },
@@ -67,8 +64,6 @@ export const NoCard: Story = {
   args: {
     group: 'ready',
     count: 0,
-    counts: countsOf(0),
-    costUsd: 0,
     cards: [],
   },
   play: async ({ canvasElement }) => {

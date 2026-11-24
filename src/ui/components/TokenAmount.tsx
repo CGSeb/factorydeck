@@ -14,6 +14,7 @@ import {
   type TokenCounts,
   type TooltipLine,
   type TooltipPosition,
+  buttonReset,
   placeTooltip,
   tooltipLines,
   totalTokens,
@@ -22,12 +23,18 @@ import {
 export type TokenAmountSize = 'inline' | 'strong' | 'figure';
 export type TokenAmountPlacement = 'above' | 'below';
 
+export interface TokenAmountAction {
+  label: string;
+  onClick: () => void;
+}
+
 export interface TokenAmountProps {
   counts: TokenCounts;
   costUsd: number | null;
   unknownPriceCalls?: number;
   size?: TokenAmountSize;
   placement?: TokenAmountPlacement;
+  action?: TokenAmountAction | undefined;
 }
 
 const EDGE_MARGIN_TOKEN = '--fd-space-2';
@@ -282,20 +289,37 @@ export function TokenAmount({
   unknownPriceCalls = 0,
   size = 'inline',
   placement = 'above',
+  action,
 }: TokenAmountProps): ReactElement {
   const tooltipId = useId();
   const { open, pointerHandlers, focusHandlers } = useHoverFocusDisclosure();
+  const style = { ...number, ...NUMBER_STYLES[size] };
+  const text = formatTokens(totalTokens(counts));
 
   return (
     <span style={anchor} {...pointerHandlers}>
-      <span
-        tabIndex={0}
-        aria-describedby={tooltipId}
-        style={{ ...number, ...NUMBER_STYLES[size] }}
-        {...focusHandlers}
-      >
-        {formatTokens(totalTokens(counts))}
-      </span>
+      {action === undefined ? (
+        <span
+          tabIndex={0}
+          aria-describedby={tooltipId}
+          style={style}
+          {...focusHandlers}
+        >
+          {text}
+        </span>
+      ) : (
+        <button
+          type="button"
+          aria-label={action.label}
+          aria-describedby={tooltipId}
+          aria-haspopup="dialog"
+          style={{ ...buttonReset, ...style, cursor: 'pointer' }}
+          onClick={action.onClick}
+          {...focusHandlers}
+        >
+          {text}
+        </button>
+      )}
       <Tooltip
         id={tooltipId}
         open={open}

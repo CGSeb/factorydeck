@@ -12,7 +12,7 @@ import { Panel } from './components/Panel.tsx';
 import { PeriodPills } from './components/PeriodPills.tsx';
 import { ScoreHistogram } from './components/ScoreHistogram.tsx';
 import { StatFigure } from './components/StatFigure.tsx';
-import { FIGURE_HELP } from './stats-help.ts';
+import { FIGURE_HELP, MERGED_NOUN, REPORTED_NOUN } from './stats-help.ts';
 import { StatusLine } from './components/StatusLine.tsx';
 import { TrendBars } from './components/TrendBars.tsx';
 import { formatElapsed } from './format.ts';
@@ -48,14 +48,9 @@ export interface StatsPageProps {
 const LOADING = 'Loading…';
 const TREND_BASE = 'Merged without a person';
 const REASONS_TITLE = 'Why a person stepped in';
-const MERGED_NOUN = { one: 'merged issue', other: 'merged issues' };
 const ANSWERED_NOUN = { one: 'answered stop', other: 'answered stops' };
 const QUALITY_TREND_BASE = 'Right the first time';
 const HISTOGRAM_TITLE = 'First serenity score';
-const REPORTED_NOUN = {
-  one: 'merged issue with a report',
-  other: 'merged issues with a report',
-};
 const REVIEWED_NOUN = {
   one: 'merged issue reviewed twice or more',
   other: 'merged issues reviewed twice or more',

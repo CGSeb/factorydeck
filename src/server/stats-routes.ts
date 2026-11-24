@@ -9,6 +9,8 @@ import type {
   FlowStats,
   QualityResponse,
   QualityStats,
+  WaitingList,
+  WaitingResponse,
 } from '../stats/types.ts';
 import type { ApiContext } from './api-context.ts';
 import type { FrictionSource } from './friction-routes.ts';
@@ -18,6 +20,7 @@ export interface StatsSource extends FrictionSource {
   autonomy: (query: AutonomyQuery) => Promise<AutonomyStats>;
   quality: (query: QualityQuery) => Promise<QualityStats>;
   flow: (query: FlowQuery) => Promise<FlowStats>;
+  waiting: (project: string | undefined) => Promise<WaitingList>;
 }
 
 export function statsRoutes(
@@ -49,6 +52,14 @@ export function statsRoutes(
     const body: FlowResponse = await fromDatabase(async () => {
       const flow = await stats.flow(query);
       return { status: 'ok', updatedAt: updatedAt(), refreshSeconds, flow };
+    });
+    return c.json(body, body.status === 'ok' ? 200 : 503);
+  });
+  routes.get('/waiting', async (c) => {
+    const project = c.req.query('project') || undefined;
+    const body: WaitingResponse = await fromDatabase(async () => {
+      const waiting = await stats.waiting(project);
+      return { status: 'ok', updatedAt: updatedAt(), refreshSeconds, waiting };
     });
     return c.json(body, body.status === 'ok' ? 200 : 503);
   });

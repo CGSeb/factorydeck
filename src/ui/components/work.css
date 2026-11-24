@@ -83,9 +83,11 @@
   font-variant-numeric: tabular-nums;
 }
 
-.fd-stage-column-tokens {
-  font-size: var(--fd-text-sm);
+.fd-issue-card-time {
+  margin-left: auto;
   color: var(--fd-ink-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .fd-stage-column-cards {

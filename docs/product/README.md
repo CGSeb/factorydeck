@@ -12,7 +12,7 @@ For installing and running FactoryDeck, see [Getting started](../getting-started
 | [Roles and work items](roles-and-work-items.md) | How each thread gets a role and an issue, the configuration file and its defaults.           |
 | [Outcomes](outcomes.md)                         | Stages, serenity reports, help from a person, stops and rework.                              |
 | [Navigation and conventions](navigation.md)     | Sidebar, project select, periods, refresh, theme, banners, number formats, empty states.     |
-| [Overview](overview.md)                         | The home page: issues merged, the board by stage, where the tokens went.                     |
+| [Overview](overview.md)                         | The home page: factory health, issues waiting for a person, the board by stage.              |
 | [Features and issues](features.md)              | The list of issues and the story of one issue.                                               |
 | [Stats](stats.md)                               | Autonomy, quality, flow and cost figures, their trends and their definitions.                |
 | [Frictions](frictions.md)                       | Tool errors and blocked stops, by category, tool, command, role and issue, with occurrences. |

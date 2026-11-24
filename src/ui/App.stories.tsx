@@ -17,6 +17,7 @@ import {
 import { featureLoaderOf } from './feature-detail-fixtures.ts';
 import { featuresLoaderOf, someFeatures } from './feature-fixtures.ts';
 import { fixedLoader, okResponse, weekOverview } from './fixtures.ts';
+import { waitingLoaderOf } from './waiting-fixtures.ts';
 import { optionsOf } from './project-fixtures.ts';
 import { rolesLoader, someRoles } from './role-fixtures.ts';
 import {
@@ -71,6 +72,7 @@ const loaders = {
   loadOccurrences: occurrencesLoaderOf(),
   loadOutput: outputLoaderOf(),
   loadFlow: flowLoaderOf(),
+  loadWaiting: waitingLoaderOf(),
 };
 
 export const Home: Story = {

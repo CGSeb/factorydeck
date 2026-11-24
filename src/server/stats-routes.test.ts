@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import type { AutonomyQuery } from '../stats/autonomy.ts';
 import type { FlowQuery } from '../stats/flow.ts';
 import type { QualityQuery } from '../stats/quality.ts';
-import type { AutonomyStats, FlowStats, QualityStats } from '../stats/types.ts';
+import type {
+  AutonomyStats,
+  FlowStats,
+  QualityStats,
+  WaitingList,
+} from '../stats/types.ts';
 import {
   unusedFeatures,
   unusedGitHost,
@@ -87,10 +92,25 @@ const flow: FlowStats = {
   buckets: [{ start: '2026-01-05', merged: 1 }],
 };
 
+const waiting: WaitingList = {
+  issues: [
+    {
+      project: '/work/app',
+      projectName: 'app',
+      number: 12,
+      title: 'Export',
+      reasons: ['spec-question'],
+      since: '2026-01-05T08:00:00.000Z',
+    },
+  ],
+  projects: [{ project: '/work/app', name: 'app' }],
+};
+
 function app(up = true) {
   const queries: AutonomyQuery[] = [];
   const qualityQueries: QualityQuery[] = [];
   const flowQueries: FlowQuery[] = [];
+  const waitingProjects: (string | undefined)[] = [];
   const created = createApp({
     checkDatabase: () => Promise.resolve(up),
     uiDir: '/nonexistent/factorydeck-ui',
@@ -117,9 +137,19 @@ function app(up = true) {
         flowQueries.push(query);
         return Promise.resolve(flow);
       },
+      waiting: (project) => {
+        waitingProjects.push(project);
+        return Promise.resolve(waiting);
+      },
     },
   });
-  return { app: created, queries, qualityQueries, flowQueries };
+  return {
+    app: created,
+    queries,
+    qualityQueries,
+    flowQueries,
+    waitingProjects,
+  };
 }
 
 describe('/api/stats/autonomy', () => {
@@ -234,6 +264,39 @@ describe('/api/stats/flow', () => {
     const response = await app(false).app.request(
       '/api/stats/flow?period=all&tz=UTC',
     );
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      status: 'unreachable',
+      refreshSeconds: 10,
+    });
+  });
+});
+
+describe('/api/stats/waiting', () => {
+  it('answers the issues waiting for a person in the project', async () => {
+    const { app: server, waitingProjects } = app();
+    const response = await server.request(
+      '/api/stats/waiting?project=%2Fwork%2Fapp',
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      status: 'ok',
+      updatedAt: '2026-01-05T09:00:00.000Z',
+      refreshSeconds: 10,
+      waiting,
+    });
+    expect(waitingProjects).toEqual(['/work/app']);
+  });
+
+  it('reads every project without a project parameter', async () => {
+    const { app: server, waitingProjects } = app();
+    const response = await server.request('/api/stats/waiting?project=');
+    expect(response.status).toBe(200);
+    expect(waitingProjects).toEqual([undefined]);
+  });
+
+  it('answers unreachable when the database is down', async () => {
+    const response = await app(false).app.request('/api/stats/waiting');
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({
       status: 'unreachable',

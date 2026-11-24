@@ -4,7 +4,7 @@ import type { FlowResponse, FlowStats } from '../stats/types.ts';
 import { Panel } from './components/Panel.tsx';
 import { RangeStrip } from './components/RangeStrip.tsx';
 import { StatFigure } from './components/StatFigure.tsx';
-import { FIGURE_HELP } from './stats-help.ts';
+import { FIGURE_HELP, MERGED_NOUN } from './stats-help.ts';
 import { StatusLine } from './components/StatusLine.tsx';
 import { TrendBars } from './components/TrendBars.tsx';
 import { formatElapsed, formatTokens } from './format.ts';
@@ -21,7 +21,6 @@ import {
 } from './stats-view.ts';
 
 const LOADING = 'Loading…';
-const MERGED_NOUN = { one: 'merged issue', other: 'merged issues' };
 const WORKED_NOUN = {
   one: 'merged issue with agent work',
   other: 'merged issues with agent work',

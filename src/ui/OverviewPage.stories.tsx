@@ -1,154 +1,79 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { ReactElement } from 'react';
-import { MemoryRouter, useLocation } from 'react-router';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
-import { APP, featuresLoaderOf } from './feature-fixtures.ts';
-import {
-  emptyOverview,
-  fixedLoader,
-  okResponse,
-  todayOverview,
-  unreachableResponse,
-  weekOverview,
-} from './fixtures.ts';
 import { OverviewPage } from './OverviewPage.tsx';
+import { APP, featuresLoaderOf } from './feature-fixtures.ts';
+import { emptyOverview, fixedLoader, okResponse } from './fixtures.ts';
+import { flowIssues, flowLoaderOf, flowOf } from './flow-fixtures.ts';
+import { unmergedFeatures } from './overview-fixtures.ts';
 import {
-  afterPersonFeatures,
-  fullBoardFeatures,
-  unmergedFeatures,
-} from './overview-fixtures.ts';
-import { rolesLoader, someRoles } from './role-fixtures.ts';
-
-function Location(): ReactElement {
-  const { pathname, search } = useLocation();
-  return <output aria-label="Address">{`${pathname}${search}`}</output>;
-}
-
-const UNREACHABLE = { status: 'unreachable', refreshSeconds: 3600 } as const;
+  address,
+  column,
+  overviewArgs,
+  overviewRouter,
+  section,
+  title,
+} from './overview-story.ts';
+import { rolesLoader } from './role-fixtures.ts';
+import { autonomyLoaderOf, autonomyOf, noCounts } from './stats-fixtures.ts';
+import { noWaiting, waitingLoaderOf } from './waiting-fixtures.ts';
 
 const meta = {
   component: OverviewPage,
-  args: {
-    loadOverview: fixedLoader((period) =>
-      okResponse(period === 'today' ? todayOverview : weekOverview),
-    ),
-    loadFeatures: featuresLoaderOf(fullBoardFeatures),
-    loadRoles: rolesLoader(someRoles),
-  },
-  decorators: [
-    (Story, { parameters }) => (
-      <MemoryRouter
-        initialEntries={[
-          typeof parameters['entry'] === 'string'
-            ? parameters['entry']
-            : '/?period=7d',
-        ]}
-      >
-        <Story />
-        <Location />
-      </MemoryRouter>
-    ),
-  ],
+  args: overviewArgs,
+  decorators: [overviewRouter],
 } satisfies Meta<typeof OverviewPage>;
 
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-function address(canvasElement: HTMLElement): HTMLElement {
-  return within(canvasElement).getByRole('status', { name: 'Address' });
-}
-
-function column(canvasElement: HTMLElement, name: string): HTMLElement {
-  const heading = within(canvasElement).getByRole('heading', {
-    level: 2,
-    name: new RegExp(`^${name} \\d+$`),
-  });
-  const section = heading.closest('section');
-  if (section === null) throw new Error(`No column ${name}`);
-  return section;
-}
-
-function title(canvasElement: HTMLElement): Promise<HTMLElement> {
-  return within(canvasElement).findByRole('heading', { level: 1 });
-}
-
-async function expectNoOldContent(canvasElement: HTMLElement): Promise<void> {
-  const canvas = within(canvasElement);
-  await expect(canvas.queryByRole('region', { name: 'Totals' })).toBeNull();
-  await expect(canvas.queryByText('Cost per day')).toBeNull();
-  await expect(canvas.queryByRole('table', { name: 'By project' })).toBeNull();
-  await expect(canvas.queryByRole('table', { name: 'By model' })).toBeNull();
-}
-
 export const AllProjects: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await waitFor(async () =>
       expect(await title(canvasElement)).toHaveTextContent(
-        /^7 issues merged for 12\.5MCost.* tokens$/,
+        /^24 issues merged for 12\.5MCost.* tokens$/,
       ),
     );
+    await canvas.findByText('1.2M tokens per merged issue · 14 sessions');
     await expect(
-      canvas.getByText(
-        '3.1M tokens per merged issue · 6 of 7 merged without a person · 14 sessions',
-      ),
+      canvas.queryByText(/merged without a person ·/),
+    ).not.toBeInTheDocument();
+    const health = section(canvasElement, /^Health$/);
+    await within(health).findByText('Merged without a person');
+    await expect(
+      within(health).getByText('Right the first time'),
     ).toBeVisible();
+    await expect(
+      within(health).getByRole('heading', { name: 'Merged per week' }),
+    ).toBeVisible();
+    await expect(
+      within(health).getByRole('link', { name: 'Stats' }),
+    ).toHaveAttribute('href', '/stats?period=7d');
+    const needs = section(canvasElement, /^Needs a person$/);
+    await expect(
+      within(needs).getByRole('link', { name: '#58 Retry failed exports' }),
+    ).toHaveAttribute(
+      'href',
+      `/features/58?project=${encodeURIComponent(APP)}&period=7d`,
+    );
     const merged = column(canvasElement, 'Merged');
     await expect(within(merged).getAllByRole('article')).toHaveLength(5);
     await expect(
       within(merged).getByRole('link', { name: '+ 2 more' }),
     ).toHaveAttribute('href', '/features?period=7d&stage=merged');
-    await expect(within(merged).getAllByText('Example App')).toHaveLength(4);
     await expect(
       within(column(canvasElement, 'Ready')).getByText('Needs spec'),
     ).toBeVisible();
     await expect(
-      within(column(canvasElement, 'In review')).getByText('round 2'),
+      within(column(canvasElement, 'In review')).getByText('13 min ago'),
     ).toBeVisible();
-    await expect(canvas.queryByText('Old charts')).toBeNull();
-    await expectNoOldContent(canvasElement);
     await expect(
-      within(merged).getByText('serenity 70 · below threshold'),
-    ).toBeVisible();
-    await expect(within(merged).getByText('by a person')).toBeVisible();
-    await expect(canvas.getByRole('link', { name: 'Roles' })).toHaveAttribute(
-      'href',
-      '/roles?period=7d',
-    );
-    await expect(
-      canvas.getByRole('group', { name: 'Tokens by role' }),
-    ).toBeVisible();
-    await expect(canvas.getByText('Tokens per day')).toBeVisible();
+      canvas.queryByRole('heading', { name: 'Where the tokens went' }),
+    ).toBeNull();
+    await expect(canvas.queryByRole('link', { name: 'Roles' })).toBeNull();
     await userEvent.click(canvas.getByRole('button', { name: 'Today' }));
-    await canvas.findByText('Tokens per hour');
     await expect(address(canvasElement)).toHaveTextContent('/?period=today');
-  },
-};
-
-export const MergedAfterAPerson: Story = {
-  name: 'Merged after a person',
-  args: { loadFeatures: featuresLoaderOf(afterPersonFeatures) },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await waitFor(async () =>
-      expect(await title(canvasElement)).toHaveTextContent(
-        /^7 issues merged for /,
-      ),
-    );
-    await expect(
-      canvas.getByText(
-        '3.1M tokens per merged issue · 5 of 7 merged without a person · 14 sessions',
-      ),
-    ).toBeVisible();
-    const merged = column(canvasElement, 'Merged');
-    const card = within(merged)
-      .getByRole('link', { name: '#30 Search filters' })
-      .closest('article');
-    if (card === null) throw new Error('No card for #30');
-    await expect(within(card).getByText('serenity 88')).toBeVisible();
-    await expect(within(card).getByText('after a person')).toBeVisible();
-    await expect(within(merged).getByText('by a person')).toBeVisible();
   },
 };
 
@@ -160,14 +85,15 @@ export const OneProject: Story = {
     await expect(canvas.queryByText('Example App')).toBeNull();
     await expect(canvas.queryByText('Retry policy')).toBeNull();
     await expect(
-      canvas.getByRole('link', { name: '#61 Bulk import' }),
+      canvas.queryByRole('link', { name: '#63 Audit log filters' }),
+    ).toBeNull();
+    await expect(
+      within(section(canvasElement, /^Health$/)).getByRole('link', {
+        name: 'Stats',
+      }),
     ).toHaveAttribute(
       'href',
-      `/features/61?project=${encodeURIComponent(APP)}&period=7d`,
-    );
-    await expect(canvas.getByRole('link', { name: 'Roles' })).toHaveAttribute(
-      'href',
-      `/roles?period=7d&project=${encodeURIComponent(APP)}`,
+      `/stats?period=7d&project=${encodeURIComponent(APP)}`,
     );
     await userEvent.click(canvas.getByRole('button', { name: 'Last 30 days' }));
     await expect(address(canvasElement)).toHaveTextContent(
@@ -177,7 +103,13 @@ export const OneProject: Story = {
 };
 
 export const NoMergedIssue: Story = {
-  args: { loadFeatures: featuresLoaderOf(unmergedFeatures) },
+  args: {
+    loadFeatures: featuresLoaderOf(unmergedFeatures),
+    loadAutonomy: autonomyLoaderOf(autonomyOf({ current: noCounts })),
+    loadFlow: flowLoaderOf(
+      flowOf({ current: { ...flowOf().current, issues: [] } }),
+    ),
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await waitFor(async () =>
@@ -185,10 +117,33 @@ export const NoMergedIssue: Story = {
         /^No issue merged · 12\.5MCost.* tokens$/,
       ),
     );
-    await expect(canvas.getByText('14 sessions')).toBeVisible();
+    await canvas.findByText('14 sessions');
     await expect(
       within(column(canvasElement, 'Merged')).getByText('No issue'),
     ).toBeVisible();
+  },
+};
+
+export const FewMergedWithAgentWork: Story = {
+  name: 'Few merged issues with agent work',
+  args: {
+    loadFlow: flowLoaderOf(
+      flowOf({
+        current: {
+          ...flowOf().current,
+          issues: flowIssues([
+            [20, 10, 1_000_000],
+            [30, 12, 1_200_000],
+            [40, 14, null],
+          ]),
+        },
+      }),
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('14 sessions');
+    await expect(canvas.queryByText(/tokens per merged issue/)).toBeNull();
   },
 };
 
@@ -197,110 +152,44 @@ export const NoActivity: Story = {
     loadOverview: fixedLoader(() => okResponse(emptyOverview)),
     loadFeatures: featuresLoaderOf([]),
     loadRoles: rolesLoader([]),
+    loadAutonomy: autonomyLoaderOf(
+      autonomyOf({
+        current: { ...noCounts, merged: 2, mergedWithoutPerson: 2 },
+      }),
+    ),
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByText('No activity in this period.');
-    await expect(await title(canvasElement)).toHaveTextContent(
-      /^No issue merged · 0Cost.* tokens$/,
-    );
-    await expect(canvas.queryByRole('region', { name: 'Board' })).toBeNull();
-    await expect(canvas.queryByText('Where the tokens went')).toBeNull();
-  },
-};
-
-export const Loading: Story = {
-  args: {
-    loadOverview: () => new Promise(() => undefined),
-    loadFeatures: () => new Promise(() => undefined),
-    loadRoles: () => new Promise(() => undefined),
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await expect(canvas.getAllByText('Loading…')).toHaveLength(3);
-    await expect(
-      canvas.getByRole('heading', { level: 1, name: 'Overview' }),
-    ).toBeVisible();
-  },
-};
-
-export const FeaturesLoading: Story = {
-  args: { loadFeatures: () => new Promise(() => undefined) },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await canvas.findByText('Tokens per day');
-    const board = canvas.getByRole('region', { name: 'Board' });
-    await expect(within(board).getByText('Loading…')).toBeVisible();
-    await expect(
-      canvas.getByRole('group', { name: 'Tokens by role' }),
-    ).toBeVisible();
-  },
-};
-
-export const DatabaseUnreachable: Story = {
-  args: {
-    loadOverview: fixedLoader(() => unreachableResponse),
-    loadFeatures: () => Promise.resolve(UNREACHABLE),
-    loadRoles: () => Promise.resolve(UNREACHABLE),
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await waitFor(() =>
-      expect(
-        canvas.getAllByText('Database unreachable. Start it with pnpm db:up.'),
-      ).toHaveLength(3),
-    );
-    await userEvent.click(canvas.getByRole('button', { name: 'All time' }));
-    await expect(address(canvasElement)).toHaveTextContent('/?period=all');
-  },
-};
-
-export const OverviewUnreachable: Story = {
-  args: { loadOverview: fixedLoader(() => unreachableResponse) },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await canvas.findByRole('link', { name: '#61 Bulk import' });
-    await expect(
-      canvas.getByRole('heading', { level: 1, name: 'Overview' }),
-    ).toBeVisible();
-    await expect(
-      canvas.getAllByText('Database unreachable. Start it with pnpm db:up.'),
-    ).toHaveLength(2);
-    await expect(canvas.queryByText('Tokens per day')).toBeNull();
-  },
-};
-
-export const FeaturesUnreachable: Story = {
-  args: { loadFeatures: () => Promise.resolve(UNREACHABLE) },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await canvas.findByText('Tokens per day');
-    const board = canvas.getByRole('region', { name: 'Board' });
-    await expect(
-      within(board).getByText(
-        'Database unreachable. Start it with pnpm db:up.',
-      ),
-    ).toBeVisible();
-    await expect(
-      canvas.getByRole('group', { name: 'Tokens by role' }),
-    ).toBeVisible();
-  },
-};
-
-export const RolesUnreachable: Story = {
-  args: { loadRoles: () => Promise.resolve(UNREACHABLE) },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
     await waitFor(async () =>
       expect(await title(canvasElement)).toHaveTextContent(
-        /^7 issues merged for 12\.5MCost.* tokens$/,
+        /^2 issues merged for 0Cost.* tokens$/,
       ),
     );
-    await canvas.findByRole('link', { name: '#61 Bulk import' });
     await expect(
-      canvas.getAllByText('Database unreachable. Start it with pnpm db:up.'),
-    ).toHaveLength(1);
-    await expect(canvas.queryByText('Tokens per day')).toBeNull();
+      canvas.queryByRole('button', { name: 'Where the tokens went' }),
+    ).toBeNull();
+    await expect(canvas.queryByRole('region', { name: 'Board' })).toBeNull();
+    const health = section(canvasElement, /^Health$/);
+    await expect(
+      within(health).getAllByText('Not enough data').length,
+    ).toBeGreaterThan(0);
+    await expect(
+      canvas.getByRole('heading', { name: 'Needs a person' }),
+    ).toBeVisible();
+  },
+};
+
+export const NobodyWaiting: Story = {
+  name: 'Nobody waiting',
+  args: { loadWaiting: waitingLoaderOf(noWaiting) },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole('link', { name: '#61 Bulk import' });
+    await canvas.findByText('Merged without a person');
+    await expect(
+      canvas.queryByRole('heading', { name: 'Needs a person' }),
+    ).toBeNull();
   },
 };
 

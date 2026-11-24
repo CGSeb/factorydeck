@@ -3,8 +3,6 @@ import { IssueCard, type IssueCardProps } from './IssueCard.tsx';
 import { type RenderLink, renderAnchor } from './link.ts';
 import { type StageGroup, StageDot } from './StageDot.tsx';
 import { STAGE_GROUP_LABELS } from './StageStrip.tsx';
-import { TokenAmount } from './TokenAmount.tsx';
-import type { TokenCounts } from './token-amount.ts';
 import './work.css';
 
 export interface StageColumnMore {
@@ -17,9 +15,6 @@ export type StageColumnCard = Omit<IssueCardProps, 'renderLink'>;
 export interface StageColumnProps {
   group: StageGroup;
   count: number;
-  counts: TokenCounts;
-  costUsd: number | null;
-  unknownPriceCalls?: number;
   cards: StageColumnCard[];
   more: StageColumnMore;
   renderLink?: RenderLink;
@@ -28,9 +23,6 @@ export interface StageColumnProps {
 export function StageColumn({
   group,
   count,
-  counts,
-  costUsd,
-  unknownPriceCalls = 0,
   cards,
   more,
   renderLink = renderAnchor,
@@ -48,15 +40,6 @@ export function StageColumn({
           {STAGE_GROUP_LABELS[group]}
           <span className="fd-stage-column-count">{count}</span>
         </h2>
-        <span className="fd-stage-column-tokens">
-          <TokenAmount
-            counts={counts}
-            costUsd={costUsd}
-            unknownPriceCalls={unknownPriceCalls}
-            placement="below"
-          />{' '}
-          tokens
-        </span>
       </div>
       {cards.length === 0 ? (
         <p className="fd-stage-column-empty">No issue</p>

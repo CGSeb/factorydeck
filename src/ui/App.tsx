@@ -19,7 +19,12 @@ import { SessionsPage } from './SessionsPage.tsx';
 import type { LoadSkill, LoadSkills } from './skills-api.ts';
 import { SkillPage } from './SkillPage.tsx';
 import { SkillsPage } from './SkillsPage.tsx';
-import type { LoadAutonomy, LoadFlow, LoadQuality } from './stats-api.ts';
+import type {
+  LoadAutonomy,
+  LoadFlow,
+  LoadQuality,
+  LoadWaiting,
+} from './stats-api.ts';
 import { StatsPage } from './StatsPage.tsx';
 
 export interface AppProps {
@@ -41,6 +46,7 @@ export interface AppProps {
   loadOccurrences: LoadOccurrences;
   loadOutput: LoadOutput;
   loadFlow: LoadFlow;
+  loadWaiting: LoadWaiting;
 }
 
 export function App(props: AppProps): ReactElement {

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { TokenAmount } from './TokenAmount.tsx';
 
 const COUNTS = {
@@ -174,5 +174,21 @@ export const NearTheEdge: Story = {
   ],
   play: async ({ canvasElement }) => {
     await openByFocus(canvasElement);
+  },
+};
+
+export const AsButton: Story = {
+  name: 'As a button',
+  args: { action: { label: 'Where the tokens went', onClick: fn() } },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = canvas.getByRole('button', {
+      name: 'Where the tokens went',
+    });
+    await expect(button).toHaveTextContent('42.1M');
+    await userEvent.hover(button);
+    await waitFor(() => expect(canvas.getByRole('tooltip')).toBeVisible());
+    await userEvent.click(button);
+    await expect(args.action?.onClick).toHaveBeenCalledOnce();
   },
 };

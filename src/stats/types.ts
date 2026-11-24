@@ -1,4 +1,5 @@
 import type { Unreachable } from '../server/api-context.ts';
+import type { ProjectOption } from '../projects/label.ts';
 
 export type TrendUnit = 'hour' | 'day' | 'week' | 'month' | 'year';
 
@@ -127,5 +128,31 @@ export type FlowResponse =
       updatedAt: string | null;
       refreshSeconds: number;
       flow: FlowStats;
+    }
+  | Unreachable;
+
+export type WaitReason =
+  'blocked' | 'spec-question' | 'below-threshold' | 'gates-failed';
+
+export interface WaitingIssue {
+  project: string;
+  projectName: string;
+  number: number;
+  title: string;
+  reasons: WaitReason[];
+  since: string | null;
+}
+
+export interface WaitingList {
+  issues: WaitingIssue[];
+  projects: ProjectOption[];
+}
+
+export type WaitingResponse =
+  | {
+      status: 'ok';
+      updatedAt: string | null;
+      refreshSeconds: number;
+      waiting: WaitingList;
     }
   | Unreachable;
