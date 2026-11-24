@@ -127,53 +127,33 @@ function FrictionsContent({
   );
 }
 
-function FrictionsBody({
+function frictionControls({
   response,
   filters,
   onFilters,
-  now,
-  loadOccurrences,
 }: {
   response: FrictionsResponse | undefined;
   filters: FrictionFilters;
   onFilters: (next: FrictionFilters) => void;
-  now: Date;
-  loadOccurrences: LoadOccurrences;
-}): ReactElement {
-  const chip = chipText(
-    filters,
-    response?.status === 'ok' ? response.frictions.subject : undefined,
-  );
-  const chipElement =
-    chip === null ? null : (
-      <FrictionFilterChip
-        text={chip}
-        onRemove={() => {
-          onFilters(withoutFilter(filters));
-        }}
-      />
-    );
-  if (response?.status !== 'ok') {
-    return (
-      <StatusLine>
-        {response === undefined ? 'Loading…' : UNREACHABLE_MESSAGE}
-      </StatusLine>
-    );
-  }
-  const { frictions: stats } = response;
+}): ReactElement | undefined {
+  if (response?.status !== 'ok') return undefined;
+  const stats = response.frictions;
+  const chip = chipText(filters, stats.subject);
   const withFilters = stats.apiCalls > 0 || stats.role !== null;
+  if (!withFilters && chip === null) return undefined;
   return (
     <>
       {withFilters && (
         <FrictionPills stats={stats} filters={filters} onFilters={onFilters} />
       )}
-      {chipElement}
-      <FrictionsContent
-        stats={stats}
-        filters={filters}
-        now={now}
-        loadOccurrences={loadOccurrences}
-      />
+      {chip !== null && (
+        <FrictionFilterChip
+          text={chip}
+          onRemove={() => {
+            onFilters(withoutFilter(filters));
+          }}
+        />
+      )}
     </>
   );
 }
@@ -205,14 +185,24 @@ export function FrictionsPage({
             }}
           />
         }
+        controls={frictionControls({
+          response,
+          filters,
+          onFilters: setFilters,
+        })}
       />
-      <FrictionsBody
-        response={response}
-        filters={filters}
-        onFilters={setFilters}
-        now={now}
-        loadOccurrences={loadOccurrences}
-      />
+      {response?.status === 'ok' ? (
+        <FrictionsContent
+          stats={response.frictions}
+          filters={filters}
+          now={now}
+          loadOccurrences={loadOccurrences}
+        />
+      ) : (
+        <StatusLine>
+          {response === undefined ? 'Loading…' : UNREACHABLE_MESSAGE}
+        </StatusLine>
+      )}
     </div>
   );
 }

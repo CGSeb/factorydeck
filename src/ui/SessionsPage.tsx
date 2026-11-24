@@ -235,10 +235,18 @@ export function SessionsPage({
             onChange={(period) => setFilters({ ...filters, period })}
           />
         }
+        {...(counts === undefined
+          ? {}
+          : {
+              controls: (
+                <StatePills
+                  counts={counts}
+                  filters={filters}
+                  onFilters={setFilters}
+                />
+              ),
+            })}
       />
-      {counts !== undefined && (
-        <StatePills counts={counts} filters={filters} onFilters={setFilters} />
-      )}
       {response === undefined && <StatusLine>Loading…</StatusLine>}
       {response?.status === 'unreachable' && (
         <StatusLine>{UNREACHABLE_MESSAGE}</StatusLine>

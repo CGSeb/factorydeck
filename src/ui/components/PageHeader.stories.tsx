@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, within } from 'storybook/test';
+import { FilterPills } from './FilterPills.tsx';
 import { PageHeader } from './PageHeader.tsx';
 import { PeriodPills } from './PeriodPills.tsx';
 import { surfaceFrame } from './story-frame.ts';
@@ -97,5 +98,48 @@ export const PendingSummary: Story = {
     const summary = canvasElement.querySelector('.fd-page-summary');
     await expect(summary).toHaveAttribute('aria-hidden', 'true');
     await expect(summary?.textContent).toBe(' ');
+  },
+};
+
+export const NotStickyWithoutSlot: Story = {
+  args: { summary: '12 features · 4 in review' },
+  play: async ({ canvasElement }) => {
+    await expect(
+      canvasElement.querySelector('.fd-page-header'),
+    ).toHaveAttribute('data-sticky', 'false');
+  },
+};
+
+export const StickyWithControls: Story = {
+  args: {
+    summary: '24 frictions · 3.1 per 100 API calls',
+    slot: pills,
+    controls: (
+      <FilterPills
+        label="Kind"
+        options={[
+          { value: 'all', label: 'All', count: 24 },
+          { value: 'tool-error', label: 'Tool errors', count: 20 },
+          { value: 'stop-blocked', label: 'Stop blocked', count: 4 },
+        ]}
+        value="all"
+        onChange={fn()}
+      />
+    ),
+  },
+  decorators: [
+    (Story) => (
+      <div style={{ height: 240, overflowY: 'auto' }}>
+        <Story />
+        <div style={{ height: 800 }} />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const header = canvasElement.querySelector('.fd-page-header');
+    await expect(header).toHaveAttribute('data-sticky', 'true');
+    await expect(
+      within(canvasElement).getByRole('group', { name: 'Kind' }),
+    ).toBeInTheDocument();
   },
 };
