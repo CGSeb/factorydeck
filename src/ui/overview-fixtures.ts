@@ -1,6 +1,6 @@
 import type { FeatureRow } from '../features/types.ts';
 import { boardFeatures } from './feature-board-fixtures.ts';
-import { APP, found, outcome } from './feature-fixtures.ts';
+import { APP, asBug, found, outcome } from './feature-fixtures.ts';
 import { splitTokens } from './token-fixtures.ts';
 
 function mergedRow(number: number, title: string, day: number): FeatureRow {
@@ -45,4 +45,12 @@ export const unmergedFeatures: FeatureRow[] = boardFeatures.filter(
     row.outcome?.stage !== 'merged' &&
     row.outcome?.stage !== 'merged-by-person' &&
     row.outcome?.stage !== 'merged-after-person',
+);
+
+const BUG_NUMBERS: ReadonlySet<number> = new Set([
+  63, 57, 52, 48, 30, 31, 32, 33,
+]);
+
+export const bugBoardFeatures: FeatureRow[] = fullBoardFeatures.map((row) =>
+  row.project === APP && BUG_NUMBERS.has(row.number) ? asBug(row) : row,
 );

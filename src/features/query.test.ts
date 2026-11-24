@@ -121,6 +121,55 @@ describe('listFeatures', () => {
     expect(list.totals).not.toHaveProperty('kind');
   });
 
+  it('counts the kinds and tells whether the selection has bug tickets', async () => {
+    const list = await listFeatures(db, week, DEFAULT_CONFIG);
+    expect(list.bugTickets).toBe(true);
+    expect(list.kinds).toEqual({ feature: 2, bug: 1 });
+    const app = await listFeatures(
+      db,
+      { ...week, project: APP },
+      DEFAULT_CONFIG,
+    );
+    expect(app.bugTickets).toBe(true);
+    const lib = await listFeatures(
+      db,
+      { ...week, project: LIB },
+      DEFAULT_CONFIG,
+    );
+    expect(lib.bugTickets).toBe(false);
+    expect(lib.kinds).toEqual({ feature: 0, bug: 0 });
+  });
+
+  it('keeps only the issues of a kind, with merged computed on them', async () => {
+    const all = await listFeatures(db, week, DEFAULT_CONFIG);
+    const bugs = await listFeatures(
+      db,
+      { ...week, kind: 'bug' },
+      DEFAULT_CONFIG,
+    );
+    expect(
+      bugs.rows.map((row) => `${row.project}#${String(row.number)}`),
+    ).toEqual([`${APP}#8`]);
+    expect(bugs.kinds).toEqual(all.kinds);
+    expect(bugs.bugTickets).toBe(true);
+    expect(bugs.merged).toMatchObject({
+      issues: 1,
+      tokensPerIssue: bugs.rows[0]?.tokens,
+      withoutPerson: 0,
+    });
+    expect(bugs.totals).toEqual(all.totals);
+    const features = await listFeatures(
+      db,
+      { ...week, kind: 'feature' },
+      DEFAULT_CONFIG,
+    );
+    expect(
+      features.rows.map((row) => row.number).sort((a, b) => a - b),
+    ).toEqual([7, 9]);
+    expect(features.rows.every((row) => row.project === APP)).toBe(true);
+    expect(features.merged).toMatchObject({ issues: 1, withoutPerson: 1 });
+  });
+
   it('totals the merged issues', async () => {
     const { merged } = await listFeatures(db, week, DEFAULT_CONFIG);
     expect(merged).toEqual({

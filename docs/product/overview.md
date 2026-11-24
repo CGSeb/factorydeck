@@ -35,9 +35,13 @@ An issue with several reasons shows each one. The wait runs from the start of it
 
 Four columns side by side (at least 250 px each, wrapping below): `Ready`, `Working`, `In review`, `Merged`, the [board groups](outcomes.md#stages) of the issues of `/features` for the same period and project, that is the issues with a call in the period. So the `Merged` column can hold an issue merged before the period, and miss one merged in it with no call. Issues closed without merge, not found or not collected are not on the board.
 
-- Each column shows its number of issues, and its 5 issues with the latest activity, most recent first; with more, `+ <k> more` links to `/features?stage=<group>` with the project and period.
-- A card shows its project only with `All projects`, and its badges: in `Ready`, its stage when it is not `Ready`; in `In review`, its review rounds when its report has some; in `Merged`, its serenity score, plus `by a person` or `after a person` for those stages. A card links to its issue page with the period.
+- Each column shows its number of issues, and its 5 issues with the latest activity, most recent first; with more, `+ <k> more` links to `/features?stage=<group>` with the project, the period and the kind.
+- A card shows its project only with `All projects`, and its badges: a bug first shows `Bug` in the danger tone (a feature shows no kind badge); then in `Ready`, its stage when it is not `Ready`; in `In review`, its review rounds when its report has some; in `Merged`, its serenity score, plus `by a person` or `after a person` for those stages. A card links to its issue page with the period.
 - A card shows the time of the issue's last activity, its latest call in the period (orchestration left out, as the `Last activity` sort of `/features`): `just now` under 1 minute, `<m> min ago` under 1 hour, `Today, 14:05` the same local day, `22 Nov, 17:33` before. A card with no call in the period shows no time. A relative time updates without a reload, at least once a minute.
+
+### Kind filter
+
+At the top of the board, the [kind filter of `/features`](features.md#kind-filter), with the same pills, counts, `kind` parameter and rules: shown only when a project of the selection has a bug label, `All` by default. With `Features` or `Bugs`, the four columns, their counts, their cards and their `+ <k> more` links hold only the issues of that kind; with no issue of it, `No bug in this period.` or `No feature in this period.` replaces the columns. The header, the health panel and `Needs a person` are not filtered. The kind is kept when the period or the project changes; the sidebar links do not carry it, only `+ <k> more` does.
 
 ## Empty and loading
 

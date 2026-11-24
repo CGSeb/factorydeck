@@ -32,3 +32,9 @@ export function kindOf(
     bugLabel,
   );
 }
+
+export const ISSUE_KINDS: readonly IssueKind[] = ['feature', 'bug'];
+
+export function isIssueKind(value: unknown): value is IssueKind {
+  return ISSUE_KINDS.some((kind) => kind === value);
+}

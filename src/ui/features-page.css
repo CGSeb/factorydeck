@@ -65,3 +65,15 @@
 .fd-serenity[data-tone='warning'] {
   color: var(--fd-warning);
 }
+
+.fd-features-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fd-space-3) var(--fd-space-4);
+}
+
+.fd-features-filters > .fd-stage-strip {
+  flex: 1 1 520px;
+  min-width: 0;
+}

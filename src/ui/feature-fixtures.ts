@@ -5,6 +5,7 @@ import type {
   FeatureRow,
   FeatureUsage,
 } from '../features/types.ts';
+import type { IssueKind } from '../git-host/kind.ts';
 import type { IssueOutcome } from '../git-host/types.ts';
 import type { LoadFeatures } from './features-api.ts';
 import { nameOf, optionsOf } from './project-fixtures.ts';
@@ -130,11 +131,23 @@ export const noWorkItem: FeatureUsage = {
   orchestrationCostUsd: null,
 };
 
+export interface KindOptions {
+  bugTickets?: boolean;
+  kind?: IssueKind | null | undefined;
+}
+
+export function asBug(row: FeatureRow): FeatureRow {
+  return { ...row, kind: 'bug' };
+}
+
 export function featureList(
-  rows: FeatureRow[],
+  listed: FeatureRow[],
   unassigned: FeatureUsage | null = noWorkItem,
+  { bugTickets = false, kind = null }: KindOptions = {},
 ): FeatureList {
-  const all = [...rows, ...(unassigned === null ? [] : [unassigned])];
+  const rows =
+    kind === null ? listed : listed.filter((row) => row.kind === kind);
+  const all = [...listed, ...(unassigned === null ? [] : [unassigned])];
   const merged = rows.filter(
     (row) =>
       row.outcome?.stage === 'merged' ||
@@ -180,6 +193,11 @@ export function featureList(
       unknownPriceCalls: 0,
     },
     projects: optionsOf([APP, LIB]),
+    bugTickets,
+    kinds: {
+      feature: listed.filter((row) => row.kind === 'feature').length,
+      bug: listed.filter((row) => row.kind === 'bug').length,
+    },
   };
 }
 
@@ -192,10 +210,14 @@ export function featuresResponse(list: FeatureList): FeatureListResponse {
   };
 }
 
-export function featuresLoaderOf(rows: FeatureRow[]): LoadFeatures {
-  return (filters) => {
+export function featuresLoaderOf(
+  rows: FeatureRow[],
+  bugTickets = false,
+): LoadFeatures {
+  return (filters, kind) => {
+    const options = { bugTickets, kind };
     if (rows.length === 0) {
-      return Promise.resolve(featuresResponse(featureList([], null)));
+      return Promise.resolve(featuresResponse(featureList([], null, options)));
     }
     const scoped =
       filters.project === undefined
@@ -207,6 +229,7 @@ export function featuresLoaderOf(rows: FeatureRow[]): LoadFeatures {
         featureList(
           filters.period === 'today' ? scoped.slice(0, 1) : scoped,
           unassigned,
+          options,
         ),
       ),
     );

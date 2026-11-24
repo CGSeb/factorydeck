@@ -1,5 +1,6 @@
-import { sql } from 'drizzle-orm';
+import { and, eq, isNotNull, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
+import { gitHostProject } from '../db/schema.ts';
 import { issueFrictionCount } from '../frictions/query.ts';
 import { issueDetail, lookupOutcomes } from '../git-host/query.ts';
 import { detailInPeriod } from '../git-host/milestones.ts';
@@ -30,6 +31,7 @@ import type {
   FeatureSession,
   FeatureThread,
   FeatureUsage,
+  KindCounts,
   MergedSummary,
 } from './types.ts';
 
@@ -136,20 +138,45 @@ function mergedSummary(
   };
 }
 
+async function hasBugTickets(
+  db: Database,
+  project: string | undefined,
+): Promise<boolean> {
+  const rows = await db
+    .select({ project: gitHostProject.project })
+    .from(gitHostProject)
+    .where(
+      and(
+        isNotNull(gitHostProject.bugLabel),
+        project === undefined ? undefined : eq(gitHostProject.project, project),
+      ),
+    )
+    .limit(1);
+  return rows.length > 0;
+}
+
+function kindCounts(rows: readonly FeatureRow[]): KindCounts {
+  return {
+    feature: rows.filter((row) => row.kind === 'feature').length,
+    bug: rows.filter((row) => row.kind === 'bug').length,
+  };
+}
+
 export async function listFeatures(
   db: Database,
   query: FeatureQuery,
   config: WorkflowConfig,
 ): Promise<FeatureList> {
   const markers = await loadMarkers(db, config, { project: query.project });
-  const [rows, names] = await Promise.all([
+  const [rows, names, bugTickets] = await Promise.all([
     usageRows(db, query, markers),
     projectNames(db),
+    hasBugTickets(db, query.project),
   ]);
   const allocation = allocate(config, rows, markers);
   const issues = [...allocation.issues.values()];
   const outcomeOf = await lookupOutcomes(db, issues);
-  const features: FeatureRow[] = issues
+  const all: FeatureRow[] = issues
     .map((issue) => ({
       project: issue.project,
       projectName: names.label(issue.project),
@@ -164,6 +191,10 @@ export async function listFeatures(
         (row) => `${row.project} ${String(row.number).padStart(12, '0')}`,
       ),
     );
+  const features =
+    query.kind === undefined
+      ? all
+      : all.filter((row) => row.kind === query.kind);
   return {
     rows: features,
     noWorkItem:
@@ -171,6 +202,8 @@ export async function listFeatures(
     totals: allocation.totals,
     merged: mergedSummary(features, allocation),
     projects: names.options(),
+    bugTickets,
+    kinds: kindCounts(all),
   };
 }
 

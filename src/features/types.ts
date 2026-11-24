@@ -60,18 +60,23 @@ export interface MergedSummary {
   unknownPriceCalls: number;
 }
 
+export type KindCounts = Record<IssueKind, number>;
+
 export interface FeatureList {
   rows: FeatureRow[];
   noWorkItem: FeatureUsage | null;
   totals: FeatureTotals;
   merged: MergedSummary;
   projects: ProjectOption[];
+  bugTickets: boolean;
+  kinds: KindCounts;
 }
 
 export interface FeatureQuery {
   period: Period;
   timeZone: string;
   project?: string | undefined;
+  kind?: IssueKind | undefined;
   now?: Date;
 }
 

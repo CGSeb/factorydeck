@@ -84,11 +84,9 @@ export function skillPath(skill: string, search = ''): string {
   return `/skills/${encodeURIComponent(skill)}${search}`;
 }
 
-export function useSkillFilters(): [
-  SkillFilters,
-  (next: SkillFilters) => void,
-  string,
-] {
+export function useSkillFilters(
+  keep: readonly string[] = [],
+): [SkillFilters, (next: SkillFilters) => void, string] {
   const [searchParams, setSearchParams] = useSearchParams();
   const period = searchParams.get('period');
   const filters: SkillFilters = {
@@ -98,6 +96,10 @@ export function useSkillFilters(): [
   const paramsOf = (next: SkillFilters): URLSearchParams => {
     const params = new URLSearchParams({ period: next.period });
     if (next.project !== undefined) params.set('project', next.project);
+    for (const name of keep) {
+      const value = searchParams.get(name);
+      if (value !== null) params.set(name, value);
+    }
     return params;
   };
   return [

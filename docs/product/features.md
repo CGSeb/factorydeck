@@ -19,11 +19,19 @@ The header `Features` sums up the period: `<n> issues · <m> merged, <k> without
 
 A strip of the four [board groups](outcomes.md#stages), each with its number of issues and tokens. Selecting a group shows only that group and sets `stage` to `ready`, `working`, `in-review` or `merged`; selecting it again removes it. Values match exactly: another spelling, an empty or unknown value means none; repeated, the first counts. A group with no issue shows `No issue in this stage.`
 
+### Kind filter
+
+When at least one project of the selection has a [bug label](outcomes.md#kinds), even with no bug in the period, three pills sit beside the stage filter: `All` (the default), `Features <n>` and `Bugs <n>`, where `<n>` is the number of issues of that [kind](outcomes.md#kinds) in the list for the period and project, all stages together. An issue whose kind is unknown (not found, not collected) shows under `All` only. With no such project, the filter is absent and every issue shows.
+
+Selecting `Features` or `Bugs` sets `kind` to `feature` or `bug`; `All` removes it. Values match exactly: another spelling, an empty or unknown value means `All`; repeated, the first counts. A `kind` in the URL while the filter is absent is ignored. The kind is kept when the period, the project, the stage or the sort changes.
+
+With a kind selected, the header, the stage filter's counts and tokens and the table show only the issues of that kind, and the `No work item` and `Total` rows are left out. The kind and stage filters combine. A kind with no issue shows `No bug in this period.` or `No feature in this period.`; with a stage also selected and no issue in it, `No issue in this stage.` While the list reloads, the filter stays with its last counts.
+
 ### Issues table
 
 Rows are grouped under header rows, in this order: `In review`, `Working`, `Ready`, `Merged`, then `Closed` (stage `Closed without merge`) and `Unknown` (not found or not collected); an empty group is left out. Columns:
 
-- `Issue`: `<title> (#<n>)`, the title first and the number in parentheses in a muted style that never breaks across lines, the whole cell linked to the issue page with the period; `#<n> (not found)` for a number the git host does not know, and `#<n>` alone when the title was not collected;
+- `Issue`: `<title> (#<n>)`, the title first and the number in parentheses in a muted style that never breaks across lines, linked to the issue page with the period; `#<n> (not found)` for a number the git host does not know, and `#<n>` alone when the title was not collected. A bug then shows a `Bug` badge in the danger tone, on the same line when it fits; a feature or an issue of unknown kind shows none;
 - `Project`, only with `All projects`;
 - `Split by role`: a thin bar of the issue's tokens by role, orchestration last;
 - `Sessions`, `Rounds`;
@@ -32,7 +40,7 @@ Rows are grouped under header rows, in this order: `In review`, `Working`, `Read
 
 A sort select offers `Last activity` (the default, latest call of the issue in the period, orchestration left out), `Tokens`, `Sessions`, `Review rounds`, `Serenity` (lowest first), `Issue number`; every other option sorts the highest first. Rows sort inside their group; issues without a value come last; ties go to the latest activity, then the highest number. The sort is kept in the URL; the default leaves no parameter.
 
-After the groups: a `No work item` row, then a bold `Total` row with all sessions and the period's tokens. Both are left out while a stage is selected.
+After the groups: a `No work item` row, then a bold `Total` row with all sessions and the period's tokens. Both are left out while a stage or a kind is selected.
 
 ## Issue page
 
@@ -59,5 +67,5 @@ The issue's tokens equal its row on `/features` for the same period and project.
 
 ## API
 
-- `GET /api/features`: per issue its `kind` (`feature`, `bug`, or `null` for an issue not found or not collected, see [Kinds](outcomes.md#kinds)), stage, score, rounds, sessions, tokens with their four kinds, cost, orchestration share, `roles` (by tokens, orchestration last) and `lastAt`; the `noWorkItem` row and the totals, which have no `kind`; and `merged` (count, without a person, `tokensPerIssue`).
+- `GET /api/features`: with `kind=feature` or `kind=bug`, only the issues of that kind, with `merged` computed on them (another value answers `400`). Per issue its `kind` (`feature`, `bug`, or `null` for an issue not found or not collected, see [Kinds](outcomes.md#kinds)), stage, score, rounds, sessions, tokens with their four kinds, cost, orchestration share, `roles` (by tokens, orchestration last) and `lastAt`; the `noWorkItem` row and the totals, which have no `kind`; `merged` (count, without a person, `tokensPerIssue`); `bugTickets`, `true` when a project of the selection has a bug label; and `kinds` (`{ "feature": <n>, "bug": <n> }`), counted on every issue of the list before the kind filter.
 - `GET /api/features/<n>?project=<root>`: the issue, its `kind` (same values), its `threads` (`sessionId`, `sessionTitle`, `threadId`, `role`, `description` or `null` for a main thread, `firstAt`, `lastAt`, tokens, cost), its orchestration row, its milestones and its friction count. The threads plus the orchestration share add up to the issue's tokens on the list.

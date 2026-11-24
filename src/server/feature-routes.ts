@@ -7,6 +7,7 @@ import {
   type FeatureResponse,
   issueNumber,
 } from '../features/types.ts';
+import { isIssueKind } from '../git-host/kind.ts';
 import type { ApiContext } from './api-context.ts';
 import { INVALID_QUERY, skillQuery } from './skill-routes.ts';
 
@@ -25,9 +26,15 @@ export function featureRoutes(
   const routes = new Hono();
   routes.get('/', async (c) => {
     const query = skillQuery((name) => c.req.query(name));
+    const kind = c.req.query('kind');
     if (query === undefined) return c.json(INVALID_QUERY, 400);
+    if (kind !== undefined && !isIssueKind(kind)) {
+      return c.json({ error: 'Expected kind to be feature or bug' }, 400);
+    }
     const body: FeatureListResponse = await fromDatabase(async () => {
-      const list = await features.list(query);
+      const list = await features.list(
+        kind === undefined ? query : { ...query, kind },
+      );
       return { status: 'ok', updatedAt: updatedAt(), refreshSeconds, list };
     });
     return c.json(body, body.status === 'ok' ? 200 : 503);

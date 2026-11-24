@@ -5,6 +5,8 @@ import type {
   FeatureRow,
   FeatureUsage,
 } from '../features/types.ts';
+import type { IssueKind } from '../git-host/kind.ts';
+import { BugBadge } from './components/BugBadge.tsx';
 import {
   DataTable,
   type GroupMarker,
@@ -55,6 +57,28 @@ function IssueName({ row }: { row: FeatureRow }): ReactElement {
       <span className="fd-issue-number">#{row.number}</span>
       {row.issue.status === 'not-found' ? ' (not found)' : ''}
     </>
+  );
+}
+
+function IssueCell({
+  row,
+  filters,
+}: {
+  row: FeatureRow;
+  filters: SkillFilters;
+}): ReactElement {
+  return (
+    <th scope="row">
+      <Link className="fd-issue-link" to={featurePath(row, filters)}>
+        <IssueName row={row} />
+      </Link>
+      {row.kind === 'bug' && (
+        <>
+          {' '}
+          <BugBadge />
+        </>
+      )}
+    </th>
   );
 }
 
@@ -114,11 +138,7 @@ function IssueRow({
   const rounds = row.outcome?.report?.rounds ?? null;
   return (
     <tr>
-      <th scope="row">
-        <Link className="fd-issue-link" to={featurePath(row, filters)}>
-          <IssueName row={row} />
-        </Link>
-      </th>
+      <IssueCell row={row} filters={filters} />
       {projectColor !== undefined && (
         <td>
           <ProjectTag
@@ -220,6 +240,7 @@ export interface IssueGroupsTableProps {
   filters: SkillFilters;
   sort: FeatureSortKey;
   stage: StageGroup | null;
+  kind?: IssueKind | null;
 }
 
 export function IssueGroupsTable({
@@ -227,6 +248,7 @@ export function IssueGroupsTable({
   filters,
   sort,
   stage,
+  kind = null,
 }: IssueGroupsTableProps): ReactElement {
   const showProject = filters.project === undefined;
   const projects = projectColors(list.projects.map(({ project }) => project));
@@ -265,7 +287,7 @@ export function IssueGroupsTable({
               ))}
           </tbody>
         ))}
-        {stage === null && (
+        {stage === null && kind === null && (
           <OtherRows list={list} blanks={showProject ? 2 : 1} />
         )}
       </table>

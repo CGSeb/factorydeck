@@ -1,6 +1,4 @@
-import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
-import type { ReactElement } from 'react';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { chooseOption } from './components/select-test.ts';
 import { boardFeatures } from './feature-board-fixtures.ts';
@@ -13,35 +11,7 @@ import {
 import type { LoadFeatures } from './features-api.ts';
 import { FEATURE_SORT_OPTIONS } from './features-list.ts';
 import { FeaturesPage } from './FeaturesPage.tsx';
-
-function Location(): ReactElement {
-  const { pathname, search } = useLocation();
-  return <output aria-label="Address">{`${pathname}${search}`}</output>;
-}
-
-function routed(fallback: string): Decorator {
-  return (Story, { parameters }) => {
-    const entry: unknown = parameters['entry'];
-    return (
-      <MemoryRouter
-        initialEntries={[typeof entry === 'string' ? entry : fallback]}
-      >
-        <Routes>
-          <Route
-            path="/features"
-            element={
-              <>
-                <Story />
-                <Location />
-              </>
-            }
-          />
-          <Route path="/features/:number" element={<Location />} />
-        </Routes>
-      </MemoryRouter>
-    );
-  };
-}
+import { address, ready, routed, rowHeaders } from './features-story.ts';
 
 const meta = {
   component: FeaturesPage,
@@ -53,25 +23,11 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-function address(canvasElement: HTMLElement): HTMLElement {
-  return within(canvasElement).getByRole('status', { name: 'Address' });
-}
-
-function rowHeaders(canvasElement: HTMLElement): string[] {
-  return within(canvasElement)
-    .getAllByRole('rowheader')
-    .map((cell) => cell.textContent);
-}
-
 function groupHeaders(canvasElement: HTMLElement): string[] {
   return within(canvasElement)
     .getAllByRole('columnheader')
     .filter((cell) => cell.getAttribute('scope') === 'colgroup')
     .map((cell) => cell.textContent);
-}
-
-async function ready(canvasElement: HTMLElement): Promise<void> {
-  await within(canvasElement).findByRole('rowheader', { name: / \(#61\)$/ });
 }
 
 export const AllProjects: Story = {

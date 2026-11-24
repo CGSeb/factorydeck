@@ -1,5 +1,6 @@
 import type { IssueStage } from '../git-host/types.ts';
 import type { FeatureList, FeatureRow } from '../features/types.ts';
+import type { IssueKind } from '../git-host/kind.ts';
 import type { SeriesPoint } from '../overview/types.ts';
 import type { RoleList } from '../roles/types.ts';
 import type { ChartSegment } from './components/chart-math.ts';
@@ -16,6 +17,7 @@ import { projectColors } from './design/palette.ts';
 import { featurePath } from './features-api.ts';
 import { STAGE_PARAM, groupOf, sortRows } from './features-list.ts';
 import { formatActivity, formatCount, formatTokens } from './format.ts';
+import { KIND_PARAM } from './kind-filter.ts';
 import { isEnough } from './components/stats-math.ts';
 import type { FlowSample } from './stats-view.ts';
 import { byTokensDescending, colorsOfRoles } from './roles-view.ts';
@@ -80,6 +82,7 @@ export function boardColumns(
   list: FeatureList,
   filters: SkillFilters,
   now: Date,
+  kind: IssueKind | null = null,
 ): BoardColumn[] {
   const showProject = filters.project === undefined;
   const colors = projectColors(list.projects.map(({ project }) => project));
@@ -97,15 +100,29 @@ export function boardColumns(
       ),
       more: {
         count: members.length - shown.length,
-        href: stagePath(group, filters),
+        href: stagePath(group, filters, kind),
       },
     };
   });
 }
 
-function stagePath(group: StageGroup, filters: SkillFilters): string {
+function stagePath(
+  group: StageGroup,
+  filters: SkillFilters,
+  kind: IssueKind | null,
+): string {
   const params = new URLSearchParams({ [STAGE_PARAM]: group });
+  if (kind !== null) params.set(KIND_PARAM, kind);
   return `${listPath('/features', filters)}&${params.toString()}`;
+}
+
+function withBugBadge(
+  row: FeatureRow,
+  badge: IssueCardBadge | IssueCardBadge[] | undefined,
+): IssueCardBadge | IssueCardBadge[] | undefined {
+  if (row.kind !== 'bug') return badge;
+  const others = badge === undefined ? [] : 'kind' in badge ? [badge] : badge;
+  return [{ kind: 'bug' }, ...others];
 }
 
 interface CardContext {
@@ -119,7 +136,7 @@ function cardOf(
   filters: SkillFilters,
   { showProject, colors, now }: CardContext,
 ): StageColumnCard {
-  const badge = cardBadge(row);
+  const badge = withBugBadge(row, cardBadge(row));
   return {
     issue: {
       project: row.project,
