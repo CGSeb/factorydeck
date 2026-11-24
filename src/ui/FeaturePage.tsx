@@ -58,30 +58,29 @@ function NotFound(): ReactElement {
 }
 
 function IssueTitle({ feature }: { feature: FeatureDetail }): ReactElement {
+  if (feature.issue.status === 'found') {
+    return (
+      <>
+        <a
+          className="fd-issue-link"
+          href={feature.issue.url}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {feature.issue.title}
+          <span className="fd-issue-link-icon" aria-hidden="true">
+            ↗
+          </span>
+        </a>{' '}
+        <span className="fd-issue-number">(#{feature.number})</span>
+      </>
+    );
+  }
   const title = issueTitleText(feature.issue);
   return (
     <>
       <span className="fd-issue-number">#{feature.number}</span>
-      {title === null ? null : (
-        <>
-          {' '}
-          {feature.issue.status === 'found' ? (
-            <a
-              className="fd-issue-link"
-              href={feature.issue.url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {title}
-              <span className="fd-issue-link-icon" aria-hidden="true">
-                ↗
-              </span>
-            </a>
-          ) : (
-            title
-          )}
-        </>
-      )}
+      {title === null ? null : ` ${title}`}
     </>
   );
 }

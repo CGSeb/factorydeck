@@ -60,8 +60,15 @@ function stepTitles(canvasElement: HTMLElement): (string | null)[] {
 export const MergedByPerson: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByRole('heading', { name: '#52 Export button' });
+    const heading = await canvas.findByRole('heading', {
+      name: 'Export button (#52)',
+    });
+    await expect(heading).toHaveTextContent(/^Export button↗ \(#52\)$/);
+    await expect(heading.querySelector('.fd-issue-number')).toHaveTextContent(
+      /^\(#52\)$/,
+    );
     const issueLink = canvas.getByRole('link', { name: 'Export button' });
+    await expect(issueLink).not.toHaveTextContent(/#52/);
     await expect(issueLink).toHaveAttribute(
       'href',
       'https://github.com/example-org/example-app/issues/52',
@@ -103,7 +110,7 @@ export const MergedAfterPerson: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByRole('heading', { name: '#62 Saved filters' });
+    await canvas.findByRole('heading', { name: 'Saved filters (#62)' });
     await expect(canvas.getByText('Merged after a person')).toHaveAttribute(
       'data-tone',
       'success',
@@ -131,7 +138,7 @@ export const MergedAfterRefusedReportAt1024: Story = {
   ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByRole('heading', { name: '#62 Saved filters' });
+    await canvas.findByRole('heading', { name: 'Saved filters (#62)' });
     const items = [...canvasElement.querySelectorAll('.fd-timeline > li')].map(
       (item) =>
         item.classList.contains('fd-timeline-milestone')
@@ -163,12 +170,12 @@ export const MergedAfterRefusedReportAt1024: Story = {
 export const ChangePeriod: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByRole('heading', { name: '#52 Export button' });
+    await canvas.findByRole('heading', { name: 'Export button (#52)' });
     await userEvent.click(canvas.getByRole('button', { name: 'Last 7 days' }));
     await expect(address(canvasElement)).toHaveTextContent(
       '/features/52?project=%2Fhome%2Fdev%2Fexample-app&period=7d',
     );
-    await canvas.findByRole('heading', { name: '#52 Export button' });
+    await canvas.findByRole('heading', { name: 'Export button (#52)' });
     await userEvent.click(
       canvas.getByRole('link', { name: '← Example App features' }),
     );
@@ -184,7 +191,7 @@ export const InReview: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByRole('heading', { name: '#61 Keyboard shortcuts' });
+    await canvas.findByRole('heading', { name: 'Keyboard shortcuts (#61)' });
     await expect(canvas.getByText('In review')).toBeVisible();
     await expect(
       canvas.getByRole('heading', { name: 'Where it stands' }),
@@ -200,7 +207,7 @@ export const OrchestrationOnly: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByRole('heading', { name: '#70 Release notes' });
+    await canvas.findByRole('heading', { name: 'Release notes (#70)' });
     await expect(stepTitles(canvasElement)).toEqual(['Orchestration']);
     await expect(canvas.getByText('1 session')).toBeVisible();
   },
@@ -212,7 +219,7 @@ export const NoActivity: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByRole('heading', { name: '#71 Import button' });
+    await canvas.findByRole('heading', { name: 'Import button (#71)' });
     await expect(canvas.getByText('No activity in this period.')).toBeVisible();
     await expect(canvas.getByText('0 sessions')).toBeVisible();
   },
@@ -224,7 +231,10 @@ export const NotCollected: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByRole('heading', { name: '#28' });
+    const heading = await canvas.findByRole('heading', { name: '#28' });
+    await expect(heading.querySelector('.fd-issue-number')).toHaveTextContent(
+      /^#28$/,
+    );
     await expect(canvas.getByText('No activity in this period.')).toBeVisible();
   },
 };
@@ -262,7 +272,7 @@ export const At1024: Story = {
   ],
   play: async ({ canvasElement }) => {
     await within(canvasElement).findByRole('heading', {
-      name: '#52 Export button',
+      name: 'Export button (#52)',
     });
   },
 };

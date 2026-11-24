@@ -196,9 +196,9 @@ export const Features: Story = {
       canvas.getByRole('link', { name: 'Features' }),
     ).toHaveAttribute('aria-current', 'page');
     await userEvent.click(
-      await canvas.findByRole('link', { name: '#52 Export button' }),
+      await canvas.findByRole('link', { name: 'Export button (#52)' }),
     );
-    await canvas.findByRole('heading', { name: '#52 Export button' });
+    await canvas.findByRole('heading', { name: 'Export button (#52)' });
     await expect(
       canvas.getByRole('link', { name: 'Export button' }),
     ).toHaveAttribute(
@@ -285,7 +285,7 @@ export const OneProjectAcrossPages: Story = {
       ),
     );
     await userEvent.click(canvas.getByRole('link', { name: 'Features' }));
-    await canvas.findByRole('rowheader', { name: '#52 Export button' });
+    await canvas.findByRole('rowheader', { name: 'Export button (#52)' });
     await expect(
       canvas.queryByRole('columnheader', { name: 'Project' }),
     ).toBeNull();

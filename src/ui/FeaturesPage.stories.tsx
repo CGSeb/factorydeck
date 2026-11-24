@@ -71,7 +71,7 @@ function groupHeaders(canvasElement: HTMLElement): string[] {
 }
 
 async function ready(canvasElement: HTMLElement): Promise<void> {
-  await within(canvasElement).findByRole('rowheader', { name: /^#61 / });
+  await within(canvasElement).findByRole('rowheader', { name: / \(#61\)$/ });
 }
 
 export const AllProjects: Story = {
@@ -98,16 +98,16 @@ export const AllProjects: Story = {
       'Unknown2',
     ]);
     await expect(rowHeaders(canvasElement)).toEqual([
-      '#61 Bulk import',
-      '#60 Retry policy',
-      '#57 Dark mode',
-      '#58 Typed errors',
-      '#63 Audit log',
-      '#64 Rate limits',
-      '#45 Config loader',
-      '#52 Export button',
-      '#48 Session list',
-      '#44 Old charts',
+      'Bulk import (#61)',
+      'Retry policy (#60)',
+      'Dark mode (#57)',
+      'Typed errors (#58)',
+      'Audit log (#63)',
+      'Rate limits (#64)',
+      'Config loader (#45)',
+      'Export button (#52)',
+      'Session list (#48)',
+      'Old charts (#44)',
       '#70 (not found)',
       '#12',
       'No work item',
@@ -153,9 +153,9 @@ export const StageSelected: Story = {
     await expect(merged).toHaveAttribute('aria-pressed', 'true');
     await expect(groupHeaders(canvasElement)).toEqual(['Merged3']);
     await expect(rowHeaders(canvasElement)).toEqual([
-      '#45 Config loader',
-      '#52 Export button',
-      '#48 Session list',
+      'Config loader (#45)',
+      'Export button (#52)',
+      'Session list (#48)',
     ]);
     await userEvent.click(merged);
     await expect(address(canvasElement)).toHaveTextContent(
@@ -176,8 +176,8 @@ export const StageFromAddress: Story = {
       canvas.getByRole('button', { name: /^In review/, pressed: true }),
     ).toBeVisible();
     await expect(rowHeaders(canvasElement)).toEqual([
-      '#61 Bulk import',
-      '#60 Retry policy',
+      'Bulk import (#61)',
+      'Retry policy (#60)',
     ]);
   },
 };
@@ -199,7 +199,10 @@ export const EmptyStageSelected: Story = {
   },
 };
 
-const BY_SIZE = ['#48 Session list', '#52 Export button', '#45 Config loader'];
+const SESSION_LIST = 'Session list (#48)';
+const EXPORT_BUTTON = 'Export button (#52)';
+const CONFIG_LOADER = 'Config loader (#45)';
+const BY_SIZE = [SESSION_LIST, EXPORT_BUTTON, CONFIG_LOADER];
 
 function sorted(label: string, merged: readonly string[]): Story {
   const sort = FEATURE_SORT_OPTIONS.find((option) => option.label === label);
@@ -209,7 +212,7 @@ function sorted(label: string, merged: readonly string[]): Story {
     },
     play: async ({ canvasElement }) => {
       const canvas = within(canvasElement);
-      await canvas.findByRole('rowheader', { name: '#52 Export button' });
+      await canvas.findByRole('rowheader', { name: EXPORT_BUTTON });
       const sort = canvas.getByRole('combobox', { name: 'Sort by' });
       await expect(sort).toHaveTextContent(label);
       await expect(rowHeaders(canvasElement)).toEqual(merged);
@@ -226,9 +229,9 @@ export const SortedByReviewRounds = sorted('Review rounds', BY_SIZE);
 export const SortedBySerenity = sorted('Serenity', BY_SIZE);
 
 export const SortedByIssueNumber = sorted('Issue number', [
-  '#52 Export button',
-  '#48 Session list',
-  '#45 Config loader',
+  EXPORT_BUTTON,
+  SESSION_LIST,
+  CONFIG_LOADER,
 ]);
 
 export const SortedByLastActivity: Story = {
@@ -242,14 +245,10 @@ export const SortedByLastActivity: Story = {
       '/features?period=all&sort=tokens',
     );
     await expect(rowHeaders(canvasElement).slice(0, 2)).toEqual([
-      '#61 Bulk import',
-      '#60 Retry policy',
+      'Bulk import (#61)',
+      'Retry policy (#60)',
     ]);
-    await expect(rowHeaders(canvasElement).slice(6, 9)).toEqual([
-      '#48 Session list',
-      '#52 Export button',
-      '#45 Config loader',
-    ]);
+    await expect(rowHeaders(canvasElement).slice(6, 9)).toEqual(BY_SIZE);
     await chooseOption(select, 'Last activity');
     await expect(address(canvasElement)).toHaveTextContent(
       /^\/features\?period=all$/,
@@ -265,7 +264,7 @@ export const ClosedAndUnknown: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByRole('rowheader', { name: '#44 Old charts' });
+    await canvas.findByRole('rowheader', { name: 'Old charts (#44)' });
     await expect(groupHeaders(canvasElement)).toEqual(['Closed1', 'Unknown2']);
     await expect(canvas.getByText('3 issues')).toBeVisible();
     await expect(
