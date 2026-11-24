@@ -22,7 +22,7 @@ Columns: `Skill` (the name as stored, linked to its page), `Launches`, `Sessions
 
 ## Roles page
 
-The header `Roles` says where the roles come from ([Roles and work items](roles-and-work-items.md#roles)).
+The header `Roles` says where the roles come from ([Roles and work items](roles-and-work-items.md#roles)): `Rules from <path>`, or without a configuration file `No configuration file at <path>: default roles of the factorydeck-skills workflows.`
 
 - **By role**: a bar of the period's tokens by role (role colours in the order of the configuration), then a table: `Role`, `Threads` (sessions for `main`, sub-agents for the others, with at least one call in the period), `API calls`, `Tokens per thread` (`—` with no thread), sorted by tokens descending, `unassigned` like the others, and a bold `Total` row.
 - **By model**: a bar `Tokens by model` (most tokens first; a model with no id is `—`), then a table: `Model`, `API calls`, sorted by tokens descending.

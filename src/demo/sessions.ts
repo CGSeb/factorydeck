@@ -26,6 +26,7 @@ import {
 import { flowSessions, reworkSessions } from './flow-sessions.ts';
 import { helpSession } from './help-sessions.ts';
 import { markerSessions } from './marker-sessions.ts';
+import { bugSessions } from './bug-sessions.ts';
 import { demoGitHub } from './git-host.ts';
 import { demoGitLab } from './git-host-gitlab.ts';
 
@@ -117,6 +118,7 @@ export const DEMO_SESSIONS: readonly DemoSession[] = [
     calls: [launching(sonnet, SPEC_SKILL), sonnet, haiku],
   },
   ...markerSessions(EXAMPLE_APP, DAY, SPEC_SKILL),
+  ...bugSessions(EXAMPLE_APP, DAY),
   ...flowSessions(EXAMPLE_APP),
   ...reworkSessions(EXAMPLE_APP),
   ...[7, 2].map((days, index) => ({

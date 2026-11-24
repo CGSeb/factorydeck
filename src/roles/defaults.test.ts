@@ -32,6 +32,8 @@ describe('default role rules', () => {
       ['shipper', '^(Ship|Merge|Push) '],
       ['reworker', '^(Rework|Rebase|Update) '],
       ['spec-checker', 'check-spec'],
+      ['debugger', '^Debug '],
+      ['bug-checker', 'check-bug'],
     ]);
     expect(
       config.rules.roles.every((rule) => rule.agentType === undefined),

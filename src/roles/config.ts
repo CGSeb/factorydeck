@@ -9,9 +9,10 @@ import {
   markerProblem,
 } from './work-item-pattern.ts';
 import { UNASSIGNED_ROLE } from './types.ts';
+import { DEFAULT_ROLES } from './default-roles.ts';
 
 export const MAIN_ROLE = 'main';
-export { UNASSIGNED_ROLE };
+export { DEFAULT_ROLES, UNASSIGNED_ROLE };
 
 export const WORK_ITEM_SOURCES = [
   'marker',
@@ -45,14 +46,6 @@ export interface WorkflowConfig {
   rules: WorkflowRules;
   projects: Map<string, Partial<WorkflowRules>>;
 }
-
-export const DEFAULT_ROLES: readonly RoleRule[] = [
-  { name: 'builder', description: /^(Build|Worker for) /i },
-  { name: 'reviewer', description: /^Review /i },
-  { name: 'shipper', description: /^(Ship|Merge|Push) /i },
-  { name: 'reworker', description: /^(Rework|Rebase|Update) /i },
-  { name: 'spec-checker', description: /check-spec/i },
-];
 
 export const DEFAULT_RULES: WorkflowRules = {
   roles: [...DEFAULT_ROLES],

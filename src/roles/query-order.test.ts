@@ -53,6 +53,8 @@ describe('order of the role list', () => {
       'shipper',
       'reworker',
       'spec-checker',
+      'debugger',
+      'bug-checker',
     ]);
   });
 });

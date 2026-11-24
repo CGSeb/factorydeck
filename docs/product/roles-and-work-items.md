@@ -2,7 +2,7 @@
 
 Every thread (a session's main thread, each sub-agent) gets a **role** and a **work item** (the issue it works on). Every API call then belongs to exactly one role and to at most one issue, so the totals of every page add up and nothing is dropped.
 
-The rules come from a configuration file; without one, the defaults fit the `build-feature` workflow of factorydeck-skills.
+The rules come from a configuration file; without one, the defaults fit the `build-feature` and `fix-bug` workflows of factorydeck-skills.
 
 ## The configuration file
 
@@ -35,7 +35,7 @@ Patterns are JavaScript regular expressions, case-insensitive, matched anywhere 
 - A sub-agent takes the name of the first role rule matching its type and description. With no match, its role is its type (`Explore`, `general-purpose`); with an empty type, `unassigned`.
 - Several rules may share a name, and a rule named like a sub-agent type shares that type's row.
 
-**Default role rules**, each on the sub-agent's description; they match the descriptions `build-feature` gives its agents:
+**Default role rules**, each on the sub-agent's description; they match the descriptions `build-feature` and `fix-bug` give their agents:
 
 | Role           | Pattern                      |
 | -------------- | ---------------------------- |
@@ -44,8 +44,10 @@ Patterns are JavaScript regular expressions, case-insensitive, matched anywhere 
 | `shipper`      | `^(Ship\|Merge\|Push) `      |
 | `reworker`     | `^(Rework\|Rebase\|Update) ` |
 | `spec-checker` | `check-spec`                 |
+| `debugger`     | `^Debug `                    |
+| `bug-checker`  | `check-bug`                  |
 
-The Roles page says where its roles come from: `Rules from <path>` when the file exists, else `No configuration file at <path>: default roles of the build-feature workflow.`
+The Roles page says where its roles come from: `Rules from <path>` when the file exists, else `No configuration file at <path>: default roles of the factorydeck-skills workflows.`
 
 ## Work items
 

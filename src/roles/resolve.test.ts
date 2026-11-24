@@ -151,6 +151,21 @@ describe('roleOf with the default role rules', () => {
     expect(role('worker FOR #31')).toBe('builder');
   });
 
+  it('gives each fix-bug sub-agent its role', () => {
+    expect(role('Debug #12')).toBe('debugger');
+    expect(role('check-bug #12')).toBe('bug-checker');
+    expect(role('Review #12')).toBe('reviewer');
+    expect(role('Ship #12')).toBe('shipper');
+    expect(role('check-spec #12')).toBe('spec-checker');
+    expect(role('debug #12')).toBe('debugger');
+    expect(role('Run the Debug #12 checks')).toBe('general-purpose');
+  });
+
+  it('keeps the first match when a description fits an earlier rule too', () => {
+    expect(role('Review check-bug #12')).toBe('reviewer');
+    expect(role('Debug check-spec #12')).toBe('spec-checker');
+  });
+
   it('keeps the type, or unassigned, when no default rule matches', () => {
     expect(role('Find the role routes', 'Explore')).toBe('Explore');
     expect(role('Fix the build')).toBe('general-purpose');
@@ -208,7 +223,7 @@ describe('workItemOf', () => {
 });
 
 describe('factorydeck.example.yml', () => {
-  it('is a valid configuration with the build-feature roles', () => {
+  it('is a valid configuration with the default roles', () => {
     const path = join(
       import.meta.dirname,
       '..',
@@ -223,6 +238,8 @@ describe('factorydeck.example.yml', () => {
       'shipper',
       'reworker',
       'spec-checker',
+      'debugger',
+      'bug-checker',
     ]);
     const role = (description: string): string =>
       roleOf(config.rules, { agentType: 'general-purpose', description });
@@ -231,6 +248,8 @@ describe('factorydeck.example.yml', () => {
     expect(role('Ship #23')).toBe('shipper');
     expect(role('Rebase #23')).toBe('reworker');
     expect(role('Run check-spec on 006')).toBe('spec-checker');
+    expect(role('Debug #23')).toBe('debugger');
+    expect(role('check-bug #23')).toBe('bug-checker');
     expect(config.rules.workItems).toEqual(DEFAULT_RULES.workItems);
     expect(config.rules.roles).toEqual(DEFAULT_RULES.roles);
   });

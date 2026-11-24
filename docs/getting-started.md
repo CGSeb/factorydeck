@@ -44,6 +44,6 @@ Every team splits agent work differently. FactoryDeck reads your workflow from c
 - **Work items**: how to find the issue or pull request a session works on, for example `#52` in a sub-agent description, or a branch name.
 - **Outcomes**: which labels, checks or comments mean "merged", "needs rework" or a quality score.
 
-Without a file, the roles of the `build-feature` workflow of factorydeck-skills apply (builder, reviewer, shipper, reworker, spec-checker), and work items are read from `#<number>` in sub-agent descriptions and session titles. To change them, copy [`factorydeck.example.yml`](../factorydeck.example.yml) to `factorydeck.yml`: it documents every key and holds the default rules. Then restart FactoryDeck.
+Without a file, the roles of the `build-feature` and `fix-bug` workflows of factorydeck-skills apply (builder, reviewer, shipper, reworker, spec-checker, debugger, bug-checker), and work items are read from `#<number>` in sub-agent descriptions and session titles. To change them, copy [`factorydeck.example.yml`](../factorydeck.example.yml) to `factorydeck.yml`: it documents every key and holds the default rules. Then restart FactoryDeck.
 
 To see how sessions, issues and outcomes are linked, read [How FactoryDeck works](how-it-works.md).
