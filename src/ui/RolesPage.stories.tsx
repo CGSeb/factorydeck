@@ -154,7 +154,7 @@ export const CustomConfiguration: Story = {
     await expect(within(writer).getAllByRole('cell')[2]).toHaveTextContent('—');
     await expect(
       canvas.getByText(
-        'No configuration file at /home/dev/factorydeck/factorydeck.yml: default roles of the build-feature workflow.',
+        'No configuration file at /home/dev/factorydeck/factorydeck.yml: default roles of the factorydeck-skills workflows.',
       ),
     ).toBeVisible();
   },

@@ -21,7 +21,7 @@ version: 1
 # A sub-agent no rule matches takes its type as role, or `unassigned` when it has none. A
 # session's main thread is always `main`.
 #
-# These are the default rules: they fit the build-feature workflow of factorydeck-skills.
+# These are the default rules: they fit the build-feature and fix-bug workflows of factorydeck-skills.
 # Removing the key keeps them; `roles: []` groups sub-agents by type.
 roles:
   - name: builder
@@ -34,6 +34,10 @@ roles:
     description: '^(Rework|Rebase|Update) '
   - name: spec-checker
     description: 'check-spec'
+  - name: debugger
+    description: '^Debug '
+  - name: bug-checker
+    description: 'check-bug'
 
 # Work items (issue numbers) of threads, tried in order: the first rule whose pattern matches and
 # captures a positive whole number gives the work item.

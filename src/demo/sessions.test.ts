@@ -30,6 +30,7 @@ import {
 } from './codex-sessions.ts';
 
 const NOW = new Date('2026-03-12T15:30:00Z');
+const STATE = { inactiveAfterMinutes: 30, now: NOW };
 
 let db: Database;
 let close: () => Promise<void>;
@@ -106,10 +107,14 @@ describe('demo sessions', () => {
     expect(list.roles.map((row) => row.role).sort()).toEqual([
       'Explore',
       'api-builder',
+      'bug-checker',
+      'bug-reporter',
       'builder',
+      'debugger',
       'explorer',
       'main',
       'reviewer',
+      'shipper',
       'spec-writer',
       'unassigned',
       'worker',
@@ -120,12 +125,7 @@ describe('demo sessions', () => {
       now: NOW,
     });
     expect(list.apiCalls).toBe(overview.totals.apiCalls);
-    const detail = await sessionDetail(
-      db,
-      'demo-app-1',
-      { inactiveAfterMinutes: 30, now: NOW },
-      config,
-    );
+    const detail = await sessionDetail(db, 'demo-app-1', STATE, config);
     expect(detail?.workItem).toBe(11);
     expect(
       detail?.subAgents.map((agent) => [agent.role, agent.workItem]),
@@ -135,29 +135,14 @@ describe('demo sessions', () => {
       ['reviewer', 11],
       ['builder', 11],
     ]);
-    const api = await sessionDetail(
-      db,
-      'demo-api-1',
-      { inactiveAfterMinutes: 30, now: NOW },
-      config,
-    );
+    const api = await sessionDetail(db, 'demo-api-1', STATE, config);
     expect(api?.workItem).toBe(21);
     expect(api?.subAgents.map((agent) => [agent.role, agent.workItem])).toEqual(
       [['api-builder', 21]],
     );
-    const spec = await sessionDetail(
-      db,
-      'demo-app-spec',
-      { inactiveAfterMinutes: 30, now: NOW },
-      config,
-    );
+    const spec = await sessionDetail(db, 'demo-app-spec', STATE, config);
     expect(spec?.workItem).toBe(31);
-    const specs = await sessionDetail(
-      db,
-      'demo-app-specs',
-      { inactiveAfterMinutes: 30, now: NOW },
-      config,
-    );
+    const specs = await sessionDetail(db, 'demo-app-specs', STATE, config);
     expect(specs?.workItem).toBe(34);
     expect(
       specs?.subAgents.map((agent) => [agent.role, agent.workItem]),

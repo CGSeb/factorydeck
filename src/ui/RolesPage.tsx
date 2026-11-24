@@ -32,7 +32,7 @@ const page: CSSProperties = {
 export function roleSourceText({ path, exists }: RoleSourceFile): string {
   return exists
     ? `Rules from ${path}`
-    : `No configuration file at ${path}: default roles of the build-feature workflow.`;
+    : `No configuration file at ${path}: default roles of the factorydeck-skills workflows.`;
 }
 
 function ModelsContent({
