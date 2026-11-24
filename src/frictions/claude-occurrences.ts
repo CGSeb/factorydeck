@@ -1,9 +1,9 @@
 import { SHELL_TOOLS, toolErrorsOf } from '../ingest/frictions.ts';
 import { recordUuidOf } from '../ingest/friction-rows.ts';
 import { type LogRecord, isObject, parseRecord } from '../ingest/records.ts';
-import { errorExcerpt, inputText, messageExcerpt } from './log-texts.ts';
+import { cleanMessage, cleanOutput, inputText } from './log-texts.ts';
 import { type FileReading, type LogTarget, settle } from './log-reading.ts';
-import type { OccurrenceTexts } from './occurrence-types.ts';
+import type { LogTexts } from './occurrence-types.ts';
 
 function callInputs(record: LogRecord, home: string): [string, string][] {
   if (record.type !== 'assistant') return [];
@@ -51,7 +51,7 @@ function textsOf(
   target: LogTarget,
   calls: ReadonlyMap<string, string>,
   home: string,
-): OccurrenceTexts | null {
+): LogTexts | null {
   if (target.kind === 'stop-blocked') {
     const errors = record['hookErrors'];
     if (
@@ -63,7 +63,7 @@ function textsOf(
     }
     return {
       kind: 'stop-blocked',
-      message: messageExcerpt(hookMessage(errors[target.position]), home),
+      message: cleanMessage(hookMessage(errors[target.position]), home),
     };
   }
   const error = toolErrorsOf(record).find(
@@ -74,7 +74,7 @@ function textsOf(
   return {
     kind: 'tool-error',
     input,
-    error: errorExcerpt(withoutErrorTag(error.text), home),
+    output: cleanOutput(withoutErrorTag(error.text), home),
   };
 }
 

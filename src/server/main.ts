@@ -8,7 +8,10 @@ import {
 } from '../config/env.ts';
 import { type Database, createDatabase } from '../db/client.ts';
 import { featureDetail, listFeatures } from '../features/query.ts';
-import { frictionOccurrences } from '../frictions/occurrences.ts';
+import {
+  frictionOccurrences,
+  frictionOutput,
+} from '../frictions/occurrences.ts';
 import { frictionStats } from '../frictions/query.ts';
 import { collect } from '../git-host/collect.ts';
 import { collectionStatus } from '../git-host/query.ts';
@@ -81,6 +84,7 @@ function statsSource(db: Database, config: WorkflowConfig): StatsSource {
     quality: (query) => qualityStats(db, query, hasFactory),
     frictions: (query) => frictionStats(db, query, config),
     occurrences: (query) => frictionOccurrences(db, query, config),
+    output: (id) => frictionOutput(db, id),
     flow: (query) => flowStats(db, query, config, hasFactory),
   };
 }

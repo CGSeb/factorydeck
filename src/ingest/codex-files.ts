@@ -6,6 +6,11 @@ import { wslPath } from './wsl.ts';
 
 export const CODEX = 'codex';
 
+export const CODEX_SHELL_TOOLS: ReadonlySet<string> = new Set([
+  'shell',
+  'exec_command',
+]);
+
 export const CODEX_RECORD_TYPES: ReadonlySet<string> = new Set([
   'session_meta',
   'response_item',

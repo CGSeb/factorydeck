@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import type { OccurrencesResponse } from '../frictions/occurrence-types.ts';
-import { occurrencesLoader, occurrencesUrl } from './occurrences-api.ts';
+import type {
+  FullOutputResponse,
+  OccurrencesResponse,
+} from '../frictions/occurrence-types.ts';
+import {
+  occurrencesLoader,
+  occurrencesUrl,
+  outputLoader,
+} from './occurrences-api.ts';
 
 describe('occurrencesUrl', () => {
   it('carries every filter of the page, the table and the row', () => {
@@ -67,5 +74,23 @@ describe('occurrencesLoader', () => {
       () => 'UTC',
     );
     expect(await load(request)).toBeUndefined();
+  });
+});
+
+describe('outputLoader', () => {
+  it('asks the output of one friction by its id', async () => {
+    const body: FullOutputResponse = { status: 'ok', gone: false, text: 'x' };
+    const urls: string[] = [];
+    const load = outputLoader((input) => {
+      urls.push(typeof input === 'string' ? input : '');
+      return Promise.resolve(Response.json(body));
+    });
+    expect(await load(42)).toEqual(body);
+    expect(urls).toEqual(['/api/frictions/42/output']);
+  });
+
+  it('answers undefined when the API does not answer', async () => {
+    const load = outputLoader(() => Promise.reject(new Error('offline')));
+    expect(await load(42)).toBeUndefined();
   });
 });

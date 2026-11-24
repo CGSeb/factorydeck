@@ -1,4 +1,5 @@
 import type {
+  FullOutputResponse,
   OccurrenceTable,
   OccurrencesResponse,
 } from '../frictions/occurrence-types.ts';
@@ -14,6 +15,23 @@ export interface OccurrenceRequest {
 export type LoadOccurrences = (
   request: OccurrenceRequest,
 ) => Promise<OccurrencesResponse | undefined>;
+
+export type LoadOutput = (
+  id: number,
+) => Promise<FullOutputResponse | undefined>;
+
+export function outputUrl(id: number): string {
+  return `/api/frictions/${String(id)}/output`;
+}
+
+export function outputLoader(
+  fetchImpl: typeof fetch = (...args) => fetch(...args),
+): LoadOutput {
+  return async (id) => {
+    const body = await fetchJson(fetchImpl, outputUrl(id));
+    return isResponse<FullOutputResponse>(body) ? body : undefined;
+  };
+}
 
 export function occurrencesUrl(
   { filters, table, row }: OccurrenceRequest,

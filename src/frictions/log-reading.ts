@@ -1,4 +1,4 @@
-import type { OccurrenceTexts } from './occurrence-types.ts';
+import type { LogTexts } from './occurrence-types.ts';
 
 export interface LogTarget {
   key: string;
@@ -10,13 +10,13 @@ export interface LogTarget {
 export interface FileReading {
   targets: readonly LogTarget[];
   home: string;
-  found: Map<string, OccurrenceTexts | null>;
+  found: Map<string, LogTexts | null>;
 }
 
 export function settle(
   reading: FileReading,
   target: LogTarget,
-  texts: OccurrenceTexts | null,
+  texts: LogTexts | null,
 ): void {
   reading.found.set(target.key, texts);
 }

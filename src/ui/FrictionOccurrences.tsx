@@ -18,14 +18,14 @@ import { RoleTag } from './components/RoleTag.tsx';
 import { roleColors } from './design/palette.ts';
 import { MISSING, formatDateTime } from './format.ts';
 import { shortSessionTitle } from './frictions-view.ts';
+import { OccurrenceTexts } from './OccurrenceTexts.tsx';
+import type { LoadOutput } from './occurrences-api.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { type LinkScope, issueHref, sessionHref } from './session-links.ts';
 import './frictions-page.css';
 
 export const LATEST_OCCURRENCES = 'Latest occurrences';
-export const LOG_GONE = 'The session log is no longer on this computer.';
 export const NO_OCCURRENCE = 'No occurrence in this period.';
-
 export interface OccurrenceControls {
   scope: LinkScope;
   isOpen: (table: OccurrenceTable, row: string) => boolean;
@@ -34,6 +34,7 @@ export interface OccurrenceControls {
     table: OccurrenceTable,
     row: string,
   ) => Promise<OccurrencesResponse | undefined>;
+  loadOutput: LoadOutput;
 }
 
 const OccurrencesContext = createContext<OccurrenceControls | null>(null);
@@ -69,32 +70,16 @@ export function useOpenRows(
   };
 }
 
-function Texts({ occurrence }: { occurrence: FrictionOccurrence }): ReactNode {
-  const { texts } = occurrence;
-  if (texts === null) {
-    return <p className="fd-occurrence-gone">{LOG_GONE}</p>;
-  }
-  if (texts.kind === 'stop-blocked') {
-    return <p className="fd-occurrence-text">{texts.message}</p>;
-  }
-  return (
-    <>
-      <p className="fd-occurrence-text">{texts.input}</p>
-      {texts.error !== '' && (
-        <p className="fd-occurrence-text fd-occurrence-error">{texts.error}</p>
-      )}
-    </>
-  );
-}
-
 function OccurrenceItem({
   occurrence,
   color,
   scope,
+  loadOutput,
 }: {
   occurrence: FrictionOccurrence;
   color: string;
   scope: LinkScope;
+  loadOutput: LoadOutput;
 }): ReactElement {
   return (
     <li className="fd-occurrence">
@@ -115,7 +100,7 @@ function OccurrenceItem({
           {shortSessionTitle(occurrence.sessionTitle, occurrence.sessionId)}
         </Link>
       </div>
-      <Texts occurrence={occurrence} />
+      <OccurrenceTexts occurrence={occurrence} loadOutput={loadOutput} />
     </li>
   );
 }
@@ -123,9 +108,11 @@ function OccurrenceItem({
 function OccurrenceBody({
   response,
   scope,
+  loadOutput,
 }: {
   response: OccurrencesResponse | undefined | null;
   scope: LinkScope;
+  loadOutput: LoadOutput;
 }): ReactElement {
   if (response === null) {
     return <p className="fd-occurrence-status">Loading…</p>;
@@ -142,10 +129,11 @@ function OccurrenceBody({
     <ol className="fd-occurrence-list">
       {occurrences.map((occurrence, index) => (
         <OccurrenceItem
-          key={`${String(index)} ${occurrence.at}`}
+          key={`${String(index)} ${String(occurrence.id)}`}
           occurrence={occurrence}
           color={colors.get(occurrence.role) ?? 'var(--fd-line)'}
           scope={scope}
+          loadOutput={loadOutput}
         />
       ))}
     </ol>
@@ -183,7 +171,11 @@ function OccurrencesRow({
       <td colSpan={colSpan}>
         <div className="fd-occurrences-box">
           <h3 className="fd-occurrences-title">{LATEST_OCCURRENCES}</h3>
-          <OccurrenceBody response={response} scope={controls.scope} />
+          <OccurrenceBody
+            response={response}
+            scope={controls.scope}
+            loadOutput={controls.loadOutput}
+          />
         </div>
       </td>
     </tr>

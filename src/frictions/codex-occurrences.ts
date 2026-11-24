@@ -9,8 +9,8 @@ import { field, textAt } from '../ingest/codex-reading.ts';
 import type { ToolCall } from '../ingest/frictions.ts';
 import { type LogRecord, isObject } from '../ingest/records.ts';
 import { type FileReading, type LogTarget, settle } from './log-reading.ts';
-import { errorExcerpt, inputText } from './log-texts.ts';
-import type { OccurrenceTexts } from './occurrence-types.ts';
+import { cleanOutput, inputText } from './log-texts.ts';
+import type { LogTexts } from './occurrence-types.ts';
 
 export interface CodexCalls {
   calls: Map<string, ToolCall>;
@@ -234,7 +234,7 @@ function textsOf(
   result: Result,
   known: CodexCalls,
   home: string,
-): OccurrenceTexts | null {
+): LogTexts | null {
   const input =
     (result.callId === undefined
       ? undefined
@@ -243,7 +243,7 @@ function textsOf(
   return {
     kind: 'tool-error',
     input,
-    error: errorExcerpt(withoutOutputHeader(result.error), home),
+    output: cleanOutput(withoutOutputHeader(result.error), home),
   };
 }
 

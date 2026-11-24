@@ -35,5 +35,6 @@ export const unusedStats: StatsSource = {
   quality: () => Promise.reject(new Error('Not used')),
   frictions: () => Promise.reject(new Error('Not used')),
   occurrences: () => Promise.reject(new Error('Not used')),
+  output: () => Promise.reject(new Error('Not used')),
   flow: () => Promise.reject(new Error('Not used')),
 };

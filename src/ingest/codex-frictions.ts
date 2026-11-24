@@ -1,4 +1,4 @@
-import { CODEX } from './codex-files.ts';
+import { CODEX, CODEX_SHELL_TOOLS } from './codex-files.ts';
 import {
   type CodexRows,
   type Entry,
@@ -19,7 +19,6 @@ import {
 } from './frictions.ts';
 import type { LogRecord } from './records.ts';
 
-const SHELL_TOOLS: ReadonlySet<string> = new Set(['shell', 'exec_command']);
 const EXEC_COMMAND = 'exec_command';
 
 const EMPTY_FIELDS = {
@@ -61,7 +60,8 @@ export function functionCallOf(
   const callId = textAt(payload, 'call_id');
   const name = textAt(payload, 'name');
   if (callId === undefined || name === undefined) return undefined;
-  if (!SHELL_TOOLS.has(name)) return [callId, { name, command: undefined }];
+  if (!CODEX_SHELL_TOOLS.has(name))
+    return [callId, { name, command: undefined }];
   const raw = field(payload, 'arguments');
   const args = typeof raw === 'string' ? parseJson(raw) : raw;
   const command =
@@ -120,7 +120,7 @@ export function outputFriction(
   output: unknown,
   call: ToolCall | undefined,
 ): FrictionFields | undefined {
-  if (call !== undefined && SHELL_TOOLS.has(call.name)) {
+  if (call !== undefined && CODEX_SHELL_TOOLS.has(call.name)) {
     const exitCode = outputExitCode(output);
     return exitCode === null || exitCode === 0
       ? undefined

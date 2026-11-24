@@ -55,13 +55,16 @@ const frictions: FrictionStats = {
 
 const occurrences: FrictionOccurrence[] = [
   {
+    id: 7,
     at: '2026-01-05T08:00:00.000Z',
     role: 'builder',
     project: '/work/app',
     workItem: 12,
     sessionId: 's-1',
     sessionTitle: 'Fix login',
-    texts: { kind: 'tool-error', input: 'git push', error: 'rejected' },
+    exitCode: 1,
+    hasMore: true,
+    texts: { kind: 'tool-error', input: 'git', error: 'no', shell: true },
   },
 ];
 
@@ -90,6 +93,7 @@ function app(up = true) {
         occurrenceQueries.push(query);
         return Promise.resolve(occurrences);
       },
+      output: () => Promise.reject(new Error('Not used')),
     },
   });
   return { app: created, queries, occurrenceQueries };

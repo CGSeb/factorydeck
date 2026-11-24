@@ -10,6 +10,27 @@ type Line = Record<string, unknown>;
 
 const STOP_REASON = 'fixture: checks of this branch fail, fix them first';
 
+function chainedBuildOutput(): string {
+  return [
+    'Exit code 1',
+    '> fixture-api@0.1.0 lint',
+    'fixture: 0 problems',
+    '',
+    '> fixture-api@0.1.0 build',
+    ...Array.from(
+      { length: 30 },
+      (_, index) =>
+        `fixture: transforming src/module-${String(index + 1).padStart(2, '0')}.ts`,
+    ),
+    '',
+    "src/routes/orders.ts(42,7): error TS2322: fixture: Type 'string' is not assignable to type 'number'.",
+    "src/routes/users.ts(9,3): error TS2304: fixture: Cannot find name 'userId'.",
+    '',
+    'Found 2 errors in 2 files.',
+    `Shell cwd was reset to ${homedir()}/example-api`,
+  ].join('\n');
+}
+
 const failingTests: DemoFriction = {
   tool: 'Bash',
   command: 'cd web && pnpm test',
@@ -76,8 +97,8 @@ export const ENDPOINT_FRICTIONS: readonly DemoFriction[] = [
   },
   {
     tool: 'Bash',
-    command: 'pnpm build | tail -5',
-    result: 'Exit code 1\nfixture: build failed',
+    command: 'pnpm lint; pnpm build && pnpm test',
+    result: chainedBuildOutput(),
   },
   {
     tool: 'Bash',
