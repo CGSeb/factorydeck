@@ -72,6 +72,8 @@ Every `rollout-*.jsonl`, at any depth, under `CODEX_SESSIONS_DIR` (default `~/.c
 
 For each factory project, FactoryDeck reads `repository.git_host` (`github` or `gitlab`) and `repository.git_host_commands` from its `docs/agents/factory.yml`, then in that file the CLI (`- CLI: \`<command>\``, default `gh`or`glab`) and the repository (`- Repository: \`<owner>/<name>\``or`- Project: \`<group>/<project>\``). It also reads `issues.labels`and`build.auto_merge` for the [outcomes](outcomes.md). These are read at every run, so a change applies at the next one.
 
+The collection also reads the optional `bugs.label` of `docs/agents/factory.yml` at every run, with the outcome settings, for the [kind of each issue](outcomes.md#kinds). A missing, empty or reserved bug label is not a collection error.
+
 Collection runs at server start, then every `FACTORYDECK_COLLECT_INTERVAL_MINUTES` (default 5); `pnpm collect` runs one and prints `Collected <p> projects: <i> issues and <r> pull or merge requests updated.` (exit code 1 when a project failed). The first run of a project reads everything; later runs only what was updated since the start of the last successful run. A change in what is collected reads each project again in full once, keeping its data on screen meanwhile.
 
 - **Issue**: number, title, state, labels with their colour, URL, creation and close times, whether it was reopened (timeline events on GitHub, state events on GitLab), and the times its needs-spec label was added and removed.

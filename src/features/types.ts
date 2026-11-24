@@ -4,6 +4,7 @@ import type {
   IssueOutcome,
   WorkItemIssue,
 } from '../git-host/types.ts';
+import type { IssueKind } from '../git-host/kind.ts';
 import type { Period, TokenCounts } from '../overview/types.ts';
 import type { SessionState } from '../sessions/types.ts';
 
@@ -36,6 +37,7 @@ export interface FeatureRow extends FeatureUsage {
   projectName: string;
   number: number;
   issue: WorkItemIssue;
+  kind: IssueKind | null;
   outcome: IssueOutcome | null;
   lastAt: string | null;
   roles: FeatureRoleShare[];
@@ -111,6 +113,7 @@ export interface FeatureDetail {
   projectName: string;
   number: number;
   issue: WorkItemIssue;
+  kind: IssueKind | null;
   detail: IssueDetail | null;
   roles: FeatureRole[];
   orchestration: FeatureRole | null;

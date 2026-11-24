@@ -59,5 +59,5 @@ The issue's tokens equal its row on `/features` for the same period and project.
 
 ## API
 
-- `GET /api/features`: per issue its stage, score, rounds, sessions, tokens with their four kinds, cost, orchestration share, `roles` (by tokens, orchestration last) and `lastAt`; the `noWorkItem` row; the totals; and `merged` (count, without a person, `tokensPerIssue`).
-- `GET /api/features/<n>?project=<root>`: the issue, its `threads` (`sessionId`, `sessionTitle`, `threadId`, `role`, `description` or `null` for a main thread, `firstAt`, `lastAt`, tokens, cost), its orchestration row, its milestones and its friction count. The threads plus the orchestration share add up to the issue's tokens on the list.
+- `GET /api/features`: per issue its `kind` (`feature`, `bug`, or `null` for an issue not found or not collected, see [Kinds](outcomes.md#kinds)), stage, score, rounds, sessions, tokens with their four kinds, cost, orchestration share, `roles` (by tokens, orchestration last) and `lastAt`; the `noWorkItem` row and the totals, which have no `kind`; and `merged` (count, without a person, `tokensPerIssue`).
+- `GET /api/features/<n>?project=<root>`: the issue, its `kind` (same values), its `threads` (`sessionId`, `sessionTitle`, `threadId`, `role`, `description` or `null` for a main thread, `firstAt`, `lastAt`, tokens, cost), its orchestration row, its milestones and its friction count. The threads plus the orchestration share add up to the issue's tokens on the list.

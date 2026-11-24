@@ -92,6 +92,7 @@ beforeAll(async () => {
       syncedFrom: CREATED,
       stageLabels: LABELS,
       autoMerge: true,
+      bugLabel: 'bug',
     })),
   );
   await seed({
@@ -104,7 +105,7 @@ beforeAll(async () => {
   });
   await seed({
     number: 2,
-    labels: ['agent:blocked', 'agent:needs-spec'],
+    labels: ['agent:blocked', 'agent:needs-spec', 'bug'],
     needsSpec: [{ added: true, at: '2026-03-07T00:00:00Z' }],
     reports: [report('2026-03-04T00:00:00Z', 70, false)],
   });
@@ -164,6 +165,7 @@ describe('GET /api/stats/waiting on the database', () => {
             project: APP,
             number: 2,
             title: 'Issue 2',
+            kind: 'bug',
             reasons: ['blocked', 'spec-question', 'below-threshold'],
             since: '2026-03-04T00:00:00.000Z',
           },
@@ -171,6 +173,7 @@ describe('GET /api/stats/waiting on the database', () => {
             project: APP,
             number: 1,
             title: 'Issue 1',
+            kind: 'feature',
             reasons: ['gates-failed'],
             since: '2026-03-06T08:00:00.000Z',
           },

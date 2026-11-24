@@ -24,7 +24,10 @@ const FULL_SPLIT = [
 ] as const;
 
 function boardRow(
-  base: Pick<FeatureRow, 'project' | 'projectName' | 'number' | 'issue'>,
+  base: Pick<
+    FeatureRow,
+    'project' | 'projectName' | 'number' | 'issue' | 'kind'
+  >,
   stage: IssueOutcome['stage'] | null,
   figures: {
     lastAt: string;
@@ -120,6 +123,7 @@ export const boardFeatures: FeatureRow[] = [
       projectName: nameOf(APP),
       number: 70,
       issue: { status: 'not-found' },
+      kind: null,
     },
     null,
     { lastAt: '2026-01-06T12:00:00.000Z', sessions: 1, tokens: 90_000 },
@@ -130,6 +134,7 @@ export const boardFeatures: FeatureRow[] = [
       projectName: nameOf(LIB),
       number: 12,
       issue: { status: 'not-collected' },
+      kind: null,
     },
     null,
     { lastAt: '2026-01-01T12:00:00.000Z', sessions: 1, tokens: 60_000 },

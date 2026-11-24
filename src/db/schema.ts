@@ -272,6 +272,7 @@ export const gitHostProject = pgTable('git_host_project', {
   errorGitHost: text('error_git_host'),
   stageLabels: jsonb('stage_labels').$type<StageLabels>(),
   autoMerge: boolean('auto_merge'),
+  bugLabel: text('bug_label'),
   historyRead: boolean('history_read').notNull().default(false),
 });
 

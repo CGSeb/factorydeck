@@ -1,0 +1,1 @@
+ALTER TABLE "git_host_project" ADD COLUMN "bug_label" text;

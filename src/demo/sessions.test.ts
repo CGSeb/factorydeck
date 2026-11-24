@@ -277,11 +277,11 @@ describe('demo sessions on the features page', () => {
     const list = await listFeatures(db, query, config);
     const shared = list.rows
       .filter((row) => row.orchestrationCostUsd !== null)
-      .map((row) => [row.project, row.number]);
+      .map((row) => [row.project, row.number, row.kind]);
     expect(shared).toEqual(
       expect.arrayContaining([
-        [app, 13],
-        [app, 14],
+        [app, 13, 'feature'],
+        [app, 14, 'bug'],
       ]),
     );
     expect(list.merged.issues).toBeGreaterThan(0);

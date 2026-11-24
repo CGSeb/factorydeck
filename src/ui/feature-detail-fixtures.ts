@@ -74,11 +74,8 @@ const exportFeature: FeatureDetail = {
   project: APP,
   projectName: nameOf(APP),
   number: 52,
-  issue: {
-    status: 'found',
-    title: githubIssue.title,
-    url: githubIssue.url,
-  },
+  issue: { status: 'found', title: githubIssue.title, url: githubIssue.url },
+  kind: 'feature',
   detail: mergedByPersonIssue,
   roles: [
     {
@@ -181,6 +178,7 @@ export const uncollectedFeature: FeatureDetail = {
   projectName: nameOf(LIB),
   number: 28,
   issue: { status: 'not-collected' },
+  kind: null,
   detail: null,
   roles: [],
   orchestration: null,

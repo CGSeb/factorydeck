@@ -1,0 +1,47 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "35ac390b-c977-42fa-b95f-13f0778b6425",
+  "prevIds": [
+    "d0baef5f-a37c-46cd-9acd-d145c9682db2"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "git_host_project",
+        "bug_label"
+      ],
+      "writes": [
+        "s|col|public.git_host_project.bug_label",
+        "n|col|public.git_host_project.bug_label",
+        "e|col|public.git_host_project.bug_label"
+      ],
+      "reads": [
+        "n|tbl|public.git_host_project",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "git_host_project",
+        "name": "bug_label",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

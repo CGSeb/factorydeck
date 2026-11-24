@@ -37,6 +37,7 @@ describe('featureDetail', () => {
       state,
     });
     expect(detail?.issue.status).toBe('found');
+    expect(detail?.kind).toBe('feature');
     expect(detail?.detail?.outcome.stage).toBe('merged');
     expect(detail?.roles).toEqual([
       {
@@ -138,9 +139,18 @@ describe('featureDetail', () => {
     });
     expect(detail).toMatchObject({
       issue: { status: 'not-collected' },
+      kind: null,
       detail: null,
       roles: [],
     });
+  });
+
+  it('gives the kind of a bug from its labels', async () => {
+    const detail = await featureDetail(db, { project: APP, number: 8 }, week, {
+      config: DEFAULT_CONFIG,
+      state,
+    });
+    expect(detail?.kind).toBe('bug');
   });
 
   it('does not know an issue with no call and no record', async () => {

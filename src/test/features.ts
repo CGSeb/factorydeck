@@ -149,11 +149,13 @@ async function seedGitHost(db: Database): Promise<void> {
     repository: 'example-org/example-app',
     syncedFrom: OLD,
     autoMerge: true,
+    bugLabel: 'bug',
   });
   await db.insert(gitHostIssue).values([
     issue(7, 'closed'),
     {
       ...issue(8, 'closed'),
+      labels: [{ name: 'Bug', color: null }],
       needsSpec: [
         { added: true, at: OLD.toISOString() },
         { added: false, at: RECENT.toISOString() },
