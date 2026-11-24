@@ -42,16 +42,18 @@ function markerOf(group: ListGroup): GroupMarker {
 }
 
 function IssueName({ row }: { row: FeatureRow }): ReactElement {
-  const suffix =
-    row.issue.status === 'found'
-      ? ` ${row.issue.title}`
-      : row.issue.status === 'not-found'
-        ? ' (not found)'
-        : '';
+  if (row.issue.status === 'found') {
+    return (
+      <>
+        {row.issue.title}{' '}
+        <span className="fd-issue-number">(#{row.number})</span>
+      </>
+    );
+  }
   return (
     <>
       <span className="fd-issue-number">#{row.number}</span>
-      {suffix}
+      {row.issue.status === 'not-found' ? ' (not found)' : ''}
     </>
   );
 }

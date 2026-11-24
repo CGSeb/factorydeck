@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { MemoryRouter } from 'react-router';
 import { expect, userEvent, within } from 'storybook/test';
 import { boardFeatures } from './feature-board-fixtures.ts';
-import { APP, featureList } from './feature-fixtures.ts';
+import { APP, featureList, found } from './feature-fixtures.ts';
 import type { ListGroup } from './features-list.ts';
 import { IssueGroupsTable } from './IssueGroupsTable.tsx';
 import {
@@ -61,7 +61,7 @@ export const GroupedWithTotal: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole('region', { name: 'Issues' })).toBeVisible();
     await expect(
-      canvas.getByRole('link', { name: '#52 Export button' }),
+      canvas.getByRole('link', { name: 'Export button (#52)' }),
     ).toHaveAttribute(
       'href',
       '/features/52?project=%2Fhome%2Fdev%2Fexample-app&period=all',
@@ -69,7 +69,7 @@ export const GroupedWithTotal: Story = {
     await expect(
       canvas.getByRole('group', { name: 'Tokens by role for #61' }),
     ).toHaveTextContent('builder 60%reviewer 25%Orchestration 15%');
-    await expect(cellsOf(canvasElement, '#52 Export button')).toEqual([
+    await expect(cellsOf(canvasElement, 'Export button (#52)')).toEqual([
       'Example App',
       'builder 60%reviewer 25%Orchestration 15%',
       '3',
@@ -84,11 +84,9 @@ export const GroupedWithTotal: Story = {
     await expect(
       canvas.getByRole('cell', { name: '70 below threshold' }),
     ).toHaveAttribute('data-tone', 'warning');
-    await expect(cellsOf(canvasElement, '#60 Retry policy').slice(3)).toEqual([
-      '—',
-      '—',
-      expect.stringMatching(/^1\.9M/),
-    ]);
+    await expect(cellsOf(canvasElement, 'Retry policy (#60)').slice(3)).toEqual(
+      ['—', '—', expect.stringMatching(/^1\.9M/)],
+    );
     await expect(cellsOf(canvasElement, 'No work item')).toEqual([
       '',
       '2',
@@ -114,7 +112,7 @@ export const OneProject: Story = {
     await expect(
       canvas.queryByRole('columnheader', { name: 'Project' }),
     ).toBeNull();
-    await expect(cellsOf(canvasElement, '#52 Export button')).toEqual([
+    await expect(cellsOf(canvasElement, 'Export button (#52)')).toEqual([
       'builder 60%reviewer 25%Orchestration 15%',
       '3',
       '1',
@@ -130,7 +128,7 @@ export const StageSelected: Story = {
     const canvas = within(canvasElement);
     await expect(
       canvas.getAllByRole('rowheader').map((cell) => cell.textContent),
-    ).toEqual(['#58 Typed errors', '#57 Dark mode']);
+    ).toEqual(['Typed errors (#58)', 'Dark mode (#57)']);
     await expect(canvas.queryByRole('rowheader', { name: 'Total' })).toBeNull();
   },
 };
@@ -184,10 +182,71 @@ export const KeptFolded: Story = {
         .map((button) => button.textContent),
     ).toEqual(['Ready2', 'Merged3']);
     await expect(
-      canvas.queryByRole('rowheader', { name: '#52 Export button' }),
+      canvas.queryByRole('rowheader', { name: 'Export button (#52)' }),
     ).toBeNull();
     await expect(
       canvas.getByRole('rowheader', { name: 'Total' }),
+    ).toBeVisible();
+  },
+};
+
+const LONG_TITLE =
+  'Explain on the overview why a feature waited for a person before it could be merged';
+
+function issueNumberOf(header: HTMLElement): string | null {
+  return header.querySelector('.fd-issue-number')?.textContent ?? null;
+}
+
+export const IssueTitleFirst: Story = {
+  args: {
+    list: featureList(
+      [
+        ...boardFeatures.filter((row) => [52, 70, 12].includes(row.number)),
+        ...boardFeatures
+          .filter((row) => row.number === 52)
+          .map((row) => ({ ...row, ...found(APP, 75, LONG_TITLE) })),
+      ],
+      null,
+    ),
+  },
+  decorators: [
+    (Story) => (
+      <div style={{ maxWidth: 360 }}>
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const exportRow = canvas.getByRole('rowheader', {
+      name: 'Export button (#52)',
+    });
+    await expect(exportRow).toHaveTextContent(/^Export button \(#52\)$/);
+    await expect(issueNumberOf(exportRow)).toBe('(#52)');
+    await expect(
+      canvas.getByRole('link', { name: 'Export button (#52)' }),
+    ).toHaveAttribute(
+      'href',
+      '/features/52?project=%2Fhome%2Fdev%2Fexample-app&period=all',
+    );
+    const longRow = canvas.getByRole('rowheader', {
+      name: `${LONG_TITLE} (#75)`,
+    });
+    await expect(issueNumberOf(longRow)).toBe('(#75)');
+    await expect(
+      canvas.getByRole('link', { name: `${LONG_TITLE} (#75)` }),
+    ).toHaveAttribute(
+      'href',
+      '/features/75?project=%2Fhome%2Fdev%2Fexample-app&period=all',
+    );
+    const notFound = canvas.getByRole('rowheader', {
+      name: '#70 (not found)',
+    });
+    await expect(issueNumberOf(notFound)).toBe('#70');
+    const notCollected = canvas.getByRole('rowheader', { name: '#12' });
+    await expect(issueNumberOf(notCollected)).toBe('#12');
+    await expect(
+      canvas.getByRole('group', { name: 'Tokens by role for #52' }),
     ).toBeVisible();
   },
 };

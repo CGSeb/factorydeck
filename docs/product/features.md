@@ -23,7 +23,7 @@ A strip of the four [board groups](outcomes.md#stages), each with its number of 
 
 Rows are grouped under header rows, in this order: `In review`, `Working`, `Ready`, `Merged`, then `Closed` (stage `Closed without merge`) and `Unknown` (not found or not collected); an empty group is left out. Columns:
 
-- `Issue`: `#<n> <title>`, linked to the issue page with the period (`#<n> (not found)` for an unknown number);
+- `Issue`: `<title> (#<n>)`, the title first and the number in parentheses in a muted style that never breaks across lines, the whole cell linked to the issue page with the period; `#<n> (not found)` for a number the git host does not know, and `#<n>` alone when the title was not collected;
 - `Project`, only with `All projects`;
 - `Split by role`: a thin bar of the issue's tokens by role, orchestration last;
 - `Sessions`, `Rounds`;
@@ -36,7 +36,7 @@ After the groups: a `No work item` row, then a bold `Total` row with all session
 
 ## Issue page
 
-The back link `← <project name> features` returns to `/features` with the issue's project and the period. The header is `#<n> <title>`, the title linked to the issue on the git host (with a small `↗`), then the stage and `<first> → <last> · <s> sessions` (the dates of its first and last call in the period, one date when equal). An unknown issue shows `Issue not found.` and `← Features`.
+The back link `← <project name> features` returns to `/features` with the issue's project and the period. The header is `<title> (#<n>)`, the title linked to the issue on the git host (with a small `↗`) and the muted `(#<n>)` outside the link (`#<n> (not found)` for a number the git host does not know, `#<n>` when the title was not collected), then the stage and `<first> → <last> · <s> sessions` (the dates of its first and last call in the period, one date when equal). An unknown issue shows `Issue not found.` and `← Features`.
 
 ### Timeline
 

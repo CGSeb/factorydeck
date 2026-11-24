@@ -13,6 +13,7 @@
 .fd-issue-number {
   font-weight: 500;
   color: var(--fd-muted);
+  white-space: nowrap;
 }
 
 .fd-issue-link {
