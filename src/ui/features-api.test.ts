@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { featureLoader, featurePath, featuresLoader } from './features-api.ts';
+import type { FeatureListResponse } from '../features/types.ts';
+import type { IssueKind } from '../git-host/kind.ts';
+import { featureList, featuresResponse } from './feature-fixtures.ts';
+import {
+  type LoadFeatures,
+  featureLoader,
+  featurePath,
+  featuresLoader,
+  loadKindList,
+} from './features-api.ts';
 
 function recorder(urls: string[], body: unknown): typeof fetch {
   return (input) => {
@@ -18,6 +27,20 @@ describe('features API', () => {
     expect(response).toEqual({ status: 'unreachable' });
     expect(urls).toEqual([
       '/api/features?period=all&tz=UTC&project=%2Fwork%2Fapp',
+    ]);
+  });
+
+  it('asks for the issues of a kind', async () => {
+    const urls: string[] = [];
+    const load = featuresLoader(
+      recorder(urls, { status: 'unreachable' }),
+      () => 'UTC',
+    );
+    await load({ period: '7d', project: undefined }, 'bug');
+    await load({ period: '7d', project: undefined }, null);
+    expect(urls).toEqual([
+      '/api/features?period=7d&tz=UTC&kind=bug',
+      '/api/features?period=7d&tz=UTC',
     ]);
   });
 
@@ -52,5 +75,45 @@ describe('features API', () => {
     expect(
       featurePath({ project: '/work/my app', number: 7 }, { period: 'all' }),
     ).toBe('/features/7?project=%2Fwork%2Fmy+app&period=all');
+  });
+});
+
+describe('loadKindList', () => {
+  const filters = { period: '7d' as const, project: undefined };
+
+  function loader(bugTickets: boolean): {
+    load: LoadFeatures;
+    kinds: (IssueKind | null | undefined)[];
+  } {
+    const kinds: (IssueKind | null | undefined)[] = [];
+    return {
+      kinds,
+      load: (_filters, kind) => {
+        kinds.push(kind);
+        const response: FeatureListResponse = featuresResponse(
+          featureList([], null, { bugTickets }),
+        );
+        return Promise.resolve(response);
+      },
+    };
+  }
+
+  it('loads the kind once when the selection has bug tickets', async () => {
+    const { load, kinds } = loader(true);
+    await loadKindList(load, filters, 'bug');
+    expect(kinds).toEqual(['bug']);
+  });
+
+  it('loads every issue again when the selection has no bug tickets', async () => {
+    const { load, kinds } = loader(false);
+    const response = await loadKindList(load, filters, 'bug');
+    expect(kinds).toEqual(['bug', undefined]);
+    expect(response?.status).toBe('ok');
+  });
+
+  it('loads once without a kind', async () => {
+    const { load, kinds } = loader(false);
+    await loadKindList(load, filters, null);
+    expect(kinds).toEqual([null]);
   });
 });

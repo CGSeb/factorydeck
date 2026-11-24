@@ -1,23 +1,18 @@
 import { type ReactElement, useState } from 'react';
-import type { FeatureList } from '../features/types.ts';
 import type { UsageOverview } from '../overview/types.ts';
 import type { RoleList } from '../roles/types.ts';
 import type { AutonomyResponse, FlowResponse } from '../stats/types.ts';
 import { PageHeader } from './components/PageHeader.tsx';
 import { PeriodPills } from './components/PeriodPills.tsx';
-import { StageColumn } from './components/StageColumn.tsx';
 import { StatusLine } from './components/StatusLine.tsx';
 import { TokenAmount } from './components/TokenAmount.tsx';
 import { totalTokens } from './components/token-amount.ts';
-import type { LoadFeatures } from './features-api.ts';
+import { type LoadFeatures, loadKindList } from './features-api.ts';
+import { KIND_PARAM, useKindParam } from './kind-filter.ts';
 import { renderRouterLink } from './Layout.tsx';
 import { NeedsPersonPanel } from './NeedsPersonPanel.tsx';
-import {
-  boardColumns,
-  headlineCount,
-  headlineSummary,
-  listPath,
-} from './overview-board.ts';
+import { OverviewBoard } from './OverviewBoard.tsx';
+import { headlineCount, headlineSummary, listPath } from './overview-board.ts';
 import { type LoadOverview, UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { OverviewHealth } from './OverviewHealth.tsx';
 import type { LoadRoles } from './roles-api.ts';
@@ -139,34 +134,6 @@ function Header({
   );
 }
 
-function Board({
-  features,
-  filters,
-  now,
-}: {
-  features: Block<FeatureList>;
-  filters: SkillFilters;
-  now: Date;
-}): ReactElement {
-  return (
-    <section aria-label="Board" className="fd-overview-board">
-      {typeof features === 'string' ? (
-        <StatusLine>
-          {features === 'loading' ? 'Loading…' : UNREACHABLE_MESSAGE}
-        </StatusLine>
-      ) : (
-        boardColumns(features, filters, now).map((column) => (
-          <StageColumn
-            key={column.group}
-            {...column}
-            renderLink={renderRouterLink}
-          />
-        ))
-      )}
-    </section>
-  );
-}
-
 function useOverviewData(
   {
     loadOverview,
@@ -179,6 +146,7 @@ function useOverviewData(
   }: OverviewPageProps,
   filters: SkillFilters,
 ) {
+  const [kind, setKind] = useKindParam();
   const key = JSON.stringify(filters);
   const scope = 'overview';
   const overview = useRefreshing(
@@ -186,9 +154,15 @@ function useOverviewData(
     () => loadOverview(filters.period, filters.project),
     scope,
   );
-  const features = useRefreshing(key, () => loadFeatures(filters), scope);
+  const features = useRefreshing(
+    JSON.stringify({ ...filters, kind }),
+    () => loadKindList(loadFeatures, filters, kind),
+    scope,
+  );
   const roles = useRefreshing(key, () => loadRoles(filters), scope);
   return {
+    kind,
+    setKind,
     overview: blockOf(
       overview,
       overview?.status === 'ok' ? overview.overview : undefined,
@@ -213,14 +187,13 @@ function useOverviewData(
 }
 
 export function OverviewPage(props: OverviewPageProps): ReactElement {
-  const [filters, setFilters] = useSkillFilters();
+  const [filters, setFilters] = useSkillFilters([KIND_PARAM]);
   const [tokensOpen, setTokensOpen] = useState(false);
   const now = useNow(props.now);
-  const { overview, features, roles, autonomy, quality, flow, waiting } =
-    useOverviewData(props, filters);
+  const data = useOverviewData(props, filters);
+  const { overview, features, roles, autonomy, quality, flow, waiting } = data;
   const noActivity =
     typeof overview !== 'string' && overview.totals.apiCalls === 0;
-
   return (
     <div className="fd-overview">
       <Header
@@ -251,7 +224,13 @@ export function OverviewPage(props: OverviewPageProps): ReactElement {
       {noActivity ? (
         <StatusLine>No activity in this period.</StatusLine>
       ) : (
-        <Board features={features} filters={filters} now={now} />
+        <OverviewBoard
+          features={features}
+          filters={filters}
+          kind={data.kind}
+          onKindChange={data.setKind}
+          now={now}
+        />
       )}
       {tokensOpen && (
         <TokensDialog

@@ -4,7 +4,7 @@ import './controls.css';
 export interface FilterOption<T extends string> {
   value: T;
   label: string;
-  count: number;
+  count?: number;
   dot?: string;
 }
 
@@ -41,7 +41,9 @@ export function FilterPills<T extends string>({
             />
           )}
           {option.label}
-          <span className="fd-pill-count">{option.count}</span>
+          {option.count !== undefined && (
+            <span className="fd-pill-count">{option.count}</span>
+          )}
         </button>
       ))}
     </div>

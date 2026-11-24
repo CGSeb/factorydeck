@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import type { IssueStage } from '../../git-host/types.ts';
+import { BugBadge } from './BugBadge.tsx';
 import { pillStyle } from './label-styles.ts';
 import { type RenderLink, renderAnchor } from './link.ts';
 import { ProjectTag } from './ProjectTag.tsx';
@@ -23,6 +24,7 @@ export interface IssueCardIssue {
 }
 
 export type IssueCardBadge =
+  | { kind: 'bug' }
   | { kind: 'stage'; stage: IssueStage }
   | { kind: 'serenity'; report: SerenityScore }
   | { kind: 'rounds'; rounds: number; inReview?: boolean }
@@ -56,6 +58,8 @@ function badgesOf(
 
 function Badge({ badge }: { badge: IssueCardBadge }): ReactElement | null {
   switch (badge.kind) {
+    case 'bug':
+      return <BugBadge />;
     case 'stage':
       return <StageBadge stage={badge.stage} />;
     case 'serenity':

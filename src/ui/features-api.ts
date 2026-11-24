@@ -2,6 +2,7 @@ import type {
   FeatureListResponse,
   FeatureResponse,
 } from '../features/types.ts';
+import type { IssueKind } from '../git-host/kind.ts';
 import {
   type SkillFilters,
   browserTimeZone,
@@ -11,6 +12,7 @@ import {
 
 export type LoadFeatures = (
   filters: SkillFilters,
+  kind?: IssueKind | null,
 ) => Promise<FeatureListResponse | undefined>;
 
 export type LoadFeature = (
@@ -40,14 +42,27 @@ export function featuresLoader(
   fetchImpl: typeof fetch = (...args) => fetch(...args),
   timeZone: () => string = browserTimeZone,
 ): LoadFeatures {
-  return async (filters) => {
+  return async (filters, kind = null) => {
     const query = queryOf(filters, timeZone());
+    if (kind !== null) query.set('kind', kind);
     const body = await fetchJson(
       fetchImpl,
       `/api/features?${query.toString()}`,
     );
     return isListResponse(body) ? body : undefined;
   };
+}
+
+export async function loadKindList(
+  load: LoadFeatures,
+  filters: SkillFilters,
+  kind: IssueKind | null,
+): Promise<FeatureListResponse | undefined> {
+  const response = await load(filters, kind);
+  if (kind === null || response?.status !== 'ok' || response.list.bugTickets) {
+    return response;
+  }
+  return load(filters);
 }
 
 export function featureLoader(

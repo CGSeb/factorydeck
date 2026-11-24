@@ -50,6 +50,8 @@ const list: FeatureList = {
     unknownPriceCalls: 0,
   },
   projects: [{ project: '/work/app', name: 'app' }],
+  bugTickets: true,
+  kinds: { feature: 0, bug: 0 },
 };
 
 const feature: FeatureDetail = {
@@ -116,6 +118,33 @@ describe('GET /api/features', () => {
     expect((await app().request('/api/features?period=1y&tz=UTC')).status).toBe(
       400,
     );
+  });
+
+  it('passes a kind of feature or bug to the list', async () => {
+    for (const kind of ['feature', 'bug']) {
+      const response = await app().request(
+        `/api/features?period=7d&tz=UTC&kind=${kind}`,
+      );
+      expect(response.status).toBe(200);
+      expect(queries.at(-1)).toEqual({ period: '7d', timeZone: 'UTC', kind });
+    }
+  });
+
+  it('keeps the first of a repeated kind', async () => {
+    const response = await app().request(
+      '/api/features?period=7d&tz=UTC&kind=bug&kind=feature',
+    );
+    expect(response.status).toBe(200);
+    expect(queries.at(-1)).toMatchObject({ kind: 'bug' });
+  });
+
+  it('answers 400 for another kind', async () => {
+    for (const kind of ['', 'Bug', 'bugs', 'all', ' bug']) {
+      const response = await app().request(
+        `/api/features?period=7d&tz=UTC&kind=${encodeURIComponent(kind)}`,
+      );
+      expect(response.status).toBe(400);
+    }
   });
 
   it('answers 503 unreachable when the database does not answer', async () => {
