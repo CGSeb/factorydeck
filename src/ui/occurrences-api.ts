@@ -20,6 +20,8 @@ export type LoadOutput = (
   id: number,
 ) => Promise<FullOutputResponse | undefined>;
 
+const NOT_FOUND = 404;
+
 export function outputUrl(id: number): string {
   return `/api/frictions/${String(id)}/output`;
 }
@@ -28,8 +30,14 @@ export function outputLoader(
   fetchImpl: typeof fetch = (...args) => fetch(...args),
 ): LoadOutput {
   return async (id) => {
-    const body = await fetchJson(fetchImpl, outputUrl(id));
-    return isResponse<FullOutputResponse>(body) ? body : undefined;
+    try {
+      const response = await fetchImpl(outputUrl(id));
+      if (response.status === NOT_FOUND) return { status: 'ok', gone: true };
+      const body: unknown = await response.json();
+      return isResponse<FullOutputResponse>(body) ? body : undefined;
+    } catch {
+      return undefined;
+    }
   };
 }
 

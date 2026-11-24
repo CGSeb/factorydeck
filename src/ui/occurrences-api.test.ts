@@ -89,6 +89,15 @@ describe('outputLoader', () => {
     expect(urls).toEqual(['/api/frictions/42/output']);
   });
 
+  it('answers the log gone when the friction is no longer known', async () => {
+    const load = outputLoader(() =>
+      Promise.resolve(
+        Response.json({ error: 'No such friction' }, { status: 404 }),
+      ),
+    );
+    expect(await load(42)).toEqual({ status: 'ok', gone: true });
+  });
+
   it('answers undefined when the API does not answer', async () => {
     const load = outputLoader(() => Promise.reject(new Error('offline')));
     expect(await load(42)).toBeUndefined();
