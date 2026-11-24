@@ -84,7 +84,7 @@ describe('withListParams', () => {
 });
 
 describe('groupOf', () => {
-  it('maps each stage to its group of spec 024', () => {
+  it('maps each stage to its board group', () => {
     expect(
       boardFeatures.map((row) => [row.number, groupOf(row)] as const),
     ).toEqual([

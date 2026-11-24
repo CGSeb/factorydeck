@@ -52,9 +52,13 @@ checks:
     manual_start: Docker Desktop
 
 specs:
-  folder: docs/specs/
-  file_name: NNN-short-name.md
-  product_context: README.md
+  # A feature spec is the body of its issue: a user story with its acceptance criteria.
+  location: issue
+  folder: none
+  file_name: none
+  product_context:
+    - docs/product/
+    - docs/how-it-works.md
   # The exact text this repository uses for each part of a spec.
   format:
     status_line: 'Status:'

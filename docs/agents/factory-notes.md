@@ -20,6 +20,10 @@ What agents must know about this repository that `docs/agents/factory.yml` canno
 
 Checked by the commit-msg hook (`scripts/check-commit-message.ts`): `type: :gitmoji: Subject`. Examples: `feat: :sparkles: …` for a feature, `fix: :bug: …`, `refactor: :recycle: …`, `test: :white_check_mark: …`, `docs: :memo: …`, `chore: :wrench: …`.
 
+## Product context
+
+None. Every source of `specs.product_context` is a file of this repository.
+
 ## Main branch protection
 
 On, through the `main` ruleset on GitHub. `main` cannot be deleted or force-pushed, and changes reach it only through a pull request whose `Check` and `Audit` jobs of `.github/workflows/ci.yml` passed. No approving review is required, so the shipper can merge a pull request that the person's own account opened. A pull request whose required checks failed or have not finished cannot be merged: fix the cause, never work around the ruleset.
@@ -32,5 +36,6 @@ On, through the `main` ruleset on GitHub. `main` cannot be deleted or force-push
 - A text may name a coding agent to describe it or compare agents; an instruction to the user (install, setup, next step) works whatever agent they use.
 - No real session data, costs or project names in code, tests, fixtures or docs; only small synthetic examples.
 - Data that matches no configuration rule is still counted, as "unassigned", never dropped.
+- A change of what a user sees or of what a figure means updates its page in `docs/product/` in the same pull request, and the page matches the code.
 - Imports use the `.ts` extension, and only erasable TypeScript syntax is used (no enums, no namespaces).
 - A story renders a small data set, a few dozen rows at most: each story renders and runs axe within the 5-second test timeout on a slower CI runner. A case that needs hundreds of items is proven by a unit test of the logic the component calls, not by a story. Exception: a story the spec asks for in so many words keeps the size the spec gives, as long as it stays well within that timeout; the builder states its measured time in the pull request body, and the reviewer does not raise its size as a finding.

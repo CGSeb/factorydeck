@@ -111,7 +111,7 @@ const PAIRS: [text: string, background: string][] = [
 ];
 
 describe('design tokens', () => {
-  it('defines exactly the tokens of spec 014, on :root', () => {
+  it('defines exactly the design tokens, on :root', () => {
     expect(css.trim()).toMatch(/^:root\s*\{[^}]*\}$/);
     expect(Object.fromEntries(tokens)).toEqual(EXPECTED);
     expect(parseTokens(css)).toHaveLength(Object.keys(EXPECTED).length);

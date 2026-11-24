@@ -345,7 +345,7 @@ export function nextTurnState(state: TurnState, record: LogRecord): TurnState {
   return state;
 }
 
-/** Whether the last assistant turn has ended, by the rule of spec 002. */
+/** Whether the last assistant turn has ended (« Turn ended » in docs/product/data.md). */
 export function turnEnded(state: TurnState): boolean {
   const assistantEnded =
     state.lastStopReason !== null &&
