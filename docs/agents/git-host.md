@@ -15,6 +15,7 @@ Pass multi-line text as a file (`--body-file <file>`); with a Windows `gh.exe` u
 - **Open blockers**: `gh.exe api repos/CGSeb/factorydeck/issues/<n>/dependencies/blocked_by --jq '[.[] | select(.state == "open") | .number]'`
 - **Add a blocker**: `gh.exe api -X POST repos/CGSeb/factorydeck/issues/<n>/dependencies/blocked_by -F issue_id=<id>`, where `<id>` is the blocker's database id: `gh.exe api repos/CGSeb/factorydeck/issues/<blocker> --jq .id`, not its number.
 - **Create an issue**: `gh.exe issue create --repo CGSeb/factorydeck --title "<title>" --label <label> --body-file <file>`
+- **Edit an issue body**: `gh.exe issue edit --repo CGSeb/factorydeck <n> --body-file <file>` (replaces the whole body: read it with **Read an issue** right before).
 - **Comment on an issue**: `gh.exe issue comment --repo CGSeb/factorydeck <n> --body-file <file>`
 - **Move an issue's labels**: `gh.exe issue edit --repo CGSeb/factorydeck <n> --remove-label <from> --add-label <to>`
 - **Hand an issue to the person**: `gh.exe issue edit --repo CGSeb/factorydeck <n> --add-assignee <person>`

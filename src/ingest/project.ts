@@ -26,7 +26,7 @@ function isInside(folder: string, root: string): boolean {
 }
 
 /**
- * Resolves the project of working directories, by the rule of spec 002. Folders that still
+ * Resolves the project of working directories (docs/product/data.md). Folders that still
  * exist are resolved first, so that a gone folder can fall inside a project they made known.
  */
 export async function resolveProjects(

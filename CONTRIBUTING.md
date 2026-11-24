@@ -38,6 +38,6 @@ Schema changes go in `src/db/schema.ts`, then `pnpm db:generate --name <change>`
 
 Commit messages follow `type: :gitmoji: Subject`, for example `feat: :sparkles: Add the cost-per-issue view`. A `commit-msg` hook checks them.
 
-## Specs
+## Specs and product documentation
 
-Each feature starts as a spec in [`docs/specs`](docs/specs) with testable acceptance criteria. The agent workflow that builds them is described in [`docs/agents`](docs/agents).
+Each feature starts as a spec in its GitHub issue: a user story with testable acceptance criteria. [`docs/product`](docs/product/README.md) describes the product as it is; a change of what a user sees or of what a figure means updates its page there in the same pull request. The agent workflow that builds the issues is described in [`docs/agents`](docs/agents).

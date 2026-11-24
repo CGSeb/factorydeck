@@ -104,7 +104,7 @@ FactoryDeck reads only the projects where the factory is installed, and everythi
 
 ## Contributing
 
-Development setup, checks and conventions are in [CONTRIBUTING.md](CONTRIBUTING.md). Feature specs live in [`docs/specs`](docs/specs).
+Development setup, checks and conventions are in [CONTRIBUTING.md](CONTRIBUTING.md). What each page shows and what each figure means is in the [product documentation](docs/product/README.md).
 
 ## License
 
