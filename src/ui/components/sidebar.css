@@ -222,9 +222,6 @@
 
 .fd-sidebar-credit-link:hover {
   color: var(--fd-link-hover);
-}
-
-.fd-sidebar-credit-link:hover {
   text-decoration: underline;
 }
 
