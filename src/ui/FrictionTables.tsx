@@ -15,7 +15,7 @@ import {
   OccurrencesProvider,
   useOpenRows,
 } from './FrictionOccurrences.tsx';
-import type { LoadOccurrences } from './occurrences-api.ts';
+import type { LoadOccurrences, LoadOutput } from './occurrences-api.ts';
 import { PagedTable } from './PagedTable.tsx';
 import type { LinkScope } from './session-links.ts';
 import {
@@ -83,12 +83,14 @@ export interface FrictionTablesProps {
   scope: LinkScope;
   filters: FrictionFilters;
   loadOccurrences: LoadOccurrences;
+  loadOutput: LoadOutput;
 }
 
 function useOccurrenceControls(
   filters: FrictionFilters,
   scope: LinkScope,
   loadOccurrences: LoadOccurrences,
+  loadOutput: LoadOutput,
 ): OccurrenceControls {
   const filtersKey = JSON.stringify(filters);
   const { isOpen, toggle } = useOpenRows(filtersKey);
@@ -96,7 +98,7 @@ function useOccurrenceControls(
     (table, row) => loadOccurrences({ filters, table, row }),
     [loadOccurrences, filtersKey],
   );
-  return { scope, isOpen, toggle, load };
+  return { scope, isOpen, toggle, load, loadOutput };
 }
 
 export function FrictionTables({
@@ -105,8 +107,14 @@ export function FrictionTables({
   scope,
   filters,
   loadOccurrences,
+  loadOutput,
 }: FrictionTablesProps): ReactElement {
-  const controls = useOccurrenceControls(filters, scope, loadOccurrences);
+  const controls = useOccurrenceControls(
+    filters,
+    scope,
+    loadOccurrences,
+    loadOutput,
+  );
   const toolErrors = showsKind(kind, 'tool-error');
   const shown = (wanted: FrictionKind, rows: readonly unknown[]): boolean =>
     showsKind(kind, wanted) && rows.length > 0;

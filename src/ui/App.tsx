@@ -5,7 +5,7 @@ import { FeaturePage } from './FeaturePage.tsx';
 import type { LoadFeature, LoadFeatures } from './features-api.ts';
 import { FeaturesPage } from './FeaturesPage.tsx';
 import type { LoadFrictions } from './frictions-api.ts';
-import type { LoadOccurrences } from './occurrences-api.ts';
+import type { LoadOccurrences, LoadOutput } from './occurrences-api.ts';
 import { FrictionsPage } from './FrictionsPage.tsx';
 import type { LoadCollection, RefreshCollection } from './git-host-api.ts';
 import { Layout } from './Layout.tsx';
@@ -39,6 +39,7 @@ export interface AppProps {
   loadQuality: LoadQuality;
   loadFrictions: LoadFrictions;
   loadOccurrences: LoadOccurrences;
+  loadOutput: LoadOutput;
   loadFlow: LoadFlow;
 }
 
@@ -54,6 +55,7 @@ export function App(props: AppProps): ReactElement {
     loadFeature,
     loadFrictions,
     loadOccurrences,
+    loadOutput,
   } = props;
   return (
     <Routes>
@@ -74,6 +76,7 @@ export function App(props: AppProps): ReactElement {
             <FrictionsPage
               loadFrictions={loadFrictions}
               loadOccurrences={loadOccurrences}
+              loadOutput={loadOutput}
             />
           }
         />

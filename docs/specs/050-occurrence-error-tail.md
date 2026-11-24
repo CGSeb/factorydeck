@@ -1,6 +1,6 @@
 # 050 · Show the error of each friction occurrence
 
-Status: ready
+Status: done
 Depends on: 048
 Checked: 2026-11-24
 
@@ -10,18 +10,18 @@ A developer opens a `Command failed` row and sees at a glance why each command f
 
 ## Acceptance criteria
 
-- [ ] For a tool error whose tool is a shell tool (spec 040, spec 043), the occurrence shows, under its call input:
+- [x] For a tool error whose tool is a shell tool (spec 040, spec 043), the occurrence shows, under its call input:
   - a line `Exit code <n>` in `--fd-ink-2` when the friction has an exit code, nothing otherwise;
   - the **error excerpt**: the last 5 non-empty lines of the output (rules), in `--fd-danger`, in `--fd-font-mono`, wrapping, with no horizontal scroll;
   - `No output.` in `--fd-ink-2` in place of the excerpt when the output has no non-empty line once cleaned (rules).
-- [ ] For a tool error of any other tool, the error excerpt is the first 3 non-empty lines of the result, as spec 048 says, now in `--fd-danger`. A stop block's hook message is unchanged (spec 048), in `--fd-ink-2`.
-- [ ] A tail excerpt longer than 300 characters keeps its last 300 and starts with `…`; a head excerpt keeps its first 300 and ends with `…` (spec 048).
-- [ ] When the cleaned output (or hook message) holds more than its excerpt shows, a button `Show full output` sits under the excerpt (`aria-expanded`, accessible name `Show full output of the occurrence at <date and time>`). Opening it shows, under the button, the whole cleaned text in `--fd-font-mono`, wrapping, in a box at most 20 lines high that scrolls vertically, never horizontally; the button then reads `Hide full output`. Several occurrences can be open at once; closing the row closes them.
-- [ ] While the full output loads, the box reads `Loading…`; if the API does not answer, the unreachable message of `StatusLine` (spec 024); when the log or the record is gone, `The session log is no longer on this computer.` (spec 048).
-- [ ] A full output longer than 400 lines or 20,000 characters keeps its end and starts with the line `… <n> earlier lines not shown.` (`1 earlier line not shown.` for one).
-- [ ] `GET /api/frictions/occurrences` (spec 048) adds to each occurrence its friction `id`, its `exitCode` (number or `null`) and whether it has more text than its excerpt (`hasMore`). `GET /api/frictions/<id>/output` returns the full cleaned text of that friction, read from the log at each request; an `id` that is not a positive integer answers 400, an unknown `id` or the `id` of a friction that is neither a tool error nor a stop block (a compaction) 404, a gone log or record 200 with the log marked gone.
-- [ ] The texts are still never written to the database, a cache, a file or the server's own output (spec 048).
-- [ ] From 360 px wide, an open full output never makes the page scroll horizontally.
+- [x] For a tool error of any other tool, the error excerpt is the first 3 non-empty lines of the result, as spec 048 says, now in `--fd-danger`. A stop block's hook message is unchanged (spec 048), in `--fd-ink-2`.
+- [x] A tail excerpt longer than 300 characters keeps its last 300 and starts with `…`; a head excerpt keeps its first 300 and ends with `…` (spec 048).
+- [x] When the cleaned output (or hook message) holds more than its excerpt shows, a button `Show full output` sits under the excerpt (`aria-expanded`, accessible name `Show full output of the occurrence at <date and time>`). Opening it shows, under the button, the whole cleaned text in `--fd-font-mono`, wrapping, in a box at most 20 lines high that scrolls vertically, never horizontally; the button then reads `Hide full output`. Several occurrences can be open at once; closing the row closes them.
+- [x] While the full output loads, the box reads `Loading…`; if the API does not answer, the unreachable message of `StatusLine` (spec 024); when the log or the record is gone, `The session log is no longer on this computer.` (spec 048).
+- [x] A full output longer than 400 lines or 20,000 characters keeps its end and starts with the line `… <n> earlier lines not shown.` (`1 earlier line not shown.` for one).
+- [x] `GET /api/frictions/occurrences` (spec 048) adds to each occurrence its friction `id`, its `exitCode` (number or `null`) and whether it has more text than its excerpt (`hasMore`). `GET /api/frictions/<id>/output` returns the full cleaned text of that friction, read from the log at each request; an `id` that is not a positive integer answers 400, an unknown `id` or the `id` of a friction that is neither a tool error nor a stop block (a compaction) 404, a gone log or record 200 with the log marked gone.
+- [x] The texts are still never written to the database, a cache, a file or the server's own output (spec 048).
+- [x] From 360 px wide, an open full output never makes the page scroll horizontally.
 
 ## Rules
 

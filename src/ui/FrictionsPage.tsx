@@ -28,7 +28,7 @@ import {
 import { FrictionBreakdown } from './FrictionBreakdown.tsx';
 import { FrictionFilterChip } from './FrictionFilterChip.tsx';
 import { FrictionTables } from './FrictionTables.tsx';
-import type { LoadOccurrences } from './occurrences-api.ts';
+import type { LoadOccurrences, LoadOutput } from './occurrences-api.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { useRefreshing } from './skills-api.ts';
 import './frictions-page.css';
@@ -36,6 +36,7 @@ import './frictions-page.css';
 export interface FrictionsPageProps {
   loadFrictions: LoadFrictions;
   loadOccurrences: LoadOccurrences;
+  loadOutput: LoadOutput;
   now?: Date | undefined;
 }
 
@@ -84,11 +85,13 @@ function FrictionsContent({
   filters,
   now,
   loadOccurrences,
+  loadOutput,
 }: {
   stats: FrictionStats;
   filters: FrictionFilters;
   now: Date;
   loadOccurrences: LoadOccurrences;
+  loadOutput: LoadOutput;
 }): ReactElement {
   if (stats.apiCalls === 0) return <StatusLine>{NO_ACTIVITY}</StatusLine>;
   const scope = { project: filters.project, period: filters.period };
@@ -114,6 +117,7 @@ function FrictionsContent({
           scope={scope}
           filters={filters}
           loadOccurrences={loadOccurrences}
+          loadOutput={loadOutput}
         />
       )}
       <FrictionBreakdown
@@ -161,6 +165,7 @@ function frictionControls({
 export function FrictionsPage({
   loadFrictions,
   loadOccurrences,
+  loadOutput,
   now = new Date(),
 }: FrictionsPageProps): ReactElement {
   const [filters, setFilters] = useFrictionFilters();
@@ -197,6 +202,7 @@ export function FrictionsPage({
           filters={filters}
           now={now}
           loadOccurrences={loadOccurrences}
+          loadOutput={loadOutput}
         />
       ) : (
         <StatusLine>

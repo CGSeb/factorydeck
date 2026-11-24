@@ -2,7 +2,8 @@ import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CODEX } from '../ingest/codex-files.ts';
 import { event, item } from '../test/codex-logs.ts';
-import { HOME, at, read } from '../test/occurrence-logs.ts';
+import { excerptOf, isShellTool } from './occurrences.ts';
+import { HOME, at, read, readRaw } from '../test/occurrence-logs.ts';
 import { sessionsFolder, writeLog } from '../test/session-logs.ts';
 
 let folder: string;
@@ -183,6 +184,45 @@ describe('Codex occurrences', () => {
         input: 'pnpm lint',
         error: 'src/a.ts: 2 problems\nWall time: kept in the body',
       },
+    });
+  });
+
+  it('keeps the end of a shell output, after its header', async () => {
+    const log = join(folder, 'rollout.jsonl');
+    const lines = Array.from({ length: 8 }, (_, index) => `ok ${index}`);
+    await writeLog(log, [
+      item(1, {
+        type: 'function_call',
+        name: 'exec_command',
+        call_id: 'c1',
+        arguments: JSON.stringify({ cmd: 'pnpm i && pnpm test' }),
+      }),
+      item(2, {
+        type: 'function_call_output',
+        call_id: 'c1',
+        output: `Chunk ID: 4f2a\nProcess exited with code 1\nOutput:\n${lines.join('\n')}\n\nFAIL ${HOME}/app/a.test.ts\n`,
+      }),
+    ]);
+    const found = await readRaw([at(log, 'call:c1', { agent: CODEX })]);
+    const texts = found['call:c1#0'] ?? null;
+    if (texts === null) throw new Error('The output was not found');
+    expect(texts).toEqual({
+      kind: 'tool-error',
+      input: 'pnpm i && pnpm test',
+      output: `${lines.join('\n')}\n\nFAIL ~/app/a.test.ts`,
+    });
+    expect(isShellTool(CODEX, 'exec_command')).toBe(true);
+    expect(isShellTool(CODEX, 'shell')).toBe(true);
+    expect(isShellTool(CODEX, 'apply_patch')).toBe(false);
+    expect(isShellTool(CODEX, 'Bash')).toBe(false);
+    expect(excerptOf(texts, true)).toEqual({
+      texts: {
+        kind: 'tool-error',
+        input: 'pnpm i && pnpm test',
+        error: 'ok 4\nok 5\nok 6\nok 7\nFAIL ~/app/a.test.ts',
+        shell: true,
+      },
+      hasMore: true,
     });
   });
 });

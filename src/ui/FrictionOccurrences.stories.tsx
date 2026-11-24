@@ -2,18 +2,21 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, within } from 'storybook/test';
 import { surfaceFrame } from './components/story-frame.ts';
 import { formatDateTime } from './format.ts';
-import { LATEST_OCCURRENCES, LOG_GONE } from './FrictionOccurrences.tsx';
+import { LATEST_OCCURRENCES } from './FrictionOccurrences.tsx';
 import { frictionStats } from './frictions-fixtures.ts';
 import { tablesRouter } from './frictions-story.ts';
 import { FrictionTables } from './FrictionTables.tsx';
 import {
   LONG_ERROR,
+  errorOccurrences,
   occurrencesLoaderOf,
   offlineOccurrences,
+  outputLoaderOf,
   pendingOccurrences,
   toolOccurrences,
   unreachableOccurrences,
 } from './occurrence-fixtures.ts';
+import { LOG_GONE, fullOutputLabel } from './OccurrenceTexts.tsx';
 import type { OccurrenceRequest } from './occurrences-api.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 
@@ -37,6 +40,7 @@ const meta = {
       requests.push(request);
       return occurrencesLoaderOf()(request);
     },
+    loadOutput: outputLoaderOf(),
   },
 } satisfies Meta<typeof FrictionTables>;
 
@@ -242,5 +246,45 @@ export const EveryTable: Story = {
     await expect(
       await within(hooks).findByText(/pnpm check failed: 2 type errors/),
     ).toBeVisible();
+  },
+};
+
+const SHELL_AT = errorOccurrences[0]?.at ?? '';
+const READ_AT = errorOccurrences[2]?.at ?? '';
+
+function moreButton(canvasElement: HTMLElement, at: string): HTMLElement {
+  return within(canvasElement).getByRole('button', {
+    name: fullOutputLabel(false, at),
+  });
+}
+
+function outputs(table: HTMLElement): HTMLElement[] {
+  return within(table).queryAllByRole('region', { name: /^Full output of/ });
+}
+
+async function press(button: HTMLElement, key: string): Promise<void> {
+  button.focus();
+  await userEvent.keyboard(key);
+}
+
+export const OutputsInRow: Story = {
+  name: 'Several full outputs open, closed with the row',
+  args: { loadOccurrences: occurrencesLoaderOf(errorOccurrences) },
+  decorators: width(360),
+  play: async ({ canvasElement }) => {
+    const table = await openGit(canvasElement);
+    const shell = moreButton(table, SHELL_AT);
+    await press(shell, '{Enter}');
+    await press(moreButton(table, READ_AT), ' ');
+    await expect(shell).toHaveAttribute('aria-expanded', 'true');
+    await expect(outputs(table)).toHaveLength(2);
+    await press(toggle(table, 'git'), '{Enter}');
+    await press(toggle(table, 'git'), '{Enter}');
+    await within(table).findByRole('heading', { name: LATEST_OCCURRENCES });
+    await expect(moreButton(table, SHELL_AT)).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    await expect(outputs(table)).toHaveLength(0);
   },
 };

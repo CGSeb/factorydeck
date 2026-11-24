@@ -95,19 +95,30 @@ export function hookParam(row: HookRow): string {
   return row.command;
 }
 
+export type LogTexts =
+  | { kind: 'tool-error'; input: string; output: string }
+  | { kind: 'stop-blocked'; message: string };
+
 export type OccurrenceTexts =
-  | { kind: 'tool-error'; input: string; error: string }
+  | { kind: 'tool-error'; input: string; error: string; shell: boolean }
   | { kind: 'stop-blocked'; message: string };
 
 export interface FrictionOccurrence {
+  id: number;
   at: string;
   role: string;
   project: string;
   workItem: number | null;
   sessionId: string;
   sessionTitle: string;
+  exitCode: number | null;
+  hasMore: boolean;
   texts: OccurrenceTexts | null;
 }
+
+export type FullOutput = { gone: true } | { gone: false; text: string };
+
+export type FullOutputResponse = ({ status: 'ok' } & FullOutput) | Unreachable;
 
 export type OccurrencesResponse =
   { status: 'ok'; occurrences: FrictionOccurrence[] } | Unreachable;

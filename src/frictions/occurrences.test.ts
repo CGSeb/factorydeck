@@ -243,6 +243,7 @@ describe('frictionOccurrences over an ingested log', () => {
         kind: 'tool-error',
         input: `curl -H ${SECRET} ~/work/demo`,
         error: `curl: failed with ${SECRET}`,
+        shell: true,
       });
       expect(block?.texts).toEqual({
         kind: 'stop-blocked',

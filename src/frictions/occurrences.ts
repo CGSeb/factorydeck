@@ -1,22 +1,33 @@
 import { homedir } from 'node:os';
+import { sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
-import { CODEX } from '../ingest/codex-files.ts';
-import type { WorkflowConfig } from '../roles/config.ts';
 import { text } from '../features/values.ts';
+import { CODEX, CODEX_SHELL_TOOLS } from '../ingest/codex-files.ts';
+import { SHELL_TOOLS } from '../ingest/frictions.ts';
+import { select } from '../overview/query.ts';
+import type { WorkflowConfig } from '../roles/config.ts';
 import { readClaudeLine } from './claude-occurrences.ts';
 import { codexCalls, readCodexLine } from './codex-occurrences.ts';
 import { type FrictionQuery, loadWindow } from './load.ts';
 import { logLines } from './log-lines.ts';
 import { type FileReading, type LogTarget, allSettled } from './log-reading.ts';
 import {
+  fullOutput,
+  hasMoreThan,
+  headExcerpt,
+  tailExcerpt,
+} from './log-texts.ts';
+import {
   type FrictionOccurrence,
+  type FullOutput,
+  type LogTexts,
   MAX_OCCURRENCES,
   type OccurrenceRow,
   type OccurrenceTexts,
 } from './occurrence-types.ts';
 import { inPeriodOf, roleFrictionsOf, tableSources } from './selection.ts';
-import type { LoadedRow } from './threads.ts';
-import { REPEATED_FAILURES, categoryOf } from './types.ts';
+import type { LoadedRow, Row } from './threads.ts';
+import { FRICTION_KINDS, REPEATED_FAILURES, categoryOf } from './types.ts';
 
 export interface OccurrenceQuery extends FrictionQuery {
   row: OccurrenceRow;
@@ -75,18 +86,43 @@ interface Located extends LogLocation {
   row: LoadedRow;
 }
 
-function locate(row: LoadedRow, index: number): Located {
-  const { source } = row;
+function locationOf(source: Row, key: string): LogLocation {
   return {
-    row,
     agent: text(source['agent']),
     path: text(source['source_path']),
     target: {
-      key: String(index),
+      key,
       recordUuid: text(source['record_uuid']),
       position: Number(source['position'] ?? 0),
-      kind: row.kind,
+      kind: text(source['kind']),
     },
+  };
+}
+
+function locate(row: LoadedRow, index: number): Located {
+  return { row, ...locationOf(row.source, String(index)) };
+}
+
+export function isShellTool(agent: string, tool: string | null): boolean {
+  if (tool === null) return false;
+  return agent === CODEX ? CODEX_SHELL_TOOLS.has(tool) : SHELL_TOOLS.has(tool);
+}
+
+export function excerptOf(
+  texts: LogTexts,
+  shell: boolean,
+): { texts: OccurrenceTexts; hasMore: boolean } {
+  if (texts.kind === 'stop-blocked') {
+    const message = headExcerpt(texts.message);
+    return {
+      texts: { kind: 'stop-blocked', message },
+      hasMore: hasMoreThan(texts.message, message),
+    };
+  }
+  const error = shell ? tailExcerpt(texts.output) : headExcerpt(texts.output);
+  return {
+    texts: { kind: 'tool-error', input: texts.input, error, shell },
+    hasMore: hasMoreThan(texts.output, error),
   };
 }
 
@@ -108,16 +144,16 @@ async function readFile(
   }
 }
 
-export async function readOccurrenceTexts(
+export async function readLogTexts(
   located: readonly LogLocation[],
   home: string,
-): Promise<Map<string, OccurrenceTexts | null>> {
+): Promise<Map<string, LogTexts | null>> {
   const files = new Map<string, LogLocation[]>();
   for (const item of located) {
     const fileKey = `${item.agent}\n${item.path}`;
     files.set(fileKey, [...(files.get(fileKey) ?? []), item]);
   }
-  const found = new Map<string, OccurrenceTexts | null>();
+  const found = new Map<string, LogTexts | null>();
   await Promise.all(
     [...files.values()].map(async (items) => {
       const [first] = items;
@@ -143,14 +179,49 @@ export async function frictionOccurrences(
   const loaded = await loadWindow(db, query, config);
   const rows = roleFrictionsOf(loaded, query.role).filter(inPeriodOf(loaded));
   const located = latestOccurrences(rowFrictions(rows, query)).map(locate);
-  const texts = await readOccurrenceTexts(located, home);
-  return located.map(({ row, target }) => ({
-    at: row.at,
-    role: row.thread.role,
-    project: row.thread.project,
-    workItem: row.thread.workItem,
-    sessionId: row.sessionId,
-    sessionTitle: row.sessionTitle,
-    texts: texts.get(target.key) ?? null,
-  }));
+  const found = await readLogTexts(located, home);
+  return located.map(({ row, agent, target }) => {
+    const texts = found.get(target.key) ?? null;
+    const excerpt =
+      texts === null ? null : excerptOf(texts, isShellTool(agent, row.tool));
+    return {
+      id: Number(row.source['id']),
+      at: row.at,
+      role: row.thread.role,
+      project: row.thread.project,
+      workItem: row.thread.workItem,
+      sessionId: row.sessionId,
+      sessionTitle: row.sessionTitle,
+      exitCode: row.exitCode,
+      hasMore: excerpt?.hasMore ?? false,
+      texts: excerpt?.texts ?? null,
+    };
+  });
+}
+
+const OUTPUT_KEY = 'output';
+
+export async function frictionOutput(
+  db: Database,
+  id: number,
+  home: string = homedir(),
+): Promise<FullOutput | undefined> {
+  const [source] = await select(
+    db,
+    sql`select id, kind, agent, source_path, record_uuid, position from friction
+      where id = ${id} and kind in (${sql.join(
+        FRICTION_KINDS.map((kind) => sql`${kind}`),
+        sql`, `,
+      )})`,
+  );
+  if (source === undefined) return undefined;
+  const found = await readLogTexts([locationOf(source, OUTPUT_KEY)], home);
+  const texts = found.get(OUTPUT_KEY) ?? null;
+  if (texts === null) return { gone: true };
+  return {
+    gone: false,
+    text: fullOutput(
+      texts.kind === 'tool-error' ? texts.output : texts.message,
+    ),
+  };
 }

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, within } from 'storybook/test';
 import type { LoadFrictions } from './frictions-api.ts';
 import { frictionsLoaderOf } from './frictions-fixtures.ts';
-import { occurrencesLoaderOf } from './occurrence-fixtures.ts';
+import { occurrencesLoaderOf, outputLoaderOf } from './occurrence-fixtures.ts';
 import {
   frictionsLoaded,
   frictionsRouter,
@@ -15,6 +15,7 @@ const meta = {
   args: {
     loadFrictions: frictionsLoaderOf(),
     loadOccurrences: occurrencesLoaderOf(),
+    loadOutput: outputLoaderOf(),
   },
   decorators: [frictionsRouter],
 } satisfies Meta<typeof FrictionsPage>;

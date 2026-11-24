@@ -35,7 +35,7 @@ import {
 import { flowLoaderOf } from './flow-fixtures.ts';
 import { autonomyLoaderOf, qualityLoaderOf } from './stats-fixtures.ts';
 import { frictionsLoaderOf } from './frictions-fixtures.ts';
-import { occurrencesLoaderOf } from './occurrence-fixtures.ts';
+import { occurrencesLoaderOf, outputLoaderOf } from './occurrence-fixtures.ts';
 
 const meta = {
   component: App,
@@ -69,6 +69,7 @@ const loaders = {
   loadQuality: qualityLoaderOf(),
   loadFrictions: frictionsLoaderOf(),
   loadOccurrences: occurrencesLoaderOf(),
+  loadOutput: outputLoaderOf(),
   loadFlow: flowLoaderOf(),
 };
 

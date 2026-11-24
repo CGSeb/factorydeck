@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Database } from '../db/client.ts';
 import { friction } from '../db/schema.ts';
 import { TOOL_ERROR_CATEGORIES } from '../ingest/frictions.ts';
+import { frictionOutput } from '../frictions/occurrences.ts';
 import { ingest } from '../ingest/ingest.ts';
 import { createTestDatabase } from '../test/postgres.ts';
 import { sessionsFolder } from '../test/session-logs.ts';
@@ -59,5 +60,20 @@ describe('demo frictions', () => {
       Array(3).fill(repeated[0]?.commandHash),
     );
     expect(repeated[0]?.commandHash).not.toBeNull();
+  });
+
+  it('hold a chained command whose error is at the end of a long output', async () => {
+    const rows = await db.select().from(friction).orderBy(asc(friction.id));
+    const texts = await Promise.all(
+      rows
+        .filter((row) => row.tool === 'Bash' && row.exitCode === 1)
+        .map(async (row) => frictionOutput(db, row.id)),
+    );
+    const chained = texts.find(
+      (text) => text?.gone === false && text.text.includes('Found 2 errors'),
+    );
+    const lines = chained?.gone === false ? chained.text.split('\n') : [];
+    expect(lines).toHaveLength(39);
+    expect(lines.at(-1)).toBe('Found 2 errors in 2 files.');
   });
 });
