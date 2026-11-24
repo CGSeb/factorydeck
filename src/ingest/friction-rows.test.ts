@@ -133,6 +133,12 @@ describe('Claude Code reader', () => {
     expect(
       withHomeAsTilde(`${HOME}/a ${HOME} ${HOME}2/b "${HOME}"`, HOME),
     ).toBe(`~/a ~ ${HOME}2/b "~"`);
+    expect(withHomeAsTilde(`a=${HOME}/b (${HOME}/c)`, HOME)).toBe(
+      'a=~/b (~/c)',
+    );
+    expect(
+      withHomeAsTilde(`//wsl.localhost/Ubuntu${HOME}/a /mnt${HOME}`, HOME),
+    ).toBe(`//wsl.localhost/Ubuntu${HOME}/a /mnt${HOME}`);
     expect(withHomeAsTilde('/x', '')).toBe('/x');
   });
 

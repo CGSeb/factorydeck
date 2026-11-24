@@ -195,7 +195,7 @@ export function withHomeAsTilde(command: string, home: string): string {
   const root = home.replace(/\/+$/, '');
   if (root === '') return command;
   return command.replaceAll(
-    new RegExp(`${escapeRegExp(root)}(?=/|$|[^\\w.-])`, 'g'),
+    new RegExp(`(?<![\\w.~/-])${escapeRegExp(root)}(?=/|$|[^\\w.-])`, 'g'),
     '~',
   );
 }

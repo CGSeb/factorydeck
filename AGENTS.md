@@ -12,7 +12,7 @@ FactoryDeck is a public tool for anyone's projects and sessions. It reads only t
 
 ## Conventions
 
-- Stack: TypeScript run directly by Node 24+ (type stripping), pnpm, zod, vitest, oxlint (type-aware), prettier. PostgreSQL 18 in Docker Compose (`pnpm db:up`), Drizzle ORM and drizzle-kit migrations in `drizzle/`, configuration from the root `.env` (`src/config/env.ts`). UI in React, bundled by Vite; React Router for client routes; charts are plain HTML and CSS components in `src/ui/components/` (spec 018), with no chart library.
+- Stack: TypeScript run directly by Node 24+ (type stripping), pnpm, zod, vitest, oxlint (type-aware), prettier. PostgreSQL 18 in Docker Compose (`pnpm db:up`), Drizzle ORM and drizzle-kit migrations in `drizzle/`, configuration from the root `.env` (`src/config/env.ts`). UI in React, bundled by Vite, whose configuration is `scripts/vite-config.ts` (there is no root `vite.config.ts`); React Router for client routes; charts are plain HTML and CSS components in `src/ui/components/` (spec 018), with no chart library.
 - Code, comments, commits and docs are in English.
 - Imports use the `.ts` extension; only erasable TypeScript syntax (no enums, no namespaces).
 - Every component of `src/ui` has Storybook stories (`<Component>.stories.tsx`), one per state the specs name. Interactions go in `play` functions. `src/ui/stories.test.tsx` renders every story with happy-dom, runs its `play`, and fails on any axe-core violation. Colour contrast is not checked there (happy-dom computes no colours): check it in Storybook. `pnpm storybook` opens the catalogue on `127.0.0.1:6006`.
