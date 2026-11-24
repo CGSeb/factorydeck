@@ -75,6 +75,7 @@ export const RolesActive: Story = {
       'Sessions',
       'Skills',
       'Roles',
+      'GitHub',
     ]);
     await expect(canvas.getByRole('link', { name: 'Roles' })).toHaveAttribute(
       'aria-current',

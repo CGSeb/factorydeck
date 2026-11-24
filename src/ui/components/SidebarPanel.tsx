@@ -151,6 +151,42 @@ function SidebarNav({
   );
 }
 
+const SOURCE_URL = 'https://github.com/CGSeb/factorydeck';
+const CREDIT = 'Open source · by CGSeb';
+const SOURCE_LINK_NAME = 'FactoryDeck on GitHub';
+
+function Credit({
+  folded,
+  tipFor,
+}: {
+  folded: boolean;
+  tipFor: TipFor;
+}): ReactElement {
+  const link = {
+    href: SOURCE_URL,
+    target: '_blank',
+    rel: 'noreferrer',
+    'aria-label': SOURCE_LINK_NAME,
+  };
+  return folded ? (
+    <a
+      {...link}
+      className="fd-sidebar-icon-button fd-sidebar-credit-icon"
+      {...tipFor(`${CREDIT} on GitHub`)}
+    >
+      <Icon name="github" />
+    </a>
+  ) : (
+    <p className="fd-sidebar-credit">
+      <span>{CREDIT}</span>{' '}
+      <a {...link} className="fd-sidebar-credit-link">
+        <Icon name="github" size={14} />
+        GitHub
+      </a>
+    </p>
+  );
+}
+
 export interface PanelProps extends SidebarProps {
   id?: string | undefined;
   folded: boolean;
@@ -196,6 +232,7 @@ export function SidebarPanel({
           <ThemeButton {...themeControl} folded={folded} tipFor={tipFor} />
           {bottom}
         </div>
+        <Credit folded={folded} tipFor={tipFor} />
       </div>
     </aside>
   );
