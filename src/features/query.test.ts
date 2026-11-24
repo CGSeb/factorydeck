@@ -101,6 +101,26 @@ describe('listFeatures', () => {
     });
   });
 
+  it('gives each issue row its kind, and none to the rows without an issue', async () => {
+    const list = await listFeatures(db, week, DEFAULT_CONFIG);
+    expect(
+      Object.fromEntries(
+        list.rows.map((row) => [
+          `${row.project}#${String(row.number)}`,
+          row.kind,
+        ]),
+      ),
+    ).toEqual({
+      [`${APP}#7`]: 'feature',
+      [`${APP}#8`]: 'bug',
+      [`${APP}#9`]: 'feature',
+      [`${APP}#99`]: null,
+      [`${LIB}#7`]: null,
+    });
+    expect(list.noWorkItem).not.toHaveProperty('kind');
+    expect(list.totals).not.toHaveProperty('kind');
+  });
+
   it('totals the merged issues', async () => {
     const { merged } = await listFeatures(db, week, DEFAULT_CONFIG);
     expect(merged).toEqual({

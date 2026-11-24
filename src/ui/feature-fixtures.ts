@@ -29,7 +29,7 @@ export function found(
   project: string,
   number: number,
   title: string,
-): Pick<FeatureRow, 'project' | 'projectName' | 'number' | 'issue'> {
+): Pick<FeatureRow, 'project' | 'projectName' | 'number' | 'issue' | 'kind'> {
   return {
     project,
     projectName: nameOf(project),
@@ -39,6 +39,7 @@ export function found(
       title,
       url: `https://github.com/example-org/example-app/issues/${String(number)}`,
     },
+    kind: 'feature',
   };
 }
 
@@ -79,6 +80,7 @@ export const someFeatures: FeatureRow[] = [
     projectName: nameOf(LIB),
     number: 28,
     issue: { status: 'not-collected' },
+    kind: null,
     outcome: null,
     lastAt: '2026-01-05T09:00:00.000Z',
     sessions: 1,
@@ -106,6 +108,7 @@ export const someFeatures: FeatureRow[] = [
     projectName: nameOf(APP),
     number: 99,
     issue: { status: 'not-found' },
+    kind: null,
     outcome: null,
     lastAt: '2026-01-05T09:00:00.000Z',
     sessions: 1,

@@ -45,6 +45,7 @@ function feature(
     projectName: 'example-app',
     number: 7,
     issue: { status: 'found', title: 'Example', url: 'https://example.test/7' },
+    kind: 'feature',
     detail: null,
     roles: [],
     orchestration: withOrchestration ? orchestration : null,

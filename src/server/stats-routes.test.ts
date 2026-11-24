@@ -99,6 +99,7 @@ const waiting: WaitingList = {
       projectName: 'app',
       number: 12,
       title: 'Export',
+      kind: 'feature',
       reasons: ['spec-question'],
       since: '2026-01-05T08:00:00.000Z',
     },

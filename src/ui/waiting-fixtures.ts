@@ -23,6 +23,7 @@ function waitingIssue(
     projectName: nameOf(project),
     number,
     title,
+    kind: 'feature',
     reasons,
     since:
       hoursAgo === null

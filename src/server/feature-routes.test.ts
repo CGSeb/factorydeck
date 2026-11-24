@@ -57,6 +57,7 @@ const feature: FeatureDetail = {
   projectName: 'app',
   number: 7,
   issue: { status: 'not-collected' },
+  kind: null,
   detail: null,
   roles: [],
   orchestration: null,

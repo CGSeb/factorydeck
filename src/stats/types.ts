@@ -1,4 +1,5 @@
 import type { Unreachable } from '../server/api-context.ts';
+import type { IssueKind } from '../git-host/kind.ts';
 import type { ProjectOption } from '../projects/label.ts';
 
 export type TrendUnit = 'hour' | 'day' | 'week' | 'month' | 'year';
@@ -139,6 +140,7 @@ export interface WaitingIssue {
   projectName: string;
   number: number;
   title: string;
+  kind: IssueKind;
   reasons: WaitReason[];
   since: string | null;
 }

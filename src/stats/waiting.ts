@@ -1,4 +1,5 @@
 import type { Database } from '../db/client.ts';
+import { type IssueKind, kindOf } from '../git-host/kind.ts';
 import type { IssueRow, RequestRow } from '../git-host/query.ts';
 import { projectNames } from '../projects/names.ts';
 import {
@@ -15,6 +16,7 @@ export interface WaitingFacts {
   project: string;
   number: number;
   title: string;
+  kind: IssueKind;
   reasons: WaitReason[];
   since: number | null;
 }
@@ -58,6 +60,7 @@ export function waitingFacts(
     project: issue.project,
     number: issue.number,
     title: issue.title,
+    kind: kindOf(issue, state.bugLabel),
     reasons,
     since: starts.length === 0 ? null : Math.min(...starts),
   };
@@ -83,6 +86,7 @@ export function waitingRows(
       projectName: label(fact.project),
       number: fact.number,
       title: fact.title,
+      kind: fact.kind,
       reasons: fact.reasons,
       since: fact.since === null ? null : new Date(fact.since).toISOString(),
     }));

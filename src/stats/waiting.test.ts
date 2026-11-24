@@ -11,7 +11,7 @@ const LABELS = {
   review: 'agent:review',
   blocked: 'agent:blocked',
 };
-const STATE = { stageLabels: LABELS, autoMerge: true };
+const STATE = { stageLabels: LABELS, autoMerge: true, bugLabel: null };
 const CREATED = new Date('2026-03-01T00:00:00Z');
 
 function issue(
@@ -141,7 +141,7 @@ describe('waitingFacts', () => {
     const facts = waitingFacts(
       issue(7, { labels: ['agent:review'] }),
       [request(7, [report('2026-03-06T08:00:00Z', 90)])],
-      { stageLabels: LABELS, autoMerge: false },
+      { ...STATE, autoMerge: false },
     );
     expect(facts).toBeNull();
   });
@@ -197,6 +197,7 @@ describe('waitingRows', () => {
       project: APP,
       number,
       title: `Issue ${String(number)}`,
+      kind: 'feature' as const,
       reasons: ['blocked' as const],
       since,
     });

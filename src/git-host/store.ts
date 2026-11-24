@@ -214,6 +214,7 @@ export async function saveSuccess(
       errorGitHost: null,
       stageLabels: settings.labels,
       autoMerge: settings.autoMerge,
+      bugLabel: settings.bugLabel,
       historyRead: true,
     };
     await tx

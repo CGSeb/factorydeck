@@ -242,7 +242,7 @@ export async function featureDetail(
       issueKey(key.project, key.number),
     );
   const issue = issueOf(rows);
-  const { issue: status } = outcomeOf(key);
+  const { issue: status, kind } = outcomeOf(key);
   if (
     issue === undefined &&
     status.status !== 'found' &&
@@ -255,6 +255,7 @@ export async function featureDetail(
     ...key,
     projectName: names.label(key.project),
     issue: status,
+    kind,
     detail: detailInPeriod(detail, startAt),
     roles: [...(issue?.roles.values() ?? [])]
       .map(roleOfAccumulator)

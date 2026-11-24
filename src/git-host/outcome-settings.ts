@@ -4,12 +4,14 @@ import {
   readFactorySettings,
 } from '../factory/settings.ts';
 import { GitHostConfigError } from './config.ts';
+import { bugLabelOf } from './kind.ts';
 import type { StageLabels } from './outcome.ts';
 import type { GitHostName } from './types.ts';
 
 export interface ProjectOutcomeSettings {
   labels: StageLabels;
   autoMerge: boolean | null;
+  bugLabel: string | null;
 }
 
 function stageLabels(settings: FactorySettings): StageLabels {
@@ -30,9 +32,14 @@ export async function readOutcomeSettings(
 ): Promise<ProjectOutcomeSettings> {
   try {
     const settings = await readFactorySettings(root);
+    const labels = stageLabels(settings);
     return {
-      labels: stageLabels(settings),
+      labels,
       autoMerge: settings.flag('build.auto_merge') ?? null,
+      bugLabel: bugLabelOf(settings.text('bugs.label'), [
+        settings.text('issues.labels.spec'),
+        ...Object.values(labels),
+      ]),
     };
   } catch (error) {
     if (error instanceof FactorySettingsError) {

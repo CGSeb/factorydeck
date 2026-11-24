@@ -59,6 +59,16 @@ A stop with an end is **answered**; without one it is still waiting. The time ag
 
 An issue was reworked when more than one pull or merge request closes it (any state), or it was reopened at least once.
 
+## Kinds
+
+Each collected issue has a kind, `feature` or `bug`, from the optional `bugs.label` of the project's `docs/agents/factory.yml`.
+
+- A project has **no bug label** when `bugs` is missing or not a map, or `bugs.label` is missing, not a string, or empty after trimming. It also has none when `bugs.label` equals `issues.labels.spec` or a flow label of `issues.labels` (`ready`, `working`, `needs_spec`, `review`, `blocked`), compared after trimming and without letter case. None of these is a collection error: the other settings are read as before and no banner line is added.
+- An issue is a **bug** when one of its current labels equals the project's bug label, after trimming and without letter case; otherwise it is a **feature**. A project with no bug label has only features, and an issue with both the spec label and the bug label is a bug.
+- The kind depends only on the issue's current labels and the current setting, never on the label history, the title, the branch or the pull request: a relabel on the git host, or a `bugs.label` changed in `factory.yml`, shows at the next collection for every period, without reading the project again in full. A former kind is not kept.
+- Every issue has exactly one kind, so the features and the bugs of a list add up to its issues. The kind changes no stage, score, round, token or other figure.
+- The API gives it as `kind` on each issue row of `GET /api/features` (`null` for an issue not found or not collected), on `GET /api/features/<n>`, and on each row of `GET /api/stats/waiting`. Nothing on screen shows it yet.
+
 ## Where outcomes show
 
 - The **session page** aside: the stage, serenity badge and review rounds of its work item.

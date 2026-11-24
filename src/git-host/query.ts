@@ -3,6 +3,7 @@ import type { Database } from '../db/client.ts';
 import { gitHostIssue, gitHostProject, gitHostRequest } from '../db/schema.ts';
 import type { FactoryCheck } from '../ingest/factory.ts';
 import { projectNames } from '../projects/names.ts';
+import { type IssueKind, kindOf } from './kind.ts';
 import { issueMilestones } from './milestones.ts';
 import { type StageLabels, issueOutcome } from './outcome.ts';
 import { runFinishedAt } from './store.ts';
@@ -163,22 +164,28 @@ function sortedLabels(labels: IssueLabel[]): IssueLabel[] {
 export type OutcomeLookup = (key: { project: string; number: number }) => {
   issue: WorkItemIssue;
   outcome: IssueOutcome | null;
+  kind: IssueKind | null;
 };
+
+function unknownIssue(
+  status: 'not-collected' | 'not-found',
+): ReturnType<OutcomeLookup> {
+  return { issue: { status }, outcome: null, kind: null };
+}
 
 export async function lookupOutcomes(
   db: Database,
   keys: readonly { project: string; number: number }[],
 ): Promise<OutcomeLookup> {
   const projects = [...new Set(keys.map((key) => key.project))];
-  if (projects.length === 0) {
-    return () => ({ issue: { status: 'not-collected' }, outcome: null });
-  }
+  if (projects.length === 0) return () => unknownIssue('not-collected');
   const [states, issues, requests] = await Promise.all([
     db
       .select({
         project: gitHostProject.project,
         stageLabels: gitHostProject.stageLabels,
         autoMerge: gitHostProject.autoMerge,
+        bugLabel: gitHostProject.bugLabel,
       })
       .from(gitHostProject)
       .where(
@@ -207,13 +214,9 @@ export async function lookupOutcomes(
   );
   return ({ project, number }) => {
     const state = stateOf.get(project);
-    if (state === undefined) {
-      return { issue: { status: 'not-collected' }, outcome: null };
-    }
+    if (state === undefined) return unknownIssue('not-collected');
     const issue = issueOf.get(`${String(number)} ${project}`);
-    if (issue === undefined) {
-      return { issue: { status: 'not-found' }, outcome: null };
-    }
+    if (issue === undefined) return unknownIssue('not-found');
     const closing = requests.filter(
       (request) =>
         request.project === project && request.closes.includes(number),
@@ -221,6 +224,7 @@ export async function lookupOutcomes(
     return {
       issue: { status: 'found', title: issue.title, url: issue.url },
       outcome: outcomeOf(issue, closing, state),
+      kind: kindOf(issue, state.bugLabel),
     };
   };
 }

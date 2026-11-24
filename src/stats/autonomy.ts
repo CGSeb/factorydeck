@@ -227,6 +227,7 @@ async function factoryProjects(
       project: gitHostProject.project,
       stageLabels: gitHostProject.stageLabels,
       autoMerge: gitHostProject.autoMerge,
+      bugLabel: gitHostProject.bugLabel,
     })
     .from(gitHostProject)
     .where(
@@ -242,7 +243,9 @@ async function factoryProjects(
   return kept;
 }
 
-export type ProjectState = Parameters<typeof issueFacts>[2];
+export type ProjectState = Parameters<typeof issueFacts>[2] & {
+  bugLabel: string | null;
+};
 
 export async function loadIssues<T>(
   db: Database,
