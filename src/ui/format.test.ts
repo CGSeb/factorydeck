@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  formatActivity,
   formatAgo,
   formatBucket,
   formatClock,
@@ -104,5 +105,38 @@ describe('formatWorkItem', () => {
   it('shows an issue number with #, and — without one', () => {
     expect(formatWorkItem(52)).toBe('#52');
     expect(formatWorkItem(null)).toBe('—');
+  });
+});
+
+describe('formatActivity', () => {
+  const local = (hour: number, minute: number, second = 0, day = 24): string =>
+    new Date(2026, 10, day, hour, minute, second).toISOString();
+  const now = new Date(2026, 10, 24, 14, 5, 0);
+
+  it('reads just now under one minute, even in the future', () => {
+    expect(formatActivity(local(14, 4, 1), now)).toBe('just now');
+    expect(formatActivity(local(14, 6), now)).toBe('just now');
+  });
+
+  it('counts whole minutes from one minute to under one hour', () => {
+    expect(formatActivity(local(14, 4, 0), now)).toBe('1 min ago');
+    expect(formatActivity(local(13, 5, 1), now)).toBe('59 min ago');
+  });
+
+  it('shows the time of the same local day from one hour', () => {
+    expect(formatActivity(local(13, 5, 0), now)).toBe('Today, 13:05');
+    expect(formatActivity(local(0, 0, 0), now)).toBe('Today, 00:00');
+  });
+
+  it('shows the day and time before local midnight', () => {
+    expect(formatActivity(local(23, 59, 59, 23), now)).toBe('23 Nov, 23:59');
+    expect(formatActivity(local(17, 33, 0, 22), now)).toBe('22 Nov, 17:33');
+  });
+
+  it('keeps minutes across local midnight under one hour', () => {
+    const justAfterMidnight = new Date(2026, 10, 24, 0, 10, 0);
+    expect(formatActivity(local(23, 50, 0, 23), justAfterMidnight)).toBe(
+      '20 min ago',
+    );
   });
 });

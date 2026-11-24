@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { formatCost, formatTokens } from '../format.ts';
 
 export interface TokenCounts {
@@ -104,3 +105,12 @@ export function placeTooltip({
   );
   return { side, top, left };
 }
+
+export const buttonReset: CSSProperties = {
+  margin: 0,
+  padding: 0,
+  border: 0,
+  background: 'none',
+  font: 'inherit',
+  color: 'inherit',
+};

@@ -23,6 +23,7 @@ export interface DialogProps {
   onCancel: () => void;
   danger?: DialogDanger | undefined;
   children?: ReactNode;
+  withLinks?: boolean;
 }
 
 function DialogActions({
@@ -69,11 +70,12 @@ export function Dialog({
   onCancel,
   danger,
   children,
+  withLinks = false,
 }: DialogProps): ReactElement {
   const titleId = useId();
   const textId = useId();
   const dialog = useRef<HTMLDivElement>(null);
-  const cancel = useDialogFocus(onCancel, dialog);
+  const cancel = useDialogFocus(onCancel, dialog, withLinks);
   return (
     <div
       className="fd-dialog-backdrop"

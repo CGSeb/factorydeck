@@ -42,7 +42,7 @@ FactoryDeck reads only the projects where the factory is installed, and everythi
 |                      |                                                                                                               |
 | -------------------- | ------------------------------------------------------------------------------------------------------------- |
 | 📈 **Stats**         | Autonomy, quality and flow over time: merged without a person, why a person stepped in, right the first time. |
-| 🗂️ **Overview**      | The factory at a glance: issues ready, building, in review and merged, with their review round and score.     |
+| 🗂️ **Overview**      | The factory at a glance: its health, the issues waiting for you, and issues from ready to merged.             |
 | 🧭 **Issue story**   | How one issue got merged: each agent thread, each review verdict, and the moment a person had to step in.     |
 | ⚠️ **Frictions**     | Tool errors, permission denials, blocked stops and failed commands, to fix the ones that come back.           |
 | 🧩 **Features**      | Every issue with its sessions, review rounds, score and cost, split by role.                                  |

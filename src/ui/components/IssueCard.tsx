@@ -6,8 +6,6 @@ import { ProjectTag } from './ProjectTag.tsx';
 import { RoundsBadge } from './RoundsBadge.tsx';
 import { type SerenityScore, SerenityBadge } from './SerenityBadge.tsx';
 import { StageBadge } from './StageBadge.tsx';
-import { TokenAmount } from './TokenAmount.tsx';
-import type { TokenCounts } from './token-amount.ts';
 import './work.css';
 
 export type IssueTitle =
@@ -30,12 +28,15 @@ export type IssueCardBadge =
   | { kind: 'rounds'; rounds: number; inReview?: boolean }
   | { kind: 'text'; text: string };
 
+export interface IssueCardActivity {
+  at: string;
+  text: string;
+}
+
 export interface IssueCardProps {
   issue: IssueCardIssue;
   badge?: IssueCardBadge | readonly IssueCardBadge[];
-  counts: TokenCounts;
-  costUsd: number | null;
-  unknownPriceCalls?: number;
+  activity?: IssueCardActivity | undefined;
   showProject: boolean;
   renderLink?: RenderLink;
 }
@@ -75,9 +76,7 @@ function Badge({ badge }: { badge: IssueCardBadge }): ReactElement | null {
 export function IssueCard({
   issue,
   badge,
-  counts,
-  costUsd,
-  unknownPriceCalls = 0,
+  activity,
   showProject,
   renderLink = renderAnchor,
 }: IssueCardProps): ReactElement {
@@ -109,12 +108,11 @@ export function IssueCard({
             <Badge key={`${String(index)} ${item.kind}`} badge={item} />
           ))}
         </span>
-        <TokenAmount
-          counts={counts}
-          costUsd={costUsd}
-          unknownPriceCalls={unknownPriceCalls}
-          size="strong"
-        />
+        {activity === undefined ? null : (
+          <time className="fd-issue-card-time" dateTime={activity.at}>
+            {activity.text}
+          </time>
+        )}
       </div>
     </article>
   );

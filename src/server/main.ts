@@ -24,6 +24,7 @@ import { listRoles } from '../roles/query.ts';
 import { listSessions, sessionDetail } from '../sessions/query.ts';
 import { listSkills, skillDetail } from '../skills/query.ts';
 import { autonomyStats } from '../stats/autonomy.ts';
+import { waitingIssues } from '../stats/waiting.ts';
 import { flowStats } from '../stats/flow.ts';
 import { qualityStats } from '../stats/quality.ts';
 import { createApp } from './app.ts';
@@ -86,6 +87,7 @@ function statsSource(db: Database, config: WorkflowConfig): StatsSource {
     occurrences: (query) => frictionOccurrences(db, query, config),
     output: (id) => frictionOutput(db, id),
     flow: (query) => flowStats(db, query, config, hasFactory),
+    waiting: (project) => waitingIssues(db, project, hasFactory),
   };
 }
 

@@ -3,11 +3,6 @@ import { countsOf } from './chart-fixtures.ts';
 import type { StageColumnCard } from './StageColumn.tsx';
 import type { TimelineStep, TimelineThread } from './IssueTimeline.tsx';
 
-export const CARD_TOKENS = {
-  counts: countsOf(2_400_000),
-  costUsd: 6.1,
-};
-
 export function card(
   number: number,
   title: string,
@@ -22,8 +17,7 @@ export function card(
       title: { status: 'found', title },
       href: `/issues/demo-app/${String(number)}`,
     },
-    counts: countsOf(number * 100_000),
-    costUsd: number / 4,
+    activity: { at: '2026-11-24T14:05:00Z', text: 'Today, 14:05' },
     showProject: false,
     ...overrides,
   };

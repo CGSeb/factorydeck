@@ -110,3 +110,24 @@ export const ReturnsFocusToOpener: Story = {
     await expect(opener).toHaveFocus();
   },
 };
+
+export const WithLinks: Story = {
+  name: 'With links',
+  args: {
+    title: 'Where the tokens went',
+    text: 'Tokens of the period, by role.',
+    cancelLabel: 'Close',
+    danger: undefined,
+    withLinks: true,
+    children: <a href="/roles">Roles</a>,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const close = canvas.getByRole('button', { name: 'Close' });
+    await expect(close).toHaveFocus();
+    await userEvent.tab();
+    await expect(canvas.getByRole('link', { name: 'Roles' })).toHaveFocus();
+    await userEvent.tab();
+    await expect(close).toHaveFocus();
+  },
+};

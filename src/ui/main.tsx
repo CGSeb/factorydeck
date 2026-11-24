@@ -14,7 +14,12 @@ import { overviewLoader } from './overview-api.ts';
 import { rolesLoader } from './roles-api.ts';
 import { sessionLoader, sessionsLoader } from './sessions-api.ts';
 import { skillLoader, skillsLoader } from './skills-api.ts';
-import { autonomyLoader, flowLoader, qualityLoader } from './stats-api.ts';
+import {
+  autonomyLoader,
+  flowLoader,
+  qualityLoader,
+  waitingLoader,
+} from './stats-api.ts';
 
 const loadOverview = overviewLoader();
 const loadSessions = sessionsLoader();
@@ -34,6 +39,7 @@ const loadFrictions = frictionsLoader();
 const loadOccurrences = occurrencesLoader();
 const loadOutput = outputLoader();
 const loadFlow = flowLoader();
+const loadWaiting = waitingLoader();
 const root = document.querySelector('#root');
 if (root) {
   createRoot(root).render(
@@ -57,6 +63,7 @@ if (root) {
         loadOccurrences={loadOccurrences}
         loadOutput={loadOutput}
         loadFlow={loadFlow}
+        loadWaiting={loadWaiting}
       />
     </BrowserRouter>,
   );

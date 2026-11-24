@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, within } from 'storybook/test';
 import { IssueCard } from './IssueCard.tsx';
 import { surfaceFrame } from './story-frame.ts';
-import { CARD_TOKENS, card } from './work-fixtures.ts';
+import { card } from './work-fixtures.ts';
 
 const meta = {
   title: 'Components/IssueCard',
@@ -17,7 +17,6 @@ const meta = {
   ],
   args: {
     ...card(42, 'Export the session table as CSV'),
-    ...CARD_TOKENS,
     showProject: true,
     badge: { kind: 'stage', stage: 'in-review' },
   },
@@ -43,10 +42,11 @@ export const WithProject: Story = {
       '#42',
     );
     await expect(article?.closest('a')).toBeNull();
-    const amount = canvas.getByText('2.4M');
-    await expect(amount).toHaveAttribute('tabindex', '0');
-    await expect(amount).toHaveStyle({ fontWeight: '700' });
-    await expect(link.contains(amount)).toBe(false);
+    const time = canvas.getByText('Today, 14:05');
+    await expect(time.tagName).toBe('TIME');
+    await expect(time).toHaveAttribute('datetime', '2026-11-24T14:05:00Z');
+    await expect(link.contains(time)).toBe(false);
+    await expect(canvas.queryByText(/\d\.\dM/)).not.toBeInTheDocument();
     await expect(canvas.getByText('In review')).toBeInTheDocument();
   },
 };
@@ -58,6 +58,40 @@ export const WithoutProject: Story = {
     await expect(
       within(canvasElement).queryByText('demo-app'),
     ).not.toBeInTheDocument();
+  },
+};
+
+export const MinutesAgo: Story = {
+  name: 'Minutes ago',
+  args: { activity: { at: '2026-11-24T13:52:00Z', text: '13 min ago' } },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText('13 min ago')).toBeVisible();
+  },
+};
+
+export const JustNow: Story = {
+  name: 'Just now',
+  args: { activity: { at: '2026-11-24T14:04:30Z', text: 'just now' } },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText('just now')).toBeVisible();
+  },
+};
+
+export const EarlierDay: Story = {
+  name: 'Earlier day',
+  args: { activity: { at: '2026-11-22T17:33:00Z', text: '22 Nov, 17:33' } },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByText('22 Nov, 17:33'),
+    ).toBeVisible();
+  },
+};
+
+export const NoActivityInPeriod: Story = {
+  name: 'No activity in the period',
+  args: { activity: undefined },
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelector('time')).toBeNull();
   },
 };
 

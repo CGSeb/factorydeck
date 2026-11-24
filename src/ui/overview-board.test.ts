@@ -38,10 +38,11 @@ function row(
 }
 
 const ALL = { period: '7d' as const, project: undefined };
+const NOW = new Date('2026-01-10T12:00:00.000Z');
 
 describe('boardColumns', () => {
   it('groups the stages into the four columns and leaves the others out', () => {
-    const columns = boardColumns(featureList(boardFeatures), ALL);
+    const columns = boardColumns(featureList(boardFeatures), ALL, NOW);
     expect(columns.map((column) => column.group)).toEqual([
       'ready',
       'working',
@@ -74,25 +75,33 @@ describe('boardColumns', () => {
     const rows = stages.map((stage, index) =>
       row(index + 1, stage, '2026-01-01T00:00:00.000Z'),
     );
-    const counts = boardColumns(featureList(rows), ALL).map(
+    const counts = boardColumns(featureList(rows), ALL, NOW).map(
       (column) => column.count,
     );
     expect(counts).toEqual([4, 1, 1, 2]);
   });
 
-  it('sums the tokens and cost of every issue of a column, shown or not', () => {
+  it('counts every issue of a column, shown or not, with no tokens', () => {
     const rows = Array.from({ length: 7 }, (_, index) =>
       row(index + 1, 'working', `2026-01-0${String(index + 1)}T00:00:00.000Z`),
     );
-    const working = boardColumns(featureList(rows), ALL)[1];
+    const working = boardColumns(featureList(rows), ALL, NOW)[1];
     expect(working?.count).toBe(7);
-    expect(working?.costUsd).toBeCloseTo(0.07);
-    expect(working?.counts).toEqual({
-      input: splitTokens(1_000).input * 7,
-      output: splitTokens(1_000).output * 7,
-      cacheRead: splitTokens(1_000).cacheRead * 7,
-      cacheWrite: splitTokens(1_000).cacheWrite * 7,
+    expect(working).not.toHaveProperty('counts');
+    expect(working?.cards[0]).not.toHaveProperty('counts');
+  });
+
+  it('shows the time of the last activity on a card, and none without a call', () => {
+    const rows = [
+      row(1, 'working', '2026-01-10T11:58:00.000Z'),
+      row(2, 'working', null),
+    ];
+    const cards = boardColumns(featureList(rows), ALL, NOW)[1]?.cards;
+    expect(cards?.[0]?.activity).toEqual({
+      at: '2026-01-10T11:58:00.000Z',
+      text: '2 min ago',
     });
+    expect(cards?.[1]?.activity).toBeUndefined();
   });
 
   it('shows the 5 latest issues, ties broken by the highest number, and counts the rest', () => {
@@ -105,7 +114,7 @@ describe('boardColumns', () => {
       row(6, 'working', null),
       row(7, 'working', '2026-01-04T00:00:00.000Z'),
     ];
-    const working = boardColumns(featureList(rows), ALL)[1];
+    const working = boardColumns(featureList(rows), ALL, NOW)[1];
     expect(working?.cards.map((card) => card.issue.number)).toEqual([
       3, 2, 7, 4, 5,
     ]);
@@ -119,7 +128,7 @@ describe('boardColumns', () => {
     const rows = Array.from({ length: 5 }, (_, index) =>
       row(index + 1, 'merged', '2026-01-01T00:00:00.000Z'),
     );
-    expect(boardColumns(featureList(rows), ALL)[3]?.more.count).toBe(0);
+    expect(boardColumns(featureList(rows), ALL, NOW)[3]?.more.count).toBe(0);
   });
 
   it('keeps the project and period in the links, and hides the project with one selected', () => {
@@ -127,6 +136,7 @@ describe('boardColumns', () => {
     const columns = boardColumns(
       featureList(boardFeatures.filter((r) => r.project === LIB)),
       filters,
+      NOW,
     );
     const card = columns[1]?.cards[0];
     expect(card?.showProject).toBe(false);
@@ -139,7 +149,7 @@ describe('boardColumns', () => {
   });
 
   it('shows the project with all projects, coloured in the order of the projects', () => {
-    const columns = boardColumns(featureList(boardFeatures), ALL);
+    const columns = boardColumns(featureList(boardFeatures), ALL, NOW);
     const cards = columns.flatMap((column) => column.cards);
     const app = cards.find((card) => card.issue.project === APP);
     const lib = cards.find((card) => card.issue.project === LIB);
@@ -252,33 +262,16 @@ describe('headline', () => {
     expect(headlineCount(12)).toBe('12 issues merged for ');
   });
 
-  it('summarises tokens per merged issue, merges without a person and sessions', () => {
-    expect(
-      headlineSummary(
-        {
-          issues: 4,
-          withoutPerson: 0.75,
-          tokensPerIssue: 2_400_000,
-          costPerIssueUsd: 4.8,
-          unknownPriceCalls: 0,
-        },
-        14,
-      ),
-    ).toBe(
-      '2.4M tokens per merged issue · 3 of 4 merged without a person · 14 sessions',
+  it('summarises the median tokens per merged issue and the sessions', () => {
+    expect(headlineSummary({ value: 2_400_000, n: 5 }, 14)).toBe(
+      '2.4M tokens per merged issue · 14 sessions',
     );
   });
 
-  it('keeps only the sessions with no merged issue', () => {
-    const none = {
-      issues: 0,
-      withoutPerson: null,
-      tokensPerIssue: null,
-      costPerIssueUsd: null,
-      unknownPriceCalls: 0,
-    };
-    expect(headlineSummary(none, 1)).toBe('1 session');
-    expect(headlineSummary(none, 0)).toBe('0 sessions');
+  it('leaves the tokens per merged issue out below 5 merged issues with agent work', () => {
+    expect(headlineSummary({ value: 2_400_000, n: 4 }, 1)).toBe('1 session');
+    expect(headlineSummary({ value: null, n: 0 }, 0)).toBe('0 sessions');
+    expect(headlineSummary(undefined, 3)).toBe('3 sessions');
   });
 });
 

@@ -2,6 +2,7 @@ import type {
   AutonomyResponse,
   FlowResponse,
   QualityResponse,
+  WaitingResponse,
 } from '../stats/types.ts';
 import {
   type SkillFilters,
@@ -62,5 +63,21 @@ export function flowLoader(
       `/api/stats/flow?${query.toString()}`,
     );
     return isResponse<FlowResponse>(body) ? body : undefined;
+  };
+}
+
+export type LoadWaiting = (
+  project: string | undefined,
+) => Promise<WaitingResponse | undefined>;
+
+export function waitingLoader(
+  fetchImpl: typeof fetch = (...args) => fetch(...args),
+): LoadWaiting {
+  return async (project) => {
+    const query = new URLSearchParams();
+    if (project !== undefined) query.set('project', project);
+    const suffix = query.size === 0 ? '' : `?${query.toString()}`;
+    const body = await fetchJson(fetchImpl, `/api/stats/waiting${suffix}`);
+    return isResponse<WaitingResponse>(body) ? body : undefined;
   };
 }

@@ -38,3 +38,108 @@
   font-size: 13px;
   font-weight: 600;
 }
+
+.fd-overview-health {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fd-space-5) 20px;
+  margin-top: var(--fd-space-4);
+}
+
+.fd-overview-health-figures {
+  flex: 1 1 360px;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--fd-space-4) var(--fd-space-6);
+  align-content: start;
+}
+
+.fd-overview-health-trend {
+  flex: 1 1 300px;
+  min-width: 0;
+}
+
+.fd-needs-person-table {
+  width: 100%;
+}
+
+.fd-needs-person-link {
+  font-weight: 600;
+  color: var(--fd-ink);
+  text-decoration: none;
+}
+
+.fd-needs-person-link:hover {
+  color: var(--fd-link-hover);
+  text-decoration: underline;
+}
+
+.fd-needs-person-link:focus-visible {
+  outline: 2px solid var(--fd-accent);
+  outline-offset: 2px;
+}
+
+.fd-needs-person-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fd-space-1) var(--fd-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--fd-ink-2);
+}
+
+.fd-overview-dialog {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--fd-space-4);
+  margin-top: var(--fd-space-4);
+}
+
+.fd-overview-dialog > .fd-overview-tokens {
+  align-self: stretch;
+}
+
+.fd-needs-person {
+  container-type: inline-size;
+}
+
+@container (max-width: 559.98px) {
+  .fd-needs-person .fd-needs-person-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .fd-needs-person .fd-needs-person-table tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--fd-space-1) var(--fd-space-3);
+    padding: var(--fd-space-3) 0;
+  }
+
+  .fd-needs-person .fd-needs-person-table td {
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+
+  .fd-needs-person .fd-needs-person-table td:first-child {
+    flex-basis: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .fd-needs-person .fd-needs-person-table tbody tr + tr {
+    border-top: 1px solid var(--fd-line);
+  }
+
+  .fd-needs-person .fd-needs-person-table td:last-child {
+    margin-left: auto;
+  }
+}

@@ -24,3 +24,10 @@ export const FIGURE_HELP = {
   'Tokens on rework':
     "Share of the period's tokens spent on an issue after its first refused serenity report: the cost of fixing work the review sent back.",
 } as const;
+
+export const MERGED_NOUN = { one: 'merged issue', other: 'merged issues' };
+
+export const REPORTED_NOUN = {
+  one: 'merged issue with a report',
+  other: 'merged issues with a report',
+};

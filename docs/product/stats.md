@@ -70,3 +70,5 @@ Rework counts the calls at or after the issue's first refusing report, whatever 
 ## API
 
 `GET /api/stats/autonomy`, `/api/stats/quality` and `/api/stats/flow`, each with `period`, `tz` and `project`, return the counts behind each figure for the period and its previous one (none for `all`), and the trend as `unit` and `buckets`. A missing or unknown `period` or `tz` answers 400.
+
+`GET /api/stats/waiting`, with an optional `project`, returns the open issues waiting for a person now, whatever the period, as the [overview](overview.md#needs-a-person) lists them: each with its reasons and the start of its oldest open stop.

@@ -14,8 +14,10 @@ import { STAGE_GROUPS, type StageGroup } from './components/StageDot.tsx';
 import { totalTokens } from './components/token-amount.ts';
 import { projectColors } from './design/palette.ts';
 import { featurePath } from './features-api.ts';
-import { STAGE_PARAM, groupOf, sortRows, stageItems } from './features-list.ts';
-import { formatCount, formatTokens } from './format.ts';
+import { STAGE_PARAM, groupOf, sortRows } from './features-list.ts';
+import { formatActivity, formatCount, formatTokens } from './format.ts';
+import { isEnough } from './components/stats-math.ts';
+import type { FlowSample } from './stats-view.ts';
 import { byTokensDescending, colorsOfRoles } from './roles-view.ts';
 import type { SkillFilters } from './skills-api.ts';
 
@@ -77,29 +79,22 @@ export function cardBadge(
 export function boardColumns(
   list: FeatureList,
   filters: SkillFilters,
+  now: Date,
 ): BoardColumn[] {
   const showProject = filters.project === undefined;
   const colors = projectColors(list.projects.map(({ project }) => project));
-  const items = stageItems(list.rows);
-  return STAGE_GROUPS.map((group, index): BoardColumn => {
+  return STAGE_GROUPS.map((group): BoardColumn => {
     const members = sortRows(
       list.rows.filter((row) => groupOf(row) === group),
       'last',
     );
     const shown = members.slice(0, BOARD_CARD_LIMIT);
-    const item = items[index];
     return {
       group,
       count: members.length,
-      counts: item?.counts ?? {
-        input: 0,
-        output: 0,
-        cacheRead: 0,
-        cacheWrite: 0,
-      },
-      costUsd: item?.costUsd ?? null,
-      unknownPriceCalls: item?.unknownPriceCalls ?? 0,
-      cards: shown.map((row) => cardOf(row, filters, showProject, colors)),
+      cards: shown.map((row) =>
+        cardOf(row, filters, { showProject, colors, now }),
+      ),
       more: {
         count: members.length - shown.length,
         href: stagePath(group, filters),
@@ -113,11 +108,16 @@ function stagePath(group: StageGroup, filters: SkillFilters): string {
   return `${listPath('/features', filters)}&${params.toString()}`;
 }
 
+interface CardContext {
+  showProject: boolean;
+  colors: Map<string, string>;
+  now: Date;
+}
+
 function cardOf(
   row: FeatureRow,
   filters: SkillFilters,
-  showProject: boolean,
-  colors: Map<string, string>,
+  { showProject, colors, now }: CardContext,
 ): StageColumnCard {
   const badge = cardBadge(row);
   return {
@@ -133,9 +133,11 @@ function cardOf(
       href: featurePath(row, filters),
     },
     ...(badge === undefined ? {} : { badge }),
-    counts: row.tokenCounts,
-    costUsd: row.costUsd,
-    unknownPriceCalls: row.costUsd === null ? row.apiCalls : 0,
+    ...(row.lastAt === null
+      ? {}
+      : {
+          activity: { at: row.lastAt, text: formatActivity(row.lastAt, now) },
+        }),
     showProject,
   };
 }
@@ -146,17 +148,18 @@ export function headlineCount(merged: number): string {
 }
 
 export function headlineSummary(
-  merged: FeatureList['merged'],
+  tokensPerIssue: FlowSample | undefined,
   sessions: number,
 ): string {
   const sessionText = `${formatCount(sessions)} ${sessions === 1 ? 'session' : 'sessions'}`;
-  if (merged.issues === 0) return sessionText;
-  const withoutPerson = Math.round((merged.withoutPerson ?? 0) * merged.issues);
-  return [
-    `${formatTokens(merged.tokensPerIssue ?? 0)} tokens per merged issue`,
-    `${formatCount(withoutPerson)} of ${formatCount(merged.issues)} merged without a person`,
-    sessionText,
-  ].join(' · ');
+  if (
+    tokensPerIssue === undefined ||
+    tokensPerIssue.value === null ||
+    !isEnough(tokensPerIssue.n)
+  ) {
+    return sessionText;
+  }
+  return `${formatTokens(tokensPerIssue.value)} tokens per merged issue · ${sessionText}`;
 }
 
 export function roleSegments(list: RoleList): ChartSegment[] {
