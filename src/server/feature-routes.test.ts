@@ -217,6 +217,17 @@ describe('GET /api/features/:number with a version', () => {
     }
   });
 
+  it('answers 404 not-found for an unknown issue, with a version', async () => {
+    const response = await app().request(
+      '/api/features/8?period=all&tz=UTC&project=%2Fwork%2Fapp&version=1',
+    );
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({
+      status: 'not-found',
+      refreshSeconds: 10,
+    });
+  });
+
   it('answers 400 invalid-version for a version the issue does not have', async () => {
     const response = await app().request(`${path}&version=3`);
     expect(response.status).toBe(400);

@@ -173,6 +173,19 @@ describe('the page of a bug by version', () => {
     expect(reports(second)).toEqual([]);
   });
 
+  it('does not know an unknown issue, with or without a version', async () => {
+    for (const version of [undefined, 1, 2]) {
+      expect(
+        await versionDetailOf(
+          db,
+          { project: APP, number: 404 },
+          { ...allTime, version },
+          context,
+        ),
+      ).toBeUndefined();
+    }
+  });
+
   it('refuses a version that the bug does not have, and any version of a feature', async () => {
     await db
       .insert(gitHostIssue)

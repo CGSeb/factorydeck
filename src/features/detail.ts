@@ -173,7 +173,6 @@ export async function versionDetailOf(
   ]);
   const { issue: status, kind } = outcomeOf(key);
   const bug = kind === 'bug' ? await bugVersion(db, key, version) : undefined;
-  if (version !== undefined && bug === undefined) return INVALID_VERSION;
   const [{ issue, known }, frictions] = await Promise.all([
     issueUsage(db, key, { query: scoped, bug }, { config, markers }),
     issueFrictionCount(
@@ -184,6 +183,7 @@ export async function versionDetailOf(
     ),
   ]);
   if (status.status !== 'found' && !(await known())) return undefined;
+  if (version !== undefined && bug === undefined) return INVALID_VERSION;
   return {
     ...key,
     projectName: names.label(key.project),
