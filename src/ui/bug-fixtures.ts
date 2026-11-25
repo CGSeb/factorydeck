@@ -170,7 +170,11 @@ export const reopenedFixedBug = inVersion(
     stage: 'merged',
     createdAt: hoursAgo(200),
     mergedAt: hoursAgo(3),
-    fix: { rootCause: 'Rounding in two places', reproduced: 'failed-on-main' },
+    fix: {
+      rootCause: 'Rounding in two places',
+      reproduced: 'failed-on-main',
+      request: fixRequest(106),
+    },
     score: 86,
     threshold: 80,
     lastAt: hoursAgo(3.5),
@@ -184,7 +188,11 @@ export const thirdVersionBug = inVersion(
   bugRow(82, 'Session expires early', {
     stage: 'working',
     createdAt: hoursAgo(300),
-    fix: { rootCause: 'A clock skew', reproduced: 'passed-on-main' },
+    fix: {
+      rootCause: 'A clock skew',
+      reproduced: 'passed-on-main',
+      request: fixRequest(107),
+    },
     lastAt: hoursAgo(1),
     tokens: 410_000,
   }),

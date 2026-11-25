@@ -12,7 +12,6 @@ import type { FeatureQuery } from '../features/types.ts';
 import type { SerenityReport, StateEvent } from '../git-host/types.ts';
 import { DEFAULT_CONFIG } from '../roles/config.ts';
 import { createTestDatabase } from '../test/postgres.ts';
-import { featureDetail } from '../features/query.ts';
 import { bugCounts, listBugs } from './query.ts';
 import type { BugList, BugRow } from './types.ts';
 
@@ -319,26 +318,5 @@ describe('listBugs with versions', () => {
     const list = await listBugs(db, allTime, DEFAULT_CONFIG);
     expect(rowOf(list, 10)).toMatchObject({ tokens: 700, lastAt: day(6) });
     expect(rowOf(list, 13)).toMatchObject({ tokens: 0, costUsd: 0 });
-  });
-});
-
-describe('the fix of a bug page with versions', () => {
-  it('is the fix of the current version, as on the bugs list', async () => {
-    await seed();
-    const list = await listBugs(db, allTime, DEFAULT_CONFIG);
-    for (const number of [10, 11, 12, 13]) {
-      const detail = await featureDetail(
-        db,
-        { project: APP, number },
-        allTime,
-        {
-          config: DEFAULT_CONFIG,
-          state: { inactiveAfterMinutes: 30, now: NOW },
-        },
-      );
-      expect(detail?.fix).toEqual(rowOf(list, number)?.fix);
-    }
-    expect(rowOf(list, 13)?.fix).toBeNull();
-    expect(rowOf(list, 11)?.fix).toMatchObject({ rootCause: 'third try' });
   });
 });

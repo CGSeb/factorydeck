@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FACTORY_WORKFLOW } from '../demo/fake-git-host.ts';
+import { FACTORY_WORKFLOW, reopenedOnce } from '../demo/fake-git-host.ts';
 import { featureDetail } from '../features/query.ts';
 import { withIssues } from '../git-host/work-items.ts';
 import { DEFAULT_CONFIG } from '../roles/config.ts';
@@ -13,6 +13,7 @@ import {
   outcomeContext,
   serenity,
 } from '../test/outcome.ts';
+import { listBugs } from './query.ts';
 
 const ctx = outcomeContext();
 
@@ -103,6 +104,55 @@ describe('the fix of an issue page', () => {
     );
     expect(await fixOf(root, 3)).toBeNull();
     expect(await fixOf(root, 4)).toBeNull();
+  });
+
+  it('comes from the current version only, as on the bugs list', async () => {
+    const firstMerge = '2026-03-02T12:00:00Z';
+    const secondTry = '2026-03-04T12:00:00Z';
+    const root = await ctx.collected(
+      githubData(
+        [bug(5), bug(6)],
+        [
+          {
+            ...merged(50, [5], [comment(fixReport('first cause', 'no test'))]),
+            mergedAt: firstMerge,
+          },
+          {
+            ...merged(60, [6], [comment(fixReport('first cause', 'no test'))]),
+            mergedAt: firstMerge,
+          },
+          ghRequest(61, [6], [success], {
+            createdAt: secondTry,
+            updatedAt: secondTry,
+            comments: [
+              comment(fixReport('second cause', 'failed on main'), secondTry),
+            ],
+          }),
+        ],
+        {
+          factory: WITH_BUGS,
+          stateEvents: reopenedOnce(
+            [5, 6],
+            '2026-03-03T10:00:00Z',
+            '2026-03-04T08:00:00Z',
+          ),
+        },
+      ),
+      NOW,
+    );
+    expect(await fixOf(root, 5)).toBeNull();
+    expect(await fixOf(root, 6)).toMatchObject({
+      rootCause: 'second cause',
+      reproduced: 'failed-on-main',
+      request: { number: 61 },
+    });
+    const list = await listBugs(ctx.db(), all, DEFAULT_CONFIG);
+    const rows = [...list.groups.open, ...list.groups.fixing];
+    for (const number of [5, 6]) {
+      expect(rows.find((row) => row.number === number)?.fix).toEqual(
+        await fixOf(root, number),
+      );
+    }
   });
 });
 
