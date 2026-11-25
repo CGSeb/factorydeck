@@ -49,7 +49,11 @@ export function versionScope(
     },
     requests: own.map((request) => request.number),
     outcome: outcomeOf(
-      next === undefined ? issue : { ...issue, state: 'closed' },
+      {
+        ...issue,
+        state: next === undefined ? issue.state : 'closed',
+        reopened: false,
+      },
       own,
       project,
     ),

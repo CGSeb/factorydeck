@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Database } from '../db/client.ts';
-import { gitHostIssue } from '../db/schema.ts';
+import { gitHostIssue, gitHostRequest } from '../db/schema.ts';
 import { versionDetailOf } from '../features/query.ts';
 import { type FeatureDetail, INVALID_VERSION } from '../features/types.ts';
 import { DEFAULT_CONFIG } from '../roles/config.ts';
@@ -11,6 +11,7 @@ import {
   allTime,
   bug,
   day,
+  request,
   seedBugCalls,
   seedBugVersions,
 } from '../test/bug-versions.ts';
@@ -118,6 +119,19 @@ describe('the page of a bug by version', () => {
     const latest = await pageOf(10);
     expect(latest.version?.number).toBe(2);
     expect(latest.fix).toMatchObject({ rootCause: 'the real cause' });
+  });
+
+  it('says a version is reworked only when it has more than one request of its own', async () => {
+    const reworked = async (number: number, version?: number) =>
+      (await pageOf(number, version)).detail?.outcome.reworked;
+    expect(await reworked(11, 1)).toBe(false);
+    expect(await reworked(11, 2)).toBe(false);
+    expect(await reworked(11, 3)).toBe(false);
+    await db
+      .insert(gitHostRequest)
+      .values(request(27, 10, { createdAt: day(6, 12) }));
+    expect(await reworked(10, 1)).toBe(false);
+    expect(await reworked(10, 2)).toBe(true);
   });
 
   it('cuts the timeline and the tokens by version, whatever the period', async () => {
