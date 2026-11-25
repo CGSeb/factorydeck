@@ -9,6 +9,7 @@ export type BugGroup = (typeof BUG_GROUPS)[number];
 export interface BugFix {
   rootCause: string | null;
   reproduced: Reproduced | null;
+  request: { number: number; url: string };
 }
 
 export interface BugVersion {

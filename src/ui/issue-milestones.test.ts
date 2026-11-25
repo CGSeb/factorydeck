@@ -46,6 +46,7 @@ function feature(
     number: 7,
     issue: { status: 'found', title: 'Example', url: 'https://example.test/7' },
     kind: 'feature',
+    fix: null,
     detail: null,
     roles: [],
     orchestration: withOrchestration ? orchestration : null,

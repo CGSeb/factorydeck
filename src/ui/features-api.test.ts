@@ -5,6 +5,7 @@ import { featureList, featuresResponse } from './feature-fixtures.ts';
 import {
   type LoadFeatures,
   featureLoader,
+  bugsPath,
   featurePath,
   featuresLoader,
   loadKindList,
@@ -75,6 +76,29 @@ describe('features API', () => {
     expect(
       featurePath({ project: '/work/my app', number: 7 }, { period: 'all' }),
     ).toBe('/features/7?project=%2Fwork%2Fmy+app&period=all');
+  });
+
+  it('links a bug to its bug page, and a feature or an issue of no kind to its feature page', () => {
+    const issue = { project: '/work/app', number: 7 };
+    const period = { period: '7d' as const };
+    expect(featurePath({ ...issue, kind: 'bug' }, period)).toBe(
+      '/bugs/7?project=%2Fwork%2Fapp&period=7d',
+    );
+    expect(featurePath({ ...issue, kind: 'feature' }, period)).toBe(
+      '/features/7?project=%2Fwork%2Fapp&period=7d',
+    );
+    expect(featurePath({ ...issue, kind: null }, period)).toBe(
+      '/features/7?project=%2Fwork%2Fapp&period=7d',
+    );
+  });
+
+  it('links the bugs list with the period and the project', () => {
+    expect(bugsPath({ period: 'all', project: '/work/app' })).toBe(
+      '/bugs?period=all&project=%2Fwork%2Fapp',
+    );
+    expect(bugsPath({ period: '7d', project: undefined })).toBe(
+      '/bugs?period=7d',
+    );
   });
 });
 

@@ -19,6 +19,20 @@ describe('needsPersonRows', () => {
     expect(rows[3]?.wait).toBe('—');
   });
 
+  it('links a bug to its bug page', () => {
+    const [first, ...rest] = someWaiting.issues;
+    if (first === undefined) throw new Error('No waiting issue');
+    const rows = needsPersonRows(
+      { ...someWaiting, issues: [{ ...first, kind: 'bug' }, ...rest] },
+      { period: '30d' },
+      WAITING_NOW,
+    );
+    expect(rows[0]?.href).toBe(
+      `/bugs/${String(first.number)}?project=${encodeURIComponent(first.project)}&period=30d`,
+    );
+    expect(rows[1]?.href).toMatch(/^\/features\//);
+  });
+
   it('colours the projects in the order of every project', () => {
     const rows = needsPersonRows(someWaiting, { period: '7d' }, WAITING_NOW);
     const app = rows.find((row) => row.project === APP);

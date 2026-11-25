@@ -44,6 +44,14 @@ export const BugsAndFeatures: Story = {
     ).toBeVisible();
     await expect(kinds.getByRole('button', { name: 'Bugs 8' })).toBeVisible();
     const bug = canvas.getByRole('rowheader', { name: 'Dark mode (#57) Bug' });
+    await expect(
+      within(bug).getByRole('link', { name: 'Dark mode (#57)' }),
+    ).toHaveAttribute('href', expect.stringMatching(/^\/bugs\/57\?/));
+    await expect(
+      within(
+        canvas.getByRole('rowheader', { name: 'Bulk import (#61)' }),
+      ).getByRole('link'),
+    ).toHaveAttribute('href', expect.stringMatching(/^\/features\/61\?/));
     await expect(within(bug).getByText('Bug')).toHaveAttribute(
       'data-tone',
       'danger',

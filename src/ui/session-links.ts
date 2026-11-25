@@ -1,7 +1,8 @@
 import { CODEX_AGENT } from '../sessions/types.ts';
 import { type Period, isPeriod } from '../overview/types.ts';
 import { PROJECT_PARAM, projectOf, withProject } from './project-param.ts';
-import { featurePath } from './features-api.ts';
+import type { IssueKind } from '../git-host/kind.ts';
+import { featurePath, issuePageBase } from './features-api.ts';
 import { skillPath } from './skills-api.ts';
 
 export interface LinkScope {
@@ -50,9 +51,14 @@ export function issueHref(
   number: number,
   project: string,
   { period }: Pick<LinkScope, 'period'>,
+  kind: IssueKind | null = null,
 ): string {
-  if (period !== undefined) return featurePath({ project, number }, { period });
-  return withQuery(`/features/${String(number)}`, [[PROJECT_PARAM, project]]);
+  if (period !== undefined) {
+    return featurePath({ project, number, kind }, { period });
+  }
+  return withQuery(`${issuePageBase(kind)}/${String(number)}`, [
+    [PROJECT_PARAM, project],
+  ]);
 }
 
 export function skillHref(

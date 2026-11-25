@@ -1,3 +1,4 @@
+import type { BugFix } from '../bugs/types.ts';
 import type { ProjectOption } from '../projects/label.ts';
 import type {
   IssueDetail,
@@ -119,6 +120,7 @@ export interface FeatureDetail {
   number: number;
   issue: WorkItemIssue;
   kind: IssueKind | null;
+  fix: BugFix | null;
   detail: IssueDetail | null;
   roles: FeatureRole[];
   orchestration: FeatureRole | null;

@@ -1,8 +1,20 @@
-import type { BugList, BugListResponse, BugRow } from '../bugs/types.ts';
+import type {
+  BugFix,
+  BugList,
+  BugListResponse,
+  BugRow,
+} from '../bugs/types.ts';
 import type { LoadBugs } from './bugs-api.ts';
 import { APP, LIB } from './feature-fixtures.ts';
 import { nameOf, optionsOf } from './project-fixtures.ts';
 import { splitTokens } from './token-fixtures.ts';
+
+export function fixRequest(number: number): BugFix['request'] {
+  return {
+    number,
+    url: `https://github.com/example-org/example-app/pull/${String(number)}`,
+  };
+}
 
 export const BUGS_NOW = new Date('2026-03-12T15:30:00Z');
 
@@ -58,7 +70,11 @@ export const fixingBugs: BugRow[] = [
   bugRow(77, 'Login loops on refresh', {
     stage: 'in-review',
     createdAt: hoursAgo(20),
-    fix: { rootCause: 'A stale token', reproduced: 'passed-on-main' },
+    fix: {
+      rootCause: 'A stale token',
+      reproduced: 'passed-on-main',
+      request: fixRequest(101),
+    },
     score: 72,
     threshold: 80,
     lastAt: hoursAgo(1),
@@ -77,7 +93,11 @@ export const fixedBugs: BugRow[] = [
     stage: 'merged',
     createdAt: hoursAgo(50),
     mergedAt: hoursAgo(2),
-    fix: { rootCause: 'A duplicated render', reproduced: 'failed-on-main' },
+    fix: {
+      rootCause: 'A duplicated render',
+      reproduced: 'failed-on-main',
+      request: fixRequest(102),
+    },
     score: 91,
     threshold: 80,
     lastAt: hoursAgo(2.5),
@@ -87,7 +107,11 @@ export const fixedBugs: BugRow[] = [
     stage: 'merged-after-person',
     createdAt: hoursAgo(80),
     mergedAt: hoursAgo(5),
-    fix: { rootCause: null, reproduced: 'did-not-run-on-main' },
+    fix: {
+      rootCause: null,
+      reproduced: 'did-not-run-on-main',
+      request: fixRequest(103),
+    },
     score: 84,
     threshold: 80,
     tokens: 1_200_000,
@@ -96,7 +120,11 @@ export const fixedBugs: BugRow[] = [
     stage: 'merged-by-person',
     createdAt: hoursAgo(100),
     mergedAt: hoursAgo(26),
-    fix: { rootCause: 'The sort is not in the URL', reproduced: 'no-test' },
+    fix: {
+      rootCause: 'The sort is not in the URL',
+      reproduced: 'no-test',
+      request: fixRequest(104),
+    },
     score: 62,
     threshold: 80,
     tokens: 900_000,
@@ -105,7 +133,7 @@ export const fixedBugs: BugRow[] = [
     stage: 'merged',
     createdAt: hoursAgo(60),
     mergedAt: hoursAgo(40),
-    fix: { rootCause: null, reproduced: null },
+    fix: { rootCause: null, reproduced: null, request: fixRequest(105) },
     score: 88,
     threshold: 80,
     tokens: 300_000,
@@ -142,7 +170,11 @@ export const reopenedFixedBug = inVersion(
     stage: 'merged',
     createdAt: hoursAgo(200),
     mergedAt: hoursAgo(3),
-    fix: { rootCause: 'Rounding in two places', reproduced: 'failed-on-main' },
+    fix: {
+      rootCause: 'Rounding in two places',
+      reproduced: 'failed-on-main',
+      request: fixRequest(106),
+    },
     score: 86,
     threshold: 80,
     lastAt: hoursAgo(3.5),
@@ -156,7 +188,11 @@ export const thirdVersionBug = inVersion(
   bugRow(82, 'Session expires early', {
     stage: 'working',
     createdAt: hoursAgo(300),
-    fix: { rootCause: 'A clock skew', reproduced: 'passed-on-main' },
+    fix: {
+      rootCause: 'A clock skew',
+      reproduced: 'passed-on-main',
+      request: fixRequest(107),
+    },
     lastAt: hoursAgo(1),
     tokens: 410_000,
   }),

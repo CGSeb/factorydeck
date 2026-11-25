@@ -1,6 +1,6 @@
 # Features and issues
 
-`/features` lists every issue the factory worked on in the period; `/features/<n>?project=<root>` tells how one issue got where it is. An issue is identified by its project and number.
+`/features` lists every issue the factory worked on in the period; `/features/<n>?project=<root>` tells how one issue got where it is. An issue is identified by its project and number. A bug has its issue page at `/bugs/<n>` instead ([Page of a bug](bugs.md#page-of-a-bug)), and every link to a bug's issue page goes there.
 
 ## What an issue counts
 
@@ -44,7 +44,7 @@ After the groups: a `No work item` row, then a bold `Total` row with all session
 
 ## Issue page
 
-The back link `← <project name> features` returns to `/features` with the issue's project and the period. The header is `<title> (#<n>)`, the title linked to the issue on the git host (with a small `↗`) and the muted `(#<n>)` outside the link (`#<n> (not found)` for a number the git host does not know, `#<n>` when the title was not collected), then the stage and `<first> → <last> · <s> sessions` (the dates of its first and last call in the period, one date when equal). An unknown issue shows `Issue not found.` and `← Features`.
+The back link `← <project name> features` returns to `/features` with the issue's project and the period. The header is `<title> (#<n>)`, the title linked to the issue on the git host (with a small `↗`) and the muted `(#<n>)` outside the link (`#<n> (not found)` for a number the git host does not know, `#<n>` when the title was not collected), then the stage and `<first> → <last> · <s> sessions` (the dates of its first and last call in the period, one date when equal). An unknown issue shows `Issue not found.` and `← Features`. A bug opened here moves to `/bugs/<n>` ([Redirects](bugs.md#redirects)).
 
 ### Timeline
 
@@ -68,4 +68,4 @@ The issue's tokens equal its row on `/features` for the same period and project.
 ## API
 
 - `GET /api/features`: with `kind=feature` or `kind=bug`, only the issues of that kind, with `merged` computed on them (another value answers `400`). Per issue its `kind` (`feature`, `bug`, or `null` for an issue not found or not collected, see [Kinds](outcomes.md#kinds)), stage, score, rounds, sessions, tokens with their four kinds, cost, orchestration share, `roles` (by tokens, orchestration last) and `lastAt`; the `noWorkItem` row and the totals, which have no `kind`; `merged` (count, without a person, `tokensPerIssue`); `bugTickets`, `true` when a project of the selection has a bug label; and `kinds` (`{ "feature": <n>, "bug": <n> }`), counted on every issue of the list before the kind filter.
-- `GET /api/features/<n>?project=<root>`: the issue, its `kind` (same values), its `threads` (`sessionId`, `sessionTitle`, `threadId`, `role`, `description` or `null` for a main thread, `firstAt`, `lastAt`, tokens, cost), its orchestration row, its milestones and its friction count. The threads plus the orchestration share add up to the issue's tokens on the list.
+- `GET /api/features/<n>?project=<root>`: the issue, its `kind` (same values), its `threads` (`sessionId`, `sessionTitle`, `threadId`, `role`, `description` or `null` for a main thread, `firstAt`, `lastAt`, tokens, cost), its `fix` (the [fix of a bug](bugs.md#fix-block), `null` for a feature, an issue of no kind or a bug with no fix), its orchestration row, its milestones and its friction count. The threads plus the orchestration share add up to the issue's tokens on the list.

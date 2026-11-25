@@ -79,16 +79,32 @@ export function featureLoader(
   };
 }
 
+export function issuePageBase(kind: IssueKind | null | undefined): string {
+  return kind === 'bug' ? '/bugs' : '/features';
+}
+
 export function featurePath(
-  { project, number }: { project: string; number: number },
+  {
+    project,
+    number,
+    kind,
+  }: { project: string; number: number; kind?: IssueKind | null | undefined },
   { period }: Pick<SkillFilters, 'period'>,
 ): string {
   const params = new URLSearchParams({ project, period });
-  return `/features/${String(number)}?${params.toString()}`;
+  return `${issuePageBase(kind)}/${String(number)}?${params.toString()}`;
+}
+
+function listPath(base: string, filters: SkillFilters): string {
+  const params = new URLSearchParams({ period: filters.period });
+  if (filters.project !== undefined) params.set('project', filters.project);
+  return `${base}?${params.toString()}`;
 }
 
 export function featuresPath(filters: SkillFilters): string {
-  const params = new URLSearchParams({ period: filters.period });
-  if (filters.project !== undefined) params.set('project', filters.project);
-  return `/features?${params.toString()}`;
+  return listPath('/features', filters);
+}
+
+export function bugsPath(filters: SkillFilters): string {
+  return listPath('/bugs', filters);
 }

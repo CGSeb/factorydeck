@@ -1,5 +1,6 @@
 import { type ReactElement, useState } from 'react';
 import { Link } from 'react-router';
+import type { IssueKind } from '../git-host/kind.ts';
 import type { WorkItemIssue } from '../git-host/types.ts';
 import {
   SESSION_PAGE_SIZE,
@@ -45,18 +46,20 @@ export interface SessionsPageProps {
 export function IssueNumberLink({
   workItem,
   issue,
+  kind,
   project,
   scope,
 }: {
   workItem: number | null;
   issue: WorkItemIssue | null;
+  kind: IssueKind | null;
   project: string;
   scope: Pick<LinkScope, 'period'>;
 }): ReactElement {
   if (workItem === null) return <>{MISSING}</>;
   return (
     <Link
-      to={issueHref(workItem, project, scope)}
+      to={issueHref(workItem, project, scope, kind)}
       title={issue?.status === 'found' ? issue.title : undefined}
     >
       #{workItem}
@@ -105,6 +108,7 @@ function SessionRow({
         <IssueNumberLink
           workItem={row.workItem}
           issue={row.issue}
+          kind={row.kind}
           project={row.project}
           scope={scope}
         />

@@ -38,7 +38,14 @@ const fixed: BugRow = {
   version: { number: 1, count: 1, startedAt: '2026-01-01T10:00:00.000Z' },
   mergedAt: '2026-01-04T10:00:00.000Z',
   closedAt: null,
-  fix: { rootCause: 'an empty list', reproduced: 'failed-on-main' },
+  fix: {
+    rootCause: 'an empty list',
+    reproduced: 'failed-on-main',
+    request: {
+      number: 40,
+      url: 'https://github.com/example-org/example-app/pull/40',
+    },
+  },
   score: 88,
   threshold: 80,
   lastAt: '2026-01-04T09:00:00.000Z',

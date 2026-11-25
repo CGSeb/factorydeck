@@ -1,5 +1,6 @@
 import type { ProjectOption } from '../projects/label.ts';
 import type { IssueDetail, WorkItemIssue } from '../git-host/types.ts';
+import type { IssueKind } from '../git-host/kind.ts';
 import type { Period, TokenCounts } from '../overview/types.ts';
 import type { SkillUsage } from '../skills/types.ts';
 
@@ -37,6 +38,7 @@ export interface SessionSummary {
   gitBranches: string[];
   workItem: number | null;
   issue: WorkItemIssue | null;
+  kind: IssueKind | null;
   state: SessionState;
   firstAt: string | null;
   lastAt: string | null;
@@ -69,6 +71,7 @@ export interface SubAgentSummary {
   role: string;
   workItem: number | null;
   issue: WorkItemIssue | null;
+  kind: IssueKind | null;
   description: string;
   model: string;
   firstAt: string | null;
