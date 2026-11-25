@@ -18,7 +18,7 @@ import { collect } from '../git-host/collect.ts';
 import { collectionStatus } from '../git-host/query.ts';
 import { hasFactory } from '../ingest/factory.ts';
 import { ingest } from '../ingest/ingest.ts';
-import { usageOverview } from '../overview/query.ts';
+import { overviewData } from '../overview/kinds.ts';
 import { type WorkflowConfig, loadWorkflowConfig } from '../roles/config.ts';
 import { deleteProject, factoryStatus } from '../projects/remove.ts';
 import { listRoles } from '../roles/query.ts';
@@ -112,7 +112,7 @@ async function main(): Promise<void> {
     checkDatabase: databaseCheck(db),
     uiDir: UI_DIST_DIR,
     overview: {
-      load: (query) => usageOverview(db, query),
+      load: (query) => overviewData(db, query, hasFactory),
       sessionsFolder: folder,
       refreshSeconds: env.FACTORYDECK_INGEST_INTERVAL_SECONDS,
       updatedAt: ingestion.lastFinishedAt,

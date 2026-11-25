@@ -8,7 +8,7 @@ import { periodStart } from '../overview/query.ts';
 import { projectNames } from '../projects/names.ts';
 import type { WorkflowConfig } from '../roles/config.ts';
 import { type BugProject, type BugUsage, bugGroups } from './groups.ts';
-import type { BugList } from './types.ts';
+import type { BugCounts, BugList } from './types.ts';
 
 async function bugProjects(
   db: Database,
@@ -34,6 +34,38 @@ async function bugProjects(
   );
 }
 
+const NO_COUNTS: BugCounts = { open: 0, fixed: 0, closed: 0 };
+
+function bugSources(db: Database, roots: string[]) {
+  return Promise.all([
+    db.select().from(gitHostIssue).where(inArray(gitHostIssue.project, roots)),
+    db
+      .select()
+      .from(gitHostRequest)
+      .where(inArray(gitHostRequest.project, roots)),
+  ]);
+}
+
+export async function bugCounts(
+  db: Database,
+  project: string | undefined,
+): Promise<{ bugTickets: boolean; counts: BugCounts }> {
+  const found = await bugProjects(db, project);
+  if (found.length === 0) return { bugTickets: false, counts: NO_COUNTS };
+  const [issues, requests] = await bugSources(
+    db,
+    found.map((row) => row.project),
+  );
+  const { counts } = bugGroups({
+    projects: found.map((row) => ({ ...row, name: row.project })),
+    issues,
+    requests,
+    usage: () => undefined,
+    startAt: null,
+  });
+  return { bugTickets: true, counts };
+}
+
 export async function listBugs(
   db: Database,
   query: FeatureQuery,
@@ -52,16 +84,12 @@ export async function listBugs(
     return {
       bugTickets: false,
       groups: { open: [], fixing: [], fixed: [] },
-      counts: { open: 0, fixed: 0, closed: 0 },
+      counts: NO_COUNTS,
       projects: names.options(),
     };
   }
-  const [issues, requests, features, startAt] = await Promise.all([
-    db.select().from(gitHostIssue).where(inArray(gitHostIssue.project, roots)),
-    db
-      .select()
-      .from(gitHostRequest)
-      .where(inArray(gitHostRequest.project, roots)),
+  const [[issues, requests], features, startAt] = await Promise.all([
+    bugSources(db, roots),
     listFeatures(db, { ...query, kind: 'bug' }, config),
     periodStart(db, query),
   ]);

@@ -5,6 +5,20 @@
   min-width: 0;
 }
 
+.fd-overview .fd-page-header-text {
+  flex-basis: 0;
+  min-width: min(100%, 20rem);
+}
+
+.fd-overview-open-bugs {
+  color: var(--fd-link);
+  text-decoration: none;
+}
+
+.fd-overview-open-bugs:hover {
+  color: var(--fd-link-hover);
+}
+
 .fd-overview-board-area {
   display: flex;
   flex-direction: column;

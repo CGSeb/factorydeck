@@ -1,3 +1,5 @@
+import type { IssueKind } from '../git-host/kind.ts';
+
 export const PERIODS = ['today', '7d', '30d', 'all'] as const;
 
 export type Period = (typeof PERIODS)[number];
@@ -57,12 +59,20 @@ export interface UsageOverview {
   models: ModelUsage[];
 }
 
+export interface OverviewKinds {
+  merged: Record<IssueKind, number>;
+  openBugs: number;
+  bugTickets: boolean;
+}
+
+export type OverviewData = UsageOverview & OverviewKinds;
+
 export type OverviewResponse =
   | {
       status: 'ok';
       sessionsFolder: string;
       updatedAt: string | null;
       refreshSeconds: number;
-      overview: UsageOverview;
+      overview: OverviewData;
     }
   | { status: 'unreachable'; refreshSeconds: number };

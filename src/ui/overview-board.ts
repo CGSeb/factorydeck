@@ -168,6 +168,27 @@ export function headlineCount(merged: number): string {
   return `${formatCount(merged)} ${merged === 1 ? 'issue' : 'issues'} merged for `;
 }
 
+function countOf(count: number, one: string, many: string): string {
+  return `${formatCount(count)} ${count === 1 ? one : many}`;
+}
+
+export function headlineKinds(
+  merged: Record<IssueKind, number>,
+  bugTickets: boolean,
+): string {
+  if (!bugTickets) return headlineCount(merged.feature + merged.bug);
+  const parts = [
+    merged.feature > 0 ? countOf(merged.feature, 'feature', 'features') : '',
+    merged.bug > 0 ? countOf(merged.bug, 'bug', 'bugs') : '',
+  ].filter((part) => part !== '');
+  if (parts.length === 0) return headlineCount(0);
+  return `${parts.join(' and ')} merged for `;
+}
+
+export function openBugsText(open: number): string {
+  return countOf(open, 'open bug', 'open bugs');
+}
+
 export function headlineSummary(
   tokensPerIssue: FlowSample | undefined,
   sessions: number,

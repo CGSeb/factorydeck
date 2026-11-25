@@ -2,7 +2,12 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { OverviewPage } from './OverviewPage.tsx';
 import { APP, featuresLoaderOf } from './feature-fixtures.ts';
-import { emptyOverview, fixedLoader, okResponse } from './fixtures.ts';
+import {
+  emptyOverview,
+  fixedLoader,
+  okResponse,
+  weekOverview,
+} from './fixtures.ts';
 import { flowIssues, flowLoaderOf, flowOf } from './flow-fixtures.ts';
 import { unmergedFeatures } from './overview-fixtures.ts';
 import {
@@ -104,6 +109,9 @@ export const OneProject: Story = {
 
 export const NoMergedIssue: Story = {
   args: {
+    loadOverview: fixedLoader(() =>
+      okResponse({ ...weekOverview, merged: { feature: 0, bug: 0 } }),
+    ),
     loadFeatures: featuresLoaderOf(unmergedFeatures),
     loadAutonomy: autonomyLoaderOf(autonomyOf({ current: noCounts })),
     loadFlow: flowLoaderOf(
@@ -149,7 +157,9 @@ export const FewMergedWithAgentWork: Story = {
 
 export const NoActivity: Story = {
   args: {
-    loadOverview: fixedLoader(() => okResponse(emptyOverview)),
+    loadOverview: fixedLoader(() =>
+      okResponse({ ...emptyOverview, merged: { feature: 2, bug: 0 } }),
+    ),
     loadFeatures: featuresLoaderOf([]),
     loadRoles: rolesLoader([]),
     loadAutonomy: autonomyLoaderOf(

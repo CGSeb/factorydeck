@@ -1,5 +1,5 @@
 import { type ReactElement, useState } from 'react';
-import type { UsageOverview } from '../overview/types.ts';
+import type { OverviewData } from '../overview/types.ts';
 import type { RoleList } from '../roles/types.ts';
 import type { AutonomyResponse, FlowResponse } from '../stats/types.ts';
 import { PageHeader } from './components/PageHeader.tsx';
@@ -12,7 +12,12 @@ import { KIND_PARAM, useKindParam } from './kind-filter.ts';
 import { renderRouterLink } from './Layout.tsx';
 import { NeedsPersonPanel } from './NeedsPersonPanel.tsx';
 import { OverviewBoard } from './OverviewBoard.tsx';
-import { headlineCount, headlineSummary, listPath } from './overview-board.ts';
+import {
+  headlineKinds,
+  headlineSummary,
+  listPath,
+  openBugsText,
+} from './overview-board.ts';
 import { type LoadOverview, UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { OverviewHealth } from './OverviewHealth.tsx';
 import type { LoadRoles } from './roles-api.ts';
@@ -53,18 +58,16 @@ function blockOf<T>(
 
 function Headline({
   overview,
-  merged,
   onOpenTokens,
 }: {
-  overview: UsageOverview;
-  merged: number;
+  overview: OverviewData;
   onOpenTokens: () => void;
 }): ReactElement {
   const { totals } = overview;
   const spent = totalTokens(totals.tokens) > 0;
   return (
     <>
-      {headlineCount(merged)}
+      {headlineKinds(overview.merged, overview.bugTickets)}
       <TokenAmount
         counts={totals.tokens}
         costUsd={totals.costUsd}
@@ -85,6 +88,29 @@ function tokensPerIssue(flow: FlowResponse | undefined) {
     : undefined;
 }
 
+function Summary({
+  overview,
+  flow,
+  filters,
+}: {
+  overview: OverviewData;
+  flow: FlowResponse | undefined;
+  filters: SkillFilters;
+}): ReactElement {
+  const text = headlineSummary(tokensPerIssue(flow), overview.totals.sessions);
+  if (!overview.bugTickets || overview.openBugs === 0) return <>{text}</>;
+  return (
+    <>
+      {text} ·{' '}
+      {renderRouterLink({
+        href: listPath('/bugs', filters),
+        className: 'fd-overview-open-bugs',
+        children: openBugsText(overview.openBugs),
+      })}
+    </>
+  );
+}
+
 function Header({
   overview,
   autonomy,
@@ -93,7 +119,7 @@ function Header({
   setFilters,
   onOpenTokens,
 }: {
-  overview: Block<UsageOverview>;
+  overview: Block<OverviewData>;
   autonomy: AutonomyResponse | undefined;
   flow: FlowResponse | undefined;
   filters: SkillFilters;
@@ -121,14 +147,8 @@ function Header({
   return (
     <PageHeader
       variant="headline"
-      title={
-        <Headline
-          overview={overview}
-          merged={autonomy.autonomy.current.merged}
-          onOpenTokens={onOpenTokens}
-        />
-      }
-      summary={headlineSummary(tokensPerIssue(flow), overview.totals.sessions)}
+      title={<Headline overview={overview} onOpenTokens={onOpenTokens} />}
+      summary={<Summary overview={overview} flow={flow} filters={filters} />}
       slot={pills}
     />
   );

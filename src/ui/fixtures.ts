@@ -1,8 +1,8 @@
 import type {
+  OverviewData,
   OverviewResponse,
   Period,
   SeriesPoint,
-  UsageOverview,
 } from '../overview/types.ts';
 import type { LoadOverview } from './overview-api.ts';
 import { nameOf } from './project-fixtures.ts';
@@ -34,8 +34,11 @@ function point(
   };
 }
 
-export const weekOverview: UsageOverview = {
+export const weekOverview: OverviewData = {
   hasData: true,
+  merged: { feature: 24, bug: 0 },
+  openBugs: 0,
+  bugTickets: false,
   bucket: 'day',
   totals: {
     costUsd: 48.27,
@@ -112,7 +115,7 @@ export const weekOverview: UsageOverview = {
   ],
 };
 
-export const unknownPricesOverview: UsageOverview = {
+export const unknownPricesOverview: OverviewData = {
   ...weekOverview,
   totals: { ...weekOverview.totals, unknownPriceCalls: 40, apiCalls: 1_367 },
   models: [
@@ -134,7 +137,7 @@ export const unknownPricesOverview: UsageOverview = {
   ],
 };
 
-export const todayOverview: UsageOverview = {
+export const todayOverview: OverviewData = {
   ...weekOverview,
   bucket: 'hour',
   series: Array.from({ length: 12 }, (_, hour) =>
@@ -147,8 +150,11 @@ export const todayOverview: UsageOverview = {
   ),
 };
 
-export const emptyOverview: UsageOverview = {
+export const emptyOverview: OverviewData = {
   hasData: false,
+  merged: { feature: 0, bug: 0 },
+  openBugs: 0,
+  bugTickets: false,
   bucket: 'day',
   totals: {
     costUsd: 0,
@@ -164,7 +170,7 @@ export const emptyOverview: UsageOverview = {
 
 export const UPDATED_AT = '2026-01-07T09:41:05.000Z';
 
-export function okResponse(overview: UsageOverview): OverviewResponse {
+export function okResponse(overview: OverviewData): OverviewResponse {
   return {
     status: 'ok',
     sessionsFolder: '/home/dev/.claude/projects',
