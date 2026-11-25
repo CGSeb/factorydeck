@@ -201,6 +201,9 @@ export const NoBugTickets: Story = {
     const canvas = within(canvasElement);
     await canvas.findByText(NO_BUG_TICKETS_TEXT);
     await expect(canvas.queryByRole('table')).toBeNull();
+    await expect(
+      canvasElement.querySelector('.fd-page-summary'),
+    ).toHaveTextContent(/^\s*$/);
   },
 };
 

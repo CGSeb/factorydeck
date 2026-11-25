@@ -26,6 +26,7 @@ import {
   type SidebarProject,
   type SidebarRefresh,
 } from './components/Sidebar.tsx';
+import { useBugTickets } from './bug-tickets-state.ts';
 import type { DeleteProject, LoadFactory } from './factory-api.ts';
 import { FactoryBanner } from './FactoryBanner.tsx';
 import type { LoadCollection, RefreshCollection } from './git-host-api.ts';
@@ -269,7 +270,7 @@ export function Layout({
   const { status, forget, reload, version } = useFactoryStatus(loadFactory);
   const { project, choose, onDeleted } = useProjectChoice(forget);
   const collection = useCollection(loadCollection, refreshCollection, reload);
-  const bugTickets = status?.status === 'ok' ? status.bugTickets : [];
+  const bugTickets = useBugTickets(status);
   const { collectedAt, missing, failures, projects, welcome } = viewOf(
     status,
     collection.status,

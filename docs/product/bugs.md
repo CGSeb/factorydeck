@@ -6,7 +6,7 @@ The page has the `Bugs` link of the [sidebar](navigation.md#sidebar), right afte
 
 ## Header
 
-`Bugs`, then `<o> open · <f> fixed`, where `<o>` counts the bugs of `Open` and `Fixing` and `<f>` the merged bugs of `Fixed`, then ` · <c> closed without a fix` when `<c>`, the bugs `Closed without merge` of `Fixed`, is not 0. The period pills sit on the right; the project comes from the project select. While the page loads, the header keeps its place.
+`Bugs`, then `<o> open · <f> fixed`, where `<o>` counts the bugs of `Open` and `Fixing` and `<f>` the merged bugs of `Fixed`, then ` · <c> closed without a fix` when `<c>`, the bugs `Closed without merge` of `Fixed`, is not 0. The period pills sit on the right; the project comes from the project select. While the page loads, and when no project of the selection uses bug tickets, the summary line stays empty, so the header keeps its place.
 
 ## Groups
 

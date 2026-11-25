@@ -254,7 +254,7 @@ export function BugsPage({
             ? undefined
             : bugSummary(list.counts)
         }
-        pending={response === undefined}
+        pending={response === undefined || list?.bugTickets === false}
         slot={
           <PeriodPills
             value={filters.period}
