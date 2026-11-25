@@ -41,7 +41,7 @@ Four columns side by side (at least 250 px each, wrapping below): `Ready`, `Work
 
 ### Kind filter
 
-At the top of the board, the [kind filter of `/features`](features.md#kind-filter), with the same pills, counts, `kind` parameter and rules: shown only when a project of the selection has a bug label, `All` by default. With `Features` or `Bugs`, the four columns, their counts, their cards and their `+ <k> more` links hold only the issues of that kind; with no issue of it, `No bug in this period.` or `No feature in this period.` replaces the columns. The header, the health panel and `Needs a person` are not filtered. The kind is kept when the period or the project changes; the sidebar links do not carry it, only `+ <k> more` does.
+At the top of the board, the [kind filter of `/features`](features.md#kind-filter), with the same pills, counts, `kind` parameter and rules: shown only when a project of the selection has a bug label, `All` by default. With `Features` or `Bugs`, the four columns, their counts, their cards and their `+ <k> more` links hold only the issues of that kind; when none of the four columns holds an issue of that kind, `No bug in this period.` or `No feature in this period.` replaces the columns, even when the list holds issues of that kind that the board never shows (closed without merge, or not found), which the pill still counts. The header, the health panel and `Needs a person` are not filtered. The kind is kept when the period or the project changes; the sidebar links do not carry it, only `+ <k> more` does.
 
 ## Empty and loading
 

@@ -2,7 +2,11 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { featuresLoaderOf } from './feature-fixtures.ts';
 import { OverviewPage } from './OverviewPage.tsx';
-import { bugBoardFeatures, fullBoardFeatures } from './overview-fixtures.ts';
+import {
+  bugBoardFeatures,
+  fullBoardFeatures,
+  offBoardBugFeatures,
+} from './overview-fixtures.ts';
 import {
   address,
   column,
@@ -121,6 +125,20 @@ export const NoBugInPeriod: Story = {
     const area = within(await board(canvasElement));
     await area.findByText('No bug in this period.');
     await expect(area.getByRole('button', { name: 'Bugs 0' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(area.queryByRole('heading', { name: /^Ready / })).toBeNull();
+  },
+};
+
+export const NoBugOnBoard: Story = {
+  args: { loadFeatures: featuresLoaderOf(offBoardBugFeatures, true) },
+  parameters: { entry: '/?period=7d&kind=bug' },
+  play: async ({ canvasElement }) => {
+    const area = within(await board(canvasElement));
+    await area.findByText('No bug in this period.');
+    await expect(area.getByRole('button', { name: 'Bugs 2' })).toHaveAttribute(
       'aria-pressed',
       'true',
     );

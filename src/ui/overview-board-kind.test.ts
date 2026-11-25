@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { FeatureRow } from '../features/types.ts';
 import type { IssueOutcome } from '../git-host/types.ts';
 import { APP, asBug, featureList, found, outcome } from './feature-fixtures.ts';
-import { boardColumns } from './overview-board.ts';
+import { boardColumns, isBoardEmpty } from './overview-board.ts';
 import { splitTokens } from './token-fixtures.ts';
 
 function row(
@@ -54,5 +54,30 @@ describe('boardColumns with kinds', () => {
     expect(boardColumns(featureList(rows), ALL, NOW)[1]?.more.href).toBe(
       '/features?period=7d&stage=working',
     );
+  });
+});
+
+describe('isBoardEmpty', () => {
+  it('is empty when the selected kind has only closed or unknown issues', () => {
+    const rows = [
+      asBug(row(1, 'closed', '2026-01-09T12:00:00.000Z')),
+      asBug({
+        ...row(2, 'working', '2026-01-09T11:00:00.000Z'),
+        outcome: null,
+      }),
+      row(3, 'working', '2026-01-09T10:00:00.000Z'),
+    ];
+    const list = featureList(rows, null, { bugTickets: true, kind: 'bug' });
+    expect(list.kinds.bug).toBe(2);
+    expect(isBoardEmpty(boardColumns(list, ALL, NOW, 'bug'))).toBe(true);
+  });
+
+  it('is not empty when one column holds an issue of the kind', () => {
+    const rows = [
+      asBug(row(1, 'closed', '2026-01-09T12:00:00.000Z')),
+      asBug(row(2, 'in-review', '2026-01-09T11:00:00.000Z')),
+    ];
+    const list = featureList(rows, null, { bugTickets: true, kind: 'bug' });
+    expect(isBoardEmpty(boardColumns(list, ALL, NOW, 'bug'))).toBe(false);
   });
 });
