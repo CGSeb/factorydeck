@@ -96,14 +96,11 @@ async function bugUsages(
     scope,
     issues
       .filter((issue) => isBug(issue, bugLabels))
-      .map((issue) => {
-        const current = currentVersion(versionsOf(issue));
-        return {
-          key: issueKey(issue.project, issue.number),
-          startAt: current.startedAt,
-          endAt: current.endedAt,
-        };
-      }),
+      .map((issue) => ({
+        key: issueKey(issue.project, issue.number),
+        startAt: currentVersion(versionsOf(issue)).startedAt,
+        endAt: null,
+      })),
   );
   return new Map(
     [...accumulators].map(([key, issue]) => [key, bugUsage(issue)]),

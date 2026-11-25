@@ -105,7 +105,8 @@ export function versionDetail(
 ): IssueDetail | null {
   if (detail === null) return null;
   const start = Date.parse(version.startedAt);
-  const end = version.endedAt === null ? Infinity : Date.parse(version.endedAt);
+  const end =
+    version.reopenedAt === null ? Infinity : Date.parse(version.reopenedAt);
   return {
     ...detail,
     requests: detail.requests.filter((request) =>
@@ -117,17 +118,14 @@ export function versionDetail(
         return requests.includes(milestone.request.number);
       }
       const at = Date.parse(milestone.at);
-      return at >= start && at <= end;
+      return at >= start && at < end;
     }),
   };
 }
 
-export function versionWindow({ startedAt, endedAt }: BugVersionSpan): {
+export function versionWindow({ startedAt, reopenedAt }: BugVersionSpan): {
   startAt: string;
   endAt: string | null;
 } {
-  return {
-    startAt: startedAt,
-    endAt: endedAt === null ? null : isoOf(Date.parse(endedAt) + 1),
-  };
+  return { startAt: startedAt, endAt: reopenedAt };
 }

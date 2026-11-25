@@ -1,6 +1,7 @@
 import type { Database } from '../db/client.ts';
 import {
   apiCall,
+  friction,
   gitHostIssue,
   gitHostProject,
   gitHostRequest,
@@ -214,4 +215,48 @@ export async function seedBugCalls(db: Database): Promise<void> {
       call('s1', 200, day(6)),
       call('s1', 50, day(8), 'a1'),
     ]);
+}
+
+export async function seedCallsBetweenVersions(
+  db: Database,
+  { closedAgain = false }: { closedAgain?: boolean } = {},
+): Promise<void> {
+  const events = [closedOn(day(3)), reopenedOn(day(4))];
+  if (closedAgain) events.push(closedOn(day(5)));
+  await db.insert(gitHostIssue).values({
+    ...bug(30, events, { state: closedAgain ? 'closed' : 'open' }),
+    needsSpec: [
+      { added: true, at: day(3, 13) },
+      { added: false, at: day(3, 14) },
+    ],
+  });
+  await db
+    .insert(session)
+    .values([{ id: 's30', project: APP, title: 'Fix #30', lastAt: NOW }]);
+  await db.insert(subAgent).values({
+    sessionId: 's30',
+    id: 'b30',
+    agentType: 'debugger',
+    description: 'Fix #30',
+    firstAt: new Date(day(2)),
+  });
+  await db
+    .insert(apiCall)
+    .values([
+      call('s30', 1_000, day(3, 12), 'b30'),
+      call('s30', 500, day(4, 12), 'b30'),
+      ...(closedAgain ? [call('s30', 200, day(5, 12), 'b30')] : []),
+    ]);
+  await db.insert(friction).values({
+    sourcePath: '/logs/s30.jsonl',
+    recordUuid: 'r-30',
+    position: 0,
+    sessionId: 's30',
+    subAgentId: 'b30',
+    at: new Date(day(3, 12)),
+    agent: 'claude-code',
+    kind: 'tool-error',
+    tool: 'Bash',
+    category: 'other',
+  });
 }
