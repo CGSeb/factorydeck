@@ -12,9 +12,8 @@ import { splitTokens } from './token-fixtures.ts';
 
 const MINUTE = 60_000;
 
-function minutesAgo(minutes: number): string {
-  return new Date(Date.now() - minutes * MINUTE).toISOString();
-}
+const minutesAgo = (minutes: number): string =>
+  new Date(Date.now() - minutes * MINUTE).toISOString();
 
 const SESSION_IDS = [
   '6f1c2d3e-0000-4000-8000-000000000001',
@@ -77,6 +76,7 @@ export const exportFeature: FeatureDetail = {
   issue: { status: 'found', title: githubIssue.title, url: githubIssue.url },
   kind: 'feature',
   fix: null,
+  version: null,
   detail: mergedByPersonIssue,
   roles: [
     {
@@ -181,6 +181,7 @@ export const uncollectedFeature: FeatureDetail = {
   issue: { status: 'not-collected' },
   kind: null,
   fix: null,
+  version: null,
   detail: null,
   roles: [],
   orchestration: null,

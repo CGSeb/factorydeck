@@ -73,7 +73,7 @@ function splitOf(times: readonly number[]): SQL {
   return sql`(select count(*) from unnest(string_to_array(${list}::text, ',')::timestamptz[]) t where t <= a.at)`;
 }
 
-async function windowRows(
+export async function windowRows(
   db: Database,
   { project: scope, startAt, endAt = null }: UsageWindow,
   markers: SessionMarkers,

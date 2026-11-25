@@ -43,6 +43,7 @@ interface Scope {
   project: string | null;
   sessionId: string | null;
   windowStart: string | null;
+  windowEnd?: string | null;
 }
 
 interface CallWindow {
@@ -87,7 +88,8 @@ async function windowFrictions(db: Database, scope: Scope): Promise<Row[]> {
       left join sub_agent sa on sa.session_id = f.session_id and sa.id = f.sub_agent_id
       ${FIRST_CALLS}
       where ${inScope(scope)}
-        and (${scope.windowStart}::timestamptz is null or f.at >= ${scope.windowStart}::timestamptz)`,
+        and (${scope.windowStart}::timestamptz is null or f.at >= ${scope.windowStart}::timestamptz)
+        and (${scope.windowEnd ?? null}::timestamptz is null or f.at < ${scope.windowEnd ?? null}::timestamptz)`,
   );
 }
 
@@ -237,13 +239,14 @@ export async function issueFrictionCount(
   db: Database,
   config: WorkflowConfig,
   key: { project: string; number: number },
-  startAt: string | null,
+  { startAt, endAt = null }: { startAt: string | null; endAt?: string | null },
 ): Promise<number> {
   const markers = await loadMarkers(db, config, { project: key.project });
   const rows = await windowFrictions(db, {
     project: key.project,
     sessionId: null,
     windowStart: startAt,
+    windowEnd: endAt,
   });
   const keep = onIssue({ issue: key.number }, key.project);
   return rows.filter(

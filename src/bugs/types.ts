@@ -18,6 +18,11 @@ export interface BugVersion {
   startedAt: string;
 }
 
+export interface BugVersionSpan extends BugVersion {
+  endedAt: string | null;
+  reopenedAt: string | null;
+}
+
 export interface BugRow {
   project: string;
   projectName: string;

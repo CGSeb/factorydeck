@@ -27,6 +27,8 @@ import { sessionPath, sessionTitle } from './session-links.ts';
 
 export const ORCHESTRATION_DETAIL = 'Share of the orchestrating sessions';
 
+export const REOPENED_TEXT = 'Reopened';
+
 export function dateRange(first: string | null, last: string | null): string {
   const from = first === null ? null : formatDay(first);
   const to = last === null ? null : formatDay(last);
@@ -282,18 +284,32 @@ export function issueMilestones(feature: FeatureDetail): TimelineMilestone[] {
     id: `step-${String(index)}`,
     at: threads[0]?.firstAt ?? null,
   }));
-  return (feature.detail?.milestones ?? []).map((milestone, index) => {
-    const time = Date.parse(milestone.at);
-    let afterStep: string | null = null;
-    for (const start of starts) {
-      if (start.at !== null && Date.parse(start.at) <= time) {
-        afterStep = start.id;
+  const milestones = (feature.detail?.milestones ?? []).map(
+    (milestone, index): TimelineMilestone => {
+      const time = Date.parse(milestone.at);
+      let afterStep: string | null = null;
+      for (const start of starts) {
+        if (start.at !== null && Date.parse(start.at) <= time) {
+          afterStep = start.id;
+        }
       }
-    }
-    return {
-      id: `milestone-${String(index)}`,
-      afterStep,
-      ...milestoneText(milestone),
-    };
-  });
+      return {
+        id: `milestone-${String(index)}`,
+        afterStep,
+        ...milestoneText(milestone),
+      };
+    },
+  );
+  const version = feature.version;
+  if (version === null || version.number < 2) return milestones;
+  return [
+    {
+      id: 'reopened',
+      afterStep: null,
+      tone: 'warning',
+      title: REOPENED_TEXT,
+      detail: formatDateTime(version.startedAt),
+    },
+    ...milestones,
+  ];
 }

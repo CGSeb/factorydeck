@@ -1,4 +1,4 @@
-import type { ReactElement, ReactNode } from 'react';
+import type { ReactElement } from 'react';
 import {
   Link,
   Navigate,
@@ -12,14 +12,8 @@ import {
   issueNumber,
 } from '../features/types.ts';
 import type { IssueKind } from '../git-host/kind.ts';
-import type { IssueStage } from '../git-host/types.ts';
 import { DEFAULT_PERIOD, type Period, isPeriod } from '../overview/types.ts';
-import { issueTitleText } from './components/IssueCard.tsx';
-import { IssueSummary } from './components/IssueSummary.tsx';
-import { IssueTimeline } from './components/IssueTimeline.tsx';
-import { serenityScore } from './components/SerenityBadge.tsx';
 import { PageHeader } from './components/PageHeader.tsx';
-import { Panel } from './components/Panel.tsx';
 import { PeriodPills } from './components/PeriodPills.tsx';
 import { SplitPage } from './components/SplitPage.tsx';
 import { StageBadge } from './components/StageBadge.tsx';
@@ -30,27 +24,37 @@ import {
   featuresPath,
   issuePageBase,
 } from './features-api.ts';
-import { FixBlock } from './FixBlock.tsx';
-import { frictionsHref } from './frictions-api.ts';
-import {
-  issueActivity,
-  issueColors,
-  issueMilestones,
-  issuePullRequest,
-  issueSteps,
-  issueTotal,
-  roleSegments,
-  summaryPullRequest,
-} from './issue-page.ts';
+import { IssueAside, IssueTitle, TimelinePanel } from './IssueParts.tsx';
+import { issueActivity, issueColors, issueSteps } from './issue-page.ts';
 import { renderRouterLink } from './Layout.tsx';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { useProject, withProject } from './project-param.ts';
 import { useRefreshing } from './skills-api.ts';
+import { useNow } from './use-now.ts';
+import { VersionBar } from './VersionBar.tsx';
+import {
+  NO_STEP,
+  type VersionStep,
+  dropsVersion,
+  requestedVersion,
+  steppedParams,
+  versionView,
+  withoutVersion,
+} from './version-param.ts';
 import './feature-page.css';
 
 export interface FeaturePageProps {
   loadFeature: LoadFeature;
   kind?: IssueKind;
+  now?: Date | undefined;
+}
+
+interface PageContext {
+  kind: IssueKind;
+  period: Period;
+  onPeriod: (period: Period) => void;
+  step: VersionStep;
+  now: Date;
 }
 
 const LISTS: Record<
@@ -60,12 +64,6 @@ const LISTS: Record<
   feature: { label: 'Features', back: 'features', path: featuresPath },
   bug: { label: 'Bugs', back: 'bugs', path: bugsPath },
 };
-
-const MERGED_STAGES: readonly IssueStage[] = [
-  'merged',
-  'merged-by-person',
-  'merged-after-person',
-];
 
 function NotFound({ kind }: { kind: IssueKind }): ReactElement {
   const project = useProject();
@@ -79,95 +77,17 @@ function NotFound({ kind }: { kind: IssueKind }): ReactElement {
   );
 }
 
-function IssueTitle({ feature }: { feature: FeatureDetail }): ReactElement {
-  if (feature.issue.status === 'found') {
-    return (
-      <>
-        <a
-          className="fd-issue-link"
-          href={feature.issue.url}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {feature.issue.title}
-          <span className="fd-issue-link-icon" aria-hidden="true">
-            ↗
-          </span>
-        </a>{' '}
-        <span className="fd-issue-number">(#{feature.number})</span>
-      </>
-    );
-  }
-  const title = issueTitleText(feature.issue);
-  return (
-    <>
-      <span className="fd-issue-number">#{feature.number}</span>
-      {title === null ? null : ` ${title}`}
-    </>
-  );
-}
-
-function IssueAside({
-  feature,
-  colors,
-  period,
-  lead,
-}: {
-  feature: FeatureDetail;
-  colors: Map<string, string>;
-  period: Period;
-  lead: ReactNode;
-}): ReactElement {
-  const { detail, orchestration } = feature;
-  const report = detail?.outcome.report ?? null;
-  const request = issuePullRequest(detail);
-  return (
-    <IssueSummary
-      total={issueTotal(feature)}
-      orchestration={
-        orchestration === null
-          ? null
-          : {
-              counts: orchestration.tokenCounts,
-              costUsd: orchestration.costUsd,
-            }
-      }
-      roles={roleSegments(feature, colors)}
-      serenity={report === null ? null : serenityScore(report)}
-      rounds={report?.rounds ?? null}
-      pullRequest={summaryPullRequest(request)}
-      checks={request?.checks ?? null}
-      labels={detail === null ? null : detail.labels.map(({ name }) => name)}
-      reworked={detail?.outcome.reworked ?? null}
-      frictions={{
-        count: feature.frictions,
-        href: frictionsHref({
-          period,
-          project: feature.project,
-          issue: feature.number,
-        }),
-      }}
-      lead={lead}
-      renderLink={renderRouterLink}
-    />
-  );
-}
-
 function FeatureContent({
   feature,
-  kind,
-  period,
-  onPeriod,
+  page,
 }: {
   feature: FeatureDetail;
-  kind: IssueKind;
-  period: Period;
-  onPeriod: (period: Period) => void;
+  page: PageContext;
 }): ReactElement {
+  const { kind, period, step } = page;
   const colors = issueColors(feature);
-  const steps = issueSteps(feature, colors);
   const stage = feature.detail?.outcome.stage;
-  const merged = stage !== undefined && MERGED_STAGES.includes(stage);
+  const { bar, busy } = versionView(feature, kind, step);
   return (
     <SplitPage
       aside={
@@ -175,7 +95,7 @@ function FeatureContent({
           feature={feature}
           colors={colors}
           period={period}
-          lead={kind === 'bug' ? <FixBlock fix={feature.fix} /> : null}
+          bug={kind === 'bug' ? { now: page.now } : null}
         />
       }
     >
@@ -192,20 +112,25 @@ function FeatureContent({
               <span>{issueActivity(feature)}</span>
             </span>
           }
-          slot={<PeriodPills value={period} onChange={onPeriod} />}
+          slot={<PeriodPills value={period} onChange={page.onPeriod} />}
           renderLink={renderRouterLink}
         />
-        <Panel heading={merged ? 'How it got merged' : 'Where it stands'}>
-          {steps.length === 0 ? (
-            <StatusLine>No activity in this period.</StatusLine>
-          ) : (
-            <IssueTimeline
-              steps={steps}
-              milestones={issueMilestones(feature)}
-              renderLink={renderRouterLink}
-            />
-          )}
-        </Panel>
+        {bar === null ? null : (
+          <VersionBar
+            shown={bar.shown}
+            count={bar.count}
+            onChange={(next) => {
+              step.onChange(next, bar.count);
+            }}
+          />
+        )}
+        <div className="fd-issue-content" aria-busy={busy}>
+          <TimelinePanel
+            feature={feature}
+            kind={kind}
+            steps={issueSteps(feature, colors)}
+          />
+        </div>
       </div>
     </SplitPage>
   );
@@ -213,19 +138,22 @@ function FeatureContent({
 
 function Loaded({
   response,
-  kind,
-  period,
-  onPeriod,
+  page,
 }: {
   response: FeatureResponse | undefined;
-  kind: IssueKind;
-  period: Period;
-  onPeriod: (period: Period) => void;
+  page: PageContext;
 }): ReactElement {
-  const { search } = useLocation();
+  const { pathname, search } = useLocation();
+  const { kind } = page;
   if (response === undefined) return <StatusLine>Loading…</StatusLine>;
+  if (dropsVersion(response, { step: page.step, kind, search })) {
+    return <Navigate replace to={withoutVersion(pathname, search)} />;
+  }
   if (response.status === 'unreachable') {
     return <StatusLine>{UNREACHABLE_MESSAGE}</StatusLine>;
+  }
+  if (response.status === 'invalid-version') {
+    return <StatusLine>Loading…</StatusLine>;
   }
   if (response.status === 'not-found') return <NotFound kind={kind} />;
   const { feature } = response;
@@ -238,68 +166,71 @@ function Loaded({
     );
   }
   if (feature.kind === null && kind === 'bug') return <NotFound kind={kind} />;
-  return (
-    <FeatureContent
-      feature={feature}
-      kind={kind}
-      period={period}
-      onPeriod={onPeriod}
-    />
-  );
+  return <FeatureContent feature={feature} page={page} />;
 }
 
 function FeatureLoader({
   loadFeature,
-  kind,
   project,
   number,
-  period,
-  onPeriod,
+  page,
 }: {
   loadFeature: LoadFeature;
-  kind: IssueKind;
   project: string;
   number: number;
-  period: Period;
-  onPeriod: (period: Period) => void;
+  page: PageContext;
 }): ReactElement {
+  const { period } = page;
+  const { requested } = page.step;
   const response = useRefreshing(
-    JSON.stringify({ project, number, period }),
-    () => loadFeature({ project, number }, { period, project }),
+    JSON.stringify({ project, number, period, version: requested ?? null }),
+    () => loadFeature({ project, number }, { period, project }, requested),
     JSON.stringify({ project, number }),
   );
-  return (
-    <Loaded
-      response={response}
-      kind={kind}
-      period={period}
-      onPeriod={onPeriod}
-    />
-  );
+  return <Loaded response={response} page={page} />;
 }
 
 export function FeaturePage({
   loadFeature,
   kind = 'feature',
+  now: fixedNow,
 }: FeaturePageProps): ReactElement {
   const params = useParams();
+  const { pathname, search } = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const now = useNow(fixedNow);
   const number = issueNumber(params['number'] ?? '');
   const project = searchParams.get('project') ?? '';
   const value = searchParams.get('period');
   const period = isPeriod(value) ? value : DEFAULT_PERIOD;
+  const { requested, invalid } = requestedVersion(kind, searchParams);
+  if (invalid) {
+    return <Navigate replace to={withoutVersion(pathname, search)} />;
+  }
+  const step: VersionStep =
+    kind === 'bug'
+      ? {
+          requested,
+          onChange: (next, count) => {
+            setSearchParams(steppedParams(searchParams, next, count), {
+              replace: true,
+            });
+          },
+        }
+      : NO_STEP;
+  const onPeriod = (next: Period): void => {
+    const found = new URLSearchParams({ project, period: next });
+    if (requested !== undefined) found.set('version', String(requested));
+    setSearchParams(found);
+  };
   return number === undefined || project === '' ? (
     <NotFound kind={kind} />
   ) : (
     <FeatureLoader
       loadFeature={loadFeature}
-      kind={kind}
       project={project}
       number={number}
-      period={period}
-      onPeriod={(next) =>
-        setSearchParams(new URLSearchParams({ project, period: next }))
-      }
+      page={{ kind, period, onPeriod, step, now }}
     />
   );
 }

@@ -1,4 +1,4 @@
-import type { BugFix } from '../bugs/types.ts';
+import type { BugFix, BugVersionSpan } from '../bugs/types.ts';
 import type { ProjectOption } from '../projects/label.ts';
 import type {
   IssueDetail,
@@ -10,6 +10,8 @@ import type { Period, TokenCounts } from '../overview/types.ts';
 import type { SessionState } from '../sessions/types.ts';
 
 export const ORCHESTRATION_ROLE = 'Orchestration';
+
+export const INVALID_VERSION = 'invalid-version';
 
 export function issueNumber(value: string): number | undefined {
   if (!/^\d+$/.test(value)) return undefined;
@@ -121,6 +123,7 @@ export interface FeatureDetail {
   issue: WorkItemIssue;
   kind: IssueKind | null;
   fix: BugFix | null;
+  version: BugVersionSpan | null;
   detail: IssueDetail | null;
   roles: FeatureRole[];
   orchestration: FeatureRole | null;
@@ -141,4 +144,5 @@ export type FeatureListResponse =
 export type FeatureResponse =
   | ({ status: 'ok'; feature: FeatureDetail } & Refresh)
   | { status: 'not-found'; refreshSeconds: number }
+  | { status: 'invalid-version'; error: string; refreshSeconds: number }
   | { status: 'unreachable'; refreshSeconds: number };
