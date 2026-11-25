@@ -3,6 +3,7 @@ import {
   type FeatureDetail,
   type FeatureList,
   type FeatureQuery,
+  INVALID_VERSION,
   issueNumber,
 } from '../features/types.ts';
 import {
@@ -61,6 +62,7 @@ const feature: FeatureDetail = {
   issue: { status: 'not-collected' },
   kind: null,
   fix: null,
+  version: null,
   detail: null,
   roles: [],
   orchestration: null,
@@ -77,6 +79,9 @@ const features: FeatureSource = {
   },
   detail: (key, query) => {
     queries.push({ key, query });
+    if (query.version !== undefined && query.version > 2) {
+      return Promise.resolve(INVALID_VERSION);
+    }
     return Promise.resolve(key.number === 7 ? feature : undefined);
   },
   bugs: () => Promise.reject(new Error('Not used')),
@@ -187,6 +192,38 @@ describe('GET /api/features/:number', () => {
     ]) {
       expect((await app().request(path)).status).toBe(400);
     }
+  });
+});
+
+describe('GET /api/features/:number with a version', () => {
+  const path = '/api/features/7?period=all&tz=UTC&project=%2Fwork%2Fapp';
+
+  it('passes the version to the detail, and none without it', async () => {
+    expect((await app().request(`${path}&version=2`)).status).toBe(200);
+    expect(queries.at(-1)).toMatchObject({ query: { version: 2 } });
+    expect((await app().request(path)).status).toBe(200);
+    expect(queries.at(-1)).toMatchObject({ query: { version: undefined } });
+  });
+
+  it('answers 400 invalid-version for a value that is not a whole number from 1', async () => {
+    for (const version of ['', '0', '-1', '1.5', 'two', '2a']) {
+      const response = await app().request(
+        `${path}&version=${encodeURIComponent(version)}`,
+      );
+      expect(response.status).toBe(400);
+      expect(await response.json()).toMatchObject({
+        status: 'invalid-version',
+      });
+    }
+  });
+
+  it('answers 400 invalid-version for a version the issue does not have', async () => {
+    const response = await app().request(`${path}&version=3`);
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+      status: 'invalid-version',
+      refreshSeconds: 10,
+    });
   });
 });
 

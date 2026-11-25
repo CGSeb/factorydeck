@@ -18,6 +18,7 @@ export type LoadFeatures = (
 export type LoadFeature = (
   key: { project: string; number: number },
   filters: SkillFilters,
+  version?: number,
 ) => Promise<FeatureResponse | undefined>;
 
 function hasStatus(body: unknown, statuses: readonly string[]): boolean {
@@ -35,7 +36,7 @@ function isListResponse(body: unknown): body is FeatureListResponse {
 }
 
 function isFeatureResponse(body: unknown): body is FeatureResponse {
-  return hasStatus(body, ['ok', 'not-found', 'unreachable']);
+  return hasStatus(body, ['ok', 'not-found', 'invalid-version', 'unreachable']);
 }
 
 export function featuresLoader(
@@ -69,8 +70,9 @@ export function featureLoader(
   fetchImpl: typeof fetch = (...args) => fetch(...args),
   timeZone: () => string = browserTimeZone,
 ): LoadFeature {
-  return async ({ project, number }, { period }) => {
+  return async ({ project, number }, { period }, version) => {
     const query = queryOf({ period, project }, timeZone());
+    if (version !== undefined) query.set('version', String(version));
     const body = await fetchJson(
       fetchImpl,
       `/api/features/${String(number)}?${query.toString()}`,

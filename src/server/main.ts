@@ -8,7 +8,7 @@ import {
 } from '../config/env.ts';
 import { type Database, createDatabase } from '../db/client.ts';
 import { listBugs } from '../bugs/query.ts';
-import { featureDetail, listFeatures } from '../features/query.ts';
+import { listFeatures, versionDetailOf } from '../features/query.ts';
 import {
   frictionOccurrences,
   frictionOutput,
@@ -134,7 +134,7 @@ async function main(): Promise<void> {
     features: {
       list: (query) => listFeatures(db, query, config),
       detail: (key, query) =>
-        featureDetail(db, key, query, { config, state: stateOptions }),
+        versionDetailOf(db, key, query, { config, state: stateOptions }),
       bugs: (query) => listBugs(db, query, config),
     },
     projects: {

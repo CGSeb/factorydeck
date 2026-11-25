@@ -85,27 +85,24 @@ describe('featureDetail', () => {
     ]);
   });
 
-  it('gives the milestones inside the period only', async () => {
+  it('gives a bug the milestones of its whole version, whatever the period', async () => {
     const context = { config: DEFAULT_CONFIG, state };
     const key = { project: APP, number: 8 };
     const recent = await featureDetail(db, key, week, context);
-    expect(recent?.detail?.milestones).toEqual([
-      {
-        kind: 'report',
-        at: '2026-03-12T10:00:00.000Z',
-        request: { number: 102, url: 'https://git.example/app/pull/102' },
-        score: 60,
-        threshold: 80,
-        refused: true,
-        reasons: ['below-threshold'],
-      },
-    ]);
     const all = await featureDetail(db, key, allTime, context);
-    expect(all?.detail?.milestones.map((milestone) => milestone.kind)).toEqual([
-      'report',
-      'needs-spec',
-      'report',
-    ]);
+    expect(
+      recent?.detail?.milestones.map((milestone) => milestone.kind),
+    ).toEqual(['report', 'needs-spec', 'report']);
+    expect(all?.detail?.milestones).toEqual(recent?.detail?.milestones);
+    expect(recent?.detail?.milestones.at(-1)).toEqual({
+      kind: 'report',
+      at: '2026-03-12T10:00:00.000Z',
+      request: { number: 102, url: 'https://git.example/app/pull/102' },
+      score: 60,
+      threshold: 80,
+      refused: true,
+      reasons: ['below-threshold'],
+    });
   });
 
   it('keeps the calls of a main thread with a work item on it', async () => {

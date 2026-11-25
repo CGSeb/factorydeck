@@ -60,6 +60,33 @@ describe('features API', () => {
     ]);
   });
 
+  it('asks for a version of a bug, and keeps its invalid-version answer', async () => {
+    const urls: string[] = [];
+    const answer = {
+      status: 'invalid-version',
+      error: 'Expected version',
+      refreshSeconds: 10,
+    };
+    const response = await featureLoader(recorder(urls, answer), () => 'UTC')(
+      { project: '/work/app', number: 7 },
+      { period: '7d', project: undefined },
+      2,
+    );
+    expect(response).toEqual(answer);
+    expect(urls).toEqual([
+      '/api/features/7?period=7d&tz=UTC&project=%2Fwork%2Fapp&version=2',
+    ]);
+  });
+
+  it('links a bug at its latest version, with no version parameter', () => {
+    expect(
+      featurePath(
+        { project: '/work/app', number: 7, kind: 'bug' },
+        { period: '7d' },
+      ),
+    ).toBe('/bugs/7?project=%2Fwork%2Fapp&period=7d');
+  });
+
   it('gives nothing for an unexpected answer', async () => {
     await expect(
       featuresLoader(

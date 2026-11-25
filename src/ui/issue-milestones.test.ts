@@ -47,6 +47,7 @@ function feature(
     issue: { status: 'found', title: 'Example', url: 'https://example.test/7' },
     kind: 'feature',
     fix: null,
+    version: null,
     detail: null,
     roles: [],
     orchestration: withOrchestration ? orchestration : null,
@@ -123,6 +124,35 @@ describe('issueMilestones', () => {
 
   it('places nothing without issue detail', () => {
     expect(issueMilestones(feature(threads))).toEqual([]);
+  });
+
+  it('starts the timeline of a bug version from 2 with its reopening', () => {
+    const version = {
+      number: 2,
+      count: 3,
+      startedAt: local(17),
+      endedAt: local(21),
+      reopenedAt: local(22),
+    };
+    const reopened = issueMilestones({
+      ...withMilestones(threads, [needsSpec(local(17, 12))]),
+      kind: 'bug',
+      version,
+    });
+    expect(reopened.map((m) => [m.id, m.afterStep, m.title])).toEqual([
+      ['reopened', null, 'Reopened'],
+      ['milestone-0', null, 'Needs spec'],
+    ]);
+    expect(reopened[0]).toMatchObject({
+      tone: 'warning',
+      detail: formatDateTime(local(17)),
+    });
+    const first = issueMilestones({
+      ...feature(threads),
+      kind: 'bug',
+      version: { ...version, number: 1 },
+    });
+    expect(first).toEqual([]);
   });
 });
 
