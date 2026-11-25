@@ -9,6 +9,7 @@ import {
   day,
   seedBugCalls,
   seedBugVersions,
+  seedCallsBetweenVersions,
 } from '../test/bug-versions.ts';
 import { createTestDatabase } from '../test/postgres.ts';
 import { bugCounts, listBugs } from './query.ts';
@@ -117,11 +118,18 @@ describe('listBugs with versions', () => {
     });
   });
 
-  it('counts the tokens of the calls inside the current version only, orchestration share included', async () => {
+  it('counts the tokens of the calls of the current version only, after its close too, orchestration share included', async () => {
     await seedBugVersions(db);
     await seedBugCalls(db);
     const list = await listBugs(db, allTime, DEFAULT_CONFIG);
-    expect(rowOf(list, 10)).toMatchObject({ tokens: 700, lastAt: day(6) });
+    expect(rowOf(list, 10)).toMatchObject({ tokens: 750, lastAt: day(8) });
     expect(rowOf(list, 13)).toMatchObject({ tokens: 0, costUsd: 0 });
+  });
+
+  it('counts the calls after the close of a closed bug in its Tokens, as /features does', async () => {
+    await seedBugVersions(db);
+    await seedCallsBetweenVersions(db, { closedAgain: true });
+    const list = await listBugs(db, allTime, DEFAULT_CONFIG);
+    expect(rowOf(list, 30)).toMatchObject({ tokens: 700, lastAt: day(5, 12) });
   });
 });

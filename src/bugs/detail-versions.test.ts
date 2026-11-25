@@ -14,6 +14,7 @@ import {
   request,
   seedBugCalls,
   seedBugVersions,
+  seedCallsBetweenVersions,
 } from '../test/bug-versions.ts';
 import { createTestDatabase } from '../test/postgres.ts';
 
@@ -139,13 +140,13 @@ describe('the page of a bug by version', () => {
     const first = await pageOf(10, 1);
     const second = await pageOf(10, 2);
     expect(tokensOf(first)).toBe(1_300);
-    expect(tokensOf(second)).toBe(700);
+    expect(tokensOf(second)).toBe(750);
     expect(
       first.threads.map((thread) => [thread.firstAt, thread.lastAt]),
     ).toEqual([[day(2, 12), day(2, 12)]]);
     expect(
       second.threads.map((thread) => [thread.firstAt, thread.lastAt]),
-    ).toEqual([[day(6), day(6)]]);
+    ).toEqual([[day(6), day(8)]]);
     expect(
       first.detail?.milestones.map(
         (milestone) => milestone.kind === 'report' && milestone.request.number,
@@ -159,6 +160,32 @@ describe('the page of a bug by version', () => {
     const today = await pageOf(10, 1, { ...allTime, period: 'today' });
     expect(tokensOf(today)).toBe(1_300);
     expect(today.detail?.milestones).toEqual(first.detail?.milestones);
+  });
+
+  it('counts the calls, frictions and needs-spec episodes between a close and the next reopen in the version that close ended', async () => {
+    await seedCallsBetweenVersions(db);
+    const first = await pageOf(30, 1);
+    const second = await pageOf(30, 2);
+    expect(tokensOf(first) + tokensOf(second)).toBe(1_500);
+    expect(tokensOf(first)).toBe(1_000);
+    expect(tokensOf(second)).toBe(500);
+    expect(first.frictions + second.frictions).toBe(1);
+    expect(
+      first.detail?.milestones.flatMap((milestone) =>
+        milestone.kind === 'needs-spec' ? [milestone.at] : [],
+      ),
+    ).toEqual([day(3, 13)]);
+    expect(first.version).toMatchObject({
+      endedAt: day(3),
+      reopenedAt: day(4),
+    });
+  });
+
+  it('counts the calls after the last close of a closed bug in its latest version', async () => {
+    await seedCallsBetweenVersions(db, { closedAgain: true });
+    const latest = await pageOf(30);
+    expect(tokensOf(latest)).toBe(700);
+    expect(latest.version).toMatchObject({ endedAt: day(5) });
   });
 
   it('keeps the report of a request merged after a close on the timeline of the version that close ended', async () => {
