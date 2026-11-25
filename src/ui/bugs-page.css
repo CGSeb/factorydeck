@@ -11,3 +11,16 @@
   padding-top: var(--fd-space-2);
   padding-bottom: var(--fd-space-2);
 }
+
+.fd-bug-version {
+  display: inline-block;
+  padding: 0 var(--fd-space-1);
+  border: 1px solid var(--fd-border);
+  border-radius: var(--fd-radius-sm);
+  color: var(--fd-muted);
+  font-size: var(--fd-text-xs);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+  white-space: nowrap;
+}

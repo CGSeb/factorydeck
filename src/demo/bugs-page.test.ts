@@ -49,7 +49,7 @@ describe('demo sessions on the bugs page', () => {
       rows.map((row) => row.number);
     expect(list.bugTickets).toBe(true);
     expect(numbers(list.groups.open)).toEqual(expect.arrayContaining([14, 42]));
-    expect(numbers(list.groups.fixing)).toEqual([44]);
+    expect(numbers(list.groups.fixing)).toEqual(expect.arrayContaining([44]));
     expect(numbers(list.groups.fixed)).toEqual(
       expect.arrayContaining([41, 43]),
     );
@@ -66,5 +66,33 @@ describe('demo sessions on the bugs page', () => {
       reproduced: 'passed-on-main',
     });
     expect(list.counts.closed).toBeGreaterThan(0);
+  });
+
+  it('has a bug in its second version and one in its third', async () => {
+    await collect(db, { hasFactory });
+    const path = join(await sessionsFolder(), 'factorydeck.yml');
+    await writeDemoConfig(path, projects);
+    const config = loadWorkflowConfig(path);
+    const app = demoProjectRoot(projects, EXAMPLE_APP);
+    const list = await listBugs(
+      db,
+      { period: '7d', timeZone: 'UTC', now: NOW, project: app },
+      config,
+    );
+    const second = list.groups.open.find((row) => row.number === 47);
+    expect(second).toMatchObject({
+      version: { number: 2, count: 2 },
+      fix: null,
+      score: null,
+    });
+    const third = list.groups.fixing.find((row) => row.number === 49);
+    expect(third).toMatchObject({
+      version: { number: 3, count: 3 },
+      fix: {
+        rootCause: 'A clock skew on the server.',
+        reproduced: 'failed-on-main',
+      },
+      score: 81,
+    });
   });
 });

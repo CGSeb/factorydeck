@@ -12,7 +12,14 @@ export const FakeGitHostSchema = z.object({
   labels: z.array(RowSchema).optional(),
   closes: z.record(z.string(), z.array(RowSchema)).optional(),
   notes: z.record(z.string(), z.array(RowSchema)).optional(),
-  reopened: z.array(z.number()).optional(),
+  stateEvents: z
+    .record(
+      z.string(),
+      z.array(
+        z.object({ state: z.enum(['closed', 'reopened']), at: z.string() }),
+      ),
+    )
+    .optional(),
   labelEvents: z.record(z.string(), z.array(RowSchema)).optional(),
   factory: z.string().optional(),
   fail: z.string().optional(),
@@ -21,6 +28,22 @@ export const FakeGitHostSchema = z.object({
 });
 
 export type FakeGitHostData = z.infer<typeof FakeGitHostSchema>;
+
+export function reopenedOnce(
+  numbers: readonly number[],
+  closedAt: string,
+  reopenedAt: string,
+): NonNullable<FakeGitHostData['stateEvents']> {
+  return Object.fromEntries(
+    numbers.map((number) => [
+      String(number),
+      [
+        { state: 'closed' as const, at: closedAt },
+        { state: 'reopened' as const, at: reopenedAt },
+      ],
+    ]),
+  );
+}
 
 const FAKE_CLI = join(import.meta.dirname, 'fake-git-host-cli.ts');
 

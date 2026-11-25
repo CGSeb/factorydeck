@@ -35,6 +35,7 @@ const fixed: BugRow = {
   url: 'https://example.test/issues/4',
   stage: 'merged',
   createdAt: '2026-01-01T10:00:00.000Z',
+  version: { number: 1, count: 1, startedAt: '2026-01-01T10:00:00.000Z' },
   mergedAt: '2026-01-04T10:00:00.000Z',
   closedAt: null,
   fix: { rootCause: 'an empty list', reproduced: 'failed-on-main' },

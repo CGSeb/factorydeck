@@ -12,23 +12,29 @@ The page has the `Bugs` link of the [sidebar](navigation.md#sidebar), right afte
 
 The bugs of the selection in three groups, in this order, each under a header row with its count; an empty group is left out.
 
-- `Open`: every open bug at stage `Open`, `Ready`, `Needs spec` or `Blocked`, whatever the period, longest open first.
+- `Open`: every open bug at stage `Open`, `Ready`, `Needs spec` or `Blocked`, whatever the period, longest open first, from the start of its current [version](#versions).
 - `Fixing`: every open bug at stage `Working` or `In review`, whatever the period, by latest activity in the period first (as the `Last activity` sort of the features list); bugs without activity in the period come last.
 - `Fixed`: the bugs at a merged [stage](outcomes.md#stages) whose [merge time](outcomes.md#help-from-a-person) falls in the period, and the bugs `Closed without merge` whose close time falls in it, latest merge or close first.
 
 Ties go to the highest number. Each group shows 20 rows, then `Show more` adds 20 more. A change of the period or of the project shows each group from its first 20 rows again.
 
-Open bugs show whatever the period, because the question is how long they have been waiting; fixed and closed bugs show by the time they ended, in the period. A **reopened bug** that is open again leaves `Fixed`: it shows in `Open` or `Fixing` by the stage of its labels (`Open` with none), with its age from its creation, and keeps the fix of its merged request.
+Open bugs show whatever the period, because the question is how long they have been waiting; fixed and closed bugs show by the time they ended, in the period.
+
+## Versions
+
+A bug has one [version](outcomes.md#versions-of-a-bug) per opening: each reopening starts a new attempt. The list places, counts and shows each bug by its **current version** only, the latest: its stage, its group, its `Age`, its `Reproduced`, its `Serenity` and its `Tokens` all come from that version, and a bug shows once, never twice. A bug fixed in version 1 inside the period and reopened since leaves `Fixed` and shows by its version 2 in `Open` or `Fixing`, by the stage of its labels (`Open` with none). A bug reopened with no new request yet shows `—` in `Reproduced` and `Serenity`, and `0` tokens until a call falls in the version: nothing of the fix that did not hold shows.
+
+A bug in version 2 or more shows a muted `v<k>` tag right after `<title> (#<n>)`, whose accessible name is `Version <k>`; a bug in version 1 shows none.
 
 ## Columns
 
-- `Bug`: `<title> (#<n>)` as on the features list, linked to the bug's [issue page](features.md#issue-page) with the period.
+- `Bug`: `<title> (#<n>)` as on the features list, then the `v<k>` tag from version 2, linked to the bug's [issue page](features.md#issue-page) with the period.
 - `Project`, only with `All projects`.
 - `Stage`: its stage badge.
-- `Age`: in `Open` and `Fixing`, `Open for <duration>`, from its creation to now; in `Fixed`, `Fixed in <duration>`, from its creation to its merge, or `Closed after <duration>`, from its creation to its close, for `Closed without merge`. Durations as in the [conventions](navigation.md#figures-and-formats).
+- `Age`, from the start of the current version (the creation for version 1, the reopening after): in `Open` and `Fixing`, `Open for <duration>`, from that start to now; in `Fixed`, `Fixed in <duration>`, from that start to its merge, or `Closed after <duration>`, from that start to its close, for `Closed without merge`. Durations as in the [conventions](navigation.md#figures-and-formats).
 - `Reproduced`, from the [fix](outcomes.md#fix-of-a-bug): `Failed on main` in the success tone; `Passed on main`, `Did not run on main` or `No test` in the warning tone; `—` with no fix or no value. `Failed on main` is the only success value, because only a test that failed on main proves the bug was reproduced.
 - `Serenity`: the score of the report that counts, as on the features list.
-- `Tokens`: the bug's tokens in the period, orchestration share included, as on the features list; `0` with no call in the period.
+- `Tokens`: the bug's tokens, orchestration share included as on the features list, of the calls that fall both in the period and in its current version (from its start to its end, or to now while it is ongoing); `0` with no such call. The orchestration share is split among the issues of the calls inside that same time span.
 
 ## Empty states
 
@@ -37,4 +43,4 @@ Open bugs show whatever the period, because the question is how long they have b
 
 ## API
 
-`GET /api/bugs?project=<root>&period=<period>&tz=<tz>` answers `bugTickets` (`true` when a project of the selection has a bug label), `groups` with `open`, `fixing` and `fixed`, and `counts` (`open`, `fixed`, `closed`, the figures of the header). Each bug has its `number`, `project`, `projectName`, `title`, `url`, `stage`, `createdAt`, `mergedAt` (merged bugs of `Fixed`) and `closedAt` (`Closed without merge`), otherwise `null`; `fix` (`{ "rootCause": <string|null>, "reproduced": "failed-on-main" | "passed-on-main" | "did-not-run-on-main" | "no-test" | null }`, or `null` with no report); `score` and `threshold` (`null` with no report); `lastAt`, its latest call in the period; and `tokens`, `tokenCounts` with the four kinds, and `costUsd`. Invalid parameters answer `400`.
+`GET /api/bugs?project=<root>&period=<period>&tz=<tz>` answers `bugTickets` (`true` when a project of the selection has a bug label), `groups` with `open`, `fixing` and `fixed`, and `counts` (`open`, `fixed`, `closed`, the figures of the header). Each bug has its `number`, `project`, `projectName`, `title`, `url`, `stage`, `createdAt` (the issue's creation), `version` (`{ "number": <k>, "count": <k>, "startedAt": <ISO time> }`: `number` is the current version, `count` the number of versions, equal here, and `startedAt` the start of the current version), `mergedAt` (merged bugs of `Fixed`) and `closedAt` (`Closed without merge`), otherwise `null`. `stage`, `mergedAt`, `closedAt`, `fix`, `score`, `threshold`, `lastAt` and the tokens follow the current version. `fix` (`{ "rootCause": <string|null>, "reproduced": "failed-on-main" | "passed-on-main" | "did-not-run-on-main" | "no-test" | null }`, or `null` with no report); `score` and `threshold` (`null` with no report); `lastAt`, its latest call in the period and the current version; and `tokens`, `tokenCounts` with the four kinds, and `costUsd`. Invalid parameters answer `400`.

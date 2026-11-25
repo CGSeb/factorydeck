@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { FakeGitHostData } from '../demo/fake-git-host.ts';
+import { type FakeGitHostData, reopenedOnce } from '../demo/fake-git-host.ts';
 import { T0, T1, calls } from '../test/git-host.ts';
 import { type Row, outcomeContext, serenity } from '../test/outcome.ts';
 
@@ -67,7 +67,7 @@ describe('GitLab', () => {
           },
         ],
       },
-      reopened: [3],
+      stateEvents: reopenedOnce([3], T1, T1),
     };
   }
 

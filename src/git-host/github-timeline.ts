@@ -8,7 +8,7 @@ import {
   text,
   time,
 } from './parse.ts';
-import type { LabelEvent } from './types.ts';
+import type { LabelEvent, StateEvent } from './types.ts';
 
 const LABEL_EVENTS = `timelineItems(first: ${String(PAGE_SIZE)}, after: $events, itemTypes: [LABELED_EVENT, UNLABELED_EVENT]) {
   nodes {
@@ -19,13 +19,21 @@ const LABEL_EVENTS = `timelineItems(first: ${String(PAGE_SIZE)}, after: $events,
   pageInfo { hasNextPage endCursor }
 }`;
 
+const STATE_EVENTS = `timelineItems(first: ${String(PAGE_SIZE)}, itemTypes: [CLOSED_EVENT, REOPENED_EVENT]) {
+  nodes {
+    __typename
+    ... on ClosedEvent { createdAt }
+    ... on ReopenedEvent { createdAt }
+  }
+}`;
+
 const TIMELINE_QUERY = `query($owner: String!, $name: String!, $since: DateTime, $after: String, $events: String) {
   repository(owner: $owner, name: $name) {
     issues(first: ${String(PAGE_SIZE)}, after: $after, orderBy: {field: UPDATED_AT, direction: ASC}, filterBy: {since: $since}) {
       nodes {
         number
-        reopened: timelineItems(itemTypes: [REOPENED_EVENT]) { totalCount }
         labelEvents: ${LABEL_EVENTS}
+        stateEvents: ${STATE_EVENTS}
       }
       pageInfo { hasNextPage endCursor }
     }
@@ -41,7 +49,7 @@ const LABEL_EVENTS_QUERY = `query($owner: String!, $name: String!, $number: Int!
 }`;
 
 export interface IssueTimeline {
-  reopened: boolean;
+  stateEvents: StateEvent[];
   labelEvents: LabelEvent[];
 }
 
@@ -58,6 +66,17 @@ export function githubLabelEvents(nodes: unknown): LabelEvent[] {
     if (label === '' || at === null) return [];
     if (kind !== 'LabeledEvent' && kind !== 'UnlabeledEvent') return [];
     return [{ label, added: kind === 'LabeledEvent', at }];
+  });
+}
+
+export function githubStateEvents(nodes: unknown): StateEvent[] {
+  return list(nodes).flatMap((node): StateEvent[] => {
+    const kind = text(node['__typename']);
+    const at = time(node['createdAt']);
+    if (at === null) return [];
+    if (kind === 'ClosedEvent') return [{ state: 'closed', at }];
+    if (kind === 'ReopenedEvent') return [{ state: 'reopened', at }];
+    return [];
   });
 }
 
@@ -136,7 +155,6 @@ export async function issueTimelines(
     for (const node of list(field(issues, 'nodes'))) {
       const number = positive(node['number']);
       if (number === undefined) continue;
-      const count = field(node['reopened'], 'totalCount');
       const connection = node['labelEvents'];
       const labelEvents = githubLabelEvents(field(connection, 'nodes'));
       const more = nextCursor(connection);
@@ -146,7 +164,7 @@ export async function issueTimelines(
         );
       }
       timelines.set(number, {
-        reopened: typeof count === 'number' && count > 0,
+        stateEvents: githubStateEvents(field(node['stateEvents'], 'nodes')),
         labelEvents,
       });
     }

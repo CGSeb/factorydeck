@@ -39,6 +39,18 @@ A serenity report is a comment on a pull or merge request with a line `## Sereni
 
 The **fix** of a bug is the root cause and the reproduction of the report that counts for it; a report without fix lines gives a fix with neither. With no report, the bug has no fix. It shows in the `Reproduced` column of the [bugs page](bugs.md).
 
+## Versions of a bug
+
+A bug has one **version** per opening, read from the close and reopen events the [collection](data.md#git-host) stores:
+
+- Version 1 starts at the bug's creation; each reopen event starts the next version. A version ends at the first close event after its start, or is **ongoing** while the bug is open. A bug never reopened has one version.
+- Events are read by time. A close event while no version is ongoing, and a reopen event while one is ongoing (a repeated or out-of-order event), are ignored. Two events at the same second are read close first, then reopen: the version ends and the next one starts. An open bug whose last stored event is a close is ongoing in its last version; a closed bug whose stored events leave its last version ongoing ends it at its close time.
+- A pull or merge request that closes the bug belongs to the latest version started at or before its merge time (its update time when the git host gives none), or, when it is not merged, at or before its creation time; one before the bug's creation belongs to version 1. A request merged after a close and before the next reopen therefore stays with the version that close ended, and a request merged before a reopen never gives the fix of a later version, even when its report is the latest of the issue.
+- A version's stage, [report that counts](#serenity-reports), serenity, [fix](#fix-of-a-bug) and merge time come from its own requests only, with the rules of this page; a version with no request has no fix and no serenity, and its stage comes from the bug's labels, or `Closed without merge` when the bug is closed.
+- A version's tokens are the bug's tokens, orchestration share included, of the calls between its start and its end, or now for the ongoing one.
+
+Versions apply to bugs on the [bugs page](bugs.md#versions), and to the `<o> open bugs` of the [overview](overview.md) header, which is the `open` count of `/bugs`. The features list, the issue page, [Stats](stats.md) and the rest of the overview keep the rules above for the whole issue.
+
 ## Help from a person
 
 A merged issue was **helped by a person** when, before the merge time of the request that counts, at least one of these happened:

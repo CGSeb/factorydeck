@@ -33,6 +33,7 @@ function issue(
     closedAt: state === 'closed' ? new Date('2026-03-10T00:00:00Z') : null,
     updatedAt: CREATED,
     reopened: false,
+    stateEvents: [],
     needsSpec,
   };
 }

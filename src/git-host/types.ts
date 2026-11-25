@@ -46,6 +46,15 @@ export interface LabelEvent extends LabelChange {
   label: string;
 }
 
+export const STATE_EVENT_KINDS = ['closed', 'reopened'] as const;
+
+export type StateEventKind = (typeof STATE_EVENT_KINDS)[number];
+
+export interface StateEvent {
+  state: StateEventKind;
+  at: string;
+}
+
 export interface IssueRecord {
   number: number;
   title: string;
@@ -56,6 +65,7 @@ export interface IssueRecord {
   closedAt: string | null;
   updatedAt: string;
   reopened: boolean;
+  stateEvents: StateEvent[];
   labelEvents: LabelEvent[];
 }
 

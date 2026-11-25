@@ -13,6 +13,7 @@ import { gitlabReader } from './gitlab.ts';
 import { readOutcomeSettings } from './outcome-settings.ts';
 import type { Changes, GitHostReader } from './parse.ts';
 import {
+  type ProjectState,
   pendingRequests,
   projectState,
   saveFailure,
@@ -92,6 +93,20 @@ function reasonOf(error: unknown): string {
   );
 }
 
+function readsInFull(
+  state: ProjectState | undefined,
+  config: GitHostConfig,
+): boolean {
+  return (
+    state?.gitHost !== config.gitHost ||
+    state.repository !== config.repository ||
+    !state.outcomeSettings ||
+    !state.historyRead ||
+    !state.fixRead ||
+    !state.stateEventsRead
+  );
+}
+
 async function collectProject(
   db: Database,
   project: string,
@@ -104,13 +119,8 @@ async function collectProject(
     const config = await readGitHostConfig(project);
     gitHost = config.gitHost;
     const settings = await readOutcomeSettings(project, config.gitHost);
-    const replace =
-      state?.gitHost !== config.gitHost ||
-      state.repository !== config.repository ||
-      !state.outcomeSettings ||
-      !state.historyRead ||
-      !state.fixRead;
-    const since = replace ? null : state.syncedFrom;
+    const replace = readsInFull(state, config);
+    const since = replace || state === undefined ? null : state.syncedFrom;
     const reader = readerFor(config, project, timeoutMs);
     const changes = await changesOf(db, project, reader, since);
     await saveSuccess(db, project, {

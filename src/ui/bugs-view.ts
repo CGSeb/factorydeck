@@ -39,13 +39,13 @@ function between(from: string, to: string | number): string {
 }
 
 export function ageText(row: BugRow, group: BugGroup, now: Date): string {
+  const start = row.version.startedAt;
   if (group !== 'fixed') {
-    return `Open for ${between(row.createdAt, now.getTime())}`;
+    return `Open for ${between(start, now.getTime())}`;
   }
-  if (row.mergedAt !== null)
-    return `Fixed in ${between(row.createdAt, row.mergedAt)}`;
+  if (row.mergedAt !== null) return `Fixed in ${between(start, row.mergedAt)}`;
   if (row.closedAt !== null) {
-    return `Closed after ${between(row.createdAt, row.closedAt)}`;
+    return `Closed after ${between(start, row.closedAt)}`;
   }
   return MISSING;
 }

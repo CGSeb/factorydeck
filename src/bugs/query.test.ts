@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FACTORY_WORKFLOW } from '../demo/fake-git-host.ts';
+import { FACTORY_WORKFLOW, reopenedOnce } from '../demo/fake-git-host.ts';
 import { DEFAULT_CONFIG } from '../roles/config.ts';
 import { T0, T1, T2, ghIssue } from '../test/git-host.ts';
 import {
@@ -71,7 +71,10 @@ const REQUESTS: Row[] = [
 
 async function collectedBugs(factory: string): Promise<string> {
   return ctx.collected(
-    githubData(ISSUES, REQUESTS, { factory, reopened: [7] }),
+    githubData(ISSUES, REQUESTS, {
+      factory,
+      stateEvents: reopenedOnce([7], TODAY_MORNING, TODAY_LATER),
+    }),
     NOW,
   );
 }
@@ -94,7 +97,7 @@ describe('listBugs', () => {
     const list = await listBugs(ctx.db(), today, DEFAULT_CONFIG);
     expect(list.bugTickets).toBe(true);
     expect(numbers(list)).toEqual({
-      open: [9, 2, 7, 1],
+      open: [9, 2, 1, 7],
       fixing: [3],
       fixed: [6, 4],
     });
@@ -148,14 +151,22 @@ describe('listBugs', () => {
     expect(rowOf(1)).toMatchObject({ stage: 'open', fix: null });
   });
 
-  it('shows a reopened bug as open again, with the fix of its merged request', async () => {
+  it('shows a reopened bug as open again in its second version, without the fix of the first', async () => {
     await collectedBugs(WITH_BUGS);
     const list = await listBugs(ctx.db(), today, DEFAULT_CONFIG);
     const reopened = list.groups.open.find((row) => row.number === 7);
     expect(reopened).toMatchObject({
       stage: 'open',
       mergedAt: null,
-      fix: { rootCause: 'a race', reproduced: 'no-test' },
+      fix: null,
+      score: null,
+      threshold: null,
+      version: {
+        number: 2,
+        count: 2,
+        startedAt: new Date(TODAY_LATER).toISOString(),
+      },
+      tokens: 0,
     });
   });
 

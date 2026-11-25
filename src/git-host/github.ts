@@ -6,6 +6,7 @@ import {
   searchTime,
 } from './github-timeline.ts';
 import { reportHistory } from './report.ts';
+import { stateOf } from './state-events.ts';
 import {
   type GitHostReader,
   type Json,
@@ -58,7 +59,7 @@ export function githubIssue(
     createdAt,
     closedAt: time(row['closedAt']),
     updatedAt: requiredTime(row['updatedAt'], createdAt),
-    reopened: timelines.get(number)?.reopened ?? false,
+    ...stateOf(timelines.get(number)?.stateEvents ?? []),
     labelEvents: timelines.get(number)?.labelEvents ?? [],
   };
 }

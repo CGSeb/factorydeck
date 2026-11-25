@@ -19,6 +19,12 @@ import type {
 import { emptyCounts } from '../overview/tokens.ts';
 import type { TokenCounts } from '../overview/types.ts';
 import type { BugCounts, BugFix, BugGroup, BugRow } from './types.ts';
+import {
+  type Version,
+  currentVersion,
+  versionOfRequest,
+  versionsOf,
+} from './versions.ts';
 
 export interface BugProject {
   project: string;
@@ -102,12 +108,18 @@ function openStage(
 
 type BaseRow = Omit<BugRow, 'stage' | 'mergedAt' | 'closedAt'>;
 
+interface VersionOutcome {
+  outcome: IssueOutcome;
+  requests: readonly OutcomeRequest[];
+  versions: readonly Version[];
+}
+
 function baseRow(
   issue: IssueRow,
   project: BugProject,
-  outcome: IssueOutcome,
-  requests: readonly OutcomeRequest[],
+  { outcome, requests, versions }: VersionOutcome,
 ): Omit<BaseRow, keyof BugUsage> {
+  const current = currentVersion(versions);
   return {
     project: issue.project,
     projectName: project.name,
@@ -115,6 +127,11 @@ function baseRow(
     title: issue.title,
     url: issue.url,
     createdAt: issue.createdAt.toISOString(),
+    version: {
+      number: current.number,
+      count: versions.length,
+      startedAt: new Date(current.startedAt).toISOString(),
+    },
     fix: fixOf(countedRequest(requests)?.report),
     score: outcome.report?.score ?? null,
     threshold: outcome.report?.threshold ?? null,
@@ -125,9 +142,9 @@ function endedAt(
   issue: IssueRow,
   stage: IssueStage,
   requests: readonly OutcomeRequest[],
+  current: Version,
 ): { mergedAt: string | null; closedAt: string | null } | undefined {
   if (MERGED_STAGES.has(stage)) {
-    if (issue.state !== 'closed' && issue.reopened) return undefined;
     const request = mergedRequest(requests);
     return {
       mergedAt: request?.mergedAt ?? request?.updatedAt ?? null,
@@ -137,7 +154,9 @@ function endedAt(
   if (stage !== 'closed') return undefined;
   return {
     mergedAt: null,
-    closedAt: (issue.closedAt ?? issue.updatedAt).toISOString(),
+    closedAt: new Date(
+      current.endedAt ?? (issue.closedAt ?? issue.updatedAt).getTime(),
+    ).toISOString(),
   };
 }
 
@@ -146,18 +165,21 @@ function placeBug(
   project: BugProject,
   sources: BugSources,
 ): Placed | undefined {
+  const versions = versionsOf(issue);
+  const current = currentVersion(versions);
   const closing = sources.requests.filter(
     (request) =>
       request.project === issue.project &&
-      request.closes.includes(issue.number),
+      request.closes.includes(issue.number) &&
+      versionOfRequest(versions, request) === current.number,
   );
   const outcome = outcomeOf(issue, closing, project);
   const requests = closing.map(outcomeRequest);
   const base = {
-    ...baseRow(issue, project, outcome, requests),
+    ...baseRow(issue, project, { outcome, requests, versions }),
     ...(sources.usage(issue.project, issue.number) ?? NO_USAGE),
   };
-  const ended = endedAt(issue, outcome.stage, requests);
+  const ended = endedAt(issue, outcome.stage, requests, current);
   if (ended !== undefined) {
     const endAt = ended.mergedAt ?? ended.closedAt;
     if (endAt === null || !inPeriod(endAt, sources.startAt)) return undefined;
@@ -193,7 +215,8 @@ function ties(left: Placed, right: Placed): number {
 
 const ORDERS: Record<BugGroup, (left: Placed, right: Placed) => number> = {
   open: (left, right) =>
-    Date.parse(left.row.createdAt) - Date.parse(right.row.createdAt),
+    Date.parse(left.row.version.startedAt) -
+    Date.parse(right.row.version.startedAt),
   fixing: (left, right) =>
     latestFirst(timeOf(left.row.lastAt), timeOf(right.row.lastAt)),
   fixed: (left, right) => latestFirst(timeOf(left.endAt), timeOf(right.endAt)),
