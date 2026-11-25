@@ -28,6 +28,7 @@ export const unusedGitHost: GitHostSource = {
 export const unusedFeatures: FeatureSource = {
   list: () => Promise.reject(new Error('Not used')),
   detail: () => Promise.reject(new Error('Not used')),
+  bugs: () => Promise.reject(new Error('Not used')),
 };
 
 export const unusedStats: StatsSource = {

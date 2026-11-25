@@ -170,3 +170,111 @@ describe('reportHistory', () => {
     ]);
   });
 });
+
+describe('parseReport on a fix-bug report', () => {
+  const heading = '## Serenity: 88/100 (threshold 80)';
+
+  it.each([
+    ['failed on main', 'failed-on-main'],
+    ['passed on main', 'passed-on-main'],
+    ['did not run on main', 'did-not-run-on-main'],
+    ['no test', 'no-test'],
+  ] as const)('reads Reproduced: %s', (text, value) => {
+    const body = report([
+      heading,
+      'Gates: all passed.',
+      'Root cause: the export reads an empty list.',
+      `Reproduced: ${text}`,
+    ]);
+    expect(parseReport(body, AT)).toMatchObject({
+      rootCause: 'the export reads an empty list.',
+      reproduced: value,
+    });
+  });
+
+  it.each(['Reproduced: Failed on main', 'Reproduced: failed', 'Reproduced:'])(
+    'gives no value for %s',
+    (line) => {
+      expect(parseReport(report([heading, line]), AT)).not.toHaveProperty(
+        'reproduced',
+      );
+    },
+  );
+
+  it.each(['Root cause: none', 'Root cause:   ', 'Root cause:'])(
+    'gives no root cause for %s',
+    (line) => {
+      expect(parseReport(report([heading, line]), AT)).not.toHaveProperty(
+        'rootCause',
+      );
+    },
+  );
+
+  it('trims the root cause', () => {
+    const body = report([heading, 'Root cause:   a stale cache  ']);
+    expect(parseReport(body, AT)?.rootCause).toBe('a stale cache');
+  });
+
+  it('ignores the lines inside a code fence', () => {
+    const body = report([
+      heading,
+      '```',
+      'Root cause: inside the fence',
+      'Reproduced: failed on main',
+      '```',
+    ]);
+    const parsed = parseReport(body, AT);
+    expect(parsed).not.toHaveProperty('rootCause');
+    expect(parsed).not.toHaveProperty('reproduced');
+  });
+
+  it('cuts a 250-character root cause at 199 characters with an ellipsis', () => {
+    const sentence = 'x'.repeat(250);
+    const parsed = parseReport(
+      report([heading, `Root cause: ${sentence}`]),
+      AT,
+    );
+    expect(parsed?.rootCause).toBe(`${'x'.repeat(199)}…`);
+    expect(Array.from(parsed?.rootCause ?? '')).toHaveLength(200);
+  });
+
+  it('keeps a 200-character root cause whole', () => {
+    const sentence = 'y'.repeat(200);
+    const parsed = parseReport(
+      report([heading, `Root cause: ${sentence}`]),
+      AT,
+    );
+    expect(parsed?.rootCause).toBe(sentence);
+  });
+
+  it('counts the first line of each kind', () => {
+    const body = report([
+      heading,
+      'Root cause: the first cause',
+      'Reproduced: no test',
+      'Root cause: the second cause',
+      'Reproduced: failed on main',
+    ]);
+    expect(parseReport(body, AT)).toMatchObject({
+      rootCause: 'the first cause',
+      reproduced: 'no-test',
+    });
+  });
+
+  it('gives neither to a build-feature report', () => {
+    const body = report([
+      heading,
+      '',
+      '- −5: 1 review finding fixed',
+      '',
+      'Gates: all passed. Review: 1 round, confidence high.',
+    ]);
+    expect(parseReport(body, AT)).toEqual({
+      score: 88,
+      threshold: 80,
+      rounds: 1,
+      gatesPassed: true,
+      at: AT,
+    });
+  });
+});

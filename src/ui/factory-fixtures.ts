@@ -24,6 +24,7 @@ export function factoryResponse(
   missing: MissingFactory[] = [],
   hasSessions = true,
   projects: ProjectOption[] = [],
+  bugTickets: string[] = [],
 ): FactoryResponse {
   return {
     status: 'ok',
@@ -31,6 +32,7 @@ export function factoryResponse(
     hasSessions,
     missing,
     projects,
+    bugTickets,
   };
 }
 

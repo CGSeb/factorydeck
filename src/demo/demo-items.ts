@@ -28,6 +28,19 @@ function reviewText(rounds: number | null): string {
   return ` Review: ${String(rounds)} ${rounds === 1 ? 'round' : 'rounds'}, confidence high.`;
 }
 
+export function fixReport(
+  score: number,
+  rootCause: string,
+  reproduced: string,
+): string {
+  return [
+    serenityReport(score, 1),
+    '',
+    `Root cause: ${rootCause}`,
+    `Reproduced: ${reproduced}`,
+  ].join('\n');
+}
+
 export function serenityReport(
   score: number,
   rounds: number | null,

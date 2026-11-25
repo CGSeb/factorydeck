@@ -74,3 +74,77 @@ export const FoldedWithProjects: Story = {
     ).toHaveAttribute('aria-current', 'page');
   },
 };
+
+const APP_ROOT = '/home/dev/example-app';
+const LIB_ROOT = '/home/dev/example-lib';
+
+function withBugTickets(bugTickets: string[]) {
+  return factoryLoaderOf(
+    factoryResponse([], true, optionsOf([APP_ROOT, LIB_ROOT]), bugTickets),
+  );
+}
+
+function sectionAt(path: string): Decorator {
+  return (Story) => (
+    <MemoryRouter initialEntries={[path]}>
+      <Routes>
+        <Route element={<Story />}>
+          <Route path="*" element={<p>Section content</p>} />
+        </Route>
+      </Routes>
+    </MemoryRouter>
+  );
+}
+
+function linkNames(canvasElement: HTMLElement): string[] {
+  const nav = within(canvasElement).getByRole('navigation');
+  return within(nav)
+    .getAllByRole('link')
+    .map((link) => link.textContent);
+}
+
+export const BugsLinkAfterFeatures: Story = {
+  args: { loadFactory: withBugTickets([APP_ROOT]) },
+  decorators: [sectionAt('/bugs')],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const bugs = await canvas.findByRole('link', { name: 'Bugs' });
+    await expect(bugs).toHaveAttribute('aria-current', 'page');
+    await expect(bugs).toHaveAttribute('href', '/bugs');
+    await expect(bugs.querySelector('[data-icon="bugs"]')).not.toBeNull();
+    const names = linkNames(canvasElement);
+    await expect(names.indexOf('Bugs')).toBe(names.indexOf('Features') + 1);
+  },
+};
+
+export const BugsLinkFolded: Story = {
+  args: { loadFactory: withBugTickets([APP_ROOT]) },
+  decorators: [sectionAt('/bugs'), withStoredFold('collapsed')],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole('link', { name: 'Bugs' }),
+    ).toHaveAttribute('aria-current', 'page');
+  },
+};
+
+export const NoBugsLinkWithoutBugTickets: Story = {
+  decorators: [sectionAt('/')],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole('combobox', { name: 'Project' });
+    await expect(canvas.getByRole('link', { name: 'Features' })).toBeVisible();
+    await expect(canvas.queryByRole('link', { name: 'Bugs' })).toBeNull();
+  },
+};
+
+export const NoBugsLinkForAProjectWithoutBugTickets: Story = {
+  args: { loadFactory: withBugTickets([APP_ROOT]) },
+  decorators: [sectionAt(`/?project=${encodeURIComponent(LIB_ROOT)}`)],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole('combobox', { name: 'Project' });
+    await expect(canvas.getByRole('link', { name: 'Features' })).toBeVisible();
+    await expect(canvas.queryByRole('link', { name: 'Bugs' })).toBeNull();
+  },
+};

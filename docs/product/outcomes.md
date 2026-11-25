@@ -24,12 +24,20 @@ Tones: the three merged stages success; `Closed without merge` and `Blocked` dan
 
 A serenity report is a comment on a pull or merge request with a line `## Serenity: <score>/100 (threshold <threshold>)`, both whole numbers. From the same comment, a line starting `Review: <r> round` gives the review rounds, and a line starting `Gates:` tells whether every gate passed (`Gates: all passed.`). FactoryDeck stores every report, with its time; the format is the one `build-feature` writes and is not configurable.
 
+- **Fix lines**, written by `fix-bug` only, outside code fences like every line here:
+  - `Root cause: <sentence>`: the text after `Root cause: `, trimmed, at most 200 characters (a longer one is cut at 199 with `…`). `Root cause: none`, an empty text or no line gives no root cause.
+  - `Reproduced: <value>`: `failed on main`, `passed on main`, `did not run on main` or `no test`, matched exactly. Any other value or no line gives no value.
+  - The first line of each kind counts. A report of `build-feature` has neither line. FactoryDeck keeps both as `fix-bug` wrote them and does not judge them.
 - **The report that counts** for an issue: the latest report of the merged request that closes it; with none merged, of the most recently updated open one; else none. It gives the score, threshold and rounds shown with the issue, and sorts the features list.
 - **A report refuses the merge** when its score is below its own threshold (strictly), its gates did not all pass, or the project's `build.auto_merge` is `false`. The reasons, in that order: `below threshold`, `gates failed`, `auto-merge off`. `auto-merge off` is a project setting, read at each collection: turning it off later makes every earlier merge with a report `Merged by a person`.
 - A **refusing report**, in the figures of [Stats](stats.md), is one below its threshold or with failed gates; `auto-merge off` does not count there.
 - A merged request with no report counts as `Merged` (or `Merged after a person`).
 - A score below its threshold shows in the warning tone with `below threshold` after it.
 - **Score path**: when the request that counts has two reports or more and its first score differs from its last, the score shows as `Serenity <first> → <last>/100 (threshold <t>)`, with the last report's threshold. The features list keeps the last score only.
+
+## Fix of a bug
+
+The **fix** of a bug is the root cause and the reproduction of the report that counts for it; a report without fix lines gives a fix with neither. With no report, the bug has no fix. It shows in the `Reproduced` column of the [bugs page](bugs.md).
 
 ## Help from a person
 
@@ -74,4 +82,5 @@ Each collected issue has a kind, `feature` or `bug`, from the optional `bugs.lab
 - The **session page** aside: the stage, serenity badge and review rounds of its work item.
 - The **issue page**: the stage, the summary and the [timeline](features.md#issue-page) with every report and needs-spec episode as milestones.
 - The **features list** and the **overview board**: stage, rounds and score per issue.
+- The **bugs page**: stage, score and the fix's reproduction per bug.
 - **Stats**: every figure of the [Autonomy and Quality panels](stats.md).

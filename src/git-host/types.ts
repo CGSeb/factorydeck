@@ -18,12 +18,23 @@ export interface IssueLabel {
   color: string | null;
 }
 
+export const REPRODUCED_VALUES = [
+  'failed-on-main',
+  'passed-on-main',
+  'did-not-run-on-main',
+  'no-test',
+] as const;
+
+export type Reproduced = (typeof REPRODUCED_VALUES)[number];
+
 export interface SerenityReport {
   score: number;
   threshold: number;
   rounds: number | null;
   gatesPassed: boolean;
   at: string;
+  rootCause?: string;
+  reproduced?: Reproduced;
 }
 
 export interface LabelChange {

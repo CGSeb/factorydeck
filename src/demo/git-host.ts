@@ -1,4 +1,5 @@
 import { autonomyDemo } from './autonomy.ts';
+import { BUG_ISSUES, BUG_REQUESTS } from './bug-items.ts';
 import { burstDemo } from './burst.ts';
 import { qualityDemo } from './quality.ts';
 import {
@@ -263,12 +264,14 @@ export function demoGitHub(now: Date): FakeGitHostData {
   const burst = burstDemo(now);
   const issues = [
     ...GITHUB_ISSUES,
+    ...BUG_ISSUES,
     ...autonomy.issues,
     ...quality.issues,
     ...burst.issues,
   ];
   const requests = [
     ...GITHUB_REQUESTS,
+    ...BUG_REQUESTS,
     ...autonomy.requests,
     ...quality.requests,
     ...burst.requests,

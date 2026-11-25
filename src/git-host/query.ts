@@ -6,6 +6,11 @@ import { projectNames } from '../projects/names.ts';
 import { type IssueKind, kindOf } from './kind.ts';
 import { issueMilestones } from './milestones.ts';
 import { type StageLabels, issueOutcome } from './outcome.ts';
+import {
+  type RequestRow,
+  outcomeRequest,
+  requestState,
+} from './outcome-request.ts';
 import { runFinishedAt } from './store.ts';
 import type {
   ChecksSummary,
@@ -17,7 +22,6 @@ import type {
   IssueLabel,
   IssueOutcome,
   IssueState,
-  RequestState,
   WorkItemIssue,
 } from './types.ts';
 
@@ -30,10 +34,6 @@ export type IssueLookup = (key: WorkItemKey) => WorkItemIssue | null;
 
 function issueState(value: string): IssueState {
   return value === 'closed' ? 'closed' : 'open';
-}
-
-function requestState(value: string): RequestState {
-  return value === 'merged' || value === 'closed' ? value : 'open';
 }
 
 function checksOf(value: string): ChecksSummary {
@@ -114,7 +114,7 @@ export async function withIssues<T extends { workItem: number | null }>(
   }));
 }
 
-export type RequestRow = typeof gitHostRequest.$inferSelect;
+export type { RequestRow };
 
 export type IssueRow = typeof gitHostIssue.$inferSelect;
 
@@ -130,13 +130,7 @@ export function outcomeOf(
       reopened: issue.reopened,
       needsSpec: issue.needsSpec,
     },
-    requests.map((request) => ({
-      state: requestState(request.state),
-      mergedAt: request.mergedAt?.toISOString() ?? null,
-      updatedAt: request.updatedAt.toISOString(),
-      report: request.report,
-      reports: request.reports,
-    })),
+    requests.map(outcomeRequest),
     { labels: state.stageLabels, autoMerge: state.autoMerge },
   );
 }

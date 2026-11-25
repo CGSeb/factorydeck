@@ -48,11 +48,11 @@ export interface OutcomeIssue {
   needsSpec: readonly LabelChange[];
 }
 
-function latest(
-  requests: readonly OutcomeRequest[],
-  timeOf: (request: OutcomeRequest) => string,
-): OutcomeRequest | undefined {
-  let found: OutcomeRequest | undefined;
+function latest<T extends OutcomeRequest>(
+  requests: readonly T[],
+  timeOf: (request: T) => string,
+): T | undefined {
+  let found: T | undefined;
   for (const request of requests) {
     if (found === undefined || timeOf(request) > timeOf(found)) found = request;
   }
@@ -109,7 +109,7 @@ function personHelped(
   );
 }
 
-function labelStage(
+export function labelStage(
   labels: readonly string[],
   stageLabels: StageLabels | null,
 ): IssueStage | undefined {
@@ -135,21 +135,34 @@ function mergedStage(
     : 'merged';
 }
 
+export function mergedRequest<T extends OutcomeRequest>(
+  requests: readonly T[],
+): T | undefined {
+  return latest(
+    requests.filter((request) => request.state === 'merged'),
+    (request) => request.mergedAt ?? request.updatedAt,
+  );
+}
+
+export function countedRequest<T extends OutcomeRequest>(
+  requests: readonly T[],
+): T | undefined {
+  return (
+    mergedRequest(requests) ??
+    latest(
+      requests.filter((request) => request.state === 'open'),
+      (request) => request.updatedAt,
+    )
+  );
+}
+
 export function issueOutcome(
   issue: OutcomeIssue,
   requests: readonly OutcomeRequest[],
   settings: OutcomeSettings,
 ): IssueOutcome {
-  const merged = latest(
-    requests.filter((request) => request.state === 'merged'),
-    (request) => request.mergedAt ?? request.updatedAt,
-  );
-  const counted =
-    merged ??
-    latest(
-      requests.filter((request) => request.state === 'open'),
-      (request) => request.updatedAt,
-    );
+  const merged = mergedRequest(requests);
+  const counted = countedRequest(requests);
   const report = counted?.report ?? null;
   const first = counted === undefined ? undefined : firstScore(counted);
   let stage: IssueStage;

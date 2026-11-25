@@ -9,6 +9,7 @@ import {
   isPeriod,
 } from '../overview/types.ts';
 import { type ApiContext, apiContext, isTimeZone } from './api-context.ts';
+import { bugRoutes } from './bug-routes.ts';
 import { type FeatureSource, featureRoutes } from './feature-routes.ts';
 import { frictionRoutes } from './friction-routes.ts';
 import { type GitHostSource, gitHostRoutes } from './git-host-routes.ts';
@@ -49,6 +50,7 @@ function mountSections(
   app.route('/api/skills', skillRoutes(options.skills, context));
   app.route('/api/roles', roleRoutes(options.roles, context));
   app.route('/api/features', featureRoutes(options.features, context));
+  app.route('/api/bugs', bugRoutes(options.features, context));
   app.route('/api/projects', projectRoutes(options.projects, context));
   app.route('/api/git-host', gitHostRoutes(options.gitHost, context));
   app.route('/api/stats', statsRoutes(options.stats, context));

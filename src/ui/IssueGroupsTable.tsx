@@ -82,8 +82,11 @@ function IssueCell({
   );
 }
 
-function SerenityCell({ row }: { row: FeatureRow }): ReactElement {
-  const report = row.outcome?.report ?? null;
+export function SerenityCell({
+  report,
+}: {
+  report: { score: number; threshold: number } | null;
+}): ReactElement {
   if (report === null) return <td className={NUMERIC_CELL}>{MISSING}</td>;
   const passed = report.score >= report.threshold;
   return (
@@ -165,7 +168,7 @@ function IssueRow({
       <td className={NUMERIC_CELL}>
         {rounds === null ? MISSING : formatCount(rounds)}
       </td>
-      <SerenityCell row={row} />
+      <SerenityCell report={row.outcome?.report ?? null} />
       <td className={NUMERIC_CELL}>
         <TokenAmount counts={row.tokenCounts} costUsd={row.costUsd} />
       </td>

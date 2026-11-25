@@ -7,6 +7,7 @@ import {
   workflowConfigPath,
 } from '../config/env.ts';
 import { type Database, createDatabase } from '../db/client.ts';
+import { listBugs } from '../bugs/query.ts';
 import { featureDetail, listFeatures } from '../features/query.ts';
 import {
   frictionOccurrences,
@@ -132,6 +133,7 @@ async function main(): Promise<void> {
       list: (query) => listFeatures(db, query, config),
       detail: (key, query) =>
         featureDetail(db, key, query, { config, state: stateOptions }),
+      bugs: (query) => listBugs(db, query, config),
     },
     projects: {
       factoryStatus: () => factoryStatus(db, hasFactory),

@@ -3,6 +3,7 @@ import {
   collectionResponse,
   refresherOf,
 } from './git-host-fixtures.ts';
+import { bugsLoaderOf } from './bug-fixtures.ts';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { MemoryRouter } from 'react-router';
 import { expect, userEvent, within } from 'storybook/test';
@@ -62,6 +63,7 @@ const loaders = {
   loadRoles: rolesLoader(someRoles),
   loadFeatures: featuresLoaderOf(someFeatures),
   loadFeature: featureLoaderOf(),
+  loadBugs: bugsLoaderOf(),
   loadFactory: factoryLoaderOf(factoryResponse()),
   deleteProject: deleterOf('deleted'),
   loadCollection: collectionLoaderOf(collectionResponse()),

@@ -1,7 +1,8 @@
-import { count, eq, inArray, sql } from 'drizzle-orm';
+import { and, count, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import {
   UNASSIGNED_PROJECT,
+  gitHostProject,
   ingestState,
   session,
   skippedFile,
@@ -98,12 +99,22 @@ export async function factoryStatus(
   db: Database,
   hasFactory: FactoryCheck,
 ): Promise<FactoryStatus> {
-  const [rows, names] = await Promise.all([
+  const [rows, names, bugs] = await Promise.all([
     db
       .select({ project: session.project, sessions: count() })
       .from(session)
       .groupBy(session.project),
     projectNames(db),
+    db
+      .select({ project: gitHostProject.project })
+      .from(gitHostProject)
+      .where(
+        and(
+          isNotNull(gitHostProject.bugLabel),
+          isNotNull(gitHostProject.syncedFrom),
+        ),
+      )
+      .orderBy(gitHostProject.project),
   ]);
   const missing: MissingFactory[] = [];
   for (const { project, sessions } of rows) {
@@ -120,7 +131,12 @@ export async function factoryStatus(
       compare(a.name.toLowerCase(), b.name.toLowerCase()) ||
       compare(a.project, b.project),
   );
-  return { hasSessions: rows.length > 0, missing, projects: names.options() };
+  return {
+    hasSessions: rows.length > 0,
+    missing,
+    projects: names.options(),
+    bugTickets: bugs.map((row) => row.project),
+  };
 }
 
 function compare(a: string, b: string): number {

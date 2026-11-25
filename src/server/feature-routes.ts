@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import type { BugList } from '../bugs/types.ts';
 import {
   type FeatureDetail,
   type FeatureList,
@@ -17,6 +18,7 @@ export interface FeatureSource {
     key: { project: string; number: number },
     query: FeatureQuery,
   ) => Promise<FeatureDetail | undefined>;
+  bugs: (query: FeatureQuery) => Promise<BugList>;
 }
 
 export function featureRoutes(

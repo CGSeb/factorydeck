@@ -5,6 +5,7 @@ import './design/theme-dark.css';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
 import { App } from './App.tsx';
+import { bugsLoader } from './bugs-api.ts';
 import { factoryLoader, projectDeleter } from './factory-api.ts';
 import { featureLoader, featuresLoader } from './features-api.ts';
 import { frictionsLoader } from './frictions-api.ts';
@@ -29,6 +30,7 @@ const loadSkill = skillLoader();
 const loadRoles = rolesLoader();
 const loadFeatures = featuresLoader();
 const loadFeature = featureLoader();
+const loadBugs = bugsLoader();
 const loadFactory = factoryLoader();
 const deleteProject = projectDeleter();
 const loadCollection = collectionLoader();
@@ -53,6 +55,7 @@ if (root) {
         loadRoles={loadRoles}
         loadFeatures={loadFeatures}
         loadFeature={loadFeature}
+        loadBugs={loadBugs}
         loadFactory={loadFactory}
         deleteProject={deleteProject}
         loadCollection={loadCollection}
