@@ -17,6 +17,7 @@ import type { DatabaseCheck } from './health.ts';
 import { type ProjectSource, projectRoutes } from './project-routes.ts';
 import { type RoleSource, roleRoutes } from './role-routes.ts';
 import { type SessionSource, sessionRoutes } from './session-routes.ts';
+import { type SidebarSource, sidebarRoutes } from './sidebar-routes.ts';
 import { type SkillSource, skillRoutes } from './skill-routes.ts';
 import { type StatsSource, statsRoutes } from './stats-routes.ts';
 
@@ -39,6 +40,7 @@ export interface AppOptions {
   projects: ProjectSource;
   gitHost: GitHostSource;
   stats: StatsSource;
+  sidebar?: SidebarSource | undefined;
 }
 
 function mountSections(
@@ -55,6 +57,9 @@ function mountSections(
   app.route('/api/git-host', gitHostRoutes(options.gitHost, context));
   app.route('/api/stats', statsRoutes(options.stats, context));
   app.route('/api/frictions', frictionRoutes(options.stats, context));
+  if (options.sidebar !== undefined) {
+    app.route('/api/sidebar', sidebarRoutes(options.sidebar, context));
+  }
 }
 
 /** The FactoryDeck HTTP app: the JSON API under `/api/`, the UI everywhere else. */

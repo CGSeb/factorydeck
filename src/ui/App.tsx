@@ -18,6 +18,7 @@ import { RolesPage } from './RolesPage.tsx';
 import type { LoadSession, LoadSessions } from './sessions-api.ts';
 import { SessionPage } from './SessionPage.tsx';
 import { SessionsPage } from './SessionsPage.tsx';
+import type { LoadSidebar } from './sidebar-api.ts';
 import type { LoadSkill, LoadSkills } from './skills-api.ts';
 import { SkillPage } from './SkillPage.tsx';
 import { SkillsPage } from './SkillsPage.tsx';
@@ -52,6 +53,7 @@ export interface AppProps {
   loadFlow: LoadFlow;
   loadBugStats: LoadBugStats;
   loadWaiting: LoadWaiting;
+  loadSidebar?: LoadSidebar | undefined;
 }
 
 export function App(props: AppProps): ReactElement {

@@ -96,6 +96,48 @@
   flex: none;
 }
 
+.fd-sidebar-link-icon {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+
+.fd-sidebar-badge,
+.fd-sidebar-pastille {
+  box-sizing: border-box;
+  font-size: var(--fd-text-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--fd-neutral);
+  white-space: nowrap;
+  background: var(--fd-neutral-bg);
+  border-radius: var(--fd-radius-pill);
+}
+
+.fd-sidebar-badge[data-tone='danger'],
+.fd-sidebar-pastille[data-tone='danger'] {
+  color: var(--fd-danger);
+  background: var(--fd-danger-bg);
+}
+
+.fd-sidebar-badge {
+  flex: none;
+  margin-left: auto;
+  padding: 3px 8px;
+}
+
+.fd-sidebar-pastille {
+  position: absolute;
+  top: -7px;
+  right: -9px;
+  min-width: 16px;
+  padding: 2px 4px;
+  font-size: 10px;
+  text-align: center;
+  box-shadow: 0 0 0 2px var(--fd-surface);
+}
+
 .fd-sidebar-label {
   min-width: 0;
   overflow: hidden;

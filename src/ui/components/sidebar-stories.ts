@@ -2,7 +2,7 @@ import type { Decorator } from '@storybook/react-vite';
 import { type ReactNode, createElement, useEffect, useState } from 'react';
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test';
 import { THEME_KEY } from '../design/theme.ts';
-import { SIDEBAR_KEY } from './sidebar-state.ts';
+import { NARROW_QUERY, SIDEBAR_KEY } from './sidebar-state.ts';
 
 export function storedFold(): string | null {
   try {
@@ -213,3 +213,22 @@ export const SECTION_PATHS = [
   '/skills',
   '/roles',
 ];
+
+function NarrowWindow({ children }: { children: ReactNode }): ReactNode {
+  const [original] = useState(() => {
+    const matchMedia = window.matchMedia.bind(window);
+    window.matchMedia = (query) =>
+      matchMedia(query === NARROW_QUERY ? '(min-width: 0px)' : query);
+    return matchMedia;
+  });
+  useEffect(
+    () => () => {
+      window.matchMedia = original;
+    },
+    [original],
+  );
+  return createElement('div', { style: { maxWidth: 360 } }, children);
+}
+
+export const inNarrowWindow: Decorator = (Story) =>
+  createElement(NarrowWindow, { children: createElement(Story) });

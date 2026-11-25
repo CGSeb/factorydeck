@@ -32,6 +32,7 @@ type ThemedProps = SidebarProps & { themeControl: ThemeControl };
 
 export type {
   ProjectSlotControl,
+  SidebarBadge,
   SidebarLink,
   SidebarProject,
   SidebarProps,
