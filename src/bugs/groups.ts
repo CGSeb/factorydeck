@@ -98,7 +98,6 @@ type BaseRow = Omit<BugRow, 'stage' | 'mergedAt' | 'closedAt'>;
 
 interface VersionOutcome {
   outcome: IssueOutcome;
-  requests: readonly OutcomeRequest[];
   versions: readonly Version[];
   fix: BugFix | null;
 }
@@ -167,7 +166,6 @@ function placeBug(
   const base = {
     ...baseRow(issue, project, {
       outcome,
-      requests,
       versions,
       fix: bugFix(closing),
     }),
