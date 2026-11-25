@@ -61,6 +61,7 @@ export interface IssueAccumulator {
   project: string;
   number: number;
   apiCalls: number;
+  callShare: number;
   tokens: number;
   tokenCounts: TokenCounts;
   lastAt: string | null;
@@ -146,6 +147,7 @@ function emptyAccumulator(project: string, number: number): IssueAccumulator {
     project,
     number,
     apiCalls: 0,
+    callShare: 0,
     tokens: 0,
     tokenCounts: emptyCounts(),
     lastAt: null,
@@ -201,6 +203,7 @@ function addGroup(
     cost: group.costUsd === undefined ? undefined : group.costUsd * weight,
   };
   issue.apiCalls += group.calls;
+  issue.callShare += group.calls * weight;
   issue.tokens += share.tokens;
   addCounts(issue.tokenCounts, share.counts);
   if (!orchestration) issue.lastAt = latest(issue.lastAt, group.lastAt);

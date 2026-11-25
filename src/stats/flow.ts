@@ -88,9 +88,9 @@ function scopedTotals(
   for (const [key, issue] of allocation.issues) {
     if (!scope.has(key)) continue;
     tokens += issue.tokens;
-    apiCalls += issue.apiCalls;
+    apiCalls += issue.callShare;
   }
-  return { tokens, apiCalls };
+  return { tokens, apiCalls: Math.round(apiCalls) };
 }
 
 export function periodTokens(

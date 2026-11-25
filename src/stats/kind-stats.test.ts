@@ -60,33 +60,47 @@ describe('stats of one kind', () => {
     expect(flow.previous?.issues).toHaveLength(1);
   });
 
-  it('shares the tokens of that kind, with no work item left out', async () => {
+  it('shares the tokens of that kind, orchestration split, no work item left out', async () => {
     const [all, bug, feature] = await Promise.all(
       [undefined, 'bug' as const, 'feature' as const].map((kind) =>
         flowStats(db, query('7d', kind), DEFAULT_CONFIG, factory),
       ),
     );
     expect(all?.current.tokens).toEqual({
-      total: 3_900_000,
-      droppedWork: 500_000,
+      total: 4_250_000,
+      droppedWork: 550_000,
       noWorkItem: 400_000,
       rework: 2_000_000,
-      apiCalls: 4,
+      apiCalls: 5,
     });
     expect(bug?.current.tokens).toEqual({
-      total: 2_500_000,
-      droppedWork: 500_000,
+      total: 2_750_000,
+      droppedWork: 550_000,
       noWorkItem: 0,
       rework: 2_000_000,
-      apiCalls: 2,
+      apiCalls: 3,
     });
     expect(feature?.current.tokens).toEqual({
-      total: 1_000_000,
+      total: 1_100_000,
       droppedWork: 0,
       noWorkItem: 0,
       rework: 0,
       apiCalls: 1,
     });
+  });
+
+  it('adds the tokens and calls of both kinds up to all, with no work item', async () => {
+    const [all, bug, feature] = await Promise.all(
+      [undefined, 'bug' as const, 'feature' as const].map((kind) =>
+        flowStats(db, query('7d', kind), DEFAULT_CONFIG, factory),
+      ),
+    );
+    const empty = { total: 0, apiCalls: 0, noWorkItem: 0 };
+    const whole = all?.current.tokens ?? empty;
+    const bugs = bug?.current.tokens ?? empty;
+    const features = feature?.current.tokens ?? empty;
+    expect(bugs.total + features.total + whole.noWorkItem).toBe(whole.total);
+    expect(bugs.apiCalls + features.apiCalls).toBe(whole.apiCalls - 1);
   });
 
   it('lists only the issues of that kind waiting for a person', async () => {

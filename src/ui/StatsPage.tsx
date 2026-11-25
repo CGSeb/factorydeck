@@ -18,7 +18,7 @@ import { TrendBars } from './components/TrendBars.tsx';
 import { formatElapsed } from './format.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { KIND_PARAM, useKindParam } from './kind-filter.ts';
-import { KindFilter } from './KindFilter.tsx';
+import { KindFilterSlot } from './KindFilterSlot.tsx';
 import { useSkillFilters } from './skills-api.ts';
 import {
   type StatsLoaders,
@@ -270,11 +270,12 @@ export function StatsPage({
             onChange={(period: Period) => setFilters({ ...filters, period })}
           />
         }
-        {...(bugs?.status === 'ok' && bugs.bugs.bugTickets
+        {...(bugs === undefined ||
+        (bugs.status === 'ok' && bugs.bugs.bugTickets)
           ? {
               controls: (
-                <KindFilter
-                  kinds={bugs.bugs.kinds}
+                <KindFilterSlot
+                  kinds={bugs?.status === 'ok' ? bugs.bugs.kinds : undefined}
                   value={kind}
                   onChange={setKind}
                 />
