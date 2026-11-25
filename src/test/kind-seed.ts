@@ -17,7 +17,7 @@ export const PLAIN = '/work/plain';
 export const NOW = new Date('2026-03-18T12:00:00Z');
 const HOUR = 3_600_000;
 export const DAY = 24 * HOUR;
-const LABELS = {
+export const LABELS = {
   ready: 'agent:ready',
   working: 'agent:working',
   needs_spec: 'agent:needs-spec',
@@ -37,7 +37,7 @@ interface Merge {
   reports?: SerenityReport[];
 }
 
-interface Seed {
+export interface Seed {
   project?: string;
   number: number;
   labels: string[];
@@ -48,7 +48,7 @@ interface Seed {
   needsSpec?: LabelChange[];
 }
 
-async function seed(
+export async function seed(
   db: Database,
   {
     project = APP,
@@ -97,7 +97,12 @@ async function seed(
   }
 }
 
-function call(sessionId: string, at: string, input: number, agent?: string) {
+export function call(
+  sessionId: string,
+  at: string,
+  input: number,
+  agent?: string,
+): typeof apiCall.$inferInsert {
   callNumber += 1;
   return {
     sourcePath: `/logs/${sessionId}.jsonl`,
@@ -113,9 +118,13 @@ function call(sessionId: string, at: string, input: number, agent?: string) {
   };
 }
 
-function builder(id: string, number: number) {
+export function builder(
+  id: string,
+  number: number,
+  sessionId = 's1',
+): typeof subAgent.$inferInsert {
   return {
-    sessionId: 's1',
+    sessionId,
     id,
     agentType: 'builder',
     description: `Build #${String(number)}`,

@@ -19,6 +19,7 @@ import {
   bucketCounts,
 } from './autonomy.ts';
 import { type StatsBounds, earliestMerge, statsBounds } from './bounds.ts';
+import { type KindScope, kindTotals } from './kind-calls.ts';
 import { kinded, ofKind, valuesOf } from './kinded.ts';
 import { earliestReport, refusing, storedReports } from './stops.ts';
 import type {
@@ -79,28 +80,14 @@ export function flowIssue(
   };
 }
 
-function scopedTotals(
-  allocation: Allocation,
-  scope: ReadonlySet<string>,
-): { tokens: number; apiCalls: number } {
-  let tokens = 0;
-  let apiCalls = 0;
-  for (const [key, issue] of allocation.issues) {
-    if (!scope.has(key)) continue;
-    tokens += issue.tokens;
-    apiCalls += issue.callShare;
-  }
-  return { tokens, apiCalls: Math.round(apiCalls) };
-}
-
 export function periodTokens(
   allocation: Allocation,
   dropped: ReadonlySet<string>,
   rework: number,
-  scope?: ReadonlySet<string>,
+  scope?: KindScope,
 ): FlowTokens {
   const { tokens, apiCalls } =
-    scope === undefined ? allocation.totals : scopedTotals(allocation, scope);
+    scope === undefined ? allocation.totals : kindTotals(allocation, scope);
   let droppedWork = 0;
   for (const [key, issue] of allocation.issues) {
     if (dropped.has(key)) droppedWork += issue.tokens;
@@ -122,7 +109,7 @@ export function summarizeFlow(
   issues: readonly LoadedIssue[],
   bounds: StatsBounds,
   usage: FlowUsage,
-  scope?: ReadonlySet<string>,
+  scope?: KindScope,
 ): FlowStats {
   const dropped = new Set(
     issues
@@ -209,7 +196,7 @@ async function reworkTokens(
 interface FlowIssues {
   issues: LoadedIssue[];
   bounds: StatsBounds;
-  scope: ReadonlySet<string> | undefined;
+  scope: KindScope | undefined;
 }
 
 async function flowIssues(
@@ -231,12 +218,16 @@ async function flowIssues(
     ...query,
     earliestMerge: earliestMerge(valuesOf(loaded).map(({ facts }) => facts)),
   });
-  const issues = ofKind(loaded, query.kind);
-  const keys = issues.map(({ issue }) => issueKey(issue.project, issue.number));
+  const kinds = new Map(
+    loaded.map(({ kind, value: { issue } }) => [
+      issueKey(issue.project, issue.number),
+      kind,
+    ]),
+  );
   return {
-    issues,
+    issues: ofKind(loaded, query.kind),
     bounds,
-    scope: query.kind === undefined ? undefined : new Set(keys),
+    scope: query.kind === undefined ? undefined : { kind: query.kind, kinds },
   };
 }
 
