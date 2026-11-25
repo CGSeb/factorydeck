@@ -1,7 +1,7 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { createElement } from 'react';
-import { MemoryRouter, Route, Routes } from 'react-router';
-import { expect, userEvent, within } from 'storybook/test';
+import { Link, MemoryRouter, Route, Routes } from 'react-router';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 import {
   BUGS_NOW,
   bugList,
@@ -182,6 +182,41 @@ export const ShowMore: Story = {
     await expect(
       canvas.queryByRole('button', { name: 'Show more' }),
     ).toBeNull();
+  },
+};
+
+export const ShowMoreResetsOnPeriodChange: Story = {
+  args: { loadBugs: bugsLoaderOf(bugList({ open: manyOpen })) },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole('rowheader', { name: 'Open bug 1 (#10000)' });
+    await userEvent.click(canvas.getByRole('button', { name: 'Show more' }));
+    await expect(rowHeaders(canvasElement)).toHaveLength(25);
+    await userEvent.click(canvas.getByRole('button', { name: 'Last 30 days' }));
+    await waitFor(() => expect(rowHeaders(canvasElement)).toHaveLength(20));
+    await expect(canvas.getByText('20 of 25')).toBeVisible();
+  },
+};
+
+export const ShowMoreResetsOnProjectChange: Story = {
+  args: { loadBugs: bugsLoaderOf(bugList({ open: manyOpen })) },
+  render: (args) => (
+    <>
+      <BugsPage {...args} />
+      <Link to={`/bugs?period=7d&project=${encodeURIComponent(APP)}`}>
+        Choose example-app
+      </Link>
+    </>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole('rowheader', { name: 'Open bug 1 (#10000)' });
+    await userEvent.click(canvas.getByRole('button', { name: 'Show more' }));
+    await expect(rowHeaders(canvasElement)).toHaveLength(25);
+    await userEvent.click(
+      canvas.getByRole('link', { name: 'Choose example-app' }),
+    );
+    await waitFor(() => expect(rowHeaders(canvasElement)).toHaveLength(20));
   },
 };
 

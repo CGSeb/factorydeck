@@ -273,4 +273,23 @@ describe('deleting a project', () => {
       '/work/zeta',
     ]);
   });
+
+  it('drops a deleted project from the bug tickets', async () => {
+    const gone = await factoryProject('gone-app');
+    const kept = await factoryProject('kept-app');
+    await writeSession('g1', gone);
+    await writeSession('k1', kept);
+    await ingest(db, logs);
+    const syncedFrom = new Date('2026-03-01T10:00:00Z');
+    await db.insert(gitHostProject).values([
+      { project: gone, bugLabel: 'bug', syncedFrom },
+      { project: kept, bugLabel: 'bug', syncedFrom },
+    ]);
+    await rm(factoryFile(gone));
+    expect((await factoryStatus(db, hasFactory)).bugTickets).toEqual(
+      [gone, kept].sort(),
+    );
+    expect(await deleteProject(db, gone, hasFactory)).toBe('deleted');
+    expect((await factoryStatus(db, hasFactory)).bugTickets).toEqual([kept]);
+  });
 });

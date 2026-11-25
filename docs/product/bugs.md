@@ -16,7 +16,7 @@ The bugs of the selection in three groups, in this order, each under a header ro
 - `Fixing`: every open bug at stage `Working` or `In review`, whatever the period, by latest activity in the period first (as the `Last activity` sort of the features list); bugs without activity in the period come last.
 - `Fixed`: the bugs at a merged [stage](outcomes.md#stages) whose [merge time](outcomes.md#help-from-a-person) falls in the period, and the bugs `Closed without merge` whose close time falls in it, latest merge or close first.
 
-Ties go to the highest number. Each group shows 20 rows, then `Show more` adds 20 more.
+Ties go to the highest number. Each group shows 20 rows, then `Show more` adds 20 more. A change of the period or of the project shows each group from its first 20 rows again.
 
 Open bugs show whatever the period, because the question is how long they have been waiting; fixed and closed bugs show by the time they ended, in the period. A **reopened bug** that is open again leaves `Fixed`: it shows in `Open` or `Fixing` by the stage of its labels (`Open` with none), with its age from its creation, and keeps the fix of its merged request.
 

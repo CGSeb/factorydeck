@@ -84,6 +84,7 @@ function useFactoryStatus(loadFactory: LoadFactory): {
             ...current,
             missing: current.missing.filter((row) => row.project !== project),
             projects: current.projects.filter((row) => row.project !== project),
+            bugTickets: current.bugTickets.filter((root) => root !== project),
           }
         : current,
     );

@@ -205,7 +205,7 @@ function BugsTable({
         {BUG_GROUPS.filter((group) => list.groups[group].length > 0).map(
           (group) => (
             <BugGroupRows
-              key={group}
+              key={`${group} ${filters.period} ${filters.project ?? ''}`}
               rows={list.groups[group]}
               columns={columns}
               context={{ filters, group, now, projectColor }}
