@@ -147,6 +147,18 @@ describe('the page of a bug by version', () => {
     expect(today.detail?.milestones).toEqual(first.detail?.milestones);
   });
 
+  it('keeps the report of a request merged after a close on the timeline of the version that close ended', async () => {
+    const first = await pageOf(13, 1);
+    const second = await pageOf(13, 2);
+    const reports = (page: FeatureDetail) =>
+      page.detail?.milestones.flatMap((milestone) =>
+        milestone.kind === 'report' ? [milestone.request.number] : [],
+      );
+    expect(first.fix).toMatchObject({ request: { number: 25 } });
+    expect(reports(first)).toEqual([25]);
+    expect(reports(second)).toEqual([]);
+  });
+
   it('refuses a version that the bug does not have, and any version of a feature', async () => {
     await db
       .insert(gitHostIssue)

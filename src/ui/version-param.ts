@@ -41,11 +41,29 @@ export function steppedParams(
   return found;
 }
 
+function strayVersion(
+  response: FeatureResponse,
+  kind: IssueKind,
+  search: string,
+): boolean {
+  return (
+    kind === 'feature' &&
+    response.status === 'ok' &&
+    response.feature.kind !== 'bug' &&
+    new URLSearchParams(search).has('version')
+  );
+}
+
 export function dropsVersion(
   response: FeatureResponse,
-  { requested }: VersionStep,
+  {
+    step,
+    kind,
+    search,
+  }: { step: VersionStep; kind: IssueKind; search: string },
 ): boolean {
-  if (requested === undefined) return false;
+  const { requested } = step;
+  if (requested === undefined) return strayVersion(response, kind, search);
   if (response.status === 'invalid-version') return true;
   if (response.status !== 'ok') return false;
   const { version } = response.feature;

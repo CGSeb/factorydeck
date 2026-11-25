@@ -78,6 +78,18 @@ function bugLead(feature: FeatureDetail, bug: { now: Date } | null): ReactNode {
   );
 }
 
+function frictionsLink(
+  feature: FeatureDetail,
+  period: Period,
+  bug: { now: Date } | null,
+): string {
+  return frictionsHref({
+    period: bug === null ? period : 'all',
+    project: feature.project,
+    issue: feature.number,
+  });
+}
+
 export function IssueAside({
   feature,
   colors,
@@ -112,11 +124,7 @@ export function IssueAside({
       reworked={detail?.outcome.reworked ?? null}
       frictions={{
         count: feature.frictions,
-        href: frictionsHref({
-          period,
-          project: feature.project,
-          issue: feature.number,
-        }),
+        href: frictionsLink(feature, period, bug),
       }}
       lead={bugLead(feature, bug)}
       renderLink={renderRouterLink}

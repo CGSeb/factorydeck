@@ -9,7 +9,7 @@ import {
 } from 'react-router';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { APP, LIB } from './feature-fixtures.ts';
-import { bugPageLoader } from './bug-detail-fixtures.ts';
+import { bugPageLoader, versionedBugLoader } from './bug-detail-fixtures.ts';
 import type { LoadFeature } from './features-api.ts';
 import { FeaturePage } from './FeaturePage.tsx';
 import { NO_FIX_TEXT } from './FixBlock.tsx';
@@ -195,5 +195,36 @@ export const IssueOfNoKind: Story = {
       /^\/bugs\/28\?project=%2Fhome%2Fdev%2Fexample-lib&period=all$/,
     );
     await expect(canvas.getByRole('link', { name: '← Bugs' })).toBeVisible();
+  },
+};
+
+export const VersionOfABugOnTheFeaturesPage: Story = {
+  args: { loadFeature: versionedBugLoader() },
+  parameters: {
+    entry: `/features/76?project=${encodeURIComponent(APP)}&period=all&version=2`,
+  },
+  play: async ({ canvasElement }) => {
+    await within(canvasElement).findByText('Version 2 of 3');
+    await expect(address(canvasElement)).toHaveTextContent(
+      /^\/bugs\/76\?project=%2Fhome%2Fdev%2Fexample-app&period=all&version=2$/,
+    );
+  },
+};
+
+export const VersionOnAFeaturePage: Story = {
+  parameters: {
+    entry: `/features/52?project=${encodeURIComponent(APP)}&period=all&version=2`,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole('heading', { name: 'Export button (#52)' });
+    await waitFor(() =>
+      expect(address(canvasElement)).toHaveTextContent(
+        /^\/features\/52\?project=%2Fhome%2Fdev%2Fexample-app&period=all$/,
+      ),
+    );
+    await expect(
+      canvas.queryByRole('navigation', { name: 'Versions' }),
+    ).toBeNull();
   },
 };

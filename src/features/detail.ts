@@ -176,7 +176,12 @@ export async function versionDetailOf(
   if (version !== undefined && bug === undefined) return INVALID_VERSION;
   const [{ issue, known }, frictions] = await Promise.all([
     issueUsage(db, key, { query: scoped, bug }, { config, markers }),
-    issueFrictionCount(db, config, key, startAt),
+    issueFrictionCount(
+      db,
+      config,
+      key,
+      bug === undefined ? { startAt } : versionWindow(bug.version),
+    ),
   ]);
   if (status.status !== 'found' && !(await known())) return undefined;
   return {

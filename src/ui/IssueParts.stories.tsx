@@ -126,6 +126,9 @@ export const BugAsideWithVersions: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByText('Fix')).toBeVisible();
     await expect(canvas.getByText('Version 1')).toBeVisible();
+    await expect(
+      canvas.getByRole('link', { name: '7' }).getAttribute('href'),
+    ).toContain('period=all');
   },
 };
 

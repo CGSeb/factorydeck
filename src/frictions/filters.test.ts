@@ -142,30 +142,26 @@ describe('an issue filter', () => {
 describe('issueFrictionCount', () => {
   it('counts the frictions of an issue in the period', async () => {
     const week = '2026-03-12T00:00:00Z';
+    const count = (
+      number: number,
+      window: { startAt: string | null; endAt?: string | null },
+    ) =>
+      issueFrictionCount(db, DEFAULT_CONFIG, { project: APP, number }, window);
+    expect(await count(7, { startAt: week })).toBe(3);
+    expect(await count(7, { startAt: null })).toBe(4);
+    expect(await count(8, { startAt: null })).toBe(0);
+  });
+
+  it('counts the frictions of an issue before the end of a window', async () => {
+    const week = '2026-03-12T00:00:00Z';
     expect(
       await issueFrictionCount(
         db,
         DEFAULT_CONFIG,
         { project: APP, number: 7 },
-        week,
+        { startAt: null, endAt: week },
       ),
-    ).toBe(3);
-    expect(
-      await issueFrictionCount(
-        db,
-        DEFAULT_CONFIG,
-        { project: APP, number: 7 },
-        null,
-      ),
-    ).toBe(4);
-    expect(
-      await issueFrictionCount(
-        db,
-        DEFAULT_CONFIG,
-        { project: APP, number: 8 },
-        null,
-      ),
-    ).toBe(0);
+    ).toBe(1);
   });
 });
 

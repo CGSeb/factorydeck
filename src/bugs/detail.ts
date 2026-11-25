@@ -109,6 +109,9 @@ export function versionDetail(
     ),
     outcome,
     milestones: detail.milestones.filter((milestone) => {
+      if (milestone.kind === 'report') {
+        return requests.includes(milestone.request.number);
+      }
       const at = Date.parse(milestone.at);
       return at >= start && at <= end;
     }),

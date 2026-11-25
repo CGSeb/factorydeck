@@ -146,7 +146,7 @@ function Loaded({
   const { pathname, search } = useLocation();
   const { kind } = page;
   if (response === undefined) return <StatusLine>Loading…</StatusLine>;
-  if (dropsVersion(response, page.step)) {
+  if (dropsVersion(response, { step: page.step, kind, search })) {
     return <Navigate replace to={withoutVersion(pathname, search)} />;
   }
   if (response.status === 'unreachable') {
