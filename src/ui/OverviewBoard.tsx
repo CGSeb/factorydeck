@@ -7,7 +7,7 @@ import { noKindText, shownKind } from './kind-filter.ts';
 import { KindFilter } from './KindFilter.tsx';
 import { renderRouterLink } from './Layout.tsx';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
-import { boardColumns } from './overview-board.ts';
+import { boardColumns, isBoardEmpty } from './overview-board.ts';
 import type { SkillFilters } from './skills-api.ts';
 import type { Block } from './TokensDialog.tsx';
 import './overview-page.css';
@@ -31,12 +31,13 @@ function BoardColumns({
   kind: IssueKind | null;
   now: Date;
 }): ReactElement {
-  if (kind !== null && features.rows.length === 0) {
+  const columns = boardColumns(features, filters, now, kind);
+  if (kind !== null && isBoardEmpty(columns)) {
     return <StatusLine>{noKindText(kind)}</StatusLine>;
   }
   return (
     <div className="fd-overview-board">
-      {boardColumns(features, filters, now, kind).map((column) => (
+      {columns.map((column) => (
         <StageColumn
           key={column.group}
           {...column}

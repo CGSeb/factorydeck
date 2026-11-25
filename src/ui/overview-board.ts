@@ -106,6 +106,10 @@ export function boardColumns(
   });
 }
 
+export function isBoardEmpty(columns: readonly BoardColumn[]): boolean {
+  return columns.every((column) => column.count === 0);
+}
+
 function stagePath(
   group: StageGroup,
   filters: SkillFilters,

@@ -54,3 +54,12 @@ const BUG_NUMBERS: ReadonlySet<number> = new Set([
 export const bugBoardFeatures: FeatureRow[] = fullBoardFeatures.map((row) =>
   row.project === APP && BUG_NUMBERS.has(row.number) ? asBug(row) : row,
 );
+
+export const offBoardBugFeatures: FeatureRow[] = [
+  ...fullBoardFeatures,
+  asBug({
+    ...mergedRow(70, 'Stale cache', 3),
+    outcome: outcome('closed', null),
+  }),
+  asBug({ ...mergedRow(71, 'Lost draft', 4), outcome: null }),
+];
