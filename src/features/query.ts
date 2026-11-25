@@ -1,6 +1,7 @@
 import { and, eq, isNotNull, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import { gitHostProject } from '../db/schema.ts';
+import { bugFixOf } from '../bugs/fix.ts';
 import { issueFrictionCount } from '../frictions/query.ts';
 import { issueDetail, lookupOutcomes } from '../git-host/query.ts';
 import { detailInPeriod } from '../git-host/milestones.ts';
@@ -289,6 +290,7 @@ export async function featureDetail(
     projectName: names.label(key.project),
     issue: status,
     kind,
+    fix: await bugFixOf(db, key, kind),
     detail: detailInPeriod(detail, startAt),
     roles: [...(issue?.roles.values() ?? [])]
       .map(roleOfAccumulator)

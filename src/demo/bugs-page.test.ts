@@ -57,13 +57,15 @@ describe('demo sessions on the bugs page', () => {
       [...list.groups.fixing, ...list.groups.fixed].find(
         (row) => row.number === number,
       )?.fix;
-    expect(fixOf(41)).toEqual({
+    expect(fixOf(41)).toMatchObject({
       rootCause: 'The export reads the unfiltered rows.',
       reproduced: 'failed-on-main',
+      request: { number: 45 },
     });
-    expect(fixOf(44)).toEqual({
+    expect(fixOf(44)).toMatchObject({
       rootCause: null,
       reproduced: 'passed-on-main',
+      request: { number: 46 },
     });
     expect(list.counts.closed).toBeGreaterThan(0);
   });

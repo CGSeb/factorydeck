@@ -1,4 +1,4 @@
-import { Fragment, type ReactElement } from 'react';
+import { Fragment, type ReactElement, type ReactNode } from 'react';
 import type { ChecksSummary, RequestState } from '../../git-host/types.ts';
 import { MISSING, formatCount } from '../format.ts';
 import { Aside } from './Aside.tsx';
@@ -47,6 +47,7 @@ export interface IssueSummaryProps {
   labels: string[] | null;
   reworked: boolean | null;
   frictions?: SummaryFrictions | undefined;
+  lead?: ReactNode;
   renderLink?: RenderLink;
 }
 
@@ -168,10 +169,12 @@ export function IssueSummary({
   labels,
   reworked,
   frictions,
+  lead,
   renderLink = renderAnchor,
 }: IssueSummaryProps): ReactElement {
   return (
     <Aside>
+      {lead}
       <div>
         <p className="fd-summary-label">Tokens</p>
         <Amount amount={total} size="figure" placement="below" />

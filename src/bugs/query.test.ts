@@ -180,6 +180,10 @@ describe('listBugs', () => {
     expect(all.groups.fixed.find((row) => row.number === 5)?.fix).toEqual({
       rootCause: null,
       reproduced: null,
+      request: {
+        number: 50,
+        url: 'https://github.com/example-org/example-app/pull/50',
+      },
     });
   });
 

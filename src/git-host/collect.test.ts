@@ -25,7 +25,8 @@ import {
 } from '../test/git-host.ts';
 import { createTestDatabase } from '../test/postgres.ts';
 import { collect, collectSummary } from './collect.ts';
-import { collectionStatus, issueDetail, lookupIssues } from './query.ts';
+import { collectionStatus, issueDetail } from './query.ts';
+import { lookupIssues } from './work-items.ts';
 
 let db: Database;
 let close: () => Promise<void>;

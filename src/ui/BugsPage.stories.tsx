@@ -111,7 +111,7 @@ export const ThreeGroups: Story = {
       canvas.getByRole('link', { name: 'Empty state shows twice (#70)' }),
     ).toHaveAttribute(
       'href',
-      `/features/70?project=${encodeURIComponent(APP)}&period=7d`,
+      `/bugs/70?project=${encodeURIComponent(APP)}&period=7d`,
     );
   },
 };

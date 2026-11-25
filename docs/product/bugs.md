@@ -28,7 +28,7 @@ A bug in version 2 or more shows a muted `v<k>` tag right after `<title> (#<n>)`
 
 ## Columns
 
-- `Bug`: `<title> (#<n>)` as on the features list, then the `v<k>` tag from version 2, linked to the bug's [issue page](features.md#issue-page) with the period.
+- `Bug`: `<title> (#<n>)` as on the features list, then the `v<k>` tag from version 2, linked to the [page of the bug](#page-of-a-bug) with the period.
 - `Project`, only with `All projects`.
 - `Stage`: its stage badge.
 - `Age`, from the start of the current version (the creation for version 1, the reopening after): in `Open` and `Fixing`, `Open for <duration>`, from that start to now; in `Fixed`, `Fixed in <duration>`, from that start to its merge, or `Closed after <duration>`, from that start to its close, for `Closed without merge`. Durations as in the [conventions](navigation.md#figures-and-formats).
@@ -41,6 +41,33 @@ A bug in version 2 or more shows a muted `v<k>` tag right after `<title> (#<n>)`
 - With no bug in any group: `No open bug, and no bug fixed in this period.`
 - With no project of the selection using bug tickets: `No project here uses bug tickets. Run /setup-factory in a project to add them.`, and no table.
 
+## Page of a bug
+
+`/bugs/<n>?project=<root>` is the [issue page](features.md#issue-page) of a bug: the same header, timeline and summary, with the same rules, the period pills and the `period` parameter. The `Bugs` link of the sidebar is highlighted on it.
+
+- The back link is `← <project name> bugs`, to `/bugs` with the bug's project and the period.
+- Choosing another project opens `/bugs` with that project and the period.
+
+Every link to a bug's issue page goes to `/bugs/<n>`: the rows of `/bugs`, the cards of the overview board, the rows of `/features`, the `Needs a person` rows, and the work item links of the session list and of the session page (the session's and each sub-agent's). Any other link to an issue page opens `/features/<n>`, which moves a bug to its page.
+
+### Fix block
+
+At the top of the summary, `Fix`, from the [fix](outcomes.md#fix-of-a-bug) of the report that counts in the bug's current version, as in the `Reproduced` column:
+
+- `Root cause`: its sentence, or `Not given` when the report has none;
+- `Reproduced`: its value with its tone, as in the `Reproduced` column above, or `—`;
+- `Pull request`: `#<n>` linked to the request of that report.
+
+A bug with no fix shows `No fix reviewed yet.` in place of the three lines. A report of an earlier version, an earlier report of the same request, or a report of another request never shows here; they stay as milestones on the timeline.
+
+### Redirects
+
+The kind at the time the page loads picks the page:
+
+- `/features/<n>?…` of a bug replaces its address with `/bugs/<n>?…`, and `/bugs/<n>?…` of a feature with `/features/<n>?…`, keeping every parameter. Replacing adds no history entry: the browser's back button skips it.
+- An issue of no kind (not found, or its project not collected) stays on the address asked. On `/bugs/<n>` it shows `Issue not found.` with `← Bugs` to `/bugs` with the project; on `/features/<n>` it shows the issue page, or `Issue not found.` with `← Features` when FactoryDeck knows nothing of it.
+- An issue relabelled on the git host moves to the other address at its next load after the collection.
+
 ## API
 
-`GET /api/bugs?project=<root>&period=<period>&tz=<tz>` answers `bugTickets` (`true` when a project of the selection has a bug label), `groups` with `open`, `fixing` and `fixed`, and `counts` (`open`, `fixed`, `closed`, the figures of the header). Each bug has its `number`, `project`, `projectName`, `title`, `url`, `stage`, `createdAt` (the issue's creation), `version` (`{ "number": <k>, "count": <k>, "startedAt": <ISO time> }`: `number` is the current version, `count` the number of versions, equal here, and `startedAt` the start of the current version), `mergedAt` (merged bugs of `Fixed`) and `closedAt` (`Closed without merge`), otherwise `null`. `stage`, `mergedAt`, `closedAt`, `fix`, `score`, `threshold`, `lastAt` and the tokens follow the current version. `fix` (`{ "rootCause": <string|null>, "reproduced": "failed-on-main" | "passed-on-main" | "did-not-run-on-main" | "no-test" | null }`, or `null` with no report); `score` and `threshold` (`null` with no report); `lastAt`, its latest call in the period and the current version; and `tokens`, `tokenCounts` with the four kinds, and `costUsd`. Invalid parameters answer `400`.
+`GET /api/bugs?project=<root>&period=<period>&tz=<tz>` answers `bugTickets` (`true` when a project of the selection has a bug label), `groups` with `open`, `fixing` and `fixed`, and `counts` (`open`, `fixed`, `closed`, the figures of the header). Each bug has its `number`, `project`, `projectName`, `title`, `url`, `stage`, `createdAt` (the issue's creation), `version` (`{ "number": <k>, "count": <k>, "startedAt": <ISO time> }`: `number` is the current version, `count` the number of versions, equal here, and `startedAt` the start of the current version), `mergedAt` (merged bugs of `Fixed`) and `closedAt` (`Closed without merge`), otherwise `null`. `stage`, `mergedAt`, `closedAt`, `fix`, `score`, `threshold`, `lastAt` and the tokens follow the current version. `fix` (`{ "rootCause": <string|null>, "reproduced": "failed-on-main" | "passed-on-main" | "did-not-run-on-main" | "no-test" | null, "request": { "number": <n>, "url": <string> } }`, where `request` is the request of the report that counts, or `null` with no report); `score` and `threshold` (`null` with no report); `lastAt`, its latest call in the period and the current version; and `tokens`, `tokenCounts` with the four kinds, and `costUsd`. Invalid parameters answer `400`. `GET /api/features/<n>` gives a bug's `fix` with the same shape, from its current version.

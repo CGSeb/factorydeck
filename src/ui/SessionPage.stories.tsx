@@ -115,6 +115,45 @@ export const WithSubAgentsAndSkills: Story = {
   },
 };
 
+export const WorkingOnABug: Story = {
+  args: {
+    loadSession: detailLoader(
+      detailResponse({
+        ...sessionWithSubAgents,
+        kind: 'bug',
+        subAgents: sessionWithSubAgents.subAgents.map((agent) =>
+          agent.workItem === 52 ? { ...agent, kind: 'bug' as const } : agent,
+        ),
+      }),
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const workItem = await canvas.findByText(/^Work item/, {
+      selector: 'span',
+    });
+    await expect(
+      within(workItem).getByRole('link', { name: '#52' }),
+    ).toHaveAttribute(
+      'href',
+      '/bugs/52?project=%2Fhome%2Fdev%2Fexample-app&period=7d',
+    );
+    const agents = within(canvas.getByRole('region', { name: 'Sub-agents' }));
+    await expect(
+      agents
+        .getAllByRole('link', { name: '#52' })
+        .map((link) => link.getAttribute('href')),
+    ).toEqual([
+      '/bugs/52?project=%2Fhome%2Fdev%2Fexample-app&period=7d',
+      '/bugs/52?project=%2Fhome%2Fdev%2Fexample-app&period=7d',
+    ]);
+    await expect(agents.getByRole('link', { name: '#53' })).toHaveAttribute(
+      'href',
+      '/features/53?project=%2Fhome%2Fdev%2Fexample-app&period=7d',
+    );
+  },
+};
+
 export const WithAnOutcome: Story = {
   args: { loadSession: detailLoader(detailResponse(sessionWithSubAgents)) },
   play: async ({ canvasElement }) => {

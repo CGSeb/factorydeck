@@ -17,7 +17,7 @@ One select, with no visible label (accessible name `Project`), chooses the proje
 
 - The choice is the `project` URL parameter (the project root), nothing else: no browser storage, no server setting. `All projects` removes it; `?project=` empty means `All projects`. A root is matched exactly: a trailing `/` or another letter case is an unknown project.
 - An unknown project shows as an extra selected option (its folder name) and the pages show no data for it.
-- On a list page, choosing a project stays on the page and keeps its other parameters; the session list starts again from its first page. On a session page it opens `/sessions` with that project; on an issue page, `/features`; both keep `period`.
+- On a list page, choosing a project stays on the page and keeps its other parameters; the session list starts again from its first page. On a session page it opens `/sessions` with that project; on an issue page, `/features`, or `/bugs` on a bug's page; both keep `period`.
 - The sidebar links and the links inside pages carry `project` and only that. A link that names its own project (an issue row, a dot on a chart) keeps it.
 - The select is hidden while FactoryDeck holds no session. A deleted project leaves it at once; if it was selected, the select falls back to `All projects`.
 - With `All projects`, project columns and project tags show; with one project they are hidden.

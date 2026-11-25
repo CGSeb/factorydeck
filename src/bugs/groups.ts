@@ -2,7 +2,6 @@ import { kindOf } from '../git-host/kind.ts';
 import {
   type OutcomeRequest,
   type StageLabels,
-  countedRequest,
   labelStage,
   mergedRequest,
 } from '../git-host/outcome.ts';
@@ -11,13 +10,10 @@ import {
   outcomeRequest,
 } from '../git-host/outcome-request.ts';
 import { type IssueRow, outcomeOf } from '../git-host/query.ts';
-import type {
-  IssueOutcome,
-  IssueStage,
-  SerenityReport,
-} from '../git-host/types.ts';
+import type { IssueOutcome, IssueStage } from '../git-host/types.ts';
 import { emptyCounts } from '../overview/tokens.ts';
 import type { TokenCounts } from '../overview/types.ts';
+import { bugFix } from './fix.ts';
 import type { BugCounts, BugFix, BugGroup, BugRow } from './types.ts';
 import {
   type Version,
@@ -80,14 +76,6 @@ interface Placed {
   endAt: string | null;
 }
 
-function fixOf(report: SerenityReport | null | undefined): BugFix | null {
-  if (report == null) return null;
-  return {
-    rootCause: report.rootCause ?? null,
-    reproduced: report.reproduced ?? null,
-  };
-}
-
 function inPeriod(at: string, startAt: string | null): boolean {
   return startAt === null || Date.parse(at) >= Date.parse(startAt);
 }
@@ -112,12 +100,13 @@ interface VersionOutcome {
   outcome: IssueOutcome;
   requests: readonly OutcomeRequest[];
   versions: readonly Version[];
+  fix: BugFix | null;
 }
 
 function baseRow(
   issue: IssueRow,
   project: BugProject,
-  { outcome, requests, versions }: VersionOutcome,
+  { outcome, versions, fix }: VersionOutcome,
 ): Omit<BaseRow, keyof BugUsage> {
   const current = currentVersion(versions);
   return {
@@ -132,7 +121,7 @@ function baseRow(
       count: versions.length,
       startedAt: new Date(current.startedAt).toISOString(),
     },
-    fix: fixOf(countedRequest(requests)?.report),
+    fix,
     score: outcome.report?.score ?? null,
     threshold: outcome.report?.threshold ?? null,
   };
@@ -176,7 +165,12 @@ function placeBug(
   const outcome = outcomeOf(issue, closing, project);
   const requests = closing.map(outcomeRequest);
   const base = {
-    ...baseRow(issue, project, { outcome, requests, versions }),
+    ...baseRow(issue, project, {
+      outcome,
+      requests,
+      versions,
+      fix: bugFix(closing),
+    }),
     ...(sources.usage(issue.project, issue.number) ?? NO_USAGE),
   };
   const ended = endedAt(issue, outcome.stage, requests, current);

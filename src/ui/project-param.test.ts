@@ -79,5 +79,11 @@ describe('projectTarget', () => {
         undefined,
       ),
     ).toBe('/features?period=all');
+    expect(
+      projectTarget(
+        at('/bugs/12', '?project=%2Fwork%2Fapp&period=all'),
+        '/work/lib',
+      ),
+    ).toBe('/bugs?period=all&project=%2Fwork%2Flib');
   });
 });

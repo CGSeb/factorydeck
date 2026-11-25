@@ -56,7 +56,7 @@ function thread({
   };
 }
 
-const mergedByPersonIssue: IssueDetail = {
+export const mergedByPersonIssue: IssueDetail = {
   ...githubIssue,
   state: 'closed',
   labels: [
@@ -70,12 +70,13 @@ const mergedByPersonIssue: IssueDetail = {
   },
 };
 
-const exportFeature: FeatureDetail = {
+export const exportFeature: FeatureDetail = {
   project: APP,
   projectName: nameOf(APP),
   number: 52,
   issue: { status: 'found', title: githubIssue.title, url: githubIssue.url },
   kind: 'feature',
+  fix: null,
   detail: mergedByPersonIssue,
   roles: [
     {
@@ -179,6 +180,7 @@ export const uncollectedFeature: FeatureDetail = {
   number: 28,
   issue: { status: 'not-collected' },
   kind: null,
+  fix: null,
   detail: null,
   roles: [],
   orchestration: null,
@@ -290,7 +292,7 @@ export function featureResponse(feature: FeatureDetail): FeatureResponse {
 }
 
 export function featureLoaderOf(
-  features: FeatureDetail[] = [
+  features: readonly FeatureDetail[] = [
     exportFeature,
     uncollectedFeature,
     reviewFeature,

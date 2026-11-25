@@ -1,0 +1,5 @@
+.fd-fix-none {
+  margin: 0;
+  font-size: var(--fd-text-sm);
+  color: var(--fd-ink-2);
+}

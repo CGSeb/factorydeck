@@ -46,6 +46,18 @@ describe('session links', () => {
     );
   });
 
+  it('opens the bug page of a bug', () => {
+    expect(issueHref(52, '/work/lib', both, 'bug')).toBe(
+      '/bugs/52?project=%2Fwork%2Flib&period=7d',
+    );
+    expect(issueHref(52, '/work/lib', none, 'bug')).toBe(
+      '/bugs/52?project=%2Fwork%2Flib',
+    );
+    expect(issueHref(52, '/work/lib', both, 'feature')).toBe(
+      '/features/52?project=%2Fwork%2Flib&period=7d',
+    );
+  });
+
   it('opens the skill page with the period and the project', () => {
     expect(skillHref('kit:write-spec', both)).toBe(
       '/skills/kit%3Awrite-spec?period=7d&project=%2Fwork%2Fapp',

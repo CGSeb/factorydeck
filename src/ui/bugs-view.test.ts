@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bugRow } from './bug-fixtures.ts';
+import { bugRow, fixRequest } from './bug-fixtures.ts';
 import { bugsLoader } from './bugs-api.ts';
 import { ageText, bugSummary, reproducedOf } from './bugs-view.ts';
 
@@ -77,12 +77,22 @@ describe('bugSummary', () => {
 describe('reproducedOf', () => {
   it('gives a dash with no fix or no value', () => {
     expect(reproducedOf(null)).toEqual({ text: '—', tone: null });
-    expect(reproducedOf({ rootCause: 'x', reproduced: null })).toEqual({
+    expect(
+      reproducedOf({
+        rootCause: 'x',
+        reproduced: null,
+        request: fixRequest(1),
+      }),
+    ).toEqual({
       text: '—',
       tone: null,
     });
     expect(
-      reproducedOf({ rootCause: null, reproduced: 'failed-on-main' }),
+      reproducedOf({
+        rootCause: null,
+        reproduced: 'failed-on-main',
+        request: fixRequest(1),
+      }),
     ).toEqual({ text: 'Failed on main', tone: 'success' });
   });
 });

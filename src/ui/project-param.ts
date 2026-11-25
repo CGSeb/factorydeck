@@ -20,6 +20,7 @@ export function withProject(path: string, project: string | undefined): string {
 const DETAIL_LISTS: readonly { detail: RegExp; list: string }[] = [
   { detail: /^\/sessions\/[^/]+\/?$/, list: '/sessions' },
   { detail: /^\/features\/[^/]+\/?$/, list: '/features' },
+  { detail: /^\/bugs\/[^/]+\/?$/, list: '/bugs' },
 ];
 
 export function projectTarget(

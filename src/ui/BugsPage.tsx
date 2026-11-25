@@ -12,7 +12,6 @@ import {
   GroupHeaderRow,
   NUMERIC_CELL,
 } from './components/DataTable.tsx';
-import { pillStyle } from './components/label-styles.ts';
 import { PageHeader } from './components/PageHeader.tsx';
 import { PeriodPills } from './components/PeriodPills.tsx';
 import { ProjectTag } from './components/ProjectTag.tsx';
@@ -29,9 +28,9 @@ import {
   NO_BUG_TICKETS_TEXT,
   ageText,
   bugSummary,
-  reproducedOf,
 } from './bugs-view.ts';
 import { featurePath } from './features-api.ts';
+import { ReproducedValue } from './FixBlock.tsx';
 import { SerenityCell } from './IssueGroupsTable.tsx';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import {
@@ -55,16 +54,9 @@ const MARKERS: Record<BugGroup, GroupMarker> = {
 };
 
 function ReproducedCell({ row }: { row: BugRow }): ReactElement {
-  const { text, tone } = reproducedOf(row.fix);
   return (
     <td>
-      {tone === null ? (
-        text
-      ) : (
-        <span data-tone={tone} style={pillStyle(tone)}>
-          {text}
-        </span>
-      )}
+      <ReproducedValue fix={row.fix} />
     </td>
   );
 }
@@ -107,7 +99,10 @@ function BugTableRow({
   return (
     <tr>
       <th scope="row">
-        <Link className="fd-issue-link" to={featurePath(row, context.filters)}>
+        <Link
+          className="fd-issue-link"
+          to={featurePath({ ...row, kind: 'bug' }, context.filters)}
+        >
           {row.title} <span className="fd-issue-number">(#{row.number})</span>
           {row.version.number > 1 && (
             <>

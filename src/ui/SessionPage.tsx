@@ -63,6 +63,7 @@ function SubAgentRow({
         <IssueNumberLink
           workItem={agent.workItem}
           issue={agent.issue}
+          kind={agent.kind}
           project={project}
           scope={scope}
         />
@@ -210,7 +211,14 @@ function SessionLine({
       {session.workItem !== null && (
         <span>
           Work item{' '}
-          <Link to={issueHref(session.workItem, session.project, scope)}>
+          <Link
+            to={issueHref(
+              session.workItem,
+              session.project,
+              scope,
+              session.kind,
+            )}
+          >
             #{session.workItem}
           </Link>
         </span>

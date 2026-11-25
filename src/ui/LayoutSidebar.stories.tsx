@@ -147,6 +147,23 @@ export const BugsLinkAfterFeatures: Story = {
   },
 };
 
+export const BugsLinkOnABugPage: Story = {
+  args: { loadFactory: withBugTickets([APP_ROOT]) },
+  decorators: [
+    sectionAt(`/bugs/70?project=${encodeURIComponent(APP_ROOT)}&period=7d`),
+    withStoredBugTickets([]),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole('link', { name: 'Bugs' }),
+    ).toHaveAttribute('aria-current', 'page');
+    await expect(
+      canvas.getByRole('link', { name: 'Features' }),
+    ).not.toHaveAttribute('aria-current');
+  },
+};
+
 export const BugsLinkFolded: Story = {
   args: { loadFactory: withBugTickets([APP_ROOT]) },
   decorators: [

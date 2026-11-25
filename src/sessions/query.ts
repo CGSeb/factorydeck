@@ -1,7 +1,8 @@
 import { type SQL, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import { sessionFrictionCount } from '../frictions/load.ts';
-import { issueDetail, withIssues } from '../git-host/query.ts';
+import { issueDetail } from '../git-host/query.ts';
+import { withIssues } from '../git-host/work-items.ts';
 import { periodStart, select } from '../overview/query.ts';
 import { totalTokens } from '../overview/tokens.ts';
 import { type ProjectNames, projectNames } from '../projects/names.ts';
@@ -90,7 +91,7 @@ function summaryOf(
   usage: Usage,
   { config, markers }: Rules,
   names: ProjectNames,
-): Omit<SessionSummary, 'tokens' | 'tokenCounts' | 'issue'> & {
+): Omit<SessionSummary, 'tokens' | 'tokenCounts' | 'issue' | 'kind'> & {
   usage: Usage;
 } {
   const project = text(row['project']);
@@ -217,7 +218,7 @@ function subAgentsOf(
   usageRows: Row[],
   { config, markers }: Rules,
   summary: Pick<SessionSummary, 'id' | 'project' | 'title' | 'workItem'>,
-): Omit<SubAgentSummary, 'issue'>[] {
+): Omit<SubAgentSummary, 'issue' | 'kind'>[] {
   const byAgent = usageBy(usageRows, 'sub_agent');
   const rules = rulesFor(config, summary.project);
   const sessionMarkers = markers.get(summary.id);
@@ -298,8 +299,7 @@ export async function sessionDetail(
     workItem === null ? null : issueDetail(db, project, workItem),
   ]);
   return {
-    ...summary,
-    issue: main?.issue ?? null,
+    ...(main ?? { ...summary, issue: null, kind: null }),
     issueDetail: detail,
     cwd: typeof row['cwd'] === 'string' ? row['cwd'] : null,
     tokens: usage.tokens,

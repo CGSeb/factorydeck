@@ -40,6 +40,7 @@ const detail: SessionDetail = {
   gitBranches: ['main'],
   workItem: null,
   issue: null,
+  kind: null,
   issueDetail: null,
   state: 'waiting',
   firstAt: '2026-01-05T08:00:00.000Z',

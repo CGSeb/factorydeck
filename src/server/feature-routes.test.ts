@@ -60,6 +60,7 @@ const feature: FeatureDetail = {
   number: 7,
   issue: { status: 'not-collected' },
   kind: null,
+  fix: null,
   detail: null,
   roles: [],
   orchestration: null,

@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import { text } from '../features/values.ts';
-import { lookupIssues } from '../git-host/query.ts';
+import { lookupIssues } from '../git-host/work-items.ts';
 import { periodStart, select } from '../overview/query.ts';
 import type { Period } from '../overview/types.ts';
 import { type ProjectNames, projectNames } from '../projects/names.ts';

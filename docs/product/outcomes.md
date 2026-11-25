@@ -87,7 +87,7 @@ Each collected issue has a kind, `feature` or `bug`, from the optional `bugs.lab
 - An issue is a **bug** when one of its current labels equals the project's bug label, after trimming and without letter case; otherwise it is a **feature**. A project with no bug label has only features, and an issue with both the spec label and the bug label is a bug.
 - The kind depends only on the issue's current labels and the current setting, never on the label history, the title, the branch or the pull request: a relabel on the git host, or a `bugs.label` changed in `factory.yml`, shows at the next collection for every period, without reading the project again in full. A former kind is not kept.
 - Every issue has exactly one kind, so the features and the bugs of a list add up to its issues. The kind changes no stage, score, round, token or other figure.
-- The API gives it as `kind` on each issue row of `GET /api/features` (`null` for an issue not found or not collected), on `GET /api/features/<n>`, and on each row of `GET /api/stats/waiting`. Nothing on screen shows it yet.
+- The API gives it as `kind` on each issue row of `GET /api/features` (`null` for an issue not found or not collected), on `GET /api/features/<n>`, on each row of `GET /api/stats/waiting`, and beside the work item of each session and sub-agent of `GET /api/sessions` and `GET /api/sessions/<id>` (`null` without a work item, or for an issue not found or not collected). It picks the issue page a link opens: `/bugs/<n>` for a bug, `/features/<n>` otherwise.
 
 ## Where outcomes show
 

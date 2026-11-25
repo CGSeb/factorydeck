@@ -42,6 +42,18 @@ describe('boardColumns with kinds', () => {
     expect(working?.cards[0]?.badge).toEqual([{ kind: 'bug' }]);
   });
 
+  it('links a bug card to its bug page', () => {
+    const rows = [
+      asBug(row(1, 'working', '2026-01-09T12:00:00.000Z')),
+      row(2, 'working', '2026-01-09T11:00:00.000Z'),
+    ];
+    const working = boardColumns(featureList(rows), ALL, NOW)[1];
+    expect(working?.cards.map((card) => card.issue.href)).toEqual([
+      `/bugs/1?project=${encodeURIComponent(APP)}&period=7d`,
+      `/features/2?project=${encodeURIComponent(APP)}&period=7d`,
+    ]);
+  });
+
   it('carries the kind to the more link', () => {
     const rows = Array.from({ length: 7 }, (_, index) =>
       asBug(row(index + 1, 'working', '2026-01-09T12:00:00.000Z')),

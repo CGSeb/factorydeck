@@ -76,6 +76,10 @@ export function App(props: AppProps): ReactElement {
           element={<FeaturePage loadFeature={loadFeature} />}
         />
         <Route path="bugs" element={<BugsPage {...props} />} />
+        <Route
+          path="bugs/:number"
+          element={<FeaturePage loadFeature={loadFeature} kind="bug" />}
+        />
         <Route path="stats" element={<StatsPage {...props} />} />
         <Route path="frictions" element={<FrictionsPage {...props} />} />
         <Route

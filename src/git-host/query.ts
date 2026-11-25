@@ -25,13 +25,6 @@ import type {
   WorkItemIssue,
 } from './types.ts';
 
-export interface WorkItemKey {
-  project: string;
-  number: number | null;
-}
-
-export type IssueLookup = (key: WorkItemKey) => WorkItemIssue | null;
-
 function issueState(value: string): IssueState {
   return value === 'closed' ? 'closed' : 'open';
 }
@@ -48,70 +41,6 @@ function gitHostOf(value: string | null): GitHostName | null {
 
 function compareText(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
-}
-
-export async function lookupIssues(
-  db: Database,
-  keys: readonly WorkItemKey[],
-): Promise<IssueLookup> {
-  const wanted = keys.filter(
-    (key): key is { project: string; number: number } => key.number !== null,
-  );
-  const projects = [...new Set(wanted.map((key) => key.project))];
-  if (projects.length === 0) return () => null;
-  const [collected, issues] = await Promise.all([
-    db
-      .select({ project: gitHostProject.project })
-      .from(gitHostProject)
-      .where(
-        and(
-          inArray(gitHostProject.project, projects),
-          isNotNull(gitHostProject.syncedFrom),
-        ),
-      ),
-    db
-      .select({
-        project: gitHostIssue.project,
-        number: gitHostIssue.number,
-        title: gitHostIssue.title,
-        url: gitHostIssue.url,
-      })
-      .from(gitHostIssue)
-      .where(
-        sql`(${gitHostIssue.project}, ${gitHostIssue.number}) in (${sql.join(
-          wanted.map((key) => sql`(${key.project}, ${key.number})`),
-          sql`, `,
-        )})`,
-      ),
-  ]);
-  const done = new Set(collected.map((row) => row.project));
-  const found = new Map(
-    issues.map((row) => [`${String(row.number)} ${row.project}`, row]),
-  );
-  return ({ project, number }) => {
-    if (number === null) return null;
-    if (!done.has(project)) return { status: 'not-collected' };
-    const issue = found.get(`${String(number)} ${project}`);
-    return issue === undefined
-      ? { status: 'not-found' }
-      : { status: 'found', title: issue.title, url: issue.url };
-  };
-}
-
-export async function withIssues<T extends { workItem: number | null }>(
-  db: Database,
-  rows: T[],
-  projectOf: (row: T) => string,
-): Promise<(T & { issue: WorkItemIssue | null })[]> {
-  const keys = rows.map((row) => ({
-    project: projectOf(row),
-    number: row.workItem,
-  }));
-  const issueOf = await lookupIssues(db, keys);
-  return rows.map((row, index) => ({
-    ...row,
-    issue: issueOf(keys[index] ?? { project: '', number: null }),
-  }));
 }
 
 export type { RequestRow };
