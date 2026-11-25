@@ -55,6 +55,19 @@ function labelEventsPage(number: unknown, query: string): Row {
   };
 }
 
+function stateEventsPage(number: unknown, query: string): Row {
+  const size = Number(
+    /stateEvents: timelineItems\(first: (\d+)/.exec(query)?.[1] ?? '100',
+  );
+  const events = data.stateEvents?.[String(number)] ?? [];
+  return {
+    nodes: events.slice(0, size).map((event) => ({
+      __typename: event.state === 'closed' ? 'ClosedEvent' : 'ReopenedEvent',
+      createdAt: event.at,
+    })),
+  };
+}
+
 function githubGraphql(): void {
   const query = graphqlField('query') ?? '';
   if (
@@ -83,16 +96,13 @@ function githubGraphql(): void {
       new Date(updatedOf(row)).getTime() >= new Date(since).getTime(),
   );
   const page = rows.slice(start, start + size);
-  const reopened = new Set(data.reopened ?? []);
   print({
     data: {
       repository: {
         issues: {
           nodes: page.map((row) => ({
             number: row['number'],
-            reopened: {
-              totalCount: reopened.has(Number(row['number'])) ? 1 : 0,
-            },
+            stateEvents: stateEventsPage(row['number'], query),
             labelEvents: labelEventsPage(row['number'], query),
           })),
           pageInfo: {
@@ -152,9 +162,10 @@ function gitlabPage(query: URLSearchParams, rows: Row[]): Row[] {
 }
 
 function stateEvents(iid: string | undefined): Row[] {
-  return (data.reopened ?? []).includes(Number(iid))
-    ? [{ state: 'closed' }, { state: 'reopened' }]
-    : [];
+  return (data.stateEvents?.[iid ?? ''] ?? []).map((event) => ({
+    state: event.state,
+    created_at: event.at,
+  }));
 }
 
 function issueAnswer(

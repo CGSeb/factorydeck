@@ -1,5 +1,10 @@
 import { autonomyDemo } from './autonomy.ts';
-import { BUG_ISSUES, BUG_REQUESTS } from './bug-items.ts';
+import {
+  BUG_ISSUES,
+  BUG_REQUESTS,
+  REOPENED_BUG_REQUESTS,
+  bugStateEvents,
+} from './bug-items.ts';
 import { burstDemo } from './burst.ts';
 import { qualityDemo } from './quality.ts';
 import {
@@ -7,7 +12,7 @@ import {
   type DemoRequest,
   serenityReport,
 } from './demo-items.ts';
-import type { FakeGitHostData } from './fake-git-host.ts';
+import { type FakeGitHostData, reopenedOnce } from './fake-git-host.ts';
 
 export type Row = Record<string, unknown>;
 
@@ -272,6 +277,7 @@ export function demoGitHub(now: Date): FakeGitHostData {
   const requests = [
     ...GITHUB_REQUESTS,
     ...BUG_REQUESTS,
+    ...REOPENED_BUG_REQUESTS,
     ...autonomy.requests,
     ...quality.requests,
     ...burst.requests,
@@ -281,7 +287,10 @@ export function demoGitHub(now: Date): FakeGitHostData {
     repository: GITHUB_REPOSITORY,
     issues: issues.map((issue) => githubIssueRow(now, issue)),
     requests: requests.map((request) => githubRequestRow(now, request)),
-    reopened: quality.reopened,
+    stateEvents: {
+      ...reopenedOnce(quality.reopened, ago(now, 3 * DAY), ago(now, 2 * DAY)),
+      ...bugStateEvents(now),
+    },
     labelEvents: Object.fromEntries(
       issues.map((issue) => [
         String(issue.number),

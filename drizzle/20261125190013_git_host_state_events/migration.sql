@@ -1,0 +1,2 @@
+ALTER TABLE "git_host_issue" ADD COLUMN "state_events" jsonb DEFAULT '[]' NOT NULL;--> statement-breakpoint
+ALTER TABLE "git_host_project" ADD COLUMN "state_events_read" boolean DEFAULT false NOT NULL;

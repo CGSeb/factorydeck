@@ -1,6 +1,7 @@
 import { gitlabChecks } from './checks.ts';
 import type { RunCli } from './command.ts';
 import { reportHistory } from './report.ts';
+import { stateOf } from './state-events.ts';
 import {
   type GitHostReader,
   type Json,
@@ -22,6 +23,7 @@ import type {
   LabelEvent,
   RequestRecord,
   RequestState,
+  StateEvent,
 } from './types.ts';
 
 type Colors = Map<string, string | null>;
@@ -37,7 +39,7 @@ function labelsOf(value: unknown, colors: Colors): IssueLabel[] {
 }
 
 export interface IssueEvents {
-  reopened: boolean;
+  stateEvents: StateEvent[];
   labelEvents: LabelEvent[];
 }
 
@@ -59,7 +61,7 @@ export function gitlabIssue(
     createdAt,
     closedAt: time(row['closed_at']),
     updatedAt: requiredTime(row['updated_at'], createdAt),
-    reopened: events.get(number)?.reopened ?? false,
+    ...stateOf(events.get(number)?.stateEvents ?? []),
     labelEvents: events.get(number)?.labelEvents ?? [],
   };
 }
@@ -72,6 +74,15 @@ export function gitlabLabelEvents(rows: readonly Json[]): LabelEvent[] {
     if (label === '' || at === null) return [];
     if (action !== 'add' && action !== 'remove') return [];
     return [{ label, added: action === 'add', at }];
+  });
+}
+
+export function gitlabStateEvents(rows: readonly Json[]): StateEvent[] {
+  return rows.flatMap((row): StateEvent[] => {
+    const state = text(row['state']);
+    const at = time(row['created_at']);
+    if (at === null || (state !== 'closed' && state !== 'reopened')) return [];
+    return [{ state, at }];
   });
 }
 
@@ -200,10 +211,12 @@ async function issueEvents(
 ): Promise<Map<number, IssueEvents>> {
   const found = new Map<number, IssueEvents>();
   for (const iid of numbers) {
-    const states = await pages(
-      api,
-      `issues/${String(iid)}/resource_state_events`,
-      new URLSearchParams(),
+    const states = objects(
+      await api.run([
+        'api',
+        `${api.project}/issues/${String(iid)}/resource_state_events?${new URLSearchParams({ per_page: String(PAGE_SIZE), page: '1' }).toString()}`,
+      ]),
+      'resource_state_events',
     );
     const labels = await pages(
       api,
@@ -211,7 +224,7 @@ async function issueEvents(
       new URLSearchParams(),
     );
     found.set(iid, {
-      reopened: states.some((event) => text(event['state']) === 'reopened'),
+      stateEvents: gitlabStateEvents(states),
       labelEvents: gitlabLabelEvents(labels),
     });
   }

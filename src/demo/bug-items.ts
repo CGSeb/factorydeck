@@ -1,4 +1,7 @@
 import { type DemoIssue, type DemoRequest, fixReport } from './demo-items.ts';
+import type { FakeGitHostData } from './fake-git-host.ts';
+
+const HOUR = 3_600_000;
 
 export const BUG_ISSUES: DemoIssue[] = [
   {
@@ -31,6 +34,20 @@ export const BUG_ISSUES: DemoIssue[] = [
     labels: ['bug', 'agent:review'],
     daysAgo: 2,
   },
+  {
+    number: 47,
+    title: '047 · Upload stalls at 99%',
+    closed: false,
+    labels: ['bug', 'agent:ready'],
+    daysAgo: 6,
+  },
+  {
+    number: 49,
+    title: '049 · Session expires early',
+    closed: false,
+    labels: ['bug', 'agent:working'],
+    daysAgo: 8,
+  },
 ];
 
 export const BUG_REQUESTS: DemoRequest[] = [
@@ -57,3 +74,69 @@ export const BUG_REQUESTS: DemoRequest[] = [
     report: fixReport(84, 'none', 'passed on main'),
   },
 ];
+
+export const REOPENED_BUG_REQUESTS: DemoRequest[] = [
+  {
+    number: 48,
+    title: 'fix: Upload stalls at 99%',
+    state: 'merged',
+    closes: [47],
+    checks: 'passing',
+    hoursAgo: 97,
+    report: fixReport(90, 'The last chunk is never sent.', 'failed on main'),
+  },
+  {
+    number: 50,
+    title: 'fix: Session expires early',
+    state: 'merged',
+    closes: [49],
+    checks: 'passing',
+    hoursAgo: 145,
+    report: fixReport(86, 'The expiry uses local time.', 'failed on main'),
+  },
+  {
+    number: 51,
+    title: 'fix: Session expires early, again',
+    state: 'merged',
+    closes: [49],
+    checks: 'passing',
+    hoursAgo: 73,
+    report: fixReport(83, 'The refresh resets the expiry.', 'no test'),
+  },
+  {
+    number: 52,
+    title: 'fix: Session expires early, third try',
+    state: 'open',
+    closes: [49],
+    checks: 'pending',
+    hoursAgo: 10,
+    report: fixReport(81, 'A clock skew on the server.', 'failed on main'),
+  },
+];
+
+const REOPENED_BUG_EVENTS: Record<number, ['closed' | 'reopened', number][]> = {
+  47: [
+    ['closed', 96],
+    ['reopened', 30],
+  ],
+  49: [
+    ['closed', 144],
+    ['reopened', 120],
+    ['closed', 72],
+    ['reopened', 20],
+  ],
+};
+
+export function bugStateEvents(
+  now: Date,
+): NonNullable<FakeGitHostData['stateEvents']> {
+  return Object.fromEntries(
+    Object.entries(REOPENED_BUG_EVENTS).map(([number, events]) => [
+      number,
+      events.map(([state, hoursAgo]) => ({
+        state,
+        at: new Date(now.getTime() - hoursAgo * HOUR).toISOString(),
+      })),
+    ]),
+  );
+}

@@ -19,6 +19,7 @@ export function bugRow(
 ): BugRow {
   const project = extra.project ?? APP;
   const tokens = extra.tokens ?? 0;
+  const createdAt = extra.createdAt ?? hoursAgo(30);
   return {
     project,
     projectName: nameOf(project),
@@ -26,7 +27,8 @@ export function bugRow(
     title,
     url: `https://github.com/example-org/example-app/issues/${String(number)}`,
     stage: 'open',
-    createdAt: hoursAgo(30),
+    createdAt,
+    version: { number: 1, count: 1, startedAt: createdAt },
     mergedAt: null,
     closedAt: null,
     fix: null,
@@ -114,6 +116,53 @@ export const fixedBugs: BugRow[] = [
     closedAt: hoursAgo(30),
   }),
 ];
+
+export function inVersion(
+  row: BugRow,
+  number: number,
+  startedHoursAgo: number,
+): BugRow {
+  return {
+    ...row,
+    version: { number, count: number, startedAt: hoursAgo(startedHoursAgo) },
+  };
+}
+
+export const reopenedOpenBug = inVersion(
+  bugRow(80, 'Upload stalls at 99%', {
+    stage: 'open',
+    createdAt: hoursAgo(120),
+  }),
+  2,
+  5,
+);
+
+export const reopenedFixedBug = inVersion(
+  bugRow(81, 'Totals round twice', {
+    stage: 'merged',
+    createdAt: hoursAgo(200),
+    mergedAt: hoursAgo(3),
+    fix: { rootCause: 'Rounding in two places', reproduced: 'failed-on-main' },
+    score: 86,
+    threshold: 80,
+    lastAt: hoursAgo(3.5),
+    tokens: 820_000,
+  }),
+  2,
+  27,
+);
+
+export const thirdVersionBug = inVersion(
+  bugRow(82, 'Session expires early', {
+    stage: 'working',
+    createdAt: hoursAgo(300),
+    fix: { rootCause: 'A clock skew', reproduced: 'passed-on-main' },
+    lastAt: hoursAgo(1),
+    tokens: 410_000,
+  }),
+  3,
+  8,
+);
 
 export function bugList(
   groups: Partial<BugList['groups']> = {},

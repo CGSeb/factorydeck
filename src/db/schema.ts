@@ -14,7 +14,11 @@ import {
 } from 'drizzle-orm/pg-core';
 import { UNASSIGNED_PROJECT } from '../projects/label.ts';
 import type { StageLabels } from '../git-host/outcome.ts';
-import type { LabelChange, SerenityReport } from '../git-host/types.ts';
+import type {
+  LabelChange,
+  SerenityReport,
+  StateEvent,
+} from '../git-host/types.ts';
 
 /** A session log already read, so the next ingestion resumes where it stopped. */
 export const sourceFile = pgTable('source_file', {
@@ -236,6 +240,10 @@ export const gitHostIssue = pgTable(
     closedAt: timestamp('closed_at', { withTimezone: true }),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
     reopened: boolean().notNull().default(false),
+    stateEvents: jsonb('state_events')
+      .$type<StateEvent[]>()
+      .notNull()
+      .default([]),
     needsSpec: jsonb('needs_spec').$type<LabelChange[]>().notNull().default([]),
   },
   (table) => [primaryKey({ columns: [table.project, table.number] })],
@@ -275,6 +283,7 @@ export const gitHostProject = pgTable('git_host_project', {
   bugLabel: text('bug_label'),
   historyRead: boolean('history_read').notNull().default(false),
   fixRead: boolean('fix_read').notNull().default(false),
+  stateEventsRead: boolean('state_events_read').notNull().default(false),
 });
 
 export const gitHostRun = pgTable('git_host_run', {

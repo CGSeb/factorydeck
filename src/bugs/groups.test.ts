@@ -28,6 +28,7 @@ function issue(number: number, labels: string[]): IssueRow {
     closedAt: null,
     updatedAt: new Date('2026-03-01T10:00:00Z'),
     reopened: false,
+    stateEvents: [],
     needsSpec: [],
   };
 }

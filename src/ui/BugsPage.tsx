@@ -109,6 +109,17 @@ function BugTableRow({
       <th scope="row">
         <Link className="fd-issue-link" to={featurePath(row, context.filters)}>
           {row.title} <span className="fd-issue-number">(#{row.number})</span>
+          {row.version.number > 1 && (
+            <>
+              {' '}
+              <span className="fd-bug-version" aria-hidden="true">
+                v{row.version.number}
+              </span>
+              <span className="fd-visually-hidden">
+                Version {row.version.number}
+              </span>
+            </>
+          )}
         </Link>
       </th>
       {color !== undefined && (

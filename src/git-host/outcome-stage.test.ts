@@ -2,7 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { gitHostProject } from '../db/schema.ts';
-import { FACTORY_WORKFLOW } from '../demo/fake-git-host.ts';
+import { FACTORY_WORKFLOW, reopenedOnce } from '../demo/fake-git-host.ts';
 import { hasFactory } from '../ingest/factory.ts';
 import { T1, T2, addProject, calls, ghRequest } from '../test/git-host.ts';
 import {
@@ -93,7 +93,7 @@ describe('reworked', () => {
           merged(22, [2]),
           open(23, [3]),
         ],
-        { reopened: [2] },
+        { stateEvents: reopenedOnce([2], T1, T1) },
       ),
     );
     expect(await outcomeOf(root, 1)).toMatchObject({ reworked: true });

@@ -11,6 +11,12 @@ export interface BugFix {
   reproduced: Reproduced | null;
 }
 
+export interface BugVersion {
+  number: number;
+  count: number;
+  startedAt: string;
+}
+
 export interface BugRow {
   project: string;
   projectName: string;
@@ -19,6 +25,7 @@ export interface BugRow {
   url: string;
   stage: IssueStage;
   createdAt: string;
+  version: BugVersion;
   mergedAt: string | null;
   closedAt: string | null;
   fix: BugFix | null;

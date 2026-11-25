@@ -1,14 +1,19 @@
 import { and, eq, inArray, isNotNull } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import { gitHostIssue, gitHostProject, gitHostRequest } from '../db/schema.ts';
-import { listFeatures } from '../features/query.ts';
+import type { IssueAccumulator } from '../features/allocate.ts';
 import type { FeatureQuery } from '../features/types.ts';
+import { type UsageWindow, usageInWindows } from '../features/usage.ts';
 import { issueKey } from '../features/values.ts';
+import { kindOf } from '../git-host/kind.ts';
+import type { IssueRow } from '../git-host/query.ts';
 import { periodStart } from '../overview/query.ts';
+import { withTokenCounts } from '../overview/tokens.ts';
 import { projectNames } from '../projects/names.ts';
 import type { WorkflowConfig } from '../roles/config.ts';
 import { type BugProject, type BugUsage, bugGroups } from './groups.ts';
 import type { BugCounts, BugList } from './types.ts';
+import { currentVersion, versionsOf } from './versions.ts';
 
 async function bugProjects(
   db: Database,
@@ -66,6 +71,45 @@ export async function bugCounts(
   return { bugTickets: true, counts };
 }
 
+function isBug(issue: IssueRow, bugLabels: Map<string, string>): boolean {
+  const label = bugLabels.get(issue.project);
+  return label !== undefined && kindOf(issue, label) === 'bug';
+}
+
+function bugUsage(issue: IssueAccumulator): BugUsage {
+  const { tokens, tokenCounts } = withTokenCounts(
+    { tokens: issue.tokens },
+    issue.tokenCounts,
+  );
+  return { tokens, tokenCounts, costUsd: issue.costUsd, lastAt: issue.lastAt };
+}
+
+async function bugUsages(
+  db: Database,
+  config: WorkflowConfig,
+  scope: UsageWindow,
+  { issues, bugLabels }: { issues: IssueRow[]; bugLabels: Map<string, string> },
+): Promise<Map<string, BugUsage>> {
+  const accumulators = await usageInWindows(
+    db,
+    config,
+    scope,
+    issues
+      .filter((issue) => isBug(issue, bugLabels))
+      .map((issue) => {
+        const current = currentVersion(versionsOf(issue));
+        return {
+          key: issueKey(issue.project, issue.number),
+          startAt: current.startedAt,
+          endAt: current.endedAt,
+        };
+      }),
+  );
+  return new Map(
+    [...accumulators].map(([key, issue]) => [key, bugUsage(issue)]),
+  );
+}
+
 export async function listBugs(
   db: Database,
   query: FeatureQuery,
@@ -88,21 +132,18 @@ export async function listBugs(
       projects: names.options(),
     };
   }
-  const [[issues, requests], features, startAt] = await Promise.all([
+  const [[issues, requests], startAt] = await Promise.all([
     bugSources(db, roots),
-    listFeatures(db, { ...query, kind: 'bug' }, config),
     periodStart(db, query),
   ]);
-  const usage = new Map<string, BugUsage>(
-    features.rows.map((row) => [
-      issueKey(row.project, row.number),
-      {
-        tokens: row.tokens,
-        tokenCounts: row.tokenCounts,
-        costUsd: row.costUsd,
-        lastAt: row.lastAt,
-      },
-    ]),
+  const usage = await bugUsages(
+    db,
+    config,
+    { project: query.project, startAt },
+    {
+      issues,
+      bugLabels: new Map(projects.map((row) => [row.project, row.bugLabel])),
+    },
   );
   return {
     bugTickets: true,

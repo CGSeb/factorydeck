@@ -7,7 +7,13 @@ import {
   loadMarkers,
   markerSegments,
 } from '../roles/markers.ts';
-import { type Allocation, type Row, allocate, groupOf } from './allocate.ts';
+import {
+  type Allocation,
+  type IssueAccumulator,
+  type Row,
+  allocate,
+  groupOf,
+} from './allocate.ts';
 import { issueKey } from './values.ts';
 import type { FeatureQuery } from './types.ts';
 
@@ -103,4 +109,66 @@ async function windowRows(
       group by a.session_id, s.project, s.title, s.agent, s.git_branch, a.sub_agent_id,
         sa.agent_type, sa.description, sa.git_branch, sa.first_at, fc.first_call_at, marker.idx, a.model, split`,
   );
+}
+
+export interface IssueWindow {
+  key: string;
+  startAt: number;
+  endAt: number | null;
+}
+
+function reached(times: readonly number[], at: number): number {
+  return times.filter((time) => time <= at).length;
+}
+
+export async function usageInWindows(
+  db: Database,
+  config: WorkflowConfig,
+  scope: UsageWindow,
+  windows: readonly IssueWindow[],
+): Promise<Map<string, IssueAccumulator>> {
+  const found = new Map<string, IssueAccumulator>();
+  if (windows.length === 0) return found;
+  const bounds = windows.map((window) => ({
+    ...window,
+    endAt: window.endAt === null ? null : window.endAt + 1,
+  }));
+  const times = [
+    ...new Set(
+      bounds.flatMap((window) =>
+        window.endAt === null
+          ? [window.startAt]
+          : [window.startAt, window.endAt],
+      ),
+    ),
+  ].sort((a, b) => a - b);
+  const markers = await loadMarkers(db, config, { project: scope.project });
+  const rows = await windowRows(db, scope, markers, times);
+  const ranges = new Map<
+    string,
+    { from: number; to: number; keys: string[] }
+  >();
+  for (const window of bounds) {
+    const from = reached(times, window.startAt);
+    const to = window.endAt === null ? Infinity : reached(times, window.endAt);
+    const range = ranges.get(`${String(from)}:${String(to)}`) ?? {
+      from,
+      to,
+      keys: [],
+    };
+    range.keys.push(window.key);
+    ranges.set(`${String(from)}:${String(to)}`, range);
+  }
+  for (const { from, to, keys } of ranges.values()) {
+    const inRange = rows.filter((row) => {
+      const split = Number(row['split']);
+      return split >= from && split < to;
+    });
+    const { issues } = allocate(config, inRange, markers);
+    for (const key of keys) {
+      const issue = issues.get(key);
+      if (issue !== undefined) found.set(key, issue);
+    }
+  }
+  return found;
 }

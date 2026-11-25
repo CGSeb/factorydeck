@@ -1,0 +1,81 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "874ceaf7-c10d-485f-9eac-82ccb823e917",
+  "prevIds": [
+    "030bde85-709d-4180-86a1-c23eaa14d726"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "git_host_issue",
+        "state_events"
+      ],
+      "writes": [
+        "s|col|public.git_host_issue.state_events",
+        "n|col|public.git_host_issue.state_events",
+        "e|col|public.git_host_issue.state_events"
+      ],
+      "reads": [
+        "n|tbl|public.git_host_issue",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "git_host_project",
+        "state_events_read"
+      ],
+      "writes": [
+        "s|col|public.git_host_project.state_events_read",
+        "n|col|public.git_host_project.state_events_read",
+        "e|col|public.git_host_project.state_events_read"
+      ],
+      "reads": [
+        "n|tbl|public.git_host_project",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "git_host_issue",
+        "name": "state_events",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'[]'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "git_host_project",
+        "name": "state_events_read",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

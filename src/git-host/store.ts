@@ -23,6 +23,7 @@ export interface ProjectState {
   outcomeSettings: boolean;
   historyRead: boolean;
   fixRead: boolean;
+  stateEventsRead: boolean;
 }
 
 function isGitHost(value: string | null): value is GitHostName {
@@ -45,6 +46,7 @@ export async function projectState(
     outcomeSettings: row.stageLabels !== null,
     historyRead: row.historyRead,
     fixRead: row.fixRead,
+    stateEventsRead: row.stateEventsRead,
   };
 }
 
@@ -122,6 +124,7 @@ const EXCLUDED_ISSUE = {
   closedAt: sql`excluded.closed_at`,
   updatedAt: sql`excluded.updated_at`,
   reopened: sql`excluded.reopened`,
+  stateEvents: sql`excluded.state_events`,
   needsSpec: sql`excluded.needs_spec`,
 };
 
@@ -219,6 +222,7 @@ export async function saveSuccess(
       bugLabel: settings.bugLabel,
       historyRead: true,
       fixRead: true,
+      stateEventsRead: true,
     };
     await tx
       .insert(gitHostProject)

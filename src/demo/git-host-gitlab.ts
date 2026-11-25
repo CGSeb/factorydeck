@@ -11,7 +11,11 @@ import {
   type DemoRequest,
   serenityReport,
 } from './demo-items.ts';
-import { FACTORY_WORKFLOW, type FakeGitHostData } from './fake-git-host.ts';
+import {
+  FACTORY_WORKFLOW,
+  type FakeGitHostData,
+  reopenedOnce,
+} from './fake-git-host.ts';
 
 const GITLAB_PROJECT = 'example-group/example-api';
 
@@ -120,7 +124,7 @@ export function demoGitLab(now: Date): FakeGitHostData {
         ],
       ]),
     ),
-    reopened: [22],
+    stateEvents: reopenedOnce([22], ago(now, 3 * DAY), ago(now, 2 * DAY)),
     closes: Object.fromEntries(
       GITLAB_REQUESTS.map((request) => [
         String(request.number),

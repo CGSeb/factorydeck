@@ -36,6 +36,33 @@ describe('ageText', () => {
   });
 });
 
+describe('ageText of a reopened bug', () => {
+  const reopened = {
+    createdAt: '2026-03-01T10:00:00Z',
+    version: { number: 2, count: 2, startedAt: '2026-03-12T12:25:00Z' },
+  };
+
+  it('counts from the start of the current version, not the creation', () => {
+    expect(ageText(bugRow(1, 'A', reopened), 'open', NOW)).toBe(
+      'Open for 3 h 05 min',
+    );
+    expect(
+      ageText(
+        bugRow(1, 'A', { ...reopened, mergedAt: '2026-03-12T14:25:00Z' }),
+        'fixed',
+        NOW,
+      ),
+    ).toBe('Fixed in 2 h 00 min');
+    expect(
+      ageText(
+        bugRow(1, 'A', { ...reopened, closedAt: '2026-03-12T13:25:00Z' }),
+        'fixed',
+        NOW,
+      ),
+    ).toBe('Closed after 1 h 00 min');
+  });
+});
+
 describe('bugSummary', () => {
   it('adds the closed bugs only when there are some', () => {
     expect(bugSummary({ open: 3, fixed: 2, closed: 0 })).toBe(
