@@ -119,7 +119,10 @@ export function inside(at: number, { from, to }: Window): boolean {
   return (from === null || at >= from) && (to === null || at < to);
 }
 
-function mergedIn(issues: readonly IssueFacts[], window: Window): IssueFacts[] {
+export function mergedIn<T extends IssueFacts>(
+  issues: readonly T[],
+  window: Window,
+): T[] {
   return issues.filter(
     (issue) => issue.mergedAt !== null && inside(issue.mergedAt, window),
   );

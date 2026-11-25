@@ -4,8 +4,8 @@ import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import type { OverviewQuery } from '../overview/query.ts';
 import {
+  type OverviewData,
   type OverviewResponse,
-  type UsageOverview,
   isPeriod,
 } from '../overview/types.ts';
 import { type ApiContext, apiContext, isTimeZone } from './api-context.ts';
@@ -21,7 +21,7 @@ import { type SkillSource, skillRoutes } from './skill-routes.ts';
 import { type StatsSource, statsRoutes } from './stats-routes.ts';
 
 export interface OverviewSource {
-  load: (query: OverviewQuery) => Promise<UsageOverview>;
+  load: (query: OverviewQuery) => Promise<OverviewData>;
   sessionsFolder: string;
   refreshSeconds: number;
   updatedAt: () => Date | undefined;

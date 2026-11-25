@@ -4,8 +4,8 @@ import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { type Socket, createServer } from 'node:net';
 import { createDatabase } from '../db/client.ts';
-import { usageOverview } from '../overview/query.ts';
-import type { UsageOverview } from '../overview/types.ts';
+import { overviewData } from '../overview/kinds.ts';
+import type { OverviewData } from '../overview/types.ts';
 import { type OverviewSource, createApp } from './app.ts';
 import type { SessionSource } from './session-routes.ts';
 import {
@@ -38,8 +38,11 @@ const unused = {
 const up = (): Promise<boolean> => Promise.resolve(true);
 const down = (): Promise<boolean> => Promise.resolve(false);
 
-const usage: UsageOverview = {
+const usage: OverviewData = {
   hasData: true,
+  merged: { feature: 3, bug: 2 },
+  openBugs: 4,
+  bugTickets: true,
   bucket: 'day',
   totals: {
     costUsd: 1.5,
@@ -169,7 +172,7 @@ describe('UI', () => {
 });
 
 describe('GET /api/overview', () => {
-  it('answers the usage of the period with the ingestion facts', async () => {
+  it('answers the usage of the period, the merges by kind and the open bugs, with the ingestion facts', async () => {
     const response = await createApp({
       checkDatabase: up,
       uiDir: builtUi,
@@ -257,7 +260,7 @@ describe('GET /api/overview', () => {
     const app = createApp({
       checkDatabase: databaseCheck(db),
       uiDir: builtUi,
-      overview: { ...source, load: (query) => usageOverview(db, query) },
+      overview: { ...source, load: (query) => overviewData(db, query, up) },
       sessions: sessionSource,
       ...unused,
     });
