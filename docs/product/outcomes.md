@@ -77,7 +77,7 @@ A stop with an end is **answered**; without one it is still waiting. The time ag
 
 ## Reworked
 
-An issue was reworked when more than one pull or merge request closes it (any state), or it was reopened at least once.
+An issue was reworked when more than one pull or merge request closes it (any state), or it was reopened at least once. On the [page of a bug](bugs.md#versions-of-the-page), `Reworked` follows the version shown instead: a version was reworked when more than one request of that [version](#versions-of-a-bug) closes the bug; the reopen that starts a version is not rework.
 
 ## Kinds
 
