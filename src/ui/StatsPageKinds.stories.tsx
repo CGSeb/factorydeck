@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { type ReactElement, useState } from 'react';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import type { IssueKind } from '../git-host/kind.ts';
 import type { AutonomyStats } from '../stats/types.ts';
@@ -8,7 +9,7 @@ import {
   unreachableBugStats,
 } from './stats-bug-fixtures.ts';
 import { flowLoaderOf } from './flow-fixtures.ts';
-import type { LoadAutonomy } from './stats-api.ts';
+import type { LoadAutonomy, LoadBugStats } from './stats-api.ts';
 import {
   autonomyOf,
   autonomyResponse,
@@ -29,11 +30,11 @@ const BY_KIND: Record<IssueKind | 'all', AutonomyStats> = {
 };
 
 function kindLoader(
-  asked: (IssueKind | null)[],
+  record: (kind: IssueKind | null) => void,
   pending: IssueKind | null = null,
 ): LoadAutonomy {
   return (_filters, kind = null) => {
-    asked.push(kind);
+    record(kind);
     if (pending !== null && kind === pending) {
       return new Promise(() => undefined);
     }
@@ -41,11 +42,44 @@ function kindLoader(
   };
 }
 
+interface RecordedProps {
+  bugs?: () => LoadBugStats;
+  pending?: IssueKind | null;
+}
+
+function Recorded({
+  bugs = () => bugStatsLoaderOf(bugStatsOf()),
+  pending = null,
+}: RecordedProps): ReactElement {
+  const [asked, setAsked] = useState<string[]>([]);
+  const [loadAutonomy] = useState(() =>
+    kindLoader((kind) => {
+      setAsked((before) => [...before, kind ?? 'all']);
+    }, pending),
+  );
+  const [loadBugStats] = useState(bugs);
+  return (
+    <>
+      <StatsPage
+        loadAutonomy={loadAutonomy}
+        loadQuality={qualityLoaderOf()}
+        loadFlow={flowLoaderOf()}
+        loadBugStats={loadBugStats}
+      />
+      <output aria-label="Kinds asked">{asked.join(' ')}</output>
+    </>
+  );
+}
+
+function askedOf(canvasElement: HTMLElement): string | null {
+  return within(canvasElement).getByLabelText('Kinds asked').textContent;
+}
+
 const meta = {
   title: 'StatsPage/Kinds',
   component: StatsPage,
   args: {
-    loadAutonomy: kindLoader([]),
+    loadAutonomy: kindLoader(() => undefined),
     loadQuality: qualityLoaderOf(),
     loadFlow: flowLoaderOf(),
     loadBugStats: bugStatsLoaderOf(bugStatsOf()),
@@ -67,12 +101,10 @@ function panelNames(canvasElement: HTMLElement): string[] {
     .map((heading) => heading.textContent);
 }
 
-const bugAsked: (IssueKind | null)[] = [];
-
 export const BugsSelected: Story = {
   name: 'Bugs selected',
   parameters: { entry: '/stats?period=30d&kind=bug' },
-  args: { loadAutonomy: kindLoader(bugAsked) },
+  render: () => <Recorded />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await bugsLoaded(canvasElement);
@@ -95,7 +127,7 @@ export const BugsSelected: Story = {
     const flow = within(panelOf(canvasElement, 'Flow and cost'));
     await expect(flow.getByText('Tokens on dropped work')).toBeVisible();
     await expect(flow.queryByText('No work item')).toBeNull();
-    await expect(bugAsked).toEqual(['bug']);
+    await expect(askedOf(canvasElement)).toBe('bug');
   },
 };
 
@@ -124,15 +156,10 @@ export const FeaturesSelected: Story = {
   },
 };
 
-const plainAsked: (IssueKind | null)[] = [];
-
 export const NoBugTickets: Story = {
   name: 'A selection without bug tickets: no filter, no Bugs panel',
   parameters: { entry: '/stats?period=30d&kind=bug' },
-  args: {
-    loadAutonomy: kindLoader(plainAsked),
-    loadBugStats: bugStatsLoaderOf(),
-  },
+  render: () => <Recorded bugs={() => bugStatsLoaderOf()} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await flowLoaded(canvasElement);
@@ -148,13 +175,13 @@ export const NoBugTickets: Story = {
     await expect(
       within(panelOf(canvasElement, 'Flow and cost')).getByText('No work item'),
     ).toBeVisible();
-    await expect(plainAsked).toEqual([null]);
+    await expect(askedOf(canvasElement)).toBe('all');
   },
 };
 
 export const KeptWhileReloading: Story = {
   name: 'The filter stays with its counts while the figures reload',
-  args: { loadAutonomy: kindLoader([], 'bug') },
+  args: { loadAutonomy: kindLoader(() => undefined, 'bug') },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await bugsLoaded(canvasElement);
@@ -185,15 +212,10 @@ export const KeptWhileReloading: Story = {
   },
 };
 
-const unreachableAsked: (IssueKind | null)[] = [];
-
 export const BugsUnreachable: Story = {
   name: 'Bug answer unreachable: no filter, every kind, the Bugs panel fails alone',
   parameters: { entry: '/stats?period=30d&kind=bug' },
-  args: {
-    loadAutonomy: kindLoader(unreachableAsked),
-    loadBugStats: unreachableBugStats,
-  },
+  render: () => <Recorded bugs={() => unreachableBugStats} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await flowLoaded(canvasElement);
@@ -207,6 +229,6 @@ export const BugsUnreachable: Story = {
       'Flow and cost',
       'Bugs',
     ]);
-    await expect(unreachableAsked).toEqual([null]);
+    await expect(askedOf(canvasElement)).toBe('all');
   },
 };
