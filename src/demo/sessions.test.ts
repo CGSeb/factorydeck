@@ -252,8 +252,11 @@ describe('demo sessions on the skills pages', () => {
 });
 
 describe('demo sessions on the features page', () => {
-  it('cover an orchestration share across two issues', async () => {
+  beforeEach(async () => {
     await collect(db, { hasFactory });
+  });
+
+  it('cover an orchestration share across two issues', async () => {
     const path = join(await sessionsFolder(), 'factorydeck.yml');
     await writeDemoConfig(path, projects);
     const config = loadWorkflowConfig(path);
