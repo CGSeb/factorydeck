@@ -12,6 +12,7 @@ Pass multi-line text as a file (`--body-file <file>`); with a Windows `gh.exe` u
 
 - **List the queue**: `gh.exe issue list --repo CGSeb/factorydeck --label <spec> --label <ready> --state open --json number,title --jq 'sort_by(.title)'`
 - **Read an issue**: `gh.exe issue view --repo CGSeb/factorydeck <n> --json number,title,body,labels,state`
+- **List open issues of a label**: `gh.exe issue list --repo CGSeb/factorydeck --label <label> --state open --limit 100 --search "sort:updated-desc" --json number,title,body` (the 100 most recently updated)
 - **Open blockers**: `gh.exe api repos/CGSeb/factorydeck/issues/<n>/dependencies/blocked_by --jq '[.[] | select(.state == "open") | .number]'`
 - **Add a blocker**: `gh.exe api -X POST repos/CGSeb/factorydeck/issues/<n>/dependencies/blocked_by -F issue_id=<id>`, where `<id>` is the blocker's database id: `gh.exe api repos/CGSeb/factorydeck/issues/<blocker> --jq .id`, not its number.
 - **Create an issue**: `gh.exe issue create --repo CGSeb/factorydeck --title "<title>" --label <label> --body-file <file>`

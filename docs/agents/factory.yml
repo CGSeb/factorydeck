@@ -86,6 +86,20 @@ issues:
     review: agent:review
     blocked: agent:blocked
 
+# A bug report is always the body of its issue. A bug issue carries this label instead of
+# issues.labels.spec, plus the same flow labels; the label differs from every label above.
+bugs:
+  label: bug
+  branch_name: fix/<NNN>-<short-name>
+  pull_request_title: 'fix: :bug: <Subject>'
+  # The exact headings of a bug report. It also reuses the depends-on and checked lines of specs.format.
+  format:
+    sections:
+      observed: '## Observed'
+      expected: '## Expected'
+      steps: '## Steps to reproduce'
+      environment: '## Environment'
+
 build:
   parallel_workers: 3
   branch_name: feat/<NNN>-<short-name>
