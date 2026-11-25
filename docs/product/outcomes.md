@@ -49,7 +49,7 @@ A bug has one **version** per opening, read from the close and reopen events the
 - A version's stage, [report that counts](#serenity-reports), serenity, [fix](#fix-of-a-bug) and merge time come from its own requests only, with the rules of this page; a version with no request has no fix and no serenity, and its stage comes from the bug's labels, or `Closed without merge` when the bug is closed.
 - A version's tokens are the bug's tokens, orchestration share included, of the calls between its start and its end, or now for the ongoing one.
 
-Versions apply to bugs on the [bugs page](bugs.md#versions) only: the features list, the issue page, [Stats](stats.md) and the overview keep the rules above for the whole issue.
+Versions apply to bugs on the [bugs page](bugs.md#versions), and to the `<o> open bugs` of the [overview](overview.md) header, which is the `open` count of `/bugs`. The features list, the issue page, [Stats](stats.md) and the rest of the overview keep the rules above for the whole issue.
 
 ## Help from a person
 

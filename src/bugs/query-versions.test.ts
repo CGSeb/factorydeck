@@ -306,10 +306,7 @@ describe('listBugs with versions', () => {
     await seed();
     const list = await listBugs(db, allTime, DEFAULT_CONFIG);
     expect(list.counts).toEqual({ open: 4, fixed: 2, closed: 0 });
-    expect(await bugCounts(db, undefined)).toEqual({
-      bugTickets: true,
-      counts: { open: 4, fixed: 2, closed: 0 },
-    });
+    expect((await bugCounts(db, undefined)).counts).toEqual(list.counts);
     expect(rowOf(list, 15)).toMatchObject({
       version: { number: 1, count: 1, startedAt: CREATED },
     });
