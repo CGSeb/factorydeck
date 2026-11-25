@@ -12,6 +12,7 @@ Pass multi-line text as a file (`--body-file <file>`); with a Windows `gh.exe` u
 
 - **List the queue**: `gh.exe issue list --repo CGSeb/factorydeck --label <spec> --label <ready> --state open --json number,title --jq 'sort_by(.title)'`
 - **Read an issue**: `gh.exe issue view --repo CGSeb/factorydeck <n> --json number,title,body,labels,state`
+- **List open issues of a label**: `gh.exe issue list --repo CGSeb/factorydeck --label <label> --state open --limit 100 --search "sort:updated-desc" --json number,title,body` (the 100 most recently updated)
 - **Open blockers**: `gh.exe api repos/CGSeb/factorydeck/issues/<n>/dependencies/blocked_by --jq '[.[] | select(.state == "open") | .number]'`
 - **Add a blocker**: `gh.exe api -X POST repos/CGSeb/factorydeck/issues/<n>/dependencies/blocked_by -F issue_id=<id>`, where `<id>` is the blocker's database id: `gh.exe api repos/CGSeb/factorydeck/issues/<blocker> --jq .id`, not its number.
 - **Create an issue**: `gh.exe issue create --repo CGSeb/factorydeck --title "<title>" --label <label> --body-file <file>`
@@ -41,6 +42,10 @@ A pull request body containing `Closes #<n>` closes issue `<n>` when it merges.
 
 - **Watch CI**: `gh.exe pr checks --repo CGSeb/factorydeck <pr> --watch`. « no checks reported » means no CI ran.
 - **Failed CI log**: `gh.exe run view --repo CGSeb/factorydeck <run id> --log-failed` (the run id is in the failing check's link).
+
+## Wiki
+
+- **Read a wiki page**: read `https://raw.githubusercontent.com/wiki/CGSeb/factorydeck/<Page>.md` with `curl -fsSL` or the agent's fetch tool, where `<Page>` ends the page URL (`https://github.com/CGSeb/factorydeck/wiki/<Page>`). It reads the page where it is, nothing is copied. GitHub has no wiki API: this works for a public wiki only; a private wiki's pages are read as external pages, with the agent's own fetch tool or connector, or not at all.
 
 ## Main branch protection
 
