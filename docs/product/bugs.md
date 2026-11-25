@@ -12,7 +12,7 @@ The page has the `Bugs` link of the [sidebar](navigation.md#sidebar), right afte
 
 The bugs of the selection in three groups, in this order, each under a header row with its count; an empty group is left out.
 
-- `Open`: every open bug at stage `Open`, `Ready`, `Needs spec` or `Blocked`, whatever the period, longest open first.
+- `Open`: every open bug at stage `Open`, `Ready`, `Needs spec` or `Blocked`, whatever the period, longest open first, from the start of its current [version](#versions).
 - `Fixing`: every open bug at stage `Working` or `In review`, whatever the period, by latest activity in the period first (as the `Last activity` sort of the features list); bugs without activity in the period come last.
 - `Fixed`: the bugs at a merged [stage](outcomes.md#stages) whose [merge time](outcomes.md#help-from-a-person) falls in the period, and the bugs `Closed without merge` whose close time falls in it, latest merge or close first.
 

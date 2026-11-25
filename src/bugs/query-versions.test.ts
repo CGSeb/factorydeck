@@ -281,6 +281,15 @@ describe('listBugs with versions', () => {
     });
   });
 
+  it('sorts Open by the start of the current version, longest open first', async () => {
+    await seed();
+    await db
+      .insert(gitHostIssue)
+      .values({ ...bug(16, []), createdAt: new Date(day(3, 12)) });
+    const list = await listBugs(db, allTime, DEFAULT_CONFIG);
+    expect(list.groups.open.map((row) => row.number)).toEqual([15, 16, 13, 14]);
+  });
+
   it('shows a bug fixed in the period and reopened since only by its current version', async () => {
     await seed();
     const week = await listBugs(
@@ -306,20 +315,11 @@ describe('listBugs with versions', () => {
     });
   });
 
-  it('counts the tokens of the calls inside the current version, orchestration share included', async () => {
+  it('counts the tokens of the calls inside the current version only, orchestration share included', async () => {
     await seed();
     await seedCalls();
     const list = await listBugs(db, allTime, DEFAULT_CONFIG);
-    expect(rowOf(list, 10)).toMatchObject({
-      tokens: 700,
-      lastAt: day(6),
-    });
-  });
-
-  it('gives no tokens to a version with no call yet', async () => {
-    await seed();
-    await seedCalls();
-    const list = await listBugs(db, allTime, DEFAULT_CONFIG);
+    expect(rowOf(list, 10)).toMatchObject({ tokens: 700, lastAt: day(6) });
     expect(rowOf(list, 13)).toMatchObject({ tokens: 0, costUsd: 0 });
   });
 });

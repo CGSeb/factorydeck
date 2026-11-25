@@ -215,7 +215,8 @@ function ties(left: Placed, right: Placed): number {
 
 const ORDERS: Record<BugGroup, (left: Placed, right: Placed) => number> = {
   open: (left, right) =>
-    Date.parse(left.row.createdAt) - Date.parse(right.row.createdAt),
+    Date.parse(left.row.version.startedAt) -
+    Date.parse(right.row.version.startedAt),
   fixing: (left, right) =>
     latestFirst(timeOf(left.row.lastAt), timeOf(right.row.lastAt)),
   fixed: (left, right) => latestFirst(timeOf(left.endAt), timeOf(right.endAt)),

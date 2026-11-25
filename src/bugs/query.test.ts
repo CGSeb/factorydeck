@@ -97,7 +97,7 @@ describe('listBugs', () => {
     const list = await listBugs(ctx.db(), today, DEFAULT_CONFIG);
     expect(list.bugTickets).toBe(true);
     expect(numbers(list)).toEqual({
-      open: [9, 2, 7, 1],
+      open: [9, 2, 1, 7],
       fixing: [3],
       fixed: [6, 4],
     });
