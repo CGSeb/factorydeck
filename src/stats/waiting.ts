@@ -96,13 +96,16 @@ export async function waitingIssues(
   db: Database,
   project: string | undefined,
   hasFactory: FactoryFilter,
+  kind?: IssueKind,
 ): Promise<WaitingList> {
   const [facts, names] = await Promise.all([
     loadIssues(db, project, hasFactory, waitingFacts),
     projectNames(db),
   ]);
+  const kept =
+    kind === undefined ? facts : facts.filter((fact) => fact?.kind === kind);
   return {
-    issues: waitingRows(facts, (name) => names.label(name)),
+    issues: waitingRows(kept, (name) => names.label(name)),
     projects: names.options(),
   };
 }

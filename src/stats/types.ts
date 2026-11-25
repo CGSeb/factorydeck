@@ -1,5 +1,6 @@
 import type { Unreachable } from '../server/api-context.ts';
 import type { IssueKind } from '../git-host/kind.ts';
+import type { KindCounts } from '../features/types.ts';
 import type { ProjectOption } from '../projects/label.ts';
 
 export type TrendUnit = 'hour' | 'day' | 'week' | 'month' | 'year';
@@ -156,5 +157,44 @@ export type WaitingResponse =
       updatedAt: string | null;
       refreshSeconds: number;
       waiting: WaitingList;
+    }
+  | Unreachable;
+
+export interface BugCounts {
+  merged: number;
+  bugs: number;
+  reopened: number;
+  fixMs: number[];
+}
+
+export interface BugStripIssue {
+  project: string;
+  number: number;
+  title: string;
+  fixMs: number;
+}
+
+export interface BugBucket {
+  start: string;
+  merged: number;
+  bugs: number;
+}
+
+export interface BugStats {
+  current: BugCounts;
+  previous?: BugCounts;
+  issues: BugStripIssue[];
+  unit: TrendUnit;
+  buckets: BugBucket[];
+  bugTickets: boolean;
+  kinds: KindCounts;
+}
+
+export type BugResponse =
+  | {
+      status: 'ok';
+      updatedAt: string | null;
+      refreshSeconds: number;
+      bugs: BugStats;
     }
   | Unreachable;

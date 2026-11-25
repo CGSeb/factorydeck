@@ -1,8 +1,14 @@
 # Stats
 
-`/stats` tells whether the factory delivers on its own, delivers good work the first time, and how fast and cheaply it delivers, and whether that improves. Three panels, `Autonomy`, `Quality` and `Flow and cost`, each load and fail on their own. With `All projects`, every factory project counts together; `unassigned` work has no issue and does not count.
+`/stats` tells whether the factory delivers on its own, delivers good work the first time, and how fast and cheaply it delivers, and whether that improves. Three panels, `Autonomy`, `Quality` and `Flow and cost`, and a fourth, `Bugs`, when the factory has bug tickets, each load and fail on their own. With `All projects`, every factory project counts together; `unassigned` work has no issue and does not count.
 
 The header `Stats` says `<n> issues merged · <m> without a person` (`No issue merged` with none).
+
+## Kind filter
+
+When at least one factory project of the selection has a [bug label](outcomes.md#kinds), even with no bug in the period, the header shows the [kind filter of `/features`](features.md#kind-filter) under its title: `All` (the default), `Features <n>` and `Bugs <n>`, where `<n>` is the number of issues of that [kind](outcomes.md#kinds) merged in the period. The `kind` parameter and its matching rules are those of `/features`: another spelling, an empty or unknown value means `All`, and a `kind` in the URL while the filter is absent is ignored. The kind is kept when the period or the project changes.
+
+With `Features` or `Bugs` selected, only the merged issues of that kind count: the header, and every figure, chart, list and strip of `Autonomy`, `Quality` and `Flow and cost`, their change lines included (against the previous period for the same kind). `Waiting for a person` counts the stops of issues of that kind, and its `<k> still waiting` too. In `Where the tokens went`, `Tokens on dropped work` and `Tokens on rework` become shares of the period's tokens spent on issues of that kind (orchestration included, n = their API calls), and `No work item` is left out, since those tokens have no issue and no kind. A token of an issue whose kind is unknown (not collected) counts only under `All`. The trend charts keep the cut of `All`, so every chart of the page shares its buckets. While the figures reload, the filter stays with its last counts.
 
 ## Common rules
 
@@ -67,8 +73,26 @@ A bucket with `n` from 1 to 4 draws its bar at 40% opacity and its tooltip adds 
 
 Rework counts the calls at or after the issue's first refusing report, whatever its stage; orchestration shares are not rework. A call can count in both dropped work and rework.
 
+## Bugs
+
+Shown when at least one factory project of the selection has a bug label and the kind filter is `All` or `Bugs`. A **merged bug** is an issue of kind `bug` whose merge time falls in the period, as every merged issue of `/stats`.
+
+| Figure                   | Definition                                                                                             | n             | Better |
+| ------------------------ | ------------------------------------------------------------------------------------------------------ | ------------- | ------ |
+| `Time to fix`            | Median time from a bug's creation to its merge, including the time it waited before any agent started. | merged bugs   | lower  |
+| `Bugs in delivered work` | Share of the issues merged in the period that are bugs.                                                | merged issues | lower  |
+| `Reopened bugs`          | Share of the bugs merged in the period that were reopened at least once.                               | merged bugs   | lower  |
+
+- `Time to fix` is the `Lead time` of bugs: with `Bugs` selected, both show the same value. A negative time counts as 0.
+- `Bugs in delivered work` counts every merged issue of the period, features and bugs, even with `Bugs` selected: it is the one figure the filter does not narrow.
+- A bug counts as **reopened** when the collection recorded it as reopened (timeline events on GitHub, state events on GitLab), whenever that happened: before its merge, or after a merge then fixed again. A bug merged twice counts once, at its latest merge.
+- A strip `Time to fix`, like the `Lead time` strip: one dot per merged bug (`#<n> <title>`), median and p90 marked, each dot linking to the bug's issue page with the period, with the same stacking rule.
+- `Bugs in delivered work, by <unit>`: the share per bucket, cut as every trend of `/stats`, tooltip `25% · 1 of 4`.
+
 ## API
 
-`GET /api/stats/autonomy`, `/api/stats/quality` and `/api/stats/flow`, each with `period`, `tz` and `project`, return the counts behind each figure for the period and its previous one (none for `all`), and the trend as `unit` and `buckets`. A missing or unknown `period` or `tz` answers 400.
+`GET /api/stats/autonomy`, `/api/stats/quality` and `/api/stats/flow`, each with `period`, `tz` and `project`, return the counts behind each figure for the period and its previous one (none for `all`), and the trend as `unit` and `buckets`. A missing or unknown `period` or `tz` answers 400. With `kind=feature` or `kind=bug`, they count only the issues of that kind, as the kind filter does; another value answers 400, and without it their answers are unchanged.
 
-`GET /api/stats/waiting`, with an optional `project`, returns the open issues waiting for a person now, whatever the period, as the [overview](overview.md#needs-a-person) lists them: each with its `kind` (`feature` or `bug`, see [Kinds](outcomes.md#kinds)), its reasons and the start of its oldest open stop.
+`GET /api/stats/bugs`, with `period`, `tz` and `project`, returns the counts behind the three `Bugs` figures for the period and its previous one (none for `all`): `merged`, `bugs`, `reopened` and the sorted `fixMs`; the strip's bugs (`project`, `number`, `title`, `fixMs`); the trend as `unit` and `buckets` (`merged`, `bugs`); `bugTickets`, `true` when a factory project of the selection has a bug label; and `kinds` (`{ "feature": <n>, "bug": <n> }`), the issues of each kind merged in the period, for the filter.
+
+`GET /api/stats/waiting`, with an optional `project` and an optional `kind` (`feature` or `bug`, another value answers 400), returns the open issues waiting for a person now, whatever the period, as the [overview](overview.md#needs-a-person) lists them: each with its `kind` (`feature` or `bug`, see [Kinds](outcomes.md#kinds)), its reasons and the start of its oldest open stop.

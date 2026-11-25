@@ -17,6 +17,7 @@ import { sessionLoader, sessionsLoader } from './sessions-api.ts';
 import { skillLoader, skillsLoader } from './skills-api.ts';
 import {
   autonomyLoader,
+  bugStatsLoader,
   flowLoader,
   qualityLoader,
   waitingLoader,
@@ -41,6 +42,7 @@ const loadFrictions = frictionsLoader();
 const loadOccurrences = occurrencesLoader();
 const loadOutput = outputLoader();
 const loadFlow = flowLoader();
+const loadBugStats = bugStatsLoader();
 const loadWaiting = waitingLoader();
 const root = document.querySelector('#root');
 if (root) {
@@ -66,6 +68,7 @@ if (root) {
         loadOccurrences={loadOccurrences}
         loadOutput={loadOutput}
         loadFlow={loadFlow}
+        loadBugStats={loadBugStats}
         loadWaiting={loadWaiting}
       />
     </BrowserRouter>,

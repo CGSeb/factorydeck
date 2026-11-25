@@ -7,7 +7,8 @@
 
 .fd-stats-autonomy,
 .fd-stats-quality,
-.fd-stats-flow {
+.fd-stats-flow,
+.fd-stats-bugs {
   container-type: inline-size;
   display: flex;
   flex-direction: column;

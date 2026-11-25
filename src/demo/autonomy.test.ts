@@ -4,6 +4,7 @@ import { collect } from '../git-host/collect.ts';
 import { hasFactory } from '../ingest/factory.ts';
 import { ingest } from '../ingest/ingest.ts';
 import { autonomyStats } from '../stats/autonomy.ts';
+import { bugStats } from '../stats/bugs.ts';
 import type { AutonomyBucket } from '../stats/types.ts';
 import { createTestDatabase } from '../test/postgres.ts';
 import { sessionsFolder } from '../test/session-logs.ts';
@@ -95,5 +96,16 @@ describe('demo autonomy', () => {
     );
     expect(hour?.merged).toBeGreaterThanOrEqual(3);
     expect(hour?.mergedWithoutPerson).toBeLessThan(hour?.merged ?? 0);
+  });
+
+  it('merges at least 5 bugs in the last 30 days, and a reopened bug over all time', async () => {
+    const stats = (period: '30d' | 'all') =>
+      bugStats(db, { period, timeZone: 'UTC', now: NOW }, hasFactory);
+    const [month, all] = await Promise.all([stats('30d'), stats('all')]);
+    expect(month.bugTickets).toBe(true);
+    expect(month.current.bugs).toBeGreaterThanOrEqual(5);
+    expect(month.current.merged).toBeGreaterThan(month.current.bugs);
+    expect(new Set(month.current.fixMs).size).toBeGreaterThan(1);
+    expect(all.current.reopened).toBeGreaterThan(0);
   });
 });

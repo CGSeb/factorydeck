@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { bugStatsLoaderOf } from './stats-bug-fixtures.ts';
 import { expect, within } from 'storybook/test';
 import { autonomyLoaderOf, qualityLoaderOf } from './stats-fixtures.ts';
 import { flowLoaderOf } from './flow-fixtures.ts';
@@ -21,6 +22,7 @@ const meta = {
     loadAutonomy: autonomyLoaderOf(),
     loadQuality: qualityLoaderOf(),
     loadFlow: flowLoaderOf(),
+    loadBugStats: bugStatsLoaderOf(),
     now: PERIOD_NOW,
   },
   decorators: [

@@ -23,6 +23,12 @@ export const FIGURE_HELP = {
     "Share of the period's tokens spent in threads tied to no issue.",
   'Tokens on rework':
     "Share of the period's tokens spent on an issue after its first refused serenity report: the cost of fixing work the review sent back.",
+  'Time to fix':
+    "Median time from a bug's creation to its merge, including the time it waited before any agent started.",
+  'Bugs in delivered work':
+    'Share of the issues merged in the period that are bugs.',
+  'Reopened bugs':
+    'Share of the bugs merged in the period that were reopened at least once.',
 } as const;
 
 export const MERGED_NOUN = { one: 'merged issue', other: 'merged issues' };

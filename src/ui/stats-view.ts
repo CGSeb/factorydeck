@@ -3,6 +3,8 @@ import type {
   AutonomyCounts,
   AutonomyReasons,
   AutonomyBucket,
+  BugBucket,
+  BugCounts,
   FlowBucket,
   FlowIssue,
   FlowStripIssue,
@@ -262,14 +264,19 @@ export function tokenShares(tokens: FlowTokens): TokenShares {
   };
 }
 
-export function issueLabel({ number, title }: FlowStripIssue): string {
+type StripIssue = Pick<FlowStripIssue, 'project' | 'number' | 'title'>;
+
+export function issueLabel({
+  number,
+  title,
+}: Pick<StripIssue, 'number' | 'title'>): string {
   const name = `#${String(number)}`;
   return title.trim() === '' ? name : `${name} ${title}`;
 }
 
-export function stripItems(
-  issues: readonly FlowStripIssue[],
-  value: (issue: FlowStripIssue) => number | null,
+export function stripItems<Issue extends StripIssue>(
+  issues: readonly Issue[],
+  value: (issue: Issue) => number | null,
   period: Period,
 ): RangeItem[] {
   return issues.flatMap((issue) => {
@@ -300,4 +307,34 @@ export function comparer(
     comparison === undefined || value === undefined || n === undefined
       ? {}
       : { previous: value, previousN: n, comparison };
+}
+
+export interface BugFigures {
+  fix: number | null;
+  share: number | null;
+  reopened: number | null;
+}
+
+export function bugFigures(counts: BugCounts): BugFigures {
+  return {
+    fix: median(counts.fixMs),
+    share: shareOf(counts.bugs, counts.merged),
+    reopened: shareOf(counts.reopened, counts.bugs),
+  };
+}
+
+export function bugBuckets(trend: Trend<BugBucket>, now: Date): TrendBucket[] {
+  const labels = trendLabels(trend, now);
+  return trend.buckets.map((bucket, index) => {
+    const value = shareOf(bucket.bugs, bucket.merged);
+    return {
+      label: labels[index] ?? '',
+      value,
+      n: bucket.merged,
+      text:
+        value === null
+          ? 'No issue merged'
+          : `${wholePercent(value)} · ${String(bucket.bugs)} of ${String(bucket.merged)}`,
+    };
+  });
 }

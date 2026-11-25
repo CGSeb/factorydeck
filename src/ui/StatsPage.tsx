@@ -17,8 +17,14 @@ import { StatusLine } from './components/StatusLine.tsx';
 import { TrendBars } from './components/TrendBars.tsx';
 import { formatElapsed } from './format.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
-import { useRefreshing, useSkillFilters } from './skills-api.ts';
-import type { LoadAutonomy, LoadFlow, LoadQuality } from './stats-api.ts';
+import { KIND_PARAM, useKindParam } from './kind-filter.ts';
+import { KindFilter } from './KindFilter.tsx';
+import { useSkillFilters } from './skills-api.ts';
+import {
+  type StatsLoaders,
+  showsBugsPanel,
+  useStatsData,
+} from './stats-loading.ts';
 import {
   autonomyFigures,
   autonomySummary,
@@ -34,14 +40,12 @@ import {
   waitingNote,
   wholePercent,
 } from './stats-view.ts';
+import { StatsBugsPanel } from './StatsBugsPanel.tsx';
 import { StatsFlowPanel } from './StatsFlowPanel.tsx';
 import { StatsSection } from './StatsSection.tsx';
 import './stats-page.css';
 
-export interface StatsPageProps {
-  loadAutonomy: LoadAutonomy;
-  loadQuality: LoadQuality;
-  loadFlow: LoadFlow;
+export interface StatsPageProps extends StatsLoaders {
   now?: Date | undefined;
 }
 
@@ -245,16 +249,13 @@ function QualityContent({
 }
 
 export function StatsPage({
-  loadAutonomy,
-  loadQuality,
-  loadFlow,
   now = new Date(),
+  ...loaders
 }: StatsPageProps): ReactElement {
-  const [filters, setFilters] = useSkillFilters();
-  const key = JSON.stringify(filters);
-  const response = useRefreshing(key, () => loadAutonomy(filters), 'stats');
-  const quality = useRefreshing(key, () => loadQuality(filters), 'stats');
-  const flow = useRefreshing(key, () => loadFlow(filters), 'stats');
+  const [filters, setFilters] = useSkillFilters([KIND_PARAM]);
+  const [wanted, setKind] = useKindParam();
+  const data = useStatsData(loaders, filters, wanted);
+  const { autonomy: response, quality, flow, bugs, kind } = data;
   return (
     <div className="fd-stats">
       <PageHeader
@@ -269,6 +270,17 @@ export function StatsPage({
             onChange={(period: Period) => setFilters({ ...filters, period })}
           />
         }
+        {...(bugs?.status === 'ok' && bugs.bugs.bugTickets
+          ? {
+              controls: (
+                <KindFilter
+                  kinds={bugs.bugs.kinds}
+                  value={kind}
+                  onChange={setKind}
+                />
+              ),
+            }
+          : {})}
       />
       <Panel heading="Autonomy">
         <AutonomyContent
@@ -280,7 +292,15 @@ export function StatsPage({
       <Panel heading="Quality">
         <QualityContent response={quality} period={filters.period} now={now} />
       </Panel>
-      <StatsFlowPanel response={flow} period={filters.period} now={now} />
+      <StatsFlowPanel
+        response={flow}
+        period={filters.period}
+        now={now}
+        kind={kind}
+      />
+      {showsBugsPanel(data) && (
+        <StatsBugsPanel response={bugs} period={filters.period} now={now} />
+      )}
     </div>
   );
 }

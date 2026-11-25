@@ -138,6 +138,7 @@ function app(up = true) {
         flowQueries.push(query);
         return Promise.resolve(flow);
       },
+      bugs: () => Promise.reject(new Error('Not used')),
       waiting: (project) => {
         waitingProjects.push(project);
         return Promise.resolve(waiting);
