@@ -1,5 +1,5 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
-import { type ReactElement, type ReactNode, useEffect, useState } from 'react';
+import { type ReactElement, useState } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { ALL_PROJECTS, projectLabel } from '../ProjectSelect.tsx';
 import type { IconName } from './Icon.tsx';
@@ -7,12 +7,12 @@ import { ProjectPill } from './ProjectPill.tsx';
 import { RefreshControl, collectionText } from './RefreshControl.tsx';
 import { chooseOption } from './select-test.ts';
 import { Sidebar, type SidebarLink, type SidebarProps } from './Sidebar.tsx';
-import { NARROW_QUERY } from './sidebar-state.ts';
 import {
   expectDrawerClosed,
   currentLinks,
   expectFolded,
   foldAndUnfold,
+  inNarrowWindow,
   openDrawer,
   peek,
   storedFold,
@@ -100,22 +100,6 @@ function Harness({
   );
 }
 
-function NarrowWindow({ children }: { children: ReactNode }): ReactNode {
-  const [original] = useState(() => {
-    const matchMedia = window.matchMedia.bind(window);
-    window.matchMedia = (query) =>
-      matchMedia(query === NARROW_QUERY ? '(min-width: 0px)' : query);
-    return matchMedia;
-  });
-  useEffect(
-    () => () => {
-      window.matchMedia = original;
-    },
-    [original],
-  );
-  return <div style={{ maxWidth: 360 }}>{children}</div>;
-}
-
 function stored(fold: string | undefined): Decorator[] {
   return [
     (Story) => (
@@ -129,14 +113,7 @@ function stored(fold: string | undefined): Decorator[] {
   ];
 }
 
-const narrow: Decorator[] = [
-  (Story) => (
-    <NarrowWindow>
-      <Story />
-    </NarrowWindow>
-  ),
-  withStoredFold('collapsed'),
-];
+const narrow: Decorator[] = [inNarrowWindow, withStoredFold('collapsed')];
 
 const meta = {
   component: Sidebar,

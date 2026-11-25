@@ -8,11 +8,43 @@ import './controls.css';
 import './layout.css';
 import './sidebar.css';
 
+export interface SidebarBadge {
+  count: number;
+  tone: 'neutral' | 'danger';
+}
+
 export interface SidebarLink {
   label: string;
   href: string;
   current: boolean;
   icon: IconName;
+  badge?: SidebarBadge | undefined;
+}
+
+const BADGE_LIMIT = 99;
+
+export function badgeText(count: number): string {
+  return count > BADGE_LIMIT ? `${String(BADGE_LIMIT)}+` : String(count);
+}
+
+function shownBadge(link: SidebarLink): SidebarBadge | undefined {
+  return link.badge !== undefined && link.badge.count > 0
+    ? link.badge
+    : undefined;
+}
+
+export function linkName(link: SidebarLink): string {
+  const badge = shownBadge(link);
+  return badge === undefined
+    ? link.label
+    : `${link.label}, ${String(badge.count)} ready`;
+}
+
+export function linkTip(link: SidebarLink): string {
+  const badge = shownBadge(link);
+  return badge === undefined
+    ? link.label
+    : `${link.label} · ${String(badge.count)} ready`;
 }
 
 export interface ProjectSlotControl {
@@ -111,6 +143,34 @@ function ThemeButton({
   );
 }
 
+function LinkContent({
+  link,
+  folded,
+}: {
+  link: SidebarLink;
+  folded: boolean;
+}): ReactElement {
+  const badge = shownBadge(link);
+  const mark = (className: string): ReactNode =>
+    badge === undefined ? null : (
+      <span className={className} data-tone={badge.tone} aria-hidden="true">
+        {badgeText(badge.count)}
+      </span>
+    );
+  return (
+    <>
+      <span className="fd-sidebar-link-icon">
+        <Icon name={link.icon} />
+        {folded && mark('fd-sidebar-pastille')}
+      </span>
+      <span className={folded ? 'fd-visually-hidden' : 'fd-sidebar-label'}>
+        {link.label}
+      </span>
+      {!folded && mark('fd-sidebar-badge')}
+    </>
+  );
+}
+
 function SidebarNav({
   links,
   renderLink,
@@ -126,23 +186,15 @@ function SidebarNav({
     <nav className="fd-sidebar-nav" aria-label="Sections">
       <ul>
         {links.map((link) => (
-          <li key={link.href} {...tipFor(link.label)}>
+          <li key={link.href} {...tipFor(linkTip(link))}>
             {renderLink({
               href: link.href,
               className: 'fd-sidebar-link',
               ...(link.current ? { 'aria-current': 'page' } : {}),
-              children: (
-                <>
-                  <Icon name={link.icon} />
-                  <span
-                    className={
-                      folded ? 'fd-visually-hidden' : 'fd-sidebar-label'
-                    }
-                  >
-                    {link.label}
-                  </span>
-                </>
-              ),
+              ...(shownBadge(link) === undefined
+                ? {}
+                : { 'aria-label': linkName(link) }),
+              children: <LinkContent link={link} folded={folded} />,
             })}
           </li>
         ))}

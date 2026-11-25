@@ -23,6 +23,7 @@ import { type WorkflowConfig, loadWorkflowConfig } from '../roles/config.ts';
 import { deleteProject, factoryStatus } from '../projects/remove.ts';
 import { listRoles } from '../roles/query.ts';
 import { listSessions, sessionDetail } from '../sessions/query.ts';
+import { readyCounts } from '../sidebar/ready.ts';
 import { listSkills, skillDetail } from '../skills/query.ts';
 import { autonomyStats } from '../stats/autonomy.ts';
 import { bugStats } from '../stats/bugs.ts';
@@ -146,6 +147,7 @@ async function main(): Promise<void> {
       refresh: () => collectionLoop().refresh(),
     },
     stats: statsSource(db, config),
+    sidebar: { ready: (project) => readyCounts(db, project, hasFactory) },
   });
   await listen(app, env.FACTORYDECK_PORT);
   console.log(`FactoryDeck on http://${HOST}:${env.FACTORYDECK_PORT}`);

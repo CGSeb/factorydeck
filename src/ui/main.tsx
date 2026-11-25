@@ -14,6 +14,7 @@ import { collectionLoader, collectionRefresher } from './git-host-api.ts';
 import { overviewLoader } from './overview-api.ts';
 import { rolesLoader } from './roles-api.ts';
 import { sessionLoader, sessionsLoader } from './sessions-api.ts';
+import { sidebarLoader } from './sidebar-api.ts';
 import { skillLoader, skillsLoader } from './skills-api.ts';
 import {
   autonomyLoader,
@@ -44,6 +45,7 @@ const loadOutput = outputLoader();
 const loadFlow = flowLoader();
 const loadBugStats = bugStatsLoader();
 const loadWaiting = waitingLoader();
+const loadSidebar = sidebarLoader();
 const root = document.querySelector('#root');
 if (root) {
   createRoot(root).render(
@@ -70,6 +72,7 @@ if (root) {
         loadFlow={loadFlow}
         loadBugStats={loadBugStats}
         loadWaiting={loadWaiting}
+        loadSidebar={loadSidebar}
       />
     </BrowserRouter>,
   );

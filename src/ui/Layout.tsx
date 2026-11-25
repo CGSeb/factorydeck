@@ -2,7 +2,6 @@ import { type ReactElement, useEffect, useState } from 'react';
 import {
   Link,
   Outlet,
-  matchPath,
   useLocation,
   useNavigate,
   useSearchParams,
@@ -15,14 +14,12 @@ import type { ProjectOption } from '../projects/label.ts';
 import type { FactoryResponse, MissingFactory } from '../projects/types.ts';
 import type { RenderLink } from './components/link.ts';
 import { ProjectPill } from './components/ProjectPill.tsx';
-import type { IconName } from './components/Icon.tsx';
 import {
   RefreshControl,
   collectionText,
 } from './components/RefreshControl.tsx';
 import {
   Sidebar,
-  type SidebarLink,
   type SidebarProject,
   type SidebarRefresh,
 } from './components/Sidebar.tsx';
@@ -30,8 +27,10 @@ import { useBugTickets } from './bug-tickets-state.ts';
 import type { DeleteProject, LoadFactory } from './factory-api.ts';
 import { FactoryBanner } from './FactoryBanner.tsx';
 import type { LoadCollection, RefreshCollection } from './git-host-api.ts';
-import { projectOf, projectTarget, withProject } from './project-param.ts';
+import { projectOf, projectTarget } from './project-param.ts';
+import { hasBugTickets, sectionLinks } from './section-links.ts';
 import { projectLabel } from './ProjectSelect.tsx';
+import { type LoadSidebar, useReadyCounts } from './sidebar-api.ts';
 import { WelcomePanel } from './WelcomePanel.tsx';
 import './styles.css';
 import './shell.css';
@@ -43,6 +42,7 @@ export interface LayoutProps {
   deleteProject: DeleteProject;
   loadCollection: LoadCollection;
   refreshCollection: RefreshCollection;
+  loadSidebar?: LoadSidebar | undefined;
 }
 
 function useFactoryStatus(loadFactory: LoadFactory): {
@@ -142,43 +142,6 @@ function okOrUndefined(
   return response?.status === 'ok' ? response : undefined;
 }
 
-const BUGS_PATH = '/bugs';
-
-const SECTIONS: readonly { path: string; label: string; icon: IconName }[] = [
-  { path: '/', label: 'Overview', icon: 'overview' },
-  { path: '/features', label: 'Features', icon: 'features' },
-  { path: BUGS_PATH, label: 'Bugs', icon: 'bugs' },
-  { path: '/stats', label: 'Stats', icon: 'stats' },
-  { path: '/frictions', label: 'Frictions', icon: 'frictions' },
-  { path: '/sessions', label: 'Sessions', icon: 'sessions' },
-  { path: '/skills', label: 'Skills', icon: 'skills' },
-  { path: '/roles', label: 'Roles', icon: 'roles' },
-];
-
-export function hasBugTickets(
-  bugTickets: readonly string[],
-  project: string | undefined,
-): boolean {
-  return project === undefined
-    ? bugTickets.length > 0
-    : bugTickets.includes(project);
-}
-
-function sectionLinks(
-  pathname: string,
-  project: string | undefined,
-  bugs: boolean,
-): SidebarLink[] {
-  return SECTIONS.filter(({ path }) => bugs || path !== BUGS_PATH).map(
-    ({ path, label, icon }) => ({
-      label,
-      icon,
-      href: withProject(path, project),
-      current: matchPath({ path, end: path === '/' }, pathname) !== null,
-    }),
-  );
-}
-
 export const renderRouterLink: RenderLink = ({ href, ...props }) => (
   <Link to={href} {...props} />
 );
@@ -267,10 +230,17 @@ export function Layout({
   deleteProject,
   loadCollection,
   refreshCollection,
+  loadSidebar,
 }: LayoutProps): ReactElement {
   const { status, forget, reload, version } = useFactoryStatus(loadFactory);
   const { project, choose, onDeleted } = useProjectChoice(forget);
   const collection = useCollection(loadCollection, refreshCollection, reload);
+  const ready = useReadyCounts(
+    loadSidebar,
+    project,
+    status?.refreshSeconds ?? RETRY_SECONDS,
+    version,
+  );
   const bugTickets = useBugTickets(status);
   const { collectedAt, missing, failures, projects, welcome } = viewOf(
     status,
@@ -284,6 +254,7 @@ export function Layout({
           pathname,
           project,
           hasBugTickets(bugTickets, project),
+          ready,
         )}
         renderLink={renderRouterLink}
         project={welcome ? undefined : projectSlot(project, projects, choose)}
