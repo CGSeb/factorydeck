@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import type { IssueKind } from '../git-host/kind.ts';
 import type {
   AutonomyResponse,
@@ -32,19 +31,17 @@ export interface StatsData {
 
 const SCOPE = 'stats';
 
-function useKindOf(
-  loadBugStats: LoadBugStats,
-  filters: SkillFilters,
+function waiting<T>(): Promise<T | undefined> {
+  return new Promise(() => undefined);
+}
+
+export function panelKind(
   wanted: IssueKind | null,
-): Promise<IssueKind | null> {
-  const key = JSON.stringify({ ...filters, wanted });
-  return useMemo(async () => {
-    if (wanted === null) return null;
-    const response = await loadBugStats(filters);
-    return response?.status === 'ok' && response.bugs.bugTickets
-      ? wanted
-      : null;
-  }, [key]);
+  bugs: BugResponse | undefined,
+): IssueKind | null | undefined {
+  if (wanted === null) return null;
+  if (bugs === undefined) return undefined;
+  return bugs.status === 'ok' && bugs.bugs.bugTickets ? wanted : null;
 }
 
 export function useStatsData(
@@ -57,31 +54,34 @@ export function useStatsData(
     () => loadBugStats(filters),
     SCOPE,
   );
-  const kindOf = useKindOf(loadBugStats, filters, wanted);
-  const key = JSON.stringify({ ...filters, kind: wanted });
+  const kind = panelKind(wanted, bugs);
+  const key = JSON.stringify({
+    ...filters,
+    kind: kind ?? null,
+    ready: kind !== undefined,
+  });
   const autonomy = useRefreshing(
     key,
-    async () => loadAutonomy(filters, await kindOf),
+    () => (kind === undefined ? waiting() : loadAutonomy(filters, kind)),
     SCOPE,
   );
   const quality = useRefreshing(
     key,
-    async () => loadQuality(filters, await kindOf),
+    () => (kind === undefined ? waiting() : loadQuality(filters, kind)),
     SCOPE,
   );
   const flow = useRefreshing(
     key,
-    async () => loadFlow(filters, await kindOf),
+    () => (kind === undefined ? waiting() : loadFlow(filters, kind)),
     SCOPE,
   );
-  const bugTickets = bugs?.status === 'ok' && bugs.bugs.bugTickets;
   return {
     autonomy,
     quality,
     flow,
     bugs,
-    bugTickets,
-    kind: bugTickets ? wanted : null,
+    bugTickets: bugs?.status === 'ok' && bugs.bugs.bugTickets,
+    kind: kind ?? null,
   };
 }
 

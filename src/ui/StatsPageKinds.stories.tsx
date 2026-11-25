@@ -2,7 +2,11 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import type { IssueKind } from '../git-host/kind.ts';
 import type { AutonomyStats } from '../stats/types.ts';
-import { bugStatsLoaderOf, bugStatsOf } from './stats-bug-fixtures.ts';
+import {
+  bugStatsLoaderOf,
+  bugStatsOf,
+  unreachableBugStats,
+} from './stats-bug-fixtures.ts';
 import { flowLoaderOf } from './flow-fixtures.ts';
 import type { LoadAutonomy } from './stats-api.ts';
 import {
@@ -178,5 +182,31 @@ export const KeptWhileReloading: Story = {
     await expect(
       kindGroup(canvasElement).getByRole('button', { name: 'Features 18' }),
     ).toBeVisible();
+  },
+};
+
+const unreachableAsked: (IssueKind | null)[] = [];
+
+export const BugsUnreachable: Story = {
+  name: 'Bug answer unreachable: no filter, every kind, the Bugs panel fails alone',
+  parameters: { entry: '/stats?period=30d&kind=bug' },
+  args: {
+    loadAutonomy: kindLoader(unreachableAsked),
+    loadBugStats: unreachableBugStats,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await flowLoaded(canvasElement);
+    await expect(
+      await canvas.findByText('24 issues merged · 18 without a person'),
+    ).toBeVisible();
+    await expect(canvas.queryByRole('group', { name: 'Kind' })).toBeNull();
+    await expect(panelNames(canvasElement)).toEqual([
+      'Autonomy',
+      'Quality',
+      'Flow and cost',
+      'Bugs',
+    ]);
+    await expect(unreachableAsked).toEqual([null]);
   },
 };
