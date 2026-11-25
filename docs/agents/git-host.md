@@ -43,10 +43,6 @@ A pull request body containing `Closes #<n>` closes issue `<n>` when it merges.
 - **Watch CI**: `gh.exe pr checks --repo CGSeb/factorydeck <pr> --watch`. « no checks reported » means no CI ran.
 - **Failed CI log**: `gh.exe run view --repo CGSeb/factorydeck <run id> --log-failed` (the run id is in the failing check's link).
 
-## Wiki
-
-- **Read a wiki page**: read `https://raw.githubusercontent.com/wiki/CGSeb/factorydeck/<Page>.md` with `curl -fsSL` or the agent's fetch tool, where `<Page>` ends the page URL (`https://github.com/CGSeb/factorydeck/wiki/<Page>`). It reads the page where it is, nothing is copied. GitHub has no wiki API: this works for a public wiki only; a private wiki's pages are read as external pages, with the agent's own fetch tool or connector, or not at all.
-
 ## Main branch protection
 
 - **Protect the main branch**: `gh.exe api -X PUT repos/CGSeb/factorydeck/branches/main/protection --input <file>` with `{"required_status_checks": {"strict": true, "contexts": [<check names>]}, "enforce_admins": false, "required_pull_request_reviews": null, "restrictions": null}`. Needs admin rights; private repositories need a paid plan.
