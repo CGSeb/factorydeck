@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import type { IssueKind } from '../git-host/kind.ts';
 import type { Period } from '../overview/types.ts';
 import type { FlowResponse, FlowStats } from '../stats/types.ts';
 import { Panel } from './components/Panel.tsx';
@@ -83,9 +84,11 @@ function FlowFigures({
 function TokenFigures({
   flow,
   period,
+  kind,
 }: {
   flow: FlowStats;
   period: Period;
+  kind: IssueKind | null;
 }): ReactElement {
   const { tokens } = flow.current;
   const now = tokenShares(tokens);
@@ -106,17 +109,19 @@ function TokenFigures({
         better="lower"
         {...compare(before?.droppedWork, calls)}
       />
-      <StatFigure
-        label="No work item"
-        help={FIGURE_HELP['No work item']}
-        value={now.noWorkItem}
-        format={wholePercent}
-        kind="share"
-        n={tokens.apiCalls}
-        noun={CALL_NOUN}
-        better="lower"
-        {...compare(before?.noWorkItem, calls)}
-      />
+      {kind === null && (
+        <StatFigure
+          label="No work item"
+          help={FIGURE_HELP['No work item']}
+          value={now.noWorkItem}
+          format={wholePercent}
+          kind="share"
+          n={tokens.apiCalls}
+          noun={CALL_NOUN}
+          better="lower"
+          {...compare(before?.noWorkItem, calls)}
+        />
+      )}
       <StatFigure
         label="Tokens on rework"
         help={FIGURE_HELP['Tokens on rework']}
@@ -136,10 +141,12 @@ function FlowContent({
   response,
   period,
   now,
+  kind,
 }: {
   response: FlowResponse | undefined;
   period: Period;
   now: Date;
+  kind: IssueKind | null;
 }): ReactElement {
   if (response === undefined) return <StatusLine>{LOADING}</StatusLine>;
   if (response.status === 'unreachable') {
@@ -175,7 +182,7 @@ function FlowContent({
         />
       </StatsSection>
       <StatsSection title={WENT_TITLE}>
-        <TokenFigures flow={flow} period={period} />
+        <TokenFigures flow={flow} period={period} kind={kind} />
       </StatsSection>
     </div>
   );
@@ -185,14 +192,16 @@ export function StatsFlowPanel({
   response,
   period,
   now = new Date(),
+  kind = null,
 }: {
   response: FlowResponse | undefined;
   period: Period;
   now?: Date | undefined;
+  kind?: IssueKind | null;
 }): ReactElement {
   return (
     <Panel heading="Flow and cost">
-      <FlowContent response={response} period={period} now={now} />
+      <FlowContent response={response} period={period} now={now} kind={kind} />
     </Panel>
   );
 }

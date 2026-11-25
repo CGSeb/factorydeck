@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { bugStatsLoaderOf } from './stats-bug-fixtures.ts';
 import { expect, within } from 'storybook/test';
 import {
   autonomyLoaderOf,
@@ -28,6 +29,7 @@ const meta = {
     loadAutonomy: autonomyLoaderOf(),
     loadQuality: qualityLoaderOf(),
     loadFlow: flowLoaderOf(),
+    loadBugStats: bugStatsLoaderOf(),
   },
   decorators: [statsRouter],
 } satisfies Meta<typeof StatsPage>;

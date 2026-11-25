@@ -23,6 +23,7 @@ import { SkillPage } from './SkillPage.tsx';
 import { SkillsPage } from './SkillsPage.tsx';
 import type {
   LoadAutonomy,
+  LoadBugStats,
   LoadFlow,
   LoadQuality,
   LoadWaiting,
@@ -49,6 +50,7 @@ export interface AppProps {
   loadOccurrences: LoadOccurrences;
   loadOutput: LoadOutput;
   loadFlow: LoadFlow;
+  loadBugStats: LoadBugStats;
   loadWaiting: LoadWaiting;
 }
 

@@ -36,6 +36,7 @@ export const statsRouter: Decorator = (Story, { parameters }) =>
 export const AUTONOMY = '.fd-stats-autonomy';
 export const QUALITY = '.fd-stats-quality';
 export const FLOW = '.fd-stats-flow';
+export const BUGS = '.fd-stats-bugs';
 
 export function figureTexts(
   canvasElement: HTMLElement,
@@ -72,5 +73,11 @@ export function panelOf(canvasElement: HTMLElement, name: string): HTMLElement {
 export async function flowLoaded(canvasElement: HTMLElement): Promise<void> {
   await within(canvasElement).findByRole('heading', {
     name: 'Merged per week',
+  });
+}
+
+export async function bugsLoaded(canvasElement: HTMLElement): Promise<void> {
+  await within(canvasElement).findByRole('heading', {
+    name: 'Bugs in delivered work, by week',
   });
 }

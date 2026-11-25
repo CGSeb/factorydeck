@@ -55,28 +55,41 @@ export function refusedScore(index: number): number {
   return BELOW_SCORES[Math.floor(index / 4) % BELOW_SCORES.length] ?? 68;
 }
 
-function mergedDemo(index: number): Demo {
-  const number = mergedIssueNumber(index);
+export function isDemoBug(index: number): boolean {
+  return index % 4 === 1;
+}
+
+function mergedIssue(
+  index: number,
+  number: number,
+  waitDays: number | null,
+): DemoIssue {
   const mergeDays = mergeDaysAgo(index);
-  const kind = helpKind(index);
-  const asked = kind === 'spec' || kind === 'spec-below';
-  const waitDays = (WAITS_HOURS[index % WAITS_HOURS.length] ?? 6) / 24;
-  const issue: DemoIssue = {
+  const bug = isDemoBug(index);
+  return {
     number,
-    title: `${String(number)} · Demo feature ${String(index + 1)}`,
+    title: `${String(number)} · Demo ${bug ? 'bug' : 'feature'} ${String(index + 1)}`,
     closed: true,
-    labels: ['spec', 'feature'],
-    daysAgo: mergeDays + 3,
+    labels: ['spec', bug ? 'bug' : 'feature'],
+    daysAgo: mergeDays + (bug ? 0.5 + (index % 5) * 0.6 : 3),
     closedDaysAgo: mergeDays - 0.001,
-    ...(asked
-      ? {
+    ...(waitDays === null
+      ? {}
+      : {
           needsSpecAt: {
             addedDaysAgo: mergeDays + 2.5,
             removedDaysAgo: mergeDays + 2.5 - waitDays,
           },
-        }
-      : {}),
+        }),
   };
+}
+
+function mergedDemo(index: number): Demo {
+  const number = mergedIssueNumber(index);
+  const kind = helpKind(index);
+  const asked = kind === 'spec' || kind === 'spec-below';
+  const waitDays = (WAITS_HOURS[index % WAITS_HOURS.length] ?? 6) / 24;
+  const issue = mergedIssue(index, number, asked ? waitDays : null);
   const below = refusedScore(index);
   const refused =
     kind === 'below' || kind === 'spec-below'

@@ -1,9 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, within } from 'storybook/test';
+import { bugStatsLoaderOf, bugStatsOf } from './stats-bug-fixtures.ts';
 import { flowLoaderOf } from './flow-fixtures.ts';
 import { autonomyLoaderOf, qualityLoaderOf } from './stats-fixtures.ts';
 import { FIGURE_HELP } from './stats-help.ts';
 import {
+  bugsLoaded,
   flowLoaded,
   loaded,
   panelOf,
@@ -19,6 +21,7 @@ const meta = {
     loadAutonomy: autonomyLoaderOf(),
     loadQuality: qualityLoaderOf(),
     loadFlow: flowLoaderOf(),
+    loadBugStats: bugStatsLoaderOf(bugStatsOf()),
   },
   decorators: [
     (Story) => (
@@ -38,6 +41,7 @@ async function allLoaded(canvasElement: HTMLElement): Promise<void> {
   await loaded(canvasElement);
   await qualityLoaded(canvasElement);
   await flowLoaded(canvasElement);
+  await bugsLoaded(canvasElement);
 }
 
 export const EveryFigureHelp: Story = {

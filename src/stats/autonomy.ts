@@ -2,6 +2,7 @@ import { and, eq, inArray, isNotNull } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import { gitHostIssue, gitHostProject, gitHostRequest } from '../db/schema.ts';
 import type { Period } from '../overview/types.ts';
+import type { IssueKind } from '../git-host/kind.ts';
 import { needsSpecEpisodes } from '../git-host/milestones.ts';
 import {
   type IssueRow,
@@ -24,11 +25,13 @@ import type {
   AutonomyBucket,
 } from './types.ts';
 import { type StatsBounds, earliestMerge, statsBounds } from './bounds.ts';
+import { kinded, ofKind, valuesOf } from './kinded.ts';
 
 export interface AutonomyQuery {
   period: Period;
   timeZone: string;
   project?: string | undefined;
+  kind?: IssueKind | undefined;
   now?: Date;
 }
 
@@ -220,11 +223,16 @@ export function summarize(
   };
 }
 
-async function factoryProjects(
+export type FactoryProject = Pick<
+  typeof gitHostProject.$inferSelect,
+  'project' | 'stageLabels' | 'autoMerge' | 'bugLabel'
+>;
+
+export async function factoryProjects(
   db: Database,
   project: string | undefined,
   hasFactory: FactoryFilter,
-) {
+): Promise<FactoryProject[]> {
   const rows = await db
     .select({
       project: gitHostProject.project,
@@ -239,7 +247,7 @@ async function factoryProjects(
         project === undefined ? undefined : eq(gitHostProject.project, project),
       ),
     );
-  const kept = [];
+  const kept: FactoryProject[] = [];
   for (const row of rows) {
     if (await hasFactory(row.project)) kept.push(row);
   }
@@ -288,23 +296,20 @@ export async function loadIssues<T>(
   });
 }
 
-export function loadIssueFacts(
-  db: Database,
-  project: string | undefined,
-  hasFactory: FactoryFilter,
-): Promise<IssueFacts[]> {
-  return loadIssues(db, project, hasFactory, issueFacts);
-}
-
 export async function autonomyStats(
   db: Database,
   query: AutonomyQuery,
   hasFactory: FactoryFilter,
 ): Promise<AutonomyStats> {
-  const issues = await loadIssueFacts(db, query.project, hasFactory);
+  const issues = await loadIssues(
+    db,
+    query.project,
+    hasFactory,
+    kinded(issueFacts),
+  );
   const bounds = await statsBounds(db, {
     ...query,
-    earliestMerge: earliestMerge(issues),
+    earliestMerge: earliestMerge(valuesOf(issues)),
   });
-  return summarize(issues, bounds);
+  return summarize(ofKind(issues, query.kind), bounds);
 }

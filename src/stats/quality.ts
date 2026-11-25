@@ -18,6 +18,7 @@ import {
 } from './autonomy.ts';
 import { earliestReport, latestReport, storedReports } from './stops.ts';
 import { type StatsBounds, earliestMerge, statsBounds } from './bounds.ts';
+import { kinded, ofKind, valuesOf } from './kinded.ts';
 import type {
   FirstReport,
   QualityCounts,
@@ -166,10 +167,15 @@ export async function qualityStats(
   query: QualityQuery,
   hasFactory: FactoryFilter,
 ): Promise<QualityStats> {
-  const issues = await loadIssues(db, query.project, hasFactory, qualityFacts);
+  const issues = await loadIssues(
+    db,
+    query.project,
+    hasFactory,
+    kinded(qualityFacts),
+  );
   const bounds = await statsBounds(db, {
     ...query,
-    earliestMerge: earliestMerge(issues),
+    earliestMerge: earliestMerge(valuesOf(issues)),
   });
-  return summarizeQuality(issues, bounds);
+  return summarizeQuality(ofKind(issues, query.kind), bounds);
 }

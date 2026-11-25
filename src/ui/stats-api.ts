@@ -1,5 +1,7 @@
+import type { IssueKind } from '../git-host/kind.ts';
 import type {
   AutonomyResponse,
+  BugResponse,
   FlowResponse,
   QualityResponse,
   WaitingResponse,
@@ -12,58 +14,64 @@ import {
   queryOf,
 } from './skills-api.ts';
 
-export type LoadAutonomy = (
+type KindLoad<T> = (
   filters: SkillFilters,
-) => Promise<AutonomyResponse | undefined>;
+  kind?: IssueKind | null,
+) => Promise<T | undefined>;
+
+function statsLoader<T>(
+  path: string,
+  fetchImpl: typeof fetch,
+  timeZone: () => string,
+): KindLoad<T> {
+  return async (filters, kind = null) => {
+    const query = queryOf(filters, timeZone());
+    if (kind !== null) query.set('kind', kind);
+    const body = await fetchJson(
+      fetchImpl,
+      `/api/stats/${path}?${query.toString()}`,
+    );
+    return isResponse<T>(body) ? body : undefined;
+  };
+}
+
+export type LoadAutonomy = KindLoad<AutonomyResponse>;
 
 export function autonomyLoader(
   fetchImpl: typeof fetch = (...args) => fetch(...args),
   timeZone: () => string = browserTimeZone,
 ): LoadAutonomy {
-  return async (filters) => {
-    const query = queryOf(filters, timeZone());
-    const body = await fetchJson(
-      fetchImpl,
-      `/api/stats/autonomy?${query.toString()}`,
-    );
-    return isResponse<AutonomyResponse>(body) ? body : undefined;
-  };
+  return statsLoader('autonomy', fetchImpl, timeZone);
 }
 
-export type LoadQuality = (
-  filters: SkillFilters,
-) => Promise<QualityResponse | undefined>;
+export type LoadQuality = KindLoad<QualityResponse>;
 
 export function qualityLoader(
   fetchImpl: typeof fetch = (...args) => fetch(...args),
   timeZone: () => string = browserTimeZone,
 ): LoadQuality {
-  return async (filters) => {
-    const query = queryOf(filters, timeZone());
-    const body = await fetchJson(
-      fetchImpl,
-      `/api/stats/quality?${query.toString()}`,
-    );
-    return isResponse<QualityResponse>(body) ? body : undefined;
-  };
+  return statsLoader('quality', fetchImpl, timeZone);
 }
 
-export type LoadFlow = (
-  filters: SkillFilters,
-) => Promise<FlowResponse | undefined>;
+export type LoadFlow = KindLoad<FlowResponse>;
 
 export function flowLoader(
   fetchImpl: typeof fetch = (...args) => fetch(...args),
   timeZone: () => string = browserTimeZone,
 ): LoadFlow {
-  return async (filters) => {
-    const query = queryOf(filters, timeZone());
-    const body = await fetchJson(
-      fetchImpl,
-      `/api/stats/flow?${query.toString()}`,
-    );
-    return isResponse<FlowResponse>(body) ? body : undefined;
-  };
+  return statsLoader('flow', fetchImpl, timeZone);
+}
+
+export type LoadBugStats = (
+  filters: SkillFilters,
+) => Promise<BugResponse | undefined>;
+
+export function bugStatsLoader(
+  fetchImpl: typeof fetch = (...args) => fetch(...args),
+  timeZone: () => string = browserTimeZone,
+): LoadBugStats {
+  const load = statsLoader<BugResponse>('bugs', fetchImpl, timeZone);
+  return (filters) => load(filters);
 }
 
 export type LoadWaiting = (

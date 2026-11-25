@@ -19,6 +19,8 @@ import {
   bucketCounts,
 } from './autonomy.ts';
 import { type StatsBounds, earliestMerge, statsBounds } from './bounds.ts';
+import { type KindScope, kindTotals } from './kind-calls.ts';
+import { kinded, ofKind, valuesOf } from './kinded.ts';
 import { earliestReport, refusing, storedReports } from './stops.ts';
 import type {
   FlowIssue,
@@ -82,8 +84,10 @@ export function periodTokens(
   allocation: Allocation,
   dropped: ReadonlySet<string>,
   rework: number,
+  scope?: KindScope,
 ): FlowTokens {
-  const { tokens, apiCalls } = allocation.totals;
+  const { tokens, apiCalls } =
+    scope === undefined ? allocation.totals : kindTotals(allocation, scope);
   let droppedWork = 0;
   for (const [key, issue] of allocation.issues) {
     if (dropped.has(key)) droppedWork += issue.tokens;
@@ -91,7 +95,7 @@ export function periodTokens(
   return {
     total: tokens,
     droppedWork,
-    noWorkItem: allocation.noWorkItem?.tokens ?? 0,
+    noWorkItem: scope === undefined ? (allocation.noWorkItem?.tokens ?? 0) : 0,
     rework,
     apiCalls,
   };
@@ -105,6 +109,7 @@ export function summarizeFlow(
   issues: readonly LoadedIssue[],
   bounds: StatsBounds,
   usage: FlowUsage,
+  scope?: KindScope,
 ): FlowStats {
   const dropped = new Set(
     issues
@@ -123,7 +128,7 @@ export function summarizeFlow(
       .map(({ flow }) => flow);
   const current: FlowPeriod<FlowStripIssue> = {
     issues: mergedIn({ from: bounds.start, to: null }),
-    tokens: periodTokens(usage.current, dropped, usage.rework.current),
+    tokens: periodTokens(usage.current, dropped, usage.rework.current, scope),
   };
   const previous: FlowPeriod | undefined =
     bounds.start === null ||
@@ -136,7 +141,12 @@ export function summarizeFlow(
             from: bounds.previousStart,
             to: bounds.start,
           }).map(withoutKey),
-          tokens: periodTokens(usage.previous, dropped, usage.rework.previous),
+          tokens: periodTokens(
+            usage.previous,
+            dropped,
+            usage.rework.previous,
+            scope,
+          ),
         };
   return {
     current,
@@ -183,6 +193,44 @@ async function reworkTokens(
   };
 }
 
+interface FlowIssues {
+  issues: LoadedIssue[];
+  bounds: StatsBounds;
+  scope: KindScope | undefined;
+}
+
+async function flowIssues(
+  db: Database,
+  query: FlowQuery,
+  hasFactory: FactoryFilter,
+): Promise<FlowIssues> {
+  const loaded = await loadIssues(
+    db,
+    query.project,
+    hasFactory,
+    kinded((issue, requests, state): LoadedIssue => ({
+      issue,
+      facts: issueFacts(issue, requests, state),
+      refusedAt: firstRefusal(requests),
+    })),
+  );
+  const bounds = await statsBounds(db, {
+    ...query,
+    earliestMerge: earliestMerge(valuesOf(loaded).map(({ facts }) => facts)),
+  });
+  const kinds = new Map(
+    loaded.map(({ kind, value: { issue } }) => [
+      issueKey(issue.project, issue.number),
+      kind,
+    ]),
+  );
+  return {
+    issues: ofKind(loaded, query.kind),
+    bounds,
+    scope: query.kind === undefined ? undefined : { kind: query.kind, kinds },
+  };
+}
+
 export async function flowStats(
   db: Database,
   query: FlowQuery,
@@ -190,20 +238,7 @@ export async function flowStats(
   hasFactory: FactoryFilter,
 ): Promise<FlowStats> {
   const { project } = query;
-  const issues = await loadIssues(
-    db,
-    project,
-    hasFactory,
-    (issue, requests, state) => ({
-      issue,
-      facts: issueFacts(issue, requests, state),
-      refusedAt: firstRefusal(requests),
-    }),
-  );
-  const bounds = await statsBounds(db, {
-    ...query,
-    earliestMerge: earliestMerge(issues.map(({ facts }) => facts)),
-  });
+  const { issues, bounds, scope } = await flowIssues(db, query, hasFactory);
   const window = (
     startAt: number | null,
     endAt: number | null,
@@ -228,10 +263,15 @@ export async function flowStats(
       previous: previousWindow,
     }),
   ]);
-  return summarizeFlow(issues, bounds, {
-    lifetime,
-    current,
-    ...(previous === undefined ? {} : { previous }),
-    rework,
-  });
+  return summarizeFlow(
+    issues,
+    bounds,
+    {
+      lifetime,
+      current,
+      ...(previous === undefined ? {} : { previous }),
+      rework,
+    },
+    scope,
+  );
 }

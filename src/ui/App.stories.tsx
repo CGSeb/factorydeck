@@ -1,3 +1,4 @@
+import { bugStatsLoaderOf } from './stats-bug-fixtures.ts';
 import {
   collectionLoaderOf,
   collectionResponse,
@@ -74,6 +75,7 @@ const loaders = {
   loadOccurrences: occurrencesLoaderOf(),
   loadOutput: outputLoaderOf(),
   loadFlow: flowLoaderOf(),
+  loadBugStats: bugStatsLoaderOf(),
   loadWaiting: waitingLoaderOf(),
 };
 
