@@ -1,5 +1,7 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
+import { type ReactNode, useEffect, useState } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router';
+import { storeBugTickets } from './bug-tickets-state.ts';
 import { expect, within } from 'storybook/test';
 import { withStoredFold } from './components/sidebar-stories.ts';
 import {
@@ -72,5 +74,138 @@ export const FoldedWithProjects: Story = {
     await expect(
       canvas.getByRole('link', { name: 'Overview' }),
     ).toHaveAttribute('aria-current', 'page');
+  },
+};
+
+const APP_ROOT = '/home/dev/example-app';
+const LIB_ROOT = '/home/dev/example-lib';
+
+function withBugTickets(bugTickets: string[]) {
+  return factoryLoaderOf(
+    factoryResponse([], true, optionsOf([APP_ROOT, LIB_ROOT]), bugTickets),
+  );
+}
+
+function sectionAt(path: string): Decorator {
+  return (Story) => (
+    <MemoryRouter initialEntries={[path]}>
+      <Routes>
+        <Route element={<Story />}>
+          <Route path="*" element={<p>Section content</p>} />
+        </Route>
+      </Routes>
+    </MemoryRouter>
+  );
+}
+
+function StoredBugTickets({
+  bugTickets,
+  children,
+}: {
+  bugTickets: string[];
+  children: ReactNode;
+}): ReactNode {
+  useState(() => {
+    storeBugTickets(bugTickets);
+    return bugTickets;
+  });
+  useEffect(
+    () => () => {
+      storeBugTickets([]);
+    },
+    [],
+  );
+  return children;
+}
+
+function withStoredBugTickets(bugTickets: string[]): Decorator {
+  return (Story) => (
+    <StoredBugTickets bugTickets={bugTickets}>
+      <Story />
+    </StoredBugTickets>
+  );
+}
+
+function linkNames(canvasElement: HTMLElement): string[] {
+  const nav = within(canvasElement).getByRole('navigation');
+  return within(nav)
+    .getAllByRole('link')
+    .map((link) => link.textContent);
+}
+
+export const BugsLinkAfterFeatures: Story = {
+  args: { loadFactory: withBugTickets([APP_ROOT]) },
+  decorators: [sectionAt('/bugs'), withStoredBugTickets([])],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const bugs = await canvas.findByRole('link', { name: 'Bugs' });
+    await expect(bugs).toHaveAttribute('aria-current', 'page');
+    await expect(bugs).toHaveAttribute('href', '/bugs');
+    await expect(bugs.querySelector('[data-icon="bugs"]')).not.toBeNull();
+    const names = linkNames(canvasElement);
+    await expect(names.indexOf('Bugs')).toBe(names.indexOf('Features') + 1);
+  },
+};
+
+export const BugsLinkFolded: Story = {
+  args: { loadFactory: withBugTickets([APP_ROOT]) },
+  decorators: [
+    sectionAt('/bugs'),
+    withStoredFold('collapsed'),
+    withStoredBugTickets([]),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole('link', { name: 'Bugs' }),
+    ).toHaveAttribute('aria-current', 'page');
+  },
+};
+
+export const NoBugsLinkWithoutBugTickets: Story = {
+  decorators: [sectionAt('/')],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole('combobox', { name: 'Project' });
+    await expect(canvas.getByRole('link', { name: 'Features' })).toBeVisible();
+    await expect(canvas.queryByRole('link', { name: 'Bugs' })).toBeNull();
+  },
+};
+
+export const NoBugsLinkForAProjectWithoutBugTickets: Story = {
+  args: { loadFactory: withBugTickets([APP_ROOT]) },
+  decorators: [
+    sectionAt(`/?project=${encodeURIComponent(LIB_ROOT)}`),
+    withStoredBugTickets([]),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole('combobox', { name: 'Project' });
+    await expect(canvas.getByRole('link', { name: 'Features' })).toBeVisible();
+    await expect(canvas.queryByRole('link', { name: 'Bugs' })).toBeNull();
+  },
+};
+
+export const BugsLinkBeforeTheStatusLoads: Story = {
+  args: { loadFactory: () => new Promise(() => undefined) },
+  decorators: [sectionAt('/'), withStoredBugTickets([APP_ROOT])],
+  play: async ({ canvasElement }) => {
+    const names = linkNames(canvasElement);
+    await expect(names.indexOf('Bugs')).toBe(names.indexOf('Features') + 1);
+  },
+};
+
+export const BugsLinkKeptWhenUnreachable: Story = {
+  args: {
+    loadFactory: () =>
+      Promise.resolve({ status: 'unreachable', refreshSeconds: 3600 }),
+  },
+  decorators: [sectionAt('/'), withStoredBugTickets([APP_ROOT])],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await new Promise((resolve) => {
+      setTimeout(resolve, 50);
+    });
+    await expect(canvas.getByRole('link', { name: 'Bugs' })).toBeVisible();
   },
 };

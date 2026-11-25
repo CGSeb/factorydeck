@@ -103,6 +103,7 @@ describe('deleting a project', () => {
         { project: gone, name: 'gone-app' },
         { project: kept, name: 'kept-app' },
       ],
+      bugTickets: [],
     });
 
     expect(await deleteProject(db, gone, hasFactory)).toBe('deleted');
@@ -241,6 +242,7 @@ describe('deleting a project', () => {
       hasSessions: false,
       missing: [],
       projects: [],
+      bugTickets: [],
     });
     await db.insert(session).values([
       { id: 'a', project: '/gone/zeta' },
@@ -256,5 +258,38 @@ describe('deleting a project', () => {
       { project: '/gone/alpha', name: 'alpha' },
       { project: '/gone/zeta', name: 'zeta' },
     ]);
+  });
+
+  it('lists the collected projects that have a bug label', async () => {
+    const syncedFrom = new Date('2026-03-01T10:00:00Z');
+    await db.insert(gitHostProject).values([
+      { project: '/work/zeta', bugLabel: 'bug', syncedFrom },
+      { project: '/work/alpha', bugLabel: 'defect', syncedFrom },
+      { project: '/work/plain', bugLabel: null, syncedFrom },
+      { project: '/work/failed', bugLabel: 'bug', syncedFrom: null },
+    ]);
+    expect((await factoryStatus(db, hasFactory)).bugTickets).toEqual([
+      '/work/alpha',
+      '/work/zeta',
+    ]);
+  });
+
+  it('drops a deleted project from the bug tickets', async () => {
+    const gone = await factoryProject('gone-app');
+    const kept = await factoryProject('kept-app');
+    await writeSession('g1', gone);
+    await writeSession('k1', kept);
+    await ingest(db, logs);
+    const syncedFrom = new Date('2026-03-01T10:00:00Z');
+    await db.insert(gitHostProject).values([
+      { project: gone, bugLabel: 'bug', syncedFrom },
+      { project: kept, bugLabel: 'bug', syncedFrom },
+    ]);
+    await rm(factoryFile(gone));
+    expect((await factoryStatus(db, hasFactory)).bugTickets).toEqual(
+      [gone, kept].sort(),
+    );
+    expect(await deleteProject(db, gone, hasFactory)).toBe('deleted');
+    expect((await factoryStatus(db, hasFactory)).bugTickets).toEqual([kept]);
   });
 });

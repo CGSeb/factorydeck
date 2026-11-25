@@ -29,6 +29,7 @@ const sessions: SessionSource = {
 const status: FactoryStatus = {
   hasSessions: true,
   projects: [{ project: '/work/old-app', name: 'old-app' }],
+  bugTickets: ['/work/old-app'],
   missing: [
     {
       project: '/work/old-app',

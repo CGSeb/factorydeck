@@ -49,6 +49,7 @@ export const EveryIcon: Story = {
     await expect(items.map((item) => item.textContent)).toEqual([
       'overview',
       'features',
+      'bugs',
       'stats',
       'frictions',
       'sessions',

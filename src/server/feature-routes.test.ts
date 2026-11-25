@@ -78,6 +78,7 @@ const features: FeatureSource = {
     queries.push({ key, query });
     return Promise.resolve(key.number === 7 ? feature : undefined);
   },
+  bugs: () => Promise.reject(new Error('Not used')),
 };
 
 function app(checkDatabase = up) {

@@ -1,5 +1,7 @@
 import type { ReactElement } from 'react';
 import { Route, Routes } from 'react-router';
+import type { LoadBugs } from './bugs-api.ts';
+import { BugsPage } from './BugsPage.tsx';
 import type { DeleteProject, LoadFactory } from './factory-api.ts';
 import { FeaturePage } from './FeaturePage.tsx';
 import type { LoadFeature, LoadFeatures } from './features-api.ts';
@@ -36,6 +38,7 @@ export interface AppProps {
   loadRoles: LoadRoles;
   loadFeatures: LoadFeatures;
   loadFeature: LoadFeature;
+  loadBugs: LoadBugs;
   loadFactory: LoadFactory;
   deleteProject: DeleteProject;
   loadCollection: LoadCollection;
@@ -59,9 +62,6 @@ export function App(props: AppProps): ReactElement {
     loadRoles,
     loadFeatures,
     loadFeature,
-    loadFrictions,
-    loadOccurrences,
-    loadOutput,
   } = props;
   return (
     <Routes>
@@ -75,17 +75,9 @@ export function App(props: AppProps): ReactElement {
           path="features/:number"
           element={<FeaturePage loadFeature={loadFeature} />}
         />
+        <Route path="bugs" element={<BugsPage {...props} />} />
         <Route path="stats" element={<StatsPage {...props} />} />
-        <Route
-          path="frictions"
-          element={
-            <FrictionsPage
-              loadFrictions={loadFrictions}
-              loadOccurrences={loadOccurrences}
-              loadOutput={loadOutput}
-            />
-          }
-        />
+        <Route path="frictions" element={<FrictionsPage {...props} />} />
         <Route
           path="sessions"
           element={<SessionsPage loadSessions={loadSessions} />}

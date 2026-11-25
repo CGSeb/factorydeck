@@ -1,0 +1,47 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "030bde85-709d-4180-86a1-c23eaa14d726",
+  "prevIds": [
+    "35ac390b-c977-42fa-b95f-13f0778b6425"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "git_host_project",
+        "fix_read"
+      ],
+      "writes": [
+        "s|col|public.git_host_project.fix_read",
+        "n|col|public.git_host_project.fix_read",
+        "e|col|public.git_host_project.fix_read"
+      ],
+      "reads": [
+        "n|tbl|public.git_host_project",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "git_host_project",
+        "name": "fix_read",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

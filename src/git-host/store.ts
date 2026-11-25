@@ -22,6 +22,7 @@ export interface ProjectState {
   syncedFrom: Date | null;
   outcomeSettings: boolean;
   historyRead: boolean;
+  fixRead: boolean;
 }
 
 function isGitHost(value: string | null): value is GitHostName {
@@ -43,6 +44,7 @@ export async function projectState(
     syncedFrom: row.syncedFrom,
     outcomeSettings: row.stageLabels !== null,
     historyRead: row.historyRead,
+    fixRead: row.fixRead,
   };
 }
 
@@ -216,6 +218,7 @@ export async function saveSuccess(
       autoMerge: settings.autoMerge,
       bugLabel: settings.bugLabel,
       historyRead: true,
+      fixRead: true,
     };
     await tx
       .insert(gitHostProject)

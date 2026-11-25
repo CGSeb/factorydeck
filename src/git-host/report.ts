@@ -1,4 +1,4 @@
-import type { SerenityReport } from './types.ts';
+import type { Reproduced, SerenityReport } from './types.ts';
 
 export interface ReportComment {
   body: string;
@@ -9,6 +9,16 @@ const FENCE = /^ {0,3}(`{3,}|~{3,})/;
 const HEADING = /^ {0,3}## Serenity: (\d+)\/100 \(threshold (\d+)\)/;
 const ROUNDS = /(?:^|[.;]\s+)Review: (\d+) rounds?\b/;
 const GATES_PASSED = /^Gates: all passed(?:$|[.\s(])/;
+const ROOT_CAUSE = 'Root cause:';
+const REPRODUCED = 'Reproduced:';
+const ROOT_CAUSE_LIMIT = 200;
+
+const REPRODUCED_TEXTS: Readonly<Record<string, Reproduced>> = {
+  'failed on main': 'failed-on-main',
+  'passed on main': 'passed-on-main',
+  'did not run on main': 'did-not-run-on-main',
+  'no test': 'no-test',
+};
 
 function closes(fence: string, marker: string | undefined): boolean {
   return (
@@ -30,6 +40,26 @@ function proseLines(body: string): string[] {
   return lines;
 }
 
+function valueOf(lines: readonly string[], prefix: string): string | undefined {
+  return lines.find((line) => line.startsWith(prefix))?.slice(prefix.length);
+}
+
+function rootCauseOf(lines: readonly string[]): string | undefined {
+  const text = valueOf(lines, ROOT_CAUSE)?.trim();
+  if (text === undefined || text === '' || text === 'none') return undefined;
+  const chars = Array.from(text);
+  return chars.length <= ROOT_CAUSE_LIMIT
+    ? text
+    : `${chars.slice(0, ROOT_CAUSE_LIMIT - 1).join('')}…`;
+}
+
+function reproducedOf(lines: readonly string[]): Reproduced | undefined {
+  const text = valueOf(lines, REPRODUCED)?.trim();
+  return text === undefined || !Object.hasOwn(REPRODUCED_TEXTS, text)
+    ? undefined
+    : REPRODUCED_TEXTS[text];
+}
+
 export function parseReport(
   body: string,
   at: string,
@@ -43,12 +73,16 @@ export function parseReport(
   const rounds = lines
     .map((line) => ROUNDS.exec(line)?.[1])
     .find((value) => value !== undefined);
+  const rootCause = rootCauseOf(lines);
+  const reproduced = reproducedOf(lines);
   return {
     score: Number(heading[1]),
     threshold: Number(heading[2]),
     rounds: rounds === undefined ? null : Number(rounds),
     gatesPassed: gates !== undefined && GATES_PASSED.test(gates),
     at,
+    ...(rootCause === undefined ? {} : { rootCause }),
+    ...(reproduced === undefined ? {} : { reproduced }),
   };
 }
 

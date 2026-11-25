@@ -11,6 +11,7 @@ export interface FactoryStatus {
   hasSessions: boolean;
   missing: MissingFactory[];
   projects: ProjectOption[];
+  bugTickets: string[];
 }
 
 export type DeleteResult = 'deleted' | 'has-factory' | 'not-found';

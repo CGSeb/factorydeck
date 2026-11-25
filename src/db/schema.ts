@@ -274,6 +274,7 @@ export const gitHostProject = pgTable('git_host_project', {
   autoMerge: boolean('auto_merge'),
   bugLabel: text('bug_label'),
   historyRead: boolean('history_read').notNull().default(false),
+  fixRead: boolean('fix_read').notNull().default(false),
 });
 
 export const gitHostRun = pgTable('git_host_run', {

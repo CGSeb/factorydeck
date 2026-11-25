@@ -1,0 +1,13 @@
+.fd-bugs-table {
+  min-width: 860px;
+}
+
+.fd-bugs-age {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.fd-bugs-more > td {
+  padding-top: var(--fd-space-2);
+  padding-bottom: var(--fd-space-2);
+}
