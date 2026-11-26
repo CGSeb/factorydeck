@@ -33,9 +33,9 @@ export interface TrendBarsProps {
   noun?: Noun | undefined;
 }
 
-const COLUMN_GAP = '6px';
+export const COLUMN_GAP = '6px';
 const SMALL_SAMPLE_OPACITY = 0.4;
-const DIMMED_OPACITY = 0.45;
+export const DIMMED_OPACITY = 0.45;
 export const SMALL_SAMPLE = 'small sample';
 
 const columns: CSSProperties = {
@@ -70,10 +70,10 @@ const columnLabel: CSSProperties = {
   whiteSpace: 'nowrap',
 };
 
-function Labels({
+export function TrendLabels({
   buckets,
 }: {
-  buckets: readonly TrendBucket[];
+  buckets: readonly { label: string }[];
 }): ReactElement | null {
   const shown = edgeLabels(buckets);
   if (shown.length === 0) return null;
@@ -229,7 +229,7 @@ export function TrendBars({
             />
           ))}
         </div>
-        <Labels buckets={buckets} />
+        <TrendLabels buckets={buckets} />
       </div>
       {buckets.length > 0 ? (
         <div style={visuallyHidden}>

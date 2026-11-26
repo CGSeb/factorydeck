@@ -160,11 +160,17 @@ export type WaitingResponse =
     }
   | Unreachable;
 
+export interface BugOpenings {
+  created: number;
+  reopened: number;
+}
+
 export interface BugCounts {
   merged: number;
   bugs: number;
   reopened: number;
   fixMs: number[];
+  openings: BugOpenings;
 }
 
 export interface BugStripIssue {
@@ -178,6 +184,7 @@ export interface BugBucket {
   start: string;
   merged: number;
   bugs: number;
+  opened: number;
 }
 
 export interface BugStats {

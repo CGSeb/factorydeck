@@ -21,6 +21,7 @@ export interface ChangeInput {
   previousN?: number | undefined;
   comparison: string;
   better: BetterDirection;
+  count?: boolean;
 }
 
 export interface Change {
@@ -101,9 +102,10 @@ function versus(comparison: string): string {
 
 function changeBase(input: ChangeInput): [number, number] | null {
   const { value, previous, previousN } = input;
-  if (value === null || !isEnough(input.n)) return null;
+  const sampled = input.count !== true;
+  if (value === null || (sampled && !isEnough(input.n))) return null;
   if (previous === undefined || previous === null) return null;
-  if (previousN !== undefined && !isEnough(previousN)) return null;
+  if (sampled && previousN !== undefined && !isEnough(previousN)) return null;
   if (input.kind === 'amount' && previous === 0) return null;
   return [value, previous];
 }

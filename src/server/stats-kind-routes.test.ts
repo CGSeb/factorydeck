@@ -20,7 +20,13 @@ import {
 import { createApp } from './app.ts';
 
 const bugs: BugStats = {
-  current: { merged: 4, bugs: 1, reopened: 1, fixMs: [7_200_000] },
+  current: {
+    merged: 4,
+    bugs: 1,
+    reopened: 1,
+    fixMs: [7_200_000],
+    openings: { created: 2, reopened: 1 },
+  },
   issues: [
     {
       project: '/work/app',
@@ -30,7 +36,7 @@ const bugs: BugStats = {
     },
   ],
   unit: 'week',
-  buckets: [{ start: '2026-01-05', merged: 4, bugs: 1 }],
+  buckets: [{ start: '2026-01-05', merged: 4, bugs: 1, opened: 3 }],
   bugTickets: true,
   kinds: { feature: 3, bug: 1 },
 };
