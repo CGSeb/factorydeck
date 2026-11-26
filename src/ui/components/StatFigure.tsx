@@ -42,6 +42,7 @@ export interface StatFigureProps {
   better?: BetterDirection;
   note?: string;
   help?: string;
+  sample?: string | undefined;
 }
 
 const figure: CSSProperties = {
@@ -221,6 +222,16 @@ function ChangeLine({ change }: { change: Change }): ReactElement {
   );
 }
 
+function sampleLine(
+  shown: number | null,
+  sample: string | undefined,
+  n: number,
+  noun: Noun,
+): string {
+  if (shown === null) return 'Not enough data';
+  return sample ?? `n = ${countText(n, noun)}`;
+}
+
 export function StatFigure({
   label,
   value,
@@ -234,8 +245,10 @@ export function StatFigure({
   better = 'higher',
   note,
   help,
+  sample,
 }: StatFigureProps): ReactElement {
-  const shown = value !== null && isEnough(n) ? value : null;
+  const count = sample !== undefined;
+  const shown = value !== null && (count || isEnough(n)) ? value : null;
   const change =
     shown === null
       ? null
@@ -247,6 +260,7 @@ export function StatFigure({
           previousN,
           comparison,
           better,
+          count,
         });
   return (
     <div style={figure}>
@@ -258,7 +272,7 @@ export function StatFigure({
         {shown === null ? '—' : format(shown)}
       </span>
       <span data-sample="" style={{ ...small, color: 'var(--fd-muted)' }}>
-        {shown === null ? 'Not enough data' : `n = ${countText(n, noun)}`}
+        {sampleLine(shown, sample, n, noun)}
       </span>
       {change === null ? null : <ChangeLine change={change} />}
       {note === undefined ? null : (

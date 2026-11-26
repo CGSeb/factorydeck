@@ -37,6 +37,7 @@ export const monthBugs: BugCounts = {
   bugs: 6,
   reopened: 1,
   fixMs: monthBugIssues.map((issue) => issue.fixMs).sort((a, b) => a - b),
+  openings: { created: 15, reopened: 5 },
 };
 
 export const previousMonthBugs: BugCounts = {
@@ -44,15 +45,18 @@ export const previousMonthBugs: BugCounts = {
   bugs: 8,
   reopened: 2,
   fixMs: [6, 10, 18, 24, 30, 40, 48, 60].map((hours) => hours * HOUR),
+  openings: { created: 14, reopened: 2 },
 };
 
 const BUGS_PER_WEEK = [2, 1, 2, 2, 1, 2, 1, 2, 1, 1, 1, 0];
+const OPENED_PER_WEEK = [3, 0, 1, 4, 1, 2, 0, 3, 2, 1, 2, 1];
 
 export const bugWeeks: BugBucket[] = risingWeeks.map(
   ({ start, merged }, index) => ({
     start,
     merged,
     bugs: Math.min(merged, BUGS_PER_WEEK[index] ?? 0),
+    opened: OPENED_PER_WEEK[index] ?? 0,
   }),
 );
 
@@ -77,18 +81,76 @@ export const fewBugStats: BugStats = bugStatsOf({
     bugs: 4,
     reopened: 1,
     fixMs: fewBugIssues.map((issue) => issue.fixMs),
+    openings: { created: 3, reopened: 1 },
   },
   issues: fewBugIssues,
   kinds: { feature: 20, bug: 4 },
 });
 
+const NO_OPENING = { created: 0, reopened: 0 };
+
 export const noBugTickets: BugStats = bugStatsOf({
-  current: { merged: 24, bugs: 0, reopened: 0, fixMs: [] },
-  previous: { merged: 20, bugs: 0, reopened: 0, fixMs: [] },
+  current: {
+    merged: 24,
+    bugs: 0,
+    reopened: 0,
+    fixMs: [],
+    openings: NO_OPENING,
+  },
+  previous: {
+    merged: 20,
+    bugs: 0,
+    reopened: 0,
+    fixMs: [],
+    openings: NO_OPENING,
+  },
   issues: [],
-  buckets: bugWeeks.map((bucket) => ({ ...bucket, bugs: 0 })),
+  buckets: bugWeeks.map((bucket) => ({ ...bucket, bugs: 0, opened: 0 })),
   bugTickets: false,
   kinds: { feature: 24, bug: 0 },
+});
+
+export const openedNoFixStats: BugStats = bugStatsOf({
+  current: {
+    merged: 24,
+    bugs: 0,
+    reopened: 0,
+    fixMs: [],
+    openings: { created: 3, reopened: 1 },
+  },
+  previous: {
+    merged: 20,
+    bugs: 0,
+    reopened: 0,
+    fixMs: [],
+    openings: { created: 2, reopened: 0 },
+  },
+  issues: [],
+  buckets: bugWeeks.map((bucket, index) => ({
+    ...bucket,
+    bugs: 0,
+    opened: index === 9 ? 3 : index === 11 ? 1 : 0,
+  })),
+  kinds: { feature: 24, bug: 0 },
+});
+
+export const quietBugStats: BugStats = bugStatsOf({
+  current: { merged: 0, bugs: 0, reopened: 0, fixMs: [], openings: NO_OPENING },
+  previous: {
+    merged: 0,
+    bugs: 0,
+    reopened: 0,
+    fixMs: [],
+    openings: NO_OPENING,
+  },
+  issues: [],
+  buckets: bugWeeks.map((bucket) => ({
+    ...bucket,
+    merged: 0,
+    bugs: 0,
+    opened: 0,
+  })),
+  kinds: { feature: 0, bug: 0 },
 });
 
 export function bugStatsResponse(bugs: BugStats): BugResponse {

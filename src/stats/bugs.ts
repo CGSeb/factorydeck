@@ -1,3 +1,4 @@
+import { type VersionIssue, versionsOf } from '../bugs/versions.ts';
 import type { Database } from '../db/client.ts';
 import { type IssueKind, kindOf } from '../git-host/kind.ts';
 import {
@@ -17,7 +18,13 @@ import {
   mergeTime,
 } from './autonomy.ts';
 import { type StatsBounds, earliestMerge, statsBounds } from './bounds.ts';
-import type { BugBucket, BugCounts, BugStats, BugStripIssue } from './types.ts';
+import type {
+  BugBucket,
+  BugCounts,
+  BugOpenings,
+  BugStats,
+  BugStripIssue,
+} from './types.ts';
 
 export type BugQuery = Omit<AutonomyQuery, 'kind'>;
 
@@ -29,6 +36,11 @@ export interface BugFacts {
   mergedAt: number | null;
   leadMs: number;
   reopened: boolean;
+  openings: number[];
+}
+
+export function openingsOf(issue: VersionIssue): number[] {
+  return versionsOf(issue).map((version) => version.startedAt);
 }
 
 export function bugFacts(
@@ -47,6 +59,7 @@ export function bugFacts(
     leadMs:
       mergedAt === null ? 0 : Math.max(0, mergedAt - issue.createdAt.getTime()),
     reopened: issue.reopened,
+    openings: openingsOf(issue),
   };
 }
 
@@ -61,6 +74,22 @@ function mergedIn(issues: readonly BugFacts[], window: Window): Merged[] {
     .sort((a, b) => a.mergedAt - b.mergedAt);
 }
 
+export function bugOpenings(
+  issues: readonly BugFacts[],
+  window: Window,
+): BugOpenings {
+  const openings = { created: 0, reopened: 0 };
+  for (const issue of issues) {
+    if (issue.kind !== 'bug') continue;
+    issue.openings.forEach((at, index) => {
+      if (!inside(at, window)) return;
+      if (index === 0) openings.created += 1;
+      else openings.reopened += 1;
+    });
+  }
+  return openings;
+}
+
 export function bugCounts(
   issues: readonly BugFacts[],
   window: Window,
@@ -72,22 +101,27 @@ export function bugCounts(
     bugs: bugs.length,
     reopened: bugs.filter((issue) => issue.reopened).length,
     fixMs: bugs.map((issue) => issue.leadMs).sort((a, b) => a - b),
+    openings: bugOpenings(issues, window),
   };
 }
 
 export function bugBuckets(
   issues: readonly BugFacts[],
   buckets: StatsBounds['buckets'],
+  start: number | null,
 ): BugBucket[] {
   return buckets.map((bucket, index) => {
-    const merged = mergedIn(issues, {
-      from: bucket.start,
-      to: buckets[index + 1]?.start ?? null,
+    const to = buckets[index + 1]?.start ?? null;
+    const merged = mergedIn(issues, { from: bucket.start, to });
+    const opened = bugOpenings(issues, {
+      from: index === 0 && start === null ? null : bucket.start,
+      to,
     });
     return {
       start: bucket.key,
       merged: merged.length,
       bugs: merged.filter((issue) => issue.kind === 'bug').length,
+      opened: opened.created + opened.reopened,
     };
   });
 }
@@ -122,7 +156,7 @@ export function summarizeBugs(
       .filter((issue) => issue.kind === 'bug')
       .map(stripIssue),
     unit: bounds.unit,
-    buckets: bugBuckets(issues, bounds.buckets),
+    buckets: bugBuckets(issues, bounds.buckets, bounds.start),
     bugTickets,
     kinds: { feature: current.merged - current.bugs, bug: current.bugs },
   };

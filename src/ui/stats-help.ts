@@ -29,6 +29,8 @@ export const FIGURE_HELP = {
     'Share of the issues merged in the period that are bugs.',
   'Reopened bugs':
     'Share of the bugs merged in the period that were reopened at least once.',
+  'Bugs reported':
+    'Number of times a bug was opened in the period: each creation and each reopening counts.',
 } as const;
 
 export const MERGED_NOUN = { one: 'merged issue', other: 'merged issues' };

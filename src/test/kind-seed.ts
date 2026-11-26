@@ -8,7 +8,11 @@ import {
   subAgent,
 } from '../db/schema.ts';
 import type { IssueKind } from '../git-host/kind.ts';
-import type { LabelChange, SerenityReport } from '../git-host/types.ts';
+import type {
+  LabelChange,
+  SerenityReport,
+  StateEvent,
+} from '../git-host/types.ts';
 import type { Period } from '../overview/types.ts';
 import type { AutonomyQuery } from '../stats/autonomy.ts';
 
@@ -46,35 +50,18 @@ export interface Seed {
   closedAt?: string;
   reopened?: boolean;
   needsSpec?: LabelChange[];
+  stateEvents?: StateEvent[];
 }
 
-export async function seed(
+async function insertMerges(
   db: Database,
   {
-    project = APP,
-    number,
-    labels,
-    createdAt,
-    merges = [],
-    closedAt,
-    reopened = false,
-    needsSpec = [],
-  }: Seed,
-): Promise<void> {
-  const closed = merges.at(-1)?.at ?? closedAt;
-  await db.insert(gitHostIssue).values({
     project,
     number,
-    title: `Issue ${String(number)}`,
-    state: closed === undefined ? 'open' : 'closed',
-    labels: labels.map((name) => ({ name, color: null })),
-    url: `https://git.example/issues/${String(number)}`,
-    createdAt: new Date(createdAt),
-    closedAt: closed === undefined ? null : new Date(closed),
-    updatedAt: new Date(createdAt),
-    reopened,
-    needsSpec,
-  });
+    createdAt,
+    merges,
+  }: Pick<Required<Seed>, 'project' | 'number' | 'createdAt' | 'merges'>,
+): Promise<void> {
   for (const merge of merges) {
     requestNumber += 1;
     const reports = merge.reports ?? [report(merge.at, 90)];
@@ -95,6 +82,38 @@ export async function seed(
       reports,
     });
   }
+}
+
+export async function seed(
+  db: Database,
+  {
+    project = APP,
+    number,
+    labels,
+    createdAt,
+    merges = [],
+    closedAt,
+    reopened = false,
+    needsSpec = [],
+    stateEvents = [],
+  }: Seed,
+): Promise<void> {
+  const closed = merges.at(-1)?.at ?? closedAt;
+  await db.insert(gitHostIssue).values({
+    project,
+    number,
+    title: `Issue ${String(number)}`,
+    state: closed === undefined ? 'open' : 'closed',
+    labels: labels.map((name) => ({ name, color: null })),
+    url: `https://git.example/issues/${String(number)}`,
+    createdAt: new Date(createdAt),
+    closedAt: closed === undefined ? null : new Date(closed),
+    updatedAt: new Date(createdAt),
+    reopened,
+    needsSpec,
+    stateEvents,
+  });
+  await insertMerges(db, { project, number, createdAt, merges });
 }
 
 export function call(

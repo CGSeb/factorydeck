@@ -113,6 +113,27 @@ describe('changeText', () => {
     });
   });
 
+  it('compares a count whatever its size, but not against 0', () => {
+    const count = {
+      ...base,
+      kind: 'amount' as const,
+      count: true,
+      better: 'lower' as const,
+    };
+    expect(
+      changeText({ ...count, value: 3, n: 3, previous: 2, previousN: 2 })?.text,
+    ).toBe('▲ 50% vs previous 30 days');
+    expect(
+      changeText({ ...count, value: 0, n: 0, previous: 1, previousN: 1 })?.text,
+    ).toBe('▼ 100% vs previous 30 days');
+    expect(
+      changeText({ ...count, value: 2, n: 2, previous: 0, previousN: 0 }),
+    ).toBeNull();
+    expect(
+      changeText({ ...base, kind: 'amount', value: 3, n: 3, previous: 2 }),
+    ).toBeNull();
+  });
+
   it('treats a fall as better when lower is better', () => {
     expect(
       changeText({

@@ -32,6 +32,7 @@ describe('bug stats', () => {
       bugs: 2,
       reopened: 1,
       fixMs: [DAY, 2 * DAY],
+      openings: { created: 3, reopened: 0 },
     });
     expect(bugs.kinds).toEqual({ feature: 1, bug: 2 });
     expect(bugs.bugTickets).toBe(true);
@@ -52,6 +53,7 @@ describe('bug stats', () => {
       bugs: 1,
       reopened: 0,
       fixMs: [7 * DAY],
+      openings: { created: 1, reopened: 0 },
     });
   });
 
@@ -63,6 +65,15 @@ describe('bug stats', () => {
         merged > 0 ? [`${start} ${String(bugs)}/${String(merged)}`] : [],
       ),
     ).toEqual(['2026-03-14 0/1', '2026-03-15 1/1', '2026-03-17 1/1']);
+  });
+
+  it('counts the openings of bugs only, by day, with only the creation of a bug whose state events were not collected', async () => {
+    const { buckets } = await bugStats(db, query('7d'), factory);
+    expect(
+      buckets.flatMap(({ start, opened }) =>
+        opened > 0 ? [`${start} ${String(opened)}`] : [],
+      ),
+    ).toEqual(['2026-03-13 1', '2026-03-16 2']);
   });
 
   it('has no previous period for all time', async () => {
