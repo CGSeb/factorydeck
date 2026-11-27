@@ -84,11 +84,11 @@ curl -i -c cookies http://127.0.0.1:4317/api/auth/sign-in \
 | `POST /api/auth/sign-out` | `204`, with or without a valid session: it deletes the current session and clears the cookie.                                                                                                                                                                                 |
 | `GET /api/auth/me`        | The account of the session, or `401` with `{ "error": "Not signed in" }`.                                                                                                                                                                                                     |
 
-The email is compared the way it is stored: trimmed, in lower case. The password is compared as typed. An account can have several sessions open at once, one per browser or computer; signing out closes only the current one.
+The email is compared the way it is stored: trimmed, in lower case. The password is compared as typed. An account can have several sessions open at once, one per browser or computer; signing out closes only the current one. A sign-in sent with a session cookie deletes that session before it opens the new one; a failed sign-in leaves it open.
 
 ## How long a session lasts
 
-A session expires **30 days after its last use**. Each request with it moves its last use (written at most once a minute) and sends the cookie again with a fresh `Max-Age` of 30 days, so a session used every day never ends. An expired session is deleted the next time it is sent, and the request is answered as not signed in. A session whose account is deactivated is refused and deleted the same way.
+A session expires **30 days after its last use**: once 30 days or more have passed since its stored last use. Each request with it moves its last use (written at most once a minute) and sends the cookie again with a fresh `Max-Age` of 30 days, so a session used every day never ends. An expired session is deleted the next time it is sent, and the request is answered as not signed in. A session whose account is deactivated is refused and deleted the same way.
 
 ## Without a session
 
@@ -100,7 +100,12 @@ Every route under `/api/` answers `401` with `{ "error": "Not signed in" }` with
 
 The built UI (its HTML, scripts and styles) is served without a session. Until it has a sign-in screen, its pages show their usual error state when the API answers `401`. While the database is unreachable, a route that needs a session answers `503` with the usual unreachable body. No setting turns authentication off.
 
-Every `POST`, `PUT`, `PATCH` and `DELETE` under `/api/` whose body is not `application/json` (any letter case, with or without a `charset`) answers `415` with `{ "error": "JSON body expected" }`, before the session is checked, so a form on another site cannot send one with the cookie. A request with no body is accepted.
+Every `POST`, `PUT`, `PATCH` and `DELETE` under `/api/`, open routes included, goes through two body checks before the session is checked, in this order:
+
+1. A body larger than 1 MB (1,048,576 bytes) answers `413` with `{ "error": "Body too large" }`, without being read further.
+2. A body that is not `application/json` (any letter case, with or without a `charset`) answers `415` with `{ "error": "JSON body expected" }`, so a form on another site cannot send one with the cookie.
+
+A request with no body passes both. Only then does a missing session answer `401`.
 
 ## The demo manager
 

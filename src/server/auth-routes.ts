@@ -82,7 +82,7 @@ export function authRoutes(
   });
   routes.post('/sign-in', async (c) => {
     const body = await jsonObject(c);
-    const result = await fromDatabase(() => auth.signIn(body));
+    const result = await fromDatabase(() => auth.signIn(body, sessionToken(c)));
     switch (result.status) {
       case 'unreachable':
         return c.json(result, 503);

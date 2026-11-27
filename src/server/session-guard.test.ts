@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { MAX_BODY_BYTES } from './auth-guard.ts';
 import {
   type AuthHarness,
   PASSWORD,
@@ -158,5 +159,59 @@ describe('JSON bodies', () => {
       });
       expect(empty.status).toBe(204);
     }
+  });
+});
+
+describe('body size', () => {
+  const big = '{"a":"' + 'x'.repeat(MAX_BODY_BYTES) + '"}';
+
+  it.each([
+    ['POST', '/api/auth/sign-in', 'application/json'],
+    ['POST', '/api/frictions/reports', 'application/json'],
+    ['PUT', '/api/projects/x', 'text/plain'],
+    ['DELETE', '/api/projects/x', undefined],
+  ])(
+    'answers 413 on %s %s over 1 MB, before the body type and the session',
+    async (method, path, type) => {
+      const response = await h.app().request(path, {
+        method,
+        headers: type === undefined ? {} : { 'content-type': type },
+        body: big,
+      });
+      expect(response.status).toBe(413);
+      expect(await response.json()).toEqual({ error: 'Body too large' });
+    },
+  );
+
+  it('answers 413 from the announced length, before reading the body', async () => {
+    const response = await h.app().request('/api/git-host/refresh', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-length': String(MAX_BODY_BYTES + 1),
+      },
+      body: '{}',
+    });
+    expect(response.status).toBe(413);
+  });
+
+  it('reads a body of exactly 1 MB', async () => {
+    await h.addAccount('ada@example.test');
+    const body = JSON.stringify({
+      email: 'ada@example.test',
+      password: PASSWORD,
+      pad: '',
+    });
+    const padded = body.replace(
+      '"pad":""',
+      `"pad":"${'x'.repeat(MAX_BODY_BYTES - body.length)}"`,
+    );
+    expect(Buffer.byteLength(padded)).toBe(MAX_BODY_BYTES);
+    const response = await h.app().request('/api/auth/sign-in', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: padded,
+    });
+    expect(response.status).toBe(200);
   });
 });

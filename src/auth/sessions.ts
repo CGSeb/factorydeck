@@ -18,7 +18,10 @@ export type SignInResult =
   | { status: 'wrong' };
 
 export interface SignInSessions {
-  signIn: (body: Record<string, unknown>) => Promise<SignInResult>;
+  signIn: (
+    body: Record<string, unknown>,
+    previousToken?: string,
+  ) => Promise<SignInResult>;
   authenticate: (token: string | undefined) => Promise<Account | undefined>;
   signOut: (token: string | undefined) => Promise<void>;
 }
@@ -45,9 +48,15 @@ async function openSession(
   db: Database,
   accountId: number,
   at: Date,
+  previousToken: string | undefined,
 ): Promise<string> {
   const sessionToken = newSessionToken();
   await db.transaction(async (tx) => {
+    if (previousToken !== undefined && previousToken !== '') {
+      await tx
+        .delete(signInSession)
+        .where(eq(signInSession.tokenHash, hashToken(previousToken)));
+    }
     await tx.insert(signInSession).values({
       accountId,
       tokenHash: hashToken(sessionToken),
@@ -66,6 +75,7 @@ async function signIn(
   db: Database,
   { email, password }: Record<string, unknown>,
   at: Date,
+  previousToken: string | undefined,
 ): Promise<SignInResult> {
   if (typeof email !== 'string' || typeof password !== 'string') {
     return { status: 'wrong' };
@@ -89,7 +99,7 @@ async function signIn(
   return {
     status: 'signed-in',
     account: { id, email: found.email, name, role },
-    sessionToken: await openSession(db, id, at),
+    sessionToken: await openSession(db, id, at, previousToken),
   };
 }
 
@@ -148,7 +158,7 @@ export function signInSessions(
 ): SignInSessions {
   const now = options.now ?? (() => new Date());
   return {
-    signIn: (body) => signIn(db, body, now()),
+    signIn: (body, previousToken) => signIn(db, body, now(), previousToken),
     authenticate: (token) => authenticate(db, token, now()),
     signOut: (token) => signOut(db, token),
   };

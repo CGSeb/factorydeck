@@ -9,7 +9,7 @@ import {
   isPeriod,
 } from '../overview/types.ts';
 import { type ApiContext, apiContext, isTimeZone } from './api-context.ts';
-import { jsonBodyGuard, sessionGuard } from './auth-guard.ts';
+import { bodySizeGuard, jsonBodyGuard, sessionGuard } from './auth-guard.ts';
 import { type AuthEnv, type AuthSource, authRoutes } from './auth-routes.ts';
 import { bugRoutes } from './bug-routes.ts';
 import { type FeatureSource, featureRoutes } from './feature-routes.ts';
@@ -77,7 +77,12 @@ export function createApp(options: AppOptions): Hono<AuthEnv> {
   );
   const { refreshSeconds, updatedAt, fromDatabase } = context;
 
-  app.use('/api/*', jsonBodyGuard(), sessionGuard(options.auth, context));
+  app.use(
+    '/api/*',
+    bodySizeGuard(),
+    jsonBodyGuard(),
+    sessionGuard(options.auth, context),
+  );
 
   app.get('/api/health', async (c) =>
     (await checkDatabase())

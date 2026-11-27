@@ -111,6 +111,31 @@ describe('POST /api/auth/sign-in', () => {
     expect((await get(server, '/api/auth/me', second)).status).toBe(200);
   });
 
+  it('deletes the session the sign-in carries before opening the new one', async () => {
+    await h.addAccount('ada@example.test');
+    await h.addAccount('grace@example.test');
+    const server = h.app();
+    const other = await signedIn(server);
+    const carried = await signedIn(server);
+    const again = (password: string, email = 'grace@example.test') =>
+      server.request('/api/auth/sign-in', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', cookie: carried },
+        body: JSON.stringify({ email, password }),
+      });
+    expect((await again('wrong password!')).status).toBe(401);
+    expect((await get(server, '/api/auth/me', carried)).status).toBe(200);
+    const response = await again(PASSWORD);
+    expect(response.status).toBe(200);
+    expect((await get(server, '/api/auth/me', carried)).status).toBe(401);
+    expect((await get(server, '/api/auth/me', other)).status).toBe(200);
+    const fresh = `factorydeck_session=${tokenOf(response)}`;
+    expect(
+      await (await get(server, '/api/auth/me', fresh)).json(),
+    ).toMatchObject({ email: 'grace@example.test' });
+    expect(await h.db.select().from(signInSession)).toHaveLength(2);
+  });
+
   it('answers 503 when the database is unreachable', async () => {
     const response = await signIn(h.app(false), {
       email: 'ada@example.test',
