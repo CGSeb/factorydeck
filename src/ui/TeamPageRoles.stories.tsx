@@ -70,10 +70,13 @@ async function showsUnderTheRow(
   message: string,
 ): Promise<void> {
   const canvas = within(canvasElement);
+  await canvas.findByRole('table', { name: 'Team' });
+  const status = canvas.getByRole('status');
+  await expect(status).toBeEmptyDOMElement();
   const actions = await choose(canvasElement, BRUNO, item);
-  const status = await canvas.findByRole('status');
-  await expect(status).toHaveTextContent(message);
-  const line = status.closest('tr');
+  await waitFor(() => expect(status).toHaveTextContent(message));
+  const line = canvasElement.querySelector('.fd-team-message-row');
+  await expect(line?.textContent).toBe(message);
   await expect(line?.previousElementSibling?.textContent).toContain('Bruno');
   await expect(line?.querySelector('td')?.colSpan).toBe(6);
   await expect(rowOf(canvasElement, 'Bruno').textContent).toContain('Dev');
@@ -258,10 +261,15 @@ export const MessageClearsOnTheNextAction: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    await canvas.findByRole('table', { name: 'Team' });
+    const status = canvas.getByRole('status');
     await choose(canvasElement, BRUNO, 'Make manager');
-    await canvas.findByRole('status');
+    await waitFor(() => expect(status).toHaveTextContent(SERVER_UNREACHABLE));
     await choose(canvasElement, 'Actions for Chen', 'Make dev');
-    await expect(canvas.queryByRole('status')).toBeNull();
+    await expect(status).toBeEmptyDOMElement();
+    await expect(
+      canvasElement.querySelector('.fd-team-message-row'),
+    ).toBeNull();
   },
 };
 

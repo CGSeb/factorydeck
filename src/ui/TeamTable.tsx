@@ -238,9 +238,7 @@ function TeamRow({
       {message !== undefined && (
         <tr className="fd-team-message-row">
           <td colSpan={COLUMNS + (withActions ? 1 : 0)}>
-            <div role="status" className="fd-team-message">
-              {message}
-            </div>
+            <div className="fd-team-message">{message}</div>
           </td>
         </tr>
       )}
@@ -261,38 +259,43 @@ export function TeamTable({
   }));
   const withActions = rows.some(({ actions }) => actions.length > 0);
   return (
-    <DataTable label="Team">
-      <table className="fd-team-table" aria-label="Team">
-        <thead>
-          <tr>
-            <th scope="col">Name</th>
-            <th scope="col">Email</th>
-            <th scope="col">Role</th>
-            <th scope="col">Status</th>
-            <th scope="col">Last sign-in</th>
-            {withActions && (
-              <th scope="col">
-                <span className="fd-visually-hidden">Actions</span>
-              </th>
-            )}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(({ account, actions }) => (
-            <TeamRow
-              key={account.id}
-              account={account}
-              now={now}
-              actions={actions}
-              withActions={withActions}
-              busy={busy.has(account.id)}
-              message={
-                message?.accountId === account.id ? message.text : undefined
-              }
-            />
-          ))}
-        </tbody>
-      </table>
-    </DataTable>
+    <>
+      <DataTable label="Team">
+        <table className="fd-team-table" aria-label="Team">
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">Email</th>
+              <th scope="col">Role</th>
+              <th scope="col">Status</th>
+              <th scope="col">Last sign-in</th>
+              {withActions && (
+                <th scope="col">
+                  <span className="fd-visually-hidden">Actions</span>
+                </th>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ account, actions }) => (
+              <TeamRow
+                key={account.id}
+                account={account}
+                now={now}
+                actions={actions}
+                withActions={withActions}
+                busy={busy.has(account.id)}
+                message={
+                  message?.accountId === account.id ? message.text : undefined
+                }
+              />
+            ))}
+          </tbody>
+        </table>
+      </DataTable>
+      <span className="fd-visually-hidden" role="status">
+        {message?.text ?? ''}
+      </span>
+    </>
   );
 }
