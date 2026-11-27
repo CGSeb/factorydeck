@@ -7,6 +7,7 @@ import {
   type Json,
   PAGE_SIZE,
   byNumber,
+  closedInBody,
   field,
   labelColor,
   list,
@@ -93,7 +94,11 @@ function requestState(value: unknown): RequestState {
   return 'open';
 }
 
-function closesOf(value: unknown, projectId: unknown): number[] {
+function closesOf(
+  value: unknown,
+  projectId: unknown,
+  description: unknown,
+): number[] {
   const numbers = list(value).flatMap((issue) => {
     const number = positive(issue['iid']);
     const otherProject =
@@ -102,7 +107,8 @@ function closesOf(value: unknown, projectId: unknown): number[] {
       issue['project_id'] !== projectId;
     return number === undefined || otherProject ? [] : [number];
   });
-  return [...new Set(numbers)].sort((a, b) => a - b);
+  const closes = [...new Set(numbers)].sort((a, b) => a - b);
+  return closes.length > 0 ? closes : closedInBody(description);
 }
 
 export function gitlabRequest(
@@ -125,7 +131,11 @@ export function gitlabRequest(
     mergedAt: time(row['merged_at']),
     closedAt: time(row['closed_at']),
     updatedAt: requiredTime(row['updated_at'], createdAt),
-    closes: closesOf(closes, row['target_project_id'] ?? row['project_id']),
+    closes: closesOf(
+      closes,
+      row['target_project_id'] ?? row['project_id'],
+      row['description'],
+    ),
     checks: gitlabChecks(field(row['head_pipeline'], 'status')),
     ...reportsOf(notes),
   };

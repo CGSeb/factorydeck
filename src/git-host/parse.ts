@@ -66,6 +66,16 @@ export function labelColor(value: unknown): string | null {
   return null;
 }
 
+const CLOSING_KEYWORD =
+  /(?<![\w/-])(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?):?\s+#(\d+)(?!\w)/gi;
+
+export function closedInBody(body: unknown): number[] {
+  const numbers = [...text(body).matchAll(CLOSING_KEYWORD)].flatMap(
+    (match) => positive(Number(match[1])) ?? [],
+  );
+  return [...new Set(numbers)].sort((a, b) => a - b);
+}
+
 export function byNumber<T extends { number: number }>(rows: T[]): T[] {
   const unique = new Map<number, T>();
   for (const row of rows) unique.set(row.number, row);
