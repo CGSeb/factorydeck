@@ -14,6 +14,8 @@ const OPEN_ROUTES = new Set([
   'POST /api/auth/setup',
   'POST /api/auth/sign-in',
   'POST /api/auth/sign-out',
+  'POST /api/auth/invitation',
+  'POST /api/auth/invitation/accept',
 ]);
 const WRITE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 export const MAX_BODY_BYTES = 1024 * 1024;

@@ -14,6 +14,7 @@ import { type AuthEnv, type AuthSource, authRoutes } from './auth-routes.ts';
 import { bugRoutes } from './bug-routes.ts';
 import { type FeatureSource, featureRoutes } from './feature-routes.ts';
 import { frictionRoutes } from './friction-routes.ts';
+import { invitationAuthRoutes } from './invitation-routes.ts';
 import { type GitHostSource, gitHostRoutes } from './git-host-routes.ts';
 import type { DatabaseCheck } from './health.ts';
 import { type ProjectSource, projectRoutes } from './project-routes.ts';
@@ -64,6 +65,12 @@ function mountSections(
   app.route('/api/frictions', frictionRoutes(options.stats, context));
   if (options.sidebar !== undefined) {
     app.route('/api/sidebar', sidebarRoutes(options.sidebar, context));
+  }
+  if (options.team?.invitations !== undefined) {
+    app.route(
+      '/api/auth/invitation',
+      invitationAuthRoutes(options.team.invitations, context),
+    );
   }
   app.route('/api/auth', authRoutes(options.auth, context));
   app.route('/api/team', teamRoutes(options.team, context));

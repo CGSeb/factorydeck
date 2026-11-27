@@ -29,6 +29,12 @@ import type { LoadOccurrences, LoadOutput } from './occurrences-api.ts';
 import { FrictionsPage } from './FrictionsPage.tsx';
 import type { LoadCollection, RefreshCollection } from './git-host-api.ts';
 import type { AccountView, SidebarAccount } from './components/Sidebar.tsx';
+import type {
+  AcceptInvitation,
+  InvitationActions,
+  ReadInvitation,
+} from './invitations-api.ts';
+import { inviteScreen } from './InvitePage.tsx';
 import { Layout } from './Layout.tsx';
 import type { LoadOverview } from './overview-api.ts';
 import { OverviewPage } from './OverviewPage.tsx';
@@ -91,6 +97,9 @@ export interface AppProps {
   leavePage?: ((path: string) => void) | undefined;
   loadTeam?: LoadTeam | undefined;
   changeRole?: ChangeRole | undefined;
+  invitationActions?: InvitationActions | undefined;
+  readInvitation?: ReadInvitation | undefined;
+  acceptInvitation?: AcceptInvitation | undefined;
 }
 
 function isManager(view: AccountView): boolean {
@@ -161,7 +170,13 @@ export function App(props: AppProps): ReactElement | null {
     setPhase({ name: 'signed-out' }),
   );
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   if (phase.name === 'checking') return null;
+  const invite = inviteScreen(pathname, phase, props, () => {
+    setPhase({ name: 'ready', account: undefined });
+    void navigate('/', { replace: true });
+  });
+  if (invite !== undefined) return invite;
   if (phase.name === 'unreachable') {
     return (
       <UnreachableScreen

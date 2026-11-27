@@ -2,6 +2,7 @@ import { type RefObject, useEffect, useRef } from 'react';
 
 const BUTTONS = 'button:not(:disabled)';
 const LINKS_AND_BUTTONS = `a[href], ${BUTTONS}`;
+export const FORM_STOPS = `input:not(:disabled), select:not(:disabled), ${BUTTONS}`;
 
 function keepFocusInside(
   event: KeyboardEvent,
@@ -26,12 +27,13 @@ function keepFocusInside(
   }
 }
 
-export function useDialogFocus(
+export function useDialogFocus<T extends HTMLElement = HTMLButtonElement>(
   onCancel: () => void,
   dialog: RefObject<HTMLDivElement | null>,
   withLinks = false,
-): RefObject<HTMLButtonElement | null> {
-  const cancel = useRef<HTMLButtonElement>(null);
+  stops?: string,
+): RefObject<T | null> {
+  const cancel = useRef<T>(null);
   useEffect(() => {
     const opener =
       document.activeElement instanceof HTMLElement
@@ -49,12 +51,12 @@ export function useDialogFocus(
         keepFocusInside(
           event,
           dialog.current,
-          withLinks ? LINKS_AND_BUTTONS : BUTTONS,
+          stops ?? (withLinks ? LINKS_AND_BUTTONS : BUTTONS),
         );
       }
     }
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [onCancel, dialog, withLinks]);
+  }, [onCancel, dialog, withLinks, stops]);
   return cancel;
 }

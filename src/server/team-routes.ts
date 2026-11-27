@@ -9,12 +9,15 @@ import {
   type TeamAccount,
   type TeamResponse,
 } from '../team/types.ts';
+import type { InvitationSource } from '../team/invitations.ts';
 import type { ApiContext } from './api-context.ts';
 import type { AuthEnv } from './auth-routes.ts';
+import { teamInvitationRoutes } from './invitation-routes.ts';
 
 export interface TeamSource {
   accounts: () => Promise<TeamAccount[]>;
   changeRole?: (request: RoleChangeRequest) => Promise<RoleChangeOutcome>;
+  invitations?: InvitationSource | undefined;
 }
 
 function notFound(c: Context): Response {
@@ -93,6 +96,12 @@ export function teamRoutes(
       if (outcome.status === 'unreachable') return c.json(outcome, 503);
       return roleChangeAnswer(c, outcome, requesterId);
     });
+  }
+  if (team?.invitations !== undefined) {
+    routes.route(
+      '/invitations',
+      teamInvitationRoutes(team.invitations, { refreshSeconds, fromDatabase }),
+    );
   }
   routes.all('*', notFound);
   return routes;

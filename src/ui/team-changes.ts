@@ -32,6 +32,7 @@ export interface TeamChanges {
   busy: ReadonlySet<number>;
   message: RowMessage | undefined;
   run: (accountId: number, send: () => Promise<AccountChangeOutcome>) => void;
+  reload: () => void;
 }
 
 const START: Local = {
@@ -96,7 +97,8 @@ export function useTeamChanges(loadTeam: LoadTeam): TeamChanges {
       ? undefined
       : { view, sent, refreshSeconds: view.refreshSeconds };
   }, [loadTeam]);
-  const loaded = useRefreshing('team', load, 'team');
+  const [version, setVersion] = useState(0);
+  const loaded = useRefreshing(`team:${version}`, load, 'team');
   const [local, setLocal] = useState<Local>(START);
   const [accepted, setAccepted] = useState<Loaded | undefined>(loaded);
   if (
@@ -126,5 +128,8 @@ export function useTeamChanges(loadTeam: LoadTeam): TeamChanges {
     busy: local.busy,
     message: local.message,
     run,
+    reload: () => {
+      setVersion((previous) => previous + 1);
+    },
   };
 }

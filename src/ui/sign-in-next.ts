@@ -1,6 +1,7 @@
 export const SIGN_IN_PATH = '/sign-in';
 
 const CLOSED_PATHS = new Set([SIGN_IN_PATH, '/setup']);
+const CLOSED_PREFIXES = ['/api/', '/invite/', '/reset/'];
 
 function rawPathOf(value: string): string {
   const end = value.search(/[?#]/);
@@ -22,7 +23,11 @@ export function safeNext(value: string | null | undefined): string {
   ) {
     return '/';
   }
-  if (CLOSED_PATHS.has(pathOf(value)) || rawPathOf(value).startsWith('/api/')) {
+  const raw = rawPathOf(value);
+  if (
+    CLOSED_PATHS.has(pathOf(value)) ||
+    CLOSED_PREFIXES.some((prefix) => raw.startsWith(prefix))
+  ) {
     return '/';
   }
   return value;
