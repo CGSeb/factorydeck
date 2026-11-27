@@ -22,6 +22,7 @@ import { type SessionSource, sessionRoutes } from './session-routes.ts';
 import { type SidebarSource, sidebarRoutes } from './sidebar-routes.ts';
 import { type SkillSource, skillRoutes } from './skill-routes.ts';
 import { type StatsSource, statsRoutes } from './stats-routes.ts';
+import { type TeamSource, teamRoutes } from './team-routes.ts';
 
 export interface OverviewSource {
   load: (query: OverviewQuery) => Promise<OverviewData>;
@@ -44,6 +45,7 @@ export interface AppOptions {
   stats: StatsSource;
   sidebar?: SidebarSource | undefined;
   auth: AuthSource;
+  team?: TeamSource | undefined;
 }
 
 function mountSections(
@@ -64,6 +66,7 @@ function mountSections(
     app.route('/api/sidebar', sidebarRoutes(options.sidebar, context));
   }
   app.route('/api/auth', authRoutes(options.auth, context));
+  app.route('/api/team', teamRoutes(options.team, context));
 }
 
 /** The FactoryDeck HTTP app: the JSON API under `/api/`, the UI everywhere else. */

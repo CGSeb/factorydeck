@@ -35,6 +35,7 @@ import { bugStats } from '../stats/bugs.ts';
 import { waitingIssues } from '../stats/waiting.ts';
 import { flowStats } from '../stats/flow.ts';
 import { qualityStats } from '../stats/quality.ts';
+import { teamAccounts } from '../team/accounts.ts';
 import { createApp } from './app.ts';
 import { type CollectLoop, startCollectLoop } from './collect-loop.ts';
 import { databaseCheck } from './health.ts';
@@ -122,9 +123,7 @@ async function main(): Promise<void> {
     db,
     env.FACTORYDECK_COLLECT_INTERVAL_MINUTES,
   );
-  const ingestion = startIngestion(db, folder, env, () => {
-    collectionLoop();
-  });
+  const ingestion = startIngestion(db, folder, env, () => collectionLoop());
   const setup = firstManagerSetup(db, { log: (line) => console.log(line) });
   const app = createApp({
     checkDatabase: databaseCheck(db),
@@ -164,6 +163,7 @@ async function main(): Promise<void> {
     stats: statsSource(db, config),
     sidebar: { ready: (project) => readyCounts(db, project, hasFactory) },
     auth: { ...setup, ...signInSessions(db), signInLimit: signInLimit() },
+    team: { accounts: () => teamAccounts(db) },
   });
   await listen(app, env.FACTORYDECK_PORT);
   await startSetup(setup);

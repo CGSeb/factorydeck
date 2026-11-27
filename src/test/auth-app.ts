@@ -9,6 +9,7 @@ import { firstManagerSetup } from '../auth/setup.ts';
 import type { Database } from '../db/client.ts';
 import { account } from '../db/schema.ts';
 import { type OverviewSource, createApp } from '../server/app.ts';
+import { teamAccounts } from '../team/accounts.ts';
 import type { SessionSource } from '../server/session-routes.ts';
 import { createTestDatabase } from './postgres.ts';
 import {
@@ -45,7 +46,7 @@ export interface AuthHarness {
   app: (up?: boolean) => Server;
   addAccount: (
     email: string,
-    options?: { active?: boolean; role?: 'manager' | 'dev' },
+    options?: { active?: boolean; role?: 'manager' | 'dev'; name?: string },
   ) => Promise<number>;
   close: () => Promise<void>;
 }
@@ -80,13 +81,14 @@ export async function authHarness(): Promise<AuthHarness> {
           ...signInSessions(db, { now: () => harness.clock }),
           signInLimit: harness.signInLimit,
         },
+        team: { accounts: () => teamAccounts(db) },
       }),
     addAccount: async (email, options = {}) => {
       const [row] = await db
         .insert(account)
         .values({
           email,
-          name: email.split('@')[0] ?? email,
+          name: options.name ?? email.split('@')[0] ?? email,
           passwordHash: await hashPassword(PASSWORD),
           role: options.role ?? 'dev',
           active: options.active ?? true,

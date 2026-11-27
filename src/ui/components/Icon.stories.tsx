@@ -55,6 +55,8 @@ export const EveryIcon: Story = {
       'sessions',
       'skills',
       'roles',
+      'team',
+      'more',
       'collapse',
       'expand',
       'chevron',

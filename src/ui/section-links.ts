@@ -6,6 +6,7 @@ import { withProject } from './project-param.ts';
 
 const BUGS_PATH = '/bugs';
 const FEATURES_PATH = '/features';
+const TEAM_PATH = '/team';
 
 const SECTIONS: readonly { path: string; label: string; icon: IconName }[] = [
   { path: '/', label: 'Overview', icon: 'overview' },
@@ -52,4 +53,17 @@ export function sectionLinks(
       badge: readyBadge(path, ready),
     }),
   );
+}
+
+export function teamLink(
+  pathname: string,
+  project: string | undefined,
+): SidebarLink {
+  return {
+    label: 'Team',
+    icon: 'team',
+    href: withProject(TEAM_PATH, project),
+    current: matchPath({ path: TEAM_PATH, end: false }, pathname) !== null,
+    badge: undefined,
+  };
 }

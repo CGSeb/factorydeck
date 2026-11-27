@@ -40,6 +40,8 @@ import type {
   LoadWaiting,
 } from './stats-api.ts';
 import { StatsPage } from './StatsPage.tsx';
+import type { LoadTeam } from './team-api.ts';
+import { TeamPage } from './TeamPage.tsx';
 
 export interface AppProps {
   loadOverview: LoadOverview;
@@ -69,6 +71,7 @@ export interface AppProps {
   loadMe?: LoadMe | undefined;
   signOut?: SignOut | undefined;
   leavePage?: ((path: string) => void) | undefined;
+  loadTeam?: LoadTeam | undefined;
 }
 
 type AuthPhase = 'checking' | 'setup' | 'ready';
@@ -115,6 +118,10 @@ function useAccountView(
   return view;
 }
 
+function isManager(view: AccountView): boolean {
+  return view.status === 'account' && view.account.role === 'manager';
+}
+
 function accountSlot(
   view: AccountView,
   { loadMe, signOut, leavePage }: AppProps,
@@ -154,11 +161,17 @@ export function App(props: AppProps): ReactElement | null {
       </Routes>
     );
   }
-  return <DashboardRoutes {...props} account={accountSlot(view, props)} />;
+  return (
+    <DashboardRoutes
+      {...props}
+      account={accountSlot(view, props)}
+      team={isManager(view)}
+    />
+  );
 }
 
 function DashboardRoutes(
-  props: AppProps & { account: SidebarAccount | undefined },
+  props: AppProps & { account: SidebarAccount | undefined; team: boolean },
 ): ReactElement {
   const {
     loadOverview,
@@ -169,6 +182,7 @@ function DashboardRoutes(
     loadRoles,
     loadFeatures,
     loadFeature,
+    loadTeam,
   } = props;
   return (
     <Routes>
@@ -208,6 +222,9 @@ function DashboardRoutes(
             <RolesPage loadRoles={loadRoles} loadOverview={loadOverview} />
           }
         />
+        {loadTeam !== undefined && (
+          <Route path="team" element={<TeamPage loadTeam={loadTeam} />} />
+        )}
       </Route>
       <Route path="setup" element={<Navigate to="/" replace />} />
     </Routes>

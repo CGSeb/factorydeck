@@ -61,6 +61,21 @@ const SHAPES = {
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </>
   ),
+  team: (
+    <>
+      <circle cx="8" cy="8" r="3" />
+      <circle cx="16" cy="8" r="3" />
+      <path d="M2 20a6 6 0 0 1 12 0" />
+      <path d="M15.5 14.1A6 6 0 0 1 22 20" />
+    </>
+  ),
+  more: (
+    <>
+      <circle cx="5" cy="12" r="1" />
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="19" cy="12" r="1" />
+    </>
+  ),
   collapse: (
     <>
       <rect x="3" y="3" width="18" height="18" rx="2" />
