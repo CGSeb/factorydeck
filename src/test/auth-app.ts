@@ -48,7 +48,6 @@ export interface AuthHarness {
   close: () => Promise<void>;
 }
 
-/** A migrated test database, a built UI folder, and apps whose sign-in sessions read `clock`. */
 export async function authHarness(): Promise<AuthHarness> {
   const { db, close } = await createTestDatabase();
   const uiDir = await mkdtemp(join(tmpdir(), 'factorydeck-ui-'));

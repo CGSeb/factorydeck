@@ -32,7 +32,6 @@ async function signIn(tab: Page, url: string): Promise<void> {
   }
 }
 
-/** Signs in as the demo manager, then loads a page until the network settles, with a clear error when the server does not answer. */
 export async function openPage(tab: Page, url: string): Promise<void> {
   await signIn(tab, url);
   let response;
