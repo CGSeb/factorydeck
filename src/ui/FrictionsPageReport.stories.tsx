@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import {
+  frictionStats,
   frictionsLoaderOf,
   noActivityStats,
   noFrictionStats,
@@ -11,12 +12,21 @@ import { frictionsLoaded, frictionsRouter } from './frictions-story.ts';
 import {
   ALL_PROJECTS_TIP,
   COPIED,
+  COPY_AND_MARK,
+  COPY_FAILED,
   COPY_REPORT,
 } from './FrictionReportButton.tsx';
 import { FrictionsPage } from './FrictionsPage.tsx';
 import { occurrencesLoaderOf, outputLoaderOf } from './occurrence-fixtures.ts';
 
 const REPORT = '# Friction report\n';
+const MARKED = '# Friction report\n\nNew\n';
+const NOW = new Date('2026-11-23T09:00:00Z');
+const MARKED_AT = '2026-11-23T07:00:00Z';
+const withLastReport = frictionsLoaderOf({
+  ...frictionStats,
+  lastReportAt: MARKED_AT,
+});
 const IN_APP =
   '/frictions?period=7d&project=%2Fwork%2Fapp&kind=tool-error&role=builder';
 
@@ -27,6 +37,7 @@ const meta = {
     loadOccurrences: occurrencesLoaderOf(),
     loadOutput: outputLoaderOf(),
     loadReport: fn(() => Promise.resolve(REPORT)),
+    markReport: fn(() => Promise.resolve(MARKED)),
     writeClipboard: fn(() => Promise.resolve()),
   },
   parameters: { entry: IN_APP },
@@ -175,5 +186,122 @@ export const NoActivity: Story = {
       'aria-disabled',
       'true',
     );
+  },
+};
+
+function markButton(canvasElement: HTMLElement): HTMLElement {
+  const buttons = canvasElement.querySelectorAll<HTMLElement>(
+    '.fd-friction-report-buttons button',
+  );
+  const mark = buttons[1];
+  if (mark === undefined) throw new Error('No mark button');
+  return mark;
+}
+
+function lastReport(canvasElement: HTMLElement): HTMLElement | null {
+  return canvasElement.querySelector('.fd-friction-last-report');
+}
+
+export const MarkReport: Story = {
+  name: 'Copying and marking the report as reported',
+  args: {
+    loadReport: fn(() => Promise.resolve(REPORT)),
+    markReport: fn(() => Promise.resolve(MARKED)),
+    writeClipboard: fn(() => Promise.resolve()),
+  },
+  play: async ({ canvasElement, args }) => {
+    await frictionsLoaded(canvasElement);
+    const mark = markButton(canvasElement);
+    await expect(mark).toHaveAccessibleName(COPY_AND_MARK);
+    await expect(mark).toHaveAttribute('aria-disabled', 'false');
+    await expect(lastReport(canvasElement)).toBeEmptyDOMElement();
+    await userEvent.click(mark);
+    await waitFor(() => expect(mark).toHaveAccessibleName(COPIED));
+    await expect(args.markReport).toHaveBeenCalledWith(
+      expect.objectContaining({
+        period: '7d',
+        project: '/work/app',
+        kind: 'tool-error',
+        role: 'builder',
+      }),
+    );
+    await expect(args.loadReport).not.toHaveBeenCalled();
+    await expect(args.writeClipboard).toHaveBeenCalledWith(MARKED);
+    await expect(lastReport(canvasElement)).toHaveTextContent(
+      'Last report just now',
+    );
+  },
+};
+
+export const MarkClipboardFails: Story = {
+  name: 'Marked as reported, then the clipboard fails',
+  args: {
+    markReport: fn(() => Promise.resolve(MARKED)),
+    writeClipboard: fn(() => Promise.reject(new Error('Denied'))),
+  },
+  play: async ({ canvasElement, args }) => {
+    await frictionsLoaded(canvasElement);
+    const mark = markButton(canvasElement);
+    await userEvent.click(mark);
+    await waitFor(() => expect(mark).toHaveAccessibleName(COPY_FAILED));
+    await expect(args.markReport).toHaveBeenCalledOnce();
+    await expect(lastReport(canvasElement)).toHaveTextContent(
+      'Last report just now',
+    );
+  },
+};
+
+export const MarkAllProjects: Story = {
+  name: 'Copy and mark disabled under All projects',
+  args: {
+    loadFrictions: withLastReport,
+    markReport: fn(() => Promise.resolve(MARKED)),
+  },
+  parameters: { entry: '/frictions?period=30d' },
+  play: async ({ canvasElement, args }) => {
+    await frictionsLoaded(canvasElement);
+    const mark = markButton(canvasElement);
+    await expect(mark).toHaveAttribute('aria-disabled', 'true');
+    await expect(mark).toHaveAccessibleDescription(ALL_PROJECTS_TIP);
+    await userEvent.click(mark);
+    await expect(args.markReport).not.toHaveBeenCalled();
+    await expect(lastReport(canvasElement)).toBeEmptyDOMElement();
+  },
+};
+
+export const LastReport: Story = {
+  name: 'The last report of the project',
+  args: { loadFrictions: withLastReport, now: NOW },
+  play: async ({ canvasElement }) => {
+    await frictionsLoaded(canvasElement);
+    await expect(lastReport(canvasElement)).toHaveTextContent(
+      'Last report 2 h ago',
+    );
+  },
+};
+
+function lastReportThenPending(): LoadFrictions {
+  let calls = 0;
+  return (filters) => {
+    calls += 1;
+    return calls === 1 ? withLastReport(filters) : new Promise(() => undefined);
+  };
+}
+
+export const LastReportWhileReloading: Story = {
+  name: 'The last report stays while a period reloads',
+  args: { loadFrictions: lastReportThenPending(), now: NOW },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await frictionsLoaded(canvasElement);
+    const line = lastReport(canvasElement);
+    await userEvent.click(
+      within(canvas.getByRole('group', { name: 'Period' })).getByRole(
+        'button',
+        { name: 'Last 30 days' },
+      ),
+    );
+    await expect(lastReport(canvasElement)).toBe(line);
+    await expect(line).toHaveTextContent('Last report 2 h ago');
   },
 };

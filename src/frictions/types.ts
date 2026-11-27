@@ -182,6 +182,7 @@ export interface FrictionStats {
   issues: IssueFrictionRow[];
   context: ContextPeaks;
   projects: ProjectOption[];
+  lastReportAt: string | null;
 }
 
 export type FrictionsResponse =

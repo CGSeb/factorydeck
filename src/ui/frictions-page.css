@@ -433,3 +433,26 @@
   gap: var(--fd-space-3);
   min-width: 0;
 }
+
+.fd-friction-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--fd-space-2);
+  min-width: 0;
+}
+
+.fd-friction-report-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--fd-space-2);
+}
+
+.fd-friction-last-report {
+  min-height: 1lh;
+  margin: 0;
+  font-size: var(--fd-text-sm);
+  color: var(--fd-ink-2);
+  white-space: nowrap;
+}

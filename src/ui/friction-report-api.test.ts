@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { frictionReportLoader } from './frictions-api.ts';
+import { frictionReportLoader, frictionReportMarker } from './frictions-api.ts';
 
 function fetchOf(response: () => Response, urls: string[]): typeof fetch {
   return (input) => {
@@ -55,5 +55,38 @@ describe('frictionReportLoader', () => {
     await expect(
       load({ period: '7d', project: '/work/app', kind: undefined }),
     ).rejects.toThrow('503');
+  });
+});
+
+describe('frictionReportMarker', () => {
+  it('posts the page parameters to the reports and answers the text', async () => {
+    const calls: { url: string; method: string | undefined }[] = [];
+    const fetchImpl: typeof fetch = (input, init) => {
+      calls.push({
+        url: typeof input === 'string' ? input : '',
+        method: init?.method,
+      });
+      return Promise.resolve(new Response('# Friction report\n'));
+    };
+    const mark = frictionReportMarker(fetchImpl, () => 'UTC');
+    expect(
+      await mark({ period: '7d', project: '/work/app', kind: 'stop-blocked' }),
+    ).toBe('# Friction report\n');
+    expect(calls).toEqual([
+      {
+        url: '/api/frictions/reports?period=7d&tz=UTC&project=%2Fwork%2Fapp&kind=stop-blocked',
+        method: 'POST',
+      },
+    ]);
+  });
+
+  it('fails when the report is not recorded', async () => {
+    const mark = frictionReportMarker(
+      () => Promise.resolve(new Response('{}', { status: 400 })),
+      () => 'UTC',
+    );
+    await expect(
+      mark({ period: '7d', project: '/work/app', kind: undefined }),
+    ).rejects.toThrow('400');
   });
 });

@@ -295,3 +295,28 @@ export const projectName = pgTable('project_name', {
   project: text().primaryKey(),
   name: text().notNull(),
 });
+
+export interface ReportFilters {
+  kind: string | null;
+  role: string | null;
+  session: string | null;
+  issue: number | null;
+}
+
+export interface ReportedGroup {
+  key: string;
+  frictions: number;
+}
+
+export const markedReport = pgTable(
+  'friction_report',
+  {
+    id: bigserial({ mode: 'number' }).primaryKey(),
+    project: text().notNull(),
+    reportedAt: timestamp('reported_at', { withTimezone: true }).notNull(),
+    period: text().notNull(),
+    filters: jsonb().$type<ReportFilters>().notNull(),
+    groups: jsonb().$type<ReportedGroup[]>().notNull(),
+  },
+  (table) => [index().on(table.project, table.reportedAt)],
+);

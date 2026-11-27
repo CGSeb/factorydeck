@@ -13,6 +13,7 @@ import {
   type LoadReport,
   type WriteClipboard,
   frictionReportLoader,
+  frictionReportMarker,
   useFrictionFilters,
   withoutFilter,
   writeClipboard,
@@ -32,9 +33,11 @@ import {
 import { FrictionBreakdown } from './FrictionBreakdown.tsx';
 import { FrictionFilterChip } from './FrictionFilterChip.tsx';
 import {
-  FrictionReportButton,
-  type ReportBlock,
-} from './FrictionReportButton.tsx';
+  FrictionReportActions,
+  type MarkedReport,
+  lastReportOf,
+} from './FrictionReportActions.tsx';
+import type { ReportBlock } from './FrictionReportButton.tsx';
 import { FrictionTables } from './FrictionTables.tsx';
 import type { LoadOccurrences, LoadOutput } from './occurrences-api.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
@@ -46,11 +49,13 @@ export interface FrictionsPageProps {
   loadOccurrences: LoadOccurrences;
   loadOutput: LoadOutput;
   loadReport?: LoadReport | undefined;
+  markReport?: LoadReport | undefined;
   writeClipboard?: WriteClipboard | undefined;
   now?: Date | undefined;
 }
 
 const defaultLoadReport = frictionReportLoader();
+const defaultMarkReport = frictionReportMarker();
 
 export const NO_ACTIVITY = 'No activity in this period.';
 export const NO_FRICTION = 'No friction in this period.';
@@ -205,11 +210,49 @@ function useFrictionsResponse(
   return { response, reloading: response !== undefined && loadedKey !== key };
 }
 
+function PageReportActions({
+  response,
+  reloading,
+  filters,
+  loadReport,
+  markReport,
+  write,
+  now,
+}: {
+  response: FrictionsResponse | undefined;
+  reloading: boolean;
+  filters: FrictionFilters;
+  loadReport: LoadReport;
+  markReport: LoadReport;
+  write: WriteClipboard;
+  now: Date;
+}): ReactElement {
+  const [marked, setMarked] = useState<MarkedReport>();
+  return (
+    <FrictionReportActions
+      blocked={reportBlock(response, filters.project, reloading)}
+      onCopy={async () => {
+        await write(await loadReport(filters));
+      }}
+      onMark={async () => {
+        const report = await markReport(filters);
+        if (filters.project !== undefined) {
+          setMarked({ project: filters.project, at: new Date().toISOString() });
+        }
+        await write(report);
+      }}
+      lastReportAt={lastReportOf(response, filters.project, marked)}
+      now={now}
+    />
+  );
+}
+
 export function FrictionsPage({
   loadFrictions,
   loadOccurrences,
   loadOutput,
   loadReport = defaultLoadReport,
+  markReport = defaultMarkReport,
   writeClipboard: write = writeClipboard,
   now = new Date(),
 }: FrictionsPageProps): ReactElement {
@@ -236,11 +279,14 @@ export function FrictionsPage({
             <div className="fd-friction-filters">
               {frictionControls({ response, filters, onFilters: setFilters })}
             </div>
-            <FrictionReportButton
-              blocked={reportBlock(response, filters.project, reloading)}
-              onCopy={async () => {
-                await write(await loadReport(filters));
-              }}
+            <PageReportActions
+              response={response}
+              reloading={reloading}
+              filters={filters}
+              loadReport={loadReport}
+              markReport={markReport}
+              write={write}
+              now={now}
             />
           </div>
         }

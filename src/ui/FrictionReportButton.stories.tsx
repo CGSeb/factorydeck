@@ -4,6 +4,7 @@ import {
   ALL_PROJECTS_TIP,
   COPIED,
   COPYING,
+  COPY_AND_MARK,
   COPY_FAILED,
   COPY_REPORT,
   FrictionReportButton,
@@ -116,5 +117,72 @@ export const CouldNotCopy: Story = {
     await userEvent.click(copy);
     await waitFor(() => expect(copy).toHaveAccessibleName(COPY_FAILED));
     await expect(copy).toHaveAttribute('aria-disabled', 'false');
+  },
+};
+
+export const MarkIdle: Story = {
+  name: 'Copy and mark as reported',
+  args: { label: COPY_AND_MARK },
+  play: async ({ canvasElement }) => {
+    const mark = button(canvasElement);
+    await expect(mark).toHaveAccessibleName(COPY_AND_MARK);
+    await expect(mark).toHaveAttribute('aria-disabled', 'false');
+  },
+};
+
+export const MarkCopying: Story = {
+  name: 'Copy and mark as reported, copying',
+  args: {
+    label: COPY_AND_MARK,
+    onCopy: fn(() => new Promise<void>(() => undefined)),
+  },
+  play: async ({ canvasElement }) => {
+    const mark = button(canvasElement);
+    await userEvent.click(mark);
+    await expect(mark).toHaveAccessibleName(COPYING);
+    await expect(mark).toHaveAttribute('aria-disabled', 'true');
+  },
+};
+
+export const MarkCopied: Story = {
+  name: 'Copy and mark as reported, copied',
+  args: { label: COPY_AND_MARK, onCopy: fn(() => Promise.resolve()) },
+  play: async ({ canvasElement, args }) => {
+    const mark = button(canvasElement);
+    const width = mark.getBoundingClientRect().width;
+    await userEvent.click(mark);
+    await waitFor(() => expect(mark).toHaveAccessibleName(COPIED));
+    await expect(args.onCopy).toHaveBeenCalledOnce();
+    await expect(mark.getBoundingClientRect().width).toBe(width);
+  },
+};
+
+export const MarkCouldNotCopy: Story = {
+  name: 'Copy and mark as reported, could not copy',
+  args: {
+    label: COPY_AND_MARK,
+    onCopy: fn(() => Promise.reject(new Error('Denied'))),
+  },
+  play: async ({ canvasElement }) => {
+    const mark = button(canvasElement);
+    await userEvent.click(mark);
+    await waitFor(() => expect(mark).toHaveAccessibleName(COPY_FAILED));
+    await expect(mark).toHaveAttribute('aria-disabled', 'false');
+  },
+};
+
+export const MarkDisabled: Story = {
+  name: 'Copy and mark as reported, disabled under All projects',
+  args: {
+    label: COPY_AND_MARK,
+    blocked: 'all-projects',
+    onCopy: fn(() => Promise.resolve()),
+  },
+  play: async ({ canvasElement, args }) => {
+    const mark = button(canvasElement);
+    await expect(mark).toHaveAttribute('aria-disabled', 'true');
+    await expect(mark).toHaveAccessibleDescription(ALL_PROJECTS_TIP);
+    await userEvent.click(mark);
+    await expect(args.onCopy).not.toHaveBeenCalled();
   },
 };

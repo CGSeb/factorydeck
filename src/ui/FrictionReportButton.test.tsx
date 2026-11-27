@@ -11,6 +11,7 @@ import {
   COPIED,
   COPIED_MS,
   COPYING,
+  COPY_AND_MARK,
   COPY_FAILED,
   COPY_REPORT,
   FAILED_MS,
@@ -98,5 +99,26 @@ describe('FrictionReportButton', () => {
       <FrictionReportButton blocked={null} onCopy={() => Promise.resolve()} />,
     );
     expect(name()).toBe(`${COPY_REPORT}${COPYING}${COPIED}${COPY_FAILED}`);
+  });
+
+  it('reads its own label when idle, and the same copy states', async () => {
+    render(
+      <FrictionReportButton
+        blocked={null}
+        label={COPY_AND_MARK}
+        onCopy={() => Promise.reject(new Error('Denied'))}
+      />,
+    );
+    expect(name()).toBe(`${COPY_AND_MARK}${COPYING}${COPIED}${COPY_FAILED}`);
+    expect(current()).toBe(COPY_AND_MARK);
+    await click();
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(current()).toBe(COPY_FAILED);
+    act(() => {
+      vi.advanceTimersByTime(FAILED_MS);
+    });
+    expect(current()).toBe(COPY_AND_MARK);
   });
 });
