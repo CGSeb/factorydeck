@@ -153,7 +153,7 @@ The page loads like the others: the header keeps the place of its summary while 
 | `503`                                      | `Database unreachable. Start it with pnpm db:up.`                                       |
 | `401`, a network error or any other answer | The last data (or `Loading…`), and it tries again every 10 s.                           |
 
-The refusal also replaces a table already shown: a manager made dev meanwhile sees it at the next refresh. The `Team` link, though, comes from one `GET /api/auth/me` each time the app enters the signed-in dashboard (first load, after setup): it shows once that read answers a manager, and stays absent while it loads or when it answers `401`, `503` or nothing. A role changed meanwhile shows or hides the link at the next of those reads, not before.
+The refusal also replaces a table already shown: a manager made dev meanwhile sees it at the next refresh. The `Team` link, though, comes from one `GET /api/auth/me` each time the app enters the signed-in dashboard (first load, after setup, after each sign-in): it shows once that read answers a manager, and stays absent while it loads or when it answers `503` or nothing. A `401` from that read opens the [sign-in screen](#the-sign-in-screen), without the sidebar. A role changed meanwhile shows or hides the link at the next of those reads, not before.
 
 ### Team routes
 
