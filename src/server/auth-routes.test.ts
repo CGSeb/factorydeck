@@ -156,7 +156,7 @@ describe('POST /api/auth/setup', () => {
     expect(Object.keys(body).sort()).toEqual(['email', 'id', 'name', 'role']);
     expect(typeof body['id']).toBe('number');
     expect(body).toMatchObject({
-      email: 'Ada@Example.test',
+      email: 'ada@example.test',
       name: 'Ada Lovelace',
       role: 'manager',
     });
@@ -173,13 +173,22 @@ describe('POST /api/auth/setup', () => {
     const [stored] = await db.select().from(account);
     expect(stored).toMatchObject({
       id: body['id'],
-      email: 'Ada@Example.test',
+      email: 'ada@example.test',
       name: 'Ada Lovelace',
       role: 'manager',
       active: true,
       createdAt: NOW,
       lastSignInAt: NOW,
     });
+    await expect(
+      db.insert(account).values({
+        email: 'ada@example.test',
+        name: 'Ada again',
+        passwordHash: 'scrypt$c2FsdA$a2V5',
+        role: 'dev',
+        createdAt: NOW,
+      }),
+    ).rejects.toMatchObject({ cause: { code: '23505' } });
     expect(stored?.passwordHash).not.toContain(PASSWORD.trim());
     expect(await verifyPassword(PASSWORD, stored?.passwordHash ?? '')).toBe(
       true,

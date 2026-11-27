@@ -11,7 +11,7 @@ Who can use a FactoryDeck instance. One instance serves one organisation: there 
 
 Accounts do not restrict the pages or the API yet: every route but the setup ones answers as before. An account has an email, a name, a password, a role, whether it is active, its creation time and its last sign-in time.
 
-- **Email**: trimmed, at most 254 characters, with one `@` that has text on both sides. Two accounts cannot share an email, whatever its letter case.
+- **Email**: trimmed and lowercased, then stored that way: at most 254 characters, with one `@` that has text on both sides. Two accounts cannot share an email, so `Ada@Example.test` and `ada@example.test` are the same one.
 - **Name**: trimmed, 1 to 80 characters.
 - **Password**: 12 to 200 characters, kept as typed (spaces included). FactoryDeck stores only a salted `scrypt` hash of it, and never logs it.
 

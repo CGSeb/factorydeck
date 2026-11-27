@@ -8,7 +8,7 @@ const valid = {
 };
 
 describe('accountFields', () => {
-  it('trims the email and the name, never the password', () => {
+  it('trims and lowercases the email, trims the name, never the password', () => {
     expect(
       accountFields({
         email: '  Ada@Example.test ',
@@ -18,7 +18,7 @@ describe('accountFields', () => {
     ).toEqual({
       ok: true,
       value: {
-        email: 'Ada@Example.test',
+        email: 'ada@example.test',
         name: 'Ada',
         password: '  twelve chars  ',
       },

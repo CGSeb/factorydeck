@@ -2,7 +2,7 @@
   "type": "diff",
   "version": "9",
   "dialect": "postgres",
-  "id": "0e1cf04e-d6e4-43e0-b9cc-b2c70288da38",
+  "id": "9b29a804-d7b1-46c1-93c1-39e1281b8930",
   "prevIds": [
     "457cc160-960e-490f-b10d-2fb55c7c8591"
   ],
@@ -20,7 +20,8 @@
         "e|tbl|public.account",
         "n|rel|public.account",
         "n|type|public.account",
-        "n|rel|public.account_pkey"
+        "n|rel|public.account_pkey",
+        "n|rel|public.account_email_key"
       ],
       "reads": [
         "n|sch|public"
@@ -63,25 +64,6 @@
         "n|rel|public.sign_in_session_token_hash_key"
       ],
       "reads": [
-        "n|sch|public"
-      ]
-    },
-    {
-      "statementType": "create_index",
-      "statementTarget": [
-        "index",
-        "public",
-        "account",
-        "account_email_unique"
-      ],
-      "writes": [
-        "s|idx|public.account_email_unique",
-        "n|idx|public.account_email_unique",
-        "e|idx|public.account_email_unique",
-        "n|rel|public.account_email_unique"
-      ],
-      "reads": [
-        "n|tbl|public.account",
         "n|sch|public"
       ]
     },
@@ -575,30 +557,6 @@
       "op": "create",
       "row": {
         "schema": "public",
-        "table": "account",
-        "name": "account_email_unique",
-        "nameExplicit": true,
-        "columns": [
-          {
-            "value": "lower(\"email\")",
-            "isExpression": true,
-            "asc": true,
-            "nullsFirst": false,
-            "opclass": null
-          }
-        ],
-        "isUnique": true,
-        "where": null,
-        "with": "",
-        "method": "btree",
-        "concurrently": false,
-        "entityType": "indexes"
-      }
-    },
-    {
-      "op": "create",
-      "row": {
-        "schema": "public",
         "table": "sign_in_session",
         "name": "sign_in_session_account_id_index",
         "nameExplicit": false,
@@ -716,6 +674,20 @@
         ],
         "nameExplicit": false,
         "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "account",
+        "name": "account_email_key",
+        "nameExplicit": false,
+        "columns": [
+          "email"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
       }
     },
     {

@@ -13,7 +13,7 @@ function emailError(value: unknown): string | undefined {
   if (typeof value !== 'string' || value.trim() === '') {
     return 'Email is required';
   }
-  const email = value.trim();
+  const email = value.trim().toLowerCase();
   if (length(email) > MAX_EMAIL) {
     return `Email must be at most ${MAX_EMAIL} characters`;
   }
@@ -61,7 +61,7 @@ export function accountFields(
   return {
     ok: true,
     value: {
-      email: String(email).trim(),
+      email: String(email).trim().toLowerCase(),
       name: String(name).trim(),
       password: String(password),
     },

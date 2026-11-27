@@ -8,14 +8,13 @@ import {
   pgTable,
   text,
   timestamp,
-  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 
 export const account = pgTable(
   'account',
   {
     id: bigserial({ mode: 'number' }).primaryKey(),
-    email: text().notNull(),
+    email: text().notNull().unique(),
     name: text().notNull(),
     passwordHash: text('password_hash').notNull(),
     role: text().$type<'manager' | 'dev'>().notNull(),
@@ -24,7 +23,6 @@ export const account = pgTable(
     lastSignInAt: timestamp('last_sign_in_at', { withTimezone: true }),
   },
   (table) => [
-    uniqueIndex('account_email_unique').on(sql`lower(${table.email})`),
     check('account_role_check', sql`${table.role} in ('manager', 'dev')`),
   ],
 );

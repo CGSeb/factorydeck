@@ -1,6 +1,6 @@
 CREATE TABLE "account" (
 	"id" bigserial PRIMARY KEY,
-	"email" text NOT NULL,
+	"email" text NOT NULL UNIQUE,
 	"name" text NOT NULL,
 	"password_hash" text NOT NULL,
 	"role" text NOT NULL,
@@ -33,7 +33,6 @@ CREATE TABLE "sign_in_session" (
 	"last_used_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX "account_email_unique" ON "account" (lower("email"));--> statement-breakpoint
 CREATE INDEX "sign_in_session_account_id_index" ON "sign_in_session" ("account_id");--> statement-breakpoint
 ALTER TABLE "account_token" ADD CONSTRAINT "account_token_account_id_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "account"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "account_token" ADD CONSTRAINT "account_token_created_by_account_id_fkey" FOREIGN KEY ("created_by") REFERENCES "account"("id") ON DELETE SET NULL;--> statement-breakpoint
