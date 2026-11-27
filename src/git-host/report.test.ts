@@ -50,10 +50,29 @@ describe('parseReport', () => {
     });
   });
 
-  it('counts the gates as failed without a gates line', () => {
+  it('leaves the merge to the score without a gates line', () => {
     expect(parseReport('## Serenity: 90/100 (threshold 80)', AT)).toMatchObject(
-      { gatesPassed: false, rounds: null },
+      { gatesPassed: true, rounds: null },
     );
+  });
+
+  it.each([
+    'Gates: passed. The pull request targets `2.0`.',
+    'Gates: Passed, CI green.',
+    'Gates: all passed',
+  ])('reads « %s » as passed gates', (line) => {
+    expect(
+      parseReport(`## Serenity: 90/100 (threshold 80)\n${line}`, AT),
+    ).toMatchObject({ gatesPassed: true });
+  });
+
+  it('reads a gates line naming a failure as failed gates', () => {
+    expect(
+      parseReport(
+        '## Serenity: 90/100 (threshold 80)\nGates: failed: CI, One issue.',
+        AT,
+      ),
+    ).toMatchObject({ gatesPassed: false });
   });
 
   it('counts a gates line that only starts like a pass as failed', () => {
@@ -157,7 +176,7 @@ describe('reportHistory', () => {
         score: 60,
         threshold: 80,
         rounds: 1,
-        gatesPassed: false,
+        gatesPassed: true,
         at: '2026-03-02T09:00:00.000Z',
       },
       {
