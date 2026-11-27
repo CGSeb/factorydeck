@@ -1,4 +1,10 @@
-import { type KeyboardEvent, type RefObject, useEffect, useRef } from 'react';
+import {
+  type KeyboardEvent,
+  type RefObject,
+  useCallback,
+  useEffect,
+  useRef,
+} from 'react';
 
 export function closeOnKey(
   event: KeyboardEvent<HTMLDivElement>,
@@ -24,4 +30,14 @@ export function useFocusWhenDone(
     if (wasBusy.current && !busy) button.current?.focus();
     wasBusy.current = busy;
   }, [busy, button]);
+}
+
+export function useCloseAndFocus(
+  setOpen: (open: boolean) => void,
+  button: RefObject<HTMLButtonElement | null>,
+): () => void {
+  return useCallback(() => {
+    setOpen(false);
+    button.current?.focus();
+  }, [setOpen, button]);
 }

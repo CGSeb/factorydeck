@@ -109,3 +109,11 @@
   font-size: var(--fd-text-sm);
   color: var(--fd-danger);
 }
+
+.fd-team-actions-item[data-danger='true'] {
+  color: var(--fd-danger);
+}
+
+.fd-team-page .fd-table-scroll:has(.fd-team-actions-menu) {
+  padding-bottom: 160px;
+}

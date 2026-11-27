@@ -10,6 +10,7 @@ import type { Database } from '../db/client.ts';
 import { account } from '../db/schema.ts';
 import { type OverviewSource, createApp } from '../server/app.ts';
 import { teamAccounts } from '../team/accounts.ts';
+import { changeStatus } from '../team/account-status.ts';
 import { changeRole } from '../team/change-role.ts';
 import { invitations } from '../team/invitations.ts';
 import type { SessionSource } from '../server/session-routes.ts';
@@ -87,6 +88,7 @@ export async function authHarness(): Promise<AuthHarness> {
           accounts: () => teamAccounts(db),
           changeRole: (request) => changeRole(db, request),
           invitations: invitations(db, { now: () => harness.clock }),
+          changeStatus: (request) => changeStatus(db, request),
         },
       }),
     addAccount: async (email, options = {}) => {

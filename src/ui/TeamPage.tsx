@@ -1,4 +1,5 @@
 import type { ReactElement, RefObject } from 'react';
+import type { ChangeActive } from './account-status-api.ts';
 import type { TeamAccountRow } from '../team/types.ts';
 import { PageHeader } from './components/PageHeader.tsx';
 import { StatusLine } from './components/StatusLine.tsx';
@@ -17,6 +18,7 @@ import {
 } from './TeamTable.tsx';
 import { PendingInvitations } from './PendingInvitations.tsx';
 import { type InvitationControls, useInvitations } from './use-invitations.ts';
+import { type RunChange, useStatusActions } from './team-status-actions.ts';
 import { useNow } from './use-now.ts';
 import './team.css';
 
@@ -24,6 +26,7 @@ export interface TeamPageProps {
   loadTeam: LoadTeam;
   actionsFor?: TeamActionsFor | undefined;
   changeRole?: ChangeRole | undefined;
+  changeActive?: ChangeActive | undefined;
   now?: Date | undefined;
   invitationActions?: InvitationActions | undefined;
   origin?: string | undefined;
@@ -122,36 +125,43 @@ function TeamInvitations({
   );
 }
 
+function roleActions(
+  account: TeamAccountRow,
+  changeRole: ChangeRole | undefined,
+  run: RunChange,
+): TeamAction[] {
+  if (changeRole === undefined || !account.active) return [];
+  return [
+    {
+      label: roleActionLabel(account.role),
+      onSelect: ({ id }) => {
+        run(id, () =>
+          changeRole(id, account.role === 'manager' ? 'dev' : 'manager'),
+        );
+      },
+    },
+  ];
+}
+
 export function TeamPage({
   loadTeam,
   actionsFor,
   changeRole,
+  changeActive,
   now: fixedNow,
   invitationActions,
   origin = window.location.origin,
   copy,
 }: TeamPageProps): ReactElement {
   const { view, busy, message, run, reload } = useTeamChanges(loadTeam);
+  const status = useStatusActions(changeActive, run);
   const now = useNow(fixedNow);
   const invites = useInvitations(invitationActions, reload);
   function rowActions(account: TeamAccountRow): readonly TeamAction[] {
-    const role: TeamAction[] =
-      changeRole === undefined || !account.active
-        ? []
-        : [
-            {
-              label: roleActionLabel(account.role),
-              onSelect: ({ id }) => {
-                run(id, () =>
-                  changeRole(
-                    id,
-                    account.role === 'manager' ? 'dev' : 'manager',
-                  ),
-                );
-              },
-            },
-          ];
-    return [...role, ...(actionsFor?.(account) ?? [])];
+    return status.actionsFor(account, [
+      ...roleActions(account, changeRole, run),
+      ...(actionsFor?.(account) ?? []),
+    ]);
   }
   return (
     <div className="fd-team-page">
@@ -179,6 +189,7 @@ export function TeamPage({
           copy={copy}
         />
       )}
+      {status.dialog}
     </div>
   );
 }

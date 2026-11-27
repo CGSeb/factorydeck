@@ -13,13 +13,18 @@ import { DataTable } from './components/DataTable.tsx';
 import { Icon } from './components/Icon.tsx';
 import { formatAgo, formatDateTime } from './format.ts';
 import type { RowMessage } from './team-changes.ts';
-import { closeOnKey, useFocusWhenDone } from './team-row-focus.ts';
-import { NEVER, roleLabel, statusLabel } from './team-view.ts';
+import {
+  closeOnKey,
+  useCloseAndFocus,
+  useFocusWhenDone,
+} from './team-row-focus.ts';
+import { NEVER, busyLabelOf, roleLabel, statusLabel } from './team-view.ts';
 import './team.css';
 
 export interface TeamAction {
   label: string;
   onSelect: (account: TeamAccountRow) => void;
+  danger?: boolean;
 }
 
 export type TeamActionsFor = (account: TeamAccountRow) => readonly TeamAction[];
@@ -128,6 +133,7 @@ function ActionsMenu({
             role="menuitem"
             tabIndex={-1}
             className="fd-control fd-team-actions-item"
+            data-danger={action.danger === true ? 'true' : undefined}
             onClick={() => {
               onDone();
               action.onSelect(account);
@@ -158,6 +164,7 @@ export function TeamRowActions({
   const close = useCallback(() => {
     setOpen(false);
   }, []);
+  const choose = useCloseAndFocus(setOpen, button);
   useCloseOnOutside(open, box, close);
   useEffect(() => {
     if (open)
@@ -175,7 +182,8 @@ export function TeamRowActions({
         ref={button}
         type="button"
         className="fd-control fd-team-actions-button"
-        aria-label={`Actions for ${account.name}`}
+        aria-label={busyLabelOf(account, busy) ?? `Actions for ${account.name}`}
+        title={busyLabelOf(account, busy)}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? id : undefined}
@@ -192,7 +200,7 @@ export function TeamRowActions({
           id={id}
           account={account}
           actions={actions}
-          onDone={close}
+          onDone={choose}
         />
       )}
     </div>
