@@ -1,13 +1,8 @@
 import type { ReactElement } from 'react';
-import { PERIODS, type Period } from '../../overview/types.ts';
+import { PERIOD_LABELS, PERIODS, type Period } from '../../overview/types.ts';
 import './controls.css';
 
-export const PERIOD_LABELS: Record<Period, string> = {
-  today: 'Today',
-  '7d': 'Last 7 days',
-  '30d': 'Last 30 days',
-  all: 'All time',
-};
+export { PERIOD_LABELS };
 
 export interface PeriodPillsProps {
   value: Period;

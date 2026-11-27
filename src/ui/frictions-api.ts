@@ -67,6 +67,28 @@ export function frictionsLoader(
   };
 }
 
+export type LoadReport = (filters: FrictionFilters) => Promise<string>;
+
+export function frictionReportLoader(
+  fetchImpl: typeof fetch = (...args) => fetch(...args),
+  timeZone: () => string = browserTimeZone,
+): LoadReport {
+  return async (filters) => {
+    const response = await fetchImpl(
+      `/api/frictions/report?${frictionsQuery(filters, timeZone()).toString()}`,
+    );
+    if (!response.ok) {
+      throw new Error(`The report answered ${String(response.status)}`);
+    }
+    return response.text();
+  };
+}
+
+export type WriteClipboard = (text: string) => Promise<void>;
+
+export const writeClipboard: WriteClipboard = (text) =>
+  navigator.clipboard.writeText(text);
+
 export function frictionFiltersOf(params: URLSearchParams): FrictionFilters {
   const period = params.get('period');
   const project = projectOf(params);

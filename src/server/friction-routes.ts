@@ -8,6 +8,7 @@ import {
 } from '../frictions/occurrence-types.ts';
 import type { OccurrenceQuery } from '../frictions/occurrences.ts';
 import type { FrictionQuery } from '../frictions/query.ts';
+import type { ReportQuery } from '../frictions/report.ts';
 import {
   type FrictionStats,
   type FrictionsResponse,
@@ -22,6 +23,7 @@ export interface FrictionSource {
   frictions: (query: FrictionQuery) => Promise<FrictionStats>;
   occurrences: (query: OccurrenceQuery) => Promise<FrictionOccurrence[]>;
   output: (id: number) => Promise<FullOutput | undefined>;
+  report: (query: ReportQuery) => Promise<string>;
 }
 
 export const INVALID_OCCURRENCE_ROW = {
@@ -31,6 +33,12 @@ export const INVALID_OCCURRENCE_ROW = {
 export const INVALID_FRICTION_ID = { error: 'Expected a friction id' };
 
 export const UNKNOWN_FRICTION = { error: 'No such friction' };
+
+export const REPORT_NEEDS_PROJECT = {
+  error: 'Expected period, tz, and a project',
+};
+
+export const MARKDOWN = 'text/markdown; charset=utf-8';
 
 const FRICTION_ID = /^[1-9]\d*$/;
 
@@ -84,6 +92,17 @@ export function frictionRoutes(
       occurrences: await source.occurrences({ ...query, row }),
     }));
     return c.json(body, body.status === 'ok' ? 200 : 503);
+  });
+  routes.get('/report', async (c) => {
+    const query = frictionQuery(c);
+    if (query === undefined) return c.json(INVALID_QUERY, 400);
+    const { project } = query;
+    if (project === undefined) return c.json(REPORT_NEEDS_PROJECT, 400);
+    const report = await fromDatabase(() =>
+      source.report({ ...query, project }),
+    );
+    if (typeof report !== 'string') return c.json(report, 503);
+    return c.body(report, 200, { 'Content-Type': MARKDOWN });
   });
   routes.get('/:id/output', async (c) => {
     const id = parseFrictionId(c.req.param('id'));
