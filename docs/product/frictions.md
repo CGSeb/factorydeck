@@ -38,7 +38,7 @@ The header `Frictions` says `<n> frictions · <r> per 100 API calls` (one decima
 
 All filters combine. Changing one closes every open row.
 
-At the end of the header controls, on the right of the filters and the filter chip and at the height of their first row in every state, `Copy friction report` copies the [report](#report) of the selection to the clipboard. It is disabled while the page loads, when the selection has no friction (`No activity in this period.` or `No friction in this period.`), and under `All projects`, where its tooltip, on hover and on keyboard focus, says `Select one project to copy a friction report.`; it stays focusable. While the report is fetched it reads `Copying…`, then `Copied` for 2 seconds, or `Could not copy` for 4 seconds when the request or the clipboard fails. Its width is the same in every label.
+At the end of the header controls, on the right of the filters and the filter chip and at the height of their first row in every state, `Copy friction report` copies the [report](#report) of the selection to the clipboard. It is disabled while the page loads, including while it reloads after a filter or period change (the last figures stay on screen, and the button keeps its place and label), so a copy is always of the selection on screen; when the selection has no friction (`No activity in this period.` or `No friction in this period.`), and under `All projects`, where its tooltip, on hover and on keyboard focus, says `Select one project to copy a friction report.`; it stays focusable. While the report is fetched it reads `Copying…`, then `Copied` for 2 seconds, or `Could not copy` for 4 seconds when the request or the clipboard fails. Its width is the same in every label.
 
 ### Blocks
 

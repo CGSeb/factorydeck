@@ -6,6 +6,7 @@ import {
   noFrictionStats,
   pendingFrictions,
 } from './frictions-fixtures.ts';
+import type { LoadFrictions } from './frictions-api.ts';
 import { frictionsLoaded, frictionsRouter } from './frictions-story.ts';
 import {
   ALL_PROJECTS_TIP,
@@ -93,6 +94,63 @@ export const WhileLoading: Story = {
       canvasElement.querySelector('.fd-friction-controls')?.lastElementChild,
     ).toContainElement(copy);
     await expect(copy).toHaveAttribute('aria-disabled', 'true');
+  },
+};
+
+function firstThenPending(): LoadFrictions {
+  const loaded = frictionsLoaderOf();
+  let calls = 0;
+  return (filters) => {
+    calls += 1;
+    return calls === 1 ? loaded(filters) : new Promise(() => undefined);
+  };
+}
+
+export const WhileReloading: Story = {
+  name: 'Disabled while a period reloads',
+  args: { loadFrictions: firstThenPending() },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await frictionsLoaded(canvasElement);
+    const copy = copyButton(canvasElement);
+    await expect(copy).toHaveAttribute('aria-disabled', 'false');
+    const summary =
+      canvasElement.querySelector('.fd-page-summary')?.textContent;
+    await userEvent.click(
+      within(canvas.getByRole('group', { name: 'Period' })).getByRole(
+        'button',
+        { name: 'Last 30 days' },
+      ),
+    );
+    await expect(copyButton(canvasElement)).toBe(copy);
+    await expect(copy).toHaveAttribute('aria-disabled', 'true');
+    await expect(copy).toHaveAccessibleName(COPY_REPORT);
+    await expect(
+      canvasElement.querySelector('.fd-friction-controls')?.lastElementChild,
+    ).toContainElement(copy);
+    await expect(
+      canvasElement.querySelector('.fd-page-summary')?.textContent,
+    ).toBe(summary);
+  },
+};
+
+export const AfterReload: Story = {
+  name: 'Enabled again once the period has loaded',
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await frictionsLoaded(canvasElement);
+    await userEvent.click(
+      within(canvas.getByRole('group', { name: 'Period' })).getByRole(
+        'button',
+        { name: 'Last 30 days' },
+      ),
+    );
+    await waitFor(() =>
+      expect(copyButton(canvasElement)).toHaveAttribute(
+        'aria-disabled',
+        'false',
+      ),
+    );
   },
 };
 

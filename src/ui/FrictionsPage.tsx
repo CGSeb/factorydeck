@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import { type ReactElement, useRef, useState } from 'react';
 import type { FrictionStats, FrictionsResponse } from '../frictions/types.ts';
 import type { Period } from '../overview/types.ts';
 import { FilterPills } from './components/FilterPills.tsx';
@@ -146,9 +146,10 @@ function FrictionsContent({
 export function reportBlock(
   response: FrictionsResponse | undefined,
   project: string | undefined,
+  reloading = false,
 ): ReportBlock {
   if (project === undefined) return 'all-projects';
-  if (response?.status !== 'ok') return 'loading';
+  if (reloading || response?.status !== 'ok') return 'loading';
   const stats = response.frictions;
   return stats.apiCalls === 0 || stats.frictions === 0 ? 'empty' : null;
 }
@@ -184,6 +185,26 @@ function frictionControls({
   );
 }
 
+function useFrictionsResponse(
+  filters: FrictionFilters,
+  loadFrictions: LoadFrictions,
+): { response: FrictionsResponse | undefined; reloading: boolean } {
+  const key = JSON.stringify(filters);
+  const current = useRef(key);
+  current.current = key;
+  const [loadedKey, setLoadedKey] = useState<string>();
+  const response = useRefreshing(
+    key,
+    async () => {
+      const next = await loadFrictions(filters);
+      if (next !== undefined && current.current === key) setLoadedKey(key);
+      return next;
+    },
+    'frictions',
+  );
+  return { response, reloading: response !== undefined && loadedKey !== key };
+}
+
 export function FrictionsPage({
   loadFrictions,
   loadOccurrences,
@@ -193,11 +214,7 @@ export function FrictionsPage({
   now = new Date(),
 }: FrictionsPageProps): ReactElement {
   const [filters, setFilters] = useFrictionFilters();
-  const response = useRefreshing(
-    JSON.stringify(filters),
-    () => loadFrictions(filters),
-    'frictions',
-  );
+  const { response, reloading } = useFrictionsResponse(filters, loadFrictions);
   return (
     <div className="fd-frictions">
       <PageHeader
@@ -220,7 +237,7 @@ export function FrictionsPage({
               {frictionControls({ response, filters, onFilters: setFilters })}
             </div>
             <FrictionReportButton
-              blocked={reportBlock(response, filters.project)}
+              blocked={reportBlock(response, filters.project, reloading)}
               onCopy={async () => {
                 await write(await loadReport(filters));
               }}
