@@ -9,7 +9,7 @@ Who can use a FactoryDeck instance. One instance serves one organisation: there 
 | `manager` | Runs the instance. The first account is always one. |
 | `dev`     | A member of the team.                               |
 
-Every API route needs a signed-in account, except the few listed under [Without a session](#without-a-session); the roles change nothing there: a dev and a manager read every route alike. While the instance has no account, the pages open the [first-manager screen](#the-first-manager-screen). An account has an email, a name, a password, a role, whether it is active, its creation time and its last sign-in time.
+Every API route needs a signed-in account, except the few listed under [Without a session](#without-a-session). A dev and a manager read every route alike, except the routes under `/api/team/`, which only a manager can use (see [The Team page](#the-team-page)). While the instance has no account, the pages open the [first-manager screen](#the-first-manager-screen). An account has an email, a name, a password, a role, whether it is active, its creation time and its last sign-in time.
 
 - **Email**: trimmed and lowercased, then stored that way: at most 254 characters, with one `@` that has text on both sides. Two accounts cannot share an email, so `Ada@Example.test` and `ada@example.test` are the same one.
 - **Name**: trimmed, 1 to 80 characters.
@@ -116,6 +116,32 @@ Every `POST`, `PUT`, `PATCH` and `DELETE` under `/api/`, open routes included, g
 2. A body that is not `application/json` (any letter case, with or without a `charset`) answers `415` with `{ "error": "JSON body expected" }`, so a form on another site cannot send one with the cookie.
 
 A request with no body passes both. Only then does a missing session answer `401`.
+
+## The Team page
+
+A manager sees a `Team` link in the sidebar, the last one, after `Roles`; it opens `/team`, the list of every account of the instance. A dev sees no such link.
+
+- **Header**: `Team`, with the summary `<n> accounts · <m> managers`. `<n>` counts every account and `<m>` every account with role `manager`, deactivated ones included; one reads `1 account` and `1 manager`. The page has no period pills; the project select stays in the sidebar and changes nothing here.
+- **Table**: the columns `Name`, `Email`, `Role` (`Manager` or `Dev`), `Status` (`Active` or `Deactivated`) and `Last sign-in`. Every account is listed, with no paging: active accounts first, then by name without letter case, then by email. The email shows as stored. The manager's own row carries a small muted `You` tag after the name. Deactivated rows are in muted text. Long names and emails wrap; a table wider than the page scrolls inside its box.
+- **Last sign-in** reads as elsewhere (`just now`, `3 min ago`, `2 h ago`, `5 d ago`), with the exact date (`22 Nov, 17:33`) in a tooltip; an account that never signed in reads `Never`.
+- **Actions**: each row of another account gets an actions menu once an action exists for it; while it holds none, no menu and no column show.
+
+The page loads like the others: the header keeps the place of its summary while the list loads, under it `Loading…`, and it reloads every `refreshSeconds`.
+
+| Answer of `GET /api/team/accounts`         | The page shows                                                                          |
+| ------------------------------------------ | --------------------------------------------------------------------------------------- |
+| `200`                                      | The table.                                                                              |
+| `403`                                      | `Only managers can manage the team.` in place of the table, the header with no summary. |
+| `503`                                      | `Database unreachable. Start it with pnpm db:up.`                                       |
+| `401`, a network error or any other answer | The last data (or `Loading…`), and it tries again every 10 s.                           |
+
+The refusal also replaces a table already shown: a manager made dev meanwhile sees it at the next refresh. The `Team` link, though, comes from one `GET /api/auth/me` each time the app enters the signed-in dashboard (first load, after setup): it shows once that read answers a manager, and stays absent while it loads or when it answers `401`, `503` or nothing. A role changed meanwhile shows or hides the link at the next of those reads, not before.
+
+### Team routes
+
+`GET /api/team/accounts` answers `200` with `{ "status": "ok", "refreshSeconds": <n>, "accounts": [...] }`, in the order of the table. Each account has `id`, `name`, `email`, `role`, `active`, `lastSignInAt` (ISO 8601, or `null`) and `you` (`true` on the requester's own account only). While the database is unreachable, it answers `503` with `{ "status": "unreachable", "refreshSeconds": <n> }`.
+
+The role is read from the session's account at each request, so a change of role counts from the next request. When several answers apply to a path under `/api/team/`, the first wins: `413`, then `415`, then `401` (or `503`), as for every route; then `403` with `{ "error": "Managers only" }` for a dev, on any path under `/api/team/`, unknown ones included; then `404` with `{ "error": "Not found" }` for a manager on an unknown one.
 
 ## The demo manager
 

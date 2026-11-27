@@ -29,7 +29,7 @@ import type { DeleteProject, LoadFactory } from './factory-api.ts';
 import { FactoryBanner } from './FactoryBanner.tsx';
 import type { LoadCollection, RefreshCollection } from './git-host-api.ts';
 import { projectOf, projectTarget } from './project-param.ts';
-import { hasBugTickets, sectionLinks } from './section-links.ts';
+import { hasBugTickets, sectionLinks, teamLink } from './section-links.ts';
 import { projectLabel } from './ProjectSelect.tsx';
 import { type LoadSidebar, useReadyCounts } from './sidebar-api.ts';
 import { WelcomePanel } from './WelcomePanel.tsx';
@@ -45,6 +45,7 @@ export interface LayoutProps {
   refreshCollection: RefreshCollection;
   loadSidebar?: LoadSidebar | undefined;
   account?: SidebarAccount | undefined;
+  team?: boolean | undefined;
 }
 
 function useFactoryStatus(loadFactory: LoadFactory): {
@@ -234,6 +235,7 @@ export function Layout({
   refreshCollection,
   loadSidebar,
   account,
+  team = false,
 }: LayoutProps): ReactElement {
   const { status, forget, reload, version } = useFactoryStatus(loadFactory);
   const { project, choose, onDeleted } = useProjectChoice(forget);
@@ -253,12 +255,15 @@ export function Layout({
   return (
     <div className="fd-shell">
       <Sidebar
-        links={sectionLinks(
-          pathname,
-          project,
-          hasBugTickets(bugTickets, project),
-          ready,
-        )}
+        links={[
+          ...sectionLinks(
+            pathname,
+            project,
+            hasBugTickets(bugTickets, project),
+            ready,
+          ),
+          ...(team ? [teamLink(pathname, project)] : []),
+        ]}
         renderLink={renderRouterLink}
         project={welcome ? undefined : projectSlot(project, projects, choose)}
         refresh={refreshSlot(collectedAt, collection)}

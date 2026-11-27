@@ -30,6 +30,7 @@ import {
   qualityLoader,
   waitingLoader,
 } from './stats-api.ts';
+import { teamLoader } from './team-api.ts';
 
 const loadOverview = overviewLoader();
 const loadSessions = sessionsLoader();
@@ -58,6 +59,7 @@ const setupManager = managerSetup();
 const loadMe = meLoader();
 const signOut = signOuter();
 const leavePage = pageLeaver();
+const loadTeam = teamLoader();
 const root = document.querySelector('#root');
 if (root) {
   createRoot(root).render(
@@ -90,6 +92,7 @@ if (root) {
         loadMe={loadMe}
         signOut={signOut}
         leavePage={leavePage}
+        loadTeam={loadTeam}
       />
     </BrowserRouter>,
   );
