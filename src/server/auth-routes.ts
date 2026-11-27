@@ -2,11 +2,13 @@ import type { Context } from 'hono';
 import { Hono } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import type { SignInSessions } from '../auth/sessions.ts';
+import { type SignInLimit, signInLimit } from '../auth/sign-in-limit.ts';
 import type { Setup } from '../auth/setup.ts';
 import type { Account } from '../auth/types.ts';
 import type { ApiContext } from './api-context.ts';
 
-export type AuthSource = Pick<Setup, 'needed' | 'run'> & SignInSessions;
+export type AuthSource = Pick<Setup, 'needed' | 'run'> &
+  SignInSessions & { signInLimit?: SignInLimit };
 
 export interface AuthEnv {
   Variables: { account: Account };
@@ -47,6 +49,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function tooManyAttempts(c: Context, retryAfterMs: number) {
+  const minutes = Math.max(1, Math.ceil(retryAfterMs / 60_000));
+  c.header('Retry-After', String(Math.ceil(retryAfterMs / 1000)));
+  return c.json(
+    {
+      error: `Too many attempts, try again in ${minutes} minute${minutes === 1 ? '' : 's'}`,
+    },
+    429,
+  );
+}
+
 async function jsonObject(c: Context): Promise<Record<string, unknown>> {
   const body: unknown = await c.req.json().catch(() => undefined);
   return isRecord(body) ? body : {};
@@ -57,6 +70,7 @@ export function authRoutes(
   { fromDatabase }: ApiContext,
 ): Hono<AuthEnv> {
   const routes = new Hono<AuthEnv>();
+  const limit = auth.signInLimit ?? signInLimit();
   routes.get('/state', async (c) => {
     const body = await fromDatabase(async () => ({
       setup: await auth.needed(),
@@ -82,13 +96,19 @@ export function authRoutes(
   });
   routes.post('/sign-in', async (c) => {
     const body = await jsonObject(c);
+    const attempt = limit.begin(body.email);
+    if (attempt.status === 'limited') {
+      return tooManyAttempts(c, attempt.retryAfterMs);
+    }
     const result = await fromDatabase(() => auth.signIn(body, sessionToken(c)));
     switch (result.status) {
       case 'unreachable':
+        if (attempt.status === 'counted') attempt.release();
         return c.json(result, 503);
       case 'wrong':
         return c.json({ error: 'Wrong email or password' }, 401);
       case 'signed-in':
+        if (attempt.status === 'counted') attempt.clear();
         setSessionCookie(c, result.sessionToken);
         return c.json(result.account, 200);
     }

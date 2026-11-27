@@ -7,6 +7,7 @@ import {
   workflowConfigPath,
 } from '../config/env.ts';
 import { signInSessions } from '../auth/sessions.ts';
+import { signInLimit } from '../auth/sign-in-limit.ts';
 import { type Setup, firstManagerSetup } from '../auth/setup.ts';
 import { type Database, createDatabase } from '../db/client.ts';
 import { listBugs } from '../bugs/query.ts';
@@ -162,7 +163,7 @@ async function main(): Promise<void> {
     },
     stats: statsSource(db, config),
     sidebar: { ready: (project) => readyCounts(db, project, hasFactory) },
-    auth: { ...setup, ...signInSessions(db) },
+    auth: { ...setup, ...signInSessions(db), signInLimit: signInLimit() },
   });
   await listen(app, env.FACTORYDECK_PORT);
   await startSetup(setup);

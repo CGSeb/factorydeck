@@ -78,13 +78,23 @@ curl -i -c cookies http://127.0.0.1:4317/api/auth/sign-in \
   -d '{"email":"ada@example.test","password":"a long passphrase"}'
 ```
 
-| Route                     | Answer                                                                                                                                                                                                                                                                        |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST /api/auth/sign-in`  | `200` with the account (`id`, `email`, `name`, `role`): it opens a new session, sets its cookie and records the last sign-in time. A wrong email, a wrong password, a missing field and a deactivated account all answer `401` with `{ "error": "Wrong email or password" }`. |
-| `POST /api/auth/sign-out` | `204`, with or without a valid session: it deletes the current session and clears the cookie.                                                                                                                                                                                 |
-| `GET /api/auth/me`        | The account of the session, or `401` with `{ "error": "Not signed in" }`.                                                                                                                                                                                                     |
+| Route                     | Answer                                                                                                                                                                                                                                                                                                                                                               |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/auth/sign-in`  | `200` with the account (`id`, `email`, `name`, `role`): it opens a new session, sets its cookie and records the last sign-in time. A wrong email, a wrong password, a missing field and a deactivated account all answer `401` with `{ "error": "Wrong email or password" }`. Too many failures on one email answer `429` (see [Failed sign-ins](#failed-sign-ins)). |
+| `POST /api/auth/sign-out` | `204`, with or without a valid session: it deletes the current session and clears the cookie.                                                                                                                                                                                                                                                                        |
+| `GET /api/auth/me`        | The account of the session, or `401` with `{ "error": "Not signed in" }`.                                                                                                                                                                                                                                                                                            |
 
 The email is compared the way it is stored: trimmed, in lower case. The password is compared as typed. An account can have several sessions open at once, one per browser or computer; signing out closes only the current one. A sign-in sent with a session cookie deletes that session before it opens the new one; a failed sign-in leaves it open.
+
+### Failed sign-ins
+
+After **10 failed sign-ins on one email within 15 minutes**, `POST /api/auth/sign-in` for that email answers `429` with `{ "error": "Too many attempts, try again in <n> minutes" }`, even with the right password, until 15 minutes after the oldest of those attempts. `<n>` is the minutes left, rounded up and at least 1 (`try again in 1 minute` in the singular), and the header `Retry-After` gives the seconds left, rounded up.
+
+- The count is kept per email, trimmed and in lower case. An email with no account counts the same, so the answer does not tell which emails exist; a deactivated account counts too.
+- An attempt is counted when it arrives, before its password is checked, so attempts sent at the same time on one email get at most 10 password checks per window. An attempt leaves the count once 15 minutes or more have passed since it.
+- The limit is checked before the database: while it applies, `429` wins over `503` and `401`. An attempt answered `429` or `503` is not counted, and an email that is missing, not a string or not of the email form (at most 254 characters, one `@` with text on both sides) answers `401` without being counted.
+- A successful sign-in clears the count of its email. Sessions already open keep working: only signing in is limited.
+- The counts live in the server's memory, for at most 10,000 emails (beyond that, the email with the oldest last attempt is dropped); a restart forgets them. Only this route counts: the first-manager setup keeps its own code check.
 
 ## How long a session lasts
 
