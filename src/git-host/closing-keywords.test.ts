@@ -70,6 +70,10 @@ describe('closing keywords of a request into any branch', () => {
     expect(gitlab('Relates to #192 and Closes group/other#193')).toEqual([]);
   });
 
+  it('links nothing when the number starts the line after the keyword', () => {
+    expect(github('This PR fixes\n#12 is unrelated')).toEqual([]);
+  });
+
   it('keeps the closing references the host reports and adds nothing from the body', () => {
     expect(github('Closes #192', [12])).toEqual([12]);
     expect(gitlab('Closes #192', [12])).toEqual([12]);

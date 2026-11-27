@@ -24,6 +24,7 @@ export interface ProjectState {
   historyRead: boolean;
   fixRead: boolean;
   stateEventsRead: boolean;
+  bodyClosesRead: boolean;
 }
 
 function isGitHost(value: string | null): value is GitHostName {
@@ -47,6 +48,7 @@ export async function projectState(
     historyRead: row.historyRead,
     fixRead: row.fixRead,
     stateEventsRead: row.stateEventsRead,
+    bodyClosesRead: row.bodyClosesRead,
   };
 }
 
@@ -223,6 +225,7 @@ export async function saveSuccess(
       historyRead: true,
       fixRead: true,
       stateEventsRead: true,
+      bodyClosesRead: true,
     };
     await tx
       .insert(gitHostProject)
