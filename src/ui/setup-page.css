@@ -116,3 +116,22 @@
     min-height: calc(var(--fd-text-sm) * 1.4 * 2);
   }
 }
+
+.fd-auth-title {
+  margin-bottom: var(--fd-space-6);
+}
+
+.fd-auth-field {
+  margin-bottom: var(--fd-space-4);
+}
+
+.fd-auth-unreachable {
+  margin: var(--fd-space-6) 0;
+  font-size: var(--fd-text-md);
+  line-height: 1.5;
+  color: var(--fd-danger);
+}
+
+.fd-setup-submit[aria-disabled='true'] {
+  opacity: 0.7;
+}

@@ -1,7 +1,23 @@
 import type { Account, Role } from '../auth/types.ts';
+
+export type { Account, Role };
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 
-export type LoadAuthState = () => Promise<{ setup: boolean } | undefined>;
+export type AuthState = { setup: boolean } | { unreachable: string };
+
+export type LoadAuthState = () => Promise<AuthState>;
+
+export interface SignInInput {
+  email: string;
+  password: string;
+}
+
+export type SignInOutcome =
+  | { status: 'signed-in'; account: Account }
+  | { status: 'refused'; message: string }
+  | { status: 'failed'; message: string };
+
+export type SignIn = (input: SignInInput) => Promise<SignInOutcome>;
 
 export type SetupField = 'code' | 'email' | 'name' | 'password';
 
@@ -45,7 +61,8 @@ export function authStateLoader(
   return async () => {
     try {
       const response = await fetchImpl('/api/auth/state');
-      if (!response.ok) return undefined;
+      if (response.status === 503) return { unreachable: DATABASE_UNREACHABLE };
+      if (!response.ok) return { unreachable: SERVER_UNREACHABLE };
       const body: unknown = await response.json();
       if (
         typeof body === 'object' &&
@@ -55,10 +72,49 @@ export function authStateLoader(
       ) {
         return { setup: body.setup };
       }
-      return undefined;
+      return { unreachable: SERVER_UNREACHABLE };
     } catch {
-      return undefined;
+      return { unreachable: SERVER_UNREACHABLE };
     }
+  };
+}
+
+async function accountIn(response: Response): Promise<Account | undefined> {
+  const body: unknown = await response.json().catch(() => undefined);
+  if (!isAccount(body)) return undefined;
+  const { id, email, name, role } = body;
+  return { id, email, name, role };
+}
+
+export function signInSender(
+  fetchImpl: typeof fetch = (...args) => fetch(...args),
+): SignIn {
+  return async (input) => {
+    let response: Response;
+    try {
+      response = await fetchImpl('/api/auth/sign-in', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+    } catch {
+      return { status: 'failed', message: SERVER_UNREACHABLE };
+    }
+    if (response.status === 503) {
+      return { status: 'failed', message: DATABASE_UNREACHABLE };
+    }
+    if (response.ok) {
+      const account = await accountIn(response);
+      return account === undefined
+        ? { status: 'failed', message: SERVER_UNREACHABLE }
+        : { status: 'signed-in', account };
+    }
+    const message = messageOf(
+      await response.json().catch((): unknown => undefined),
+    );
+    return message === undefined
+      ? { status: 'failed', message: SERVER_UNREACHABLE }
+      : { status: 'refused', message };
   };
 }
 
@@ -110,7 +166,7 @@ export type SignOutOutcome =
 
 export type SignOut = () => Promise<SignOutOutcome>;
 
-export const SIGNED_OUT_PATH = '/';
+export const SIGNED_OUT_PATH = '/sign-in';
 
 const ROLES: readonly Role[] = ['manager', 'dev'];
 

@@ -32,7 +32,7 @@ While `GET /api/auth/state` answers `{ "setup": true }`, every page of the app o
 - Focus starts on `Setup code`; Enter in any field submits. The values are sent as typed: the server trims the code, the email and the name.
 - While the request runs, the button reads `Creating…` and is disabled; a second Enter sends nothing.
 - `201` opens `/`, signed in. A `403` (`Wrong setup code`) or a `409` (`Already set up`) shows the API's message under the form; a `400` shows its message under the field it names, marks that field invalid and moves the focus to it. A `503` shows `Database unreachable. Start it with pnpm db:up.` under the form. No answer at all, or any other answer without an `error` message (a `500` or `502` from a proxy, for example), shows `Could not reach the server`. Each message is announced to screen readers, and the place of every message is reserved (one line, two below 480 px wide, enough for every message the server sends), so the form keeps its size.
-- While the state is not known yet, the app shows nothing and calls no other route; while `setup` is `true`, the app calls only `/api/auth/*`. If the state cannot be read (the database or the server does not answer), the app opens as usual and each page shows its own unreachable message.
+- While the state is not known yet, the app shows nothing and calls no other route; while `setup` is `true`, the app calls only `/api/auth/*`. If the state cannot be read (the database or the server does not answer), the app shows the [unreachable screen](#the-unreachable-screen).
 - Once set up, `/setup` opens `/`.
 
 The person who installs the instance can also send the code with their email, name and password from a terminal:
@@ -96,6 +96,24 @@ After **10 failed sign-ins on one email within 15 minutes**, `POST /api/auth/sig
 - A successful sign-in clears the count of its email. Sessions already open keep working: only signing in is limited.
 - The counts live in the server's memory, for at most 10,000 emails (beyond that, the email with the oldest last attempt is dropped); a restart forgets them. Only this route counts: the first-manager setup keeps its own code check.
 
+### The sign-in screen
+
+When the app loads, it reads `GET /api/auth/state`, then `GET /api/auth/me` only when `setup` is `false`. A `401` from `/me` opens the sign-in screen; the app calls no data route before `/me` answers an account. Any page opened without a session shows the sign-in screen at `/sign-in?next=<path, query and hash asked for>`, without the sidebar: `next` is encoded as a query value (`/sign-in?next=%2Fsessions%3Fperiod%3D7d`), and left out when the page asked for is `/`. The screen reuses the card of the first-manager screen: the FactoryDeck logo, the title `Sign in to FactoryDeck`, the fields `Email` (an email field the browser fills as the user name) and `Password` (filled as the current password), and the button `Sign in`. It has no theme button and follows the light or dark theme chosen before (or the device's).
+
+- Focus starts on `Email`; Enter in any field submits. The email and password are sent as typed, with no check in the browser: an empty field is sent and answered `Wrong email or password`, and the server normalises the email.
+- While the request runs, the button reads `Signing in…` and is disabled; a second Enter sends nothing.
+- Success reads `GET /api/auth/me`, then opens `next`, replacing the sign-in screen in the history, so Back never shows it again. If that read gets no account, the form shows the message of the unreachable screen and stays.
+- A refusal (`401`, `Wrong email or password`; `429`, `Too many attempts, try again in <n> minutes`; or any other answer with an `error` message) shows the API's message under the form, keeps the email, empties the password and moves the focus to `Password`. A `503` shows `Database unreachable. Start it with pnpm db:up.`; no answer at all, or any other answer without an `error` message, shows `Could not reach the server`; both keep the email and the password and move the focus to `Sign in`. Each message is announced to screen readers, and its place under the button is reserved (one line, two below 480 px wide), so the card keeps its size.
+- `next` is used only when it is a path of this site: it starts with `/` and not with `//`, holds no `\`, and is not `/sign-in`, `/setup` or under `/api/` (in any letter case, with or without a trailing `/`). Anything else, or none, opens `/`. When `next` is repeated, the first value counts. The app opens it inside the app, never by setting the browser's location.
+- Any `401` from the API while the app is open, from any route but `POST /api/auth/sign-in`, writes included, opens the sign-in screen with `next` set to the current page, replacing it in the history. From that first `401`, the app calls no data route until a sign-in succeeds, ignores the answers of requests already sent, and drops the action that got the `401`; after the sign-in, the page loads afresh.
+- A signed-in person who opens `/sign-in` goes to `next`, or `/`. While `setup` is `true`, `/sign-in` opens `/setup` and drops `next`.
+
+### The unreachable screen
+
+When the state or the account cannot be read at load, the app shows the unreachable screen instead of the sign-in screen, at the address asked for: the card of the sign-in screen with the logo, the message (`Database unreachable. Start it with pnpm db:up.` on a `503`, `Could not reach the server` on no answer, a `500`, a `502` from a proxy, or a body that is not the one expected), then a `Retry` button, which takes the focus. The message is announced to screen readers.
+
+`Retry` reads `Retrying…` and is disabled while it runs, and keeps the focus. It reads the state and the account again: an account opens the page asked for, a `401` the sign-in screen, `setup: true` the first-manager screen, and a failure keeps the unreachable screen with its new message. Nothing retries by itself.
+
 ## How long a session lasts
 
 A session expires **30 days after its last use**: once 30 days or more have passed since its stored last use. Each request with it moves its last use (written at most once a minute) and sends the cookie again with a fresh `Max-Age` of 30 days, so a session used every day never ends. An expired session is deleted the next time it is sent, and the request is answered as not signed in. A session whose account is deactivated is refused and deleted the same way.
@@ -108,7 +126,7 @@ Every route under `/api/` answers `401` with `{ "error": "Not signed in" }` with
 - `GET /api/auth/state` and `POST /api/auth/setup`;
 - `POST /api/auth/sign-in` and `POST /api/auth/sign-out`.
 
-The built UI (its HTML, scripts and styles) is served without a session. Until it has a sign-in screen, its pages show their usual error state when the API answers `401`. While the database is unreachable, a route that needs a session answers `503` with the usual unreachable body. No setting turns authentication off.
+The built UI (its HTML, scripts and styles) is served without a session. When the API answers `401`, its pages open the [sign-in screen](#the-sign-in-screen). While the database is unreachable, a route that needs a session answers `503` with the usual unreachable body. No setting turns authentication off.
 
 Every `POST`, `PUT`, `PATCH` and `DELETE` under `/api/`, open routes included, goes through two body checks before the session is checked, in this order:
 
