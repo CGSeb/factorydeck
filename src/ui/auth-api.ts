@@ -1,3 +1,5 @@
+import { UNREACHABLE_MESSAGE } from './overview-api.ts';
+
 export type LoadAuthState = () => Promise<{ setup: boolean } | undefined>;
 
 export type SetupField = 'code' | 'email' | 'name' | 'password';
@@ -17,8 +19,7 @@ export type SetupOutcome =
 export type SetupManager = (input: SetupInput) => Promise<SetupOutcome>;
 
 export const SERVER_UNREACHABLE = 'Could not reach the server';
-export const DATABASE_UNREACHABLE =
-  'Database unreachable. Start it with pnpm db:up.';
+export const DATABASE_UNREACHABLE = UNREACHABLE_MESSAGE;
 
 const FIELDS: readonly SetupField[] = ['code', 'email', 'name', 'password'];
 

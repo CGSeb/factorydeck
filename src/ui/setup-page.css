@@ -106,3 +106,13 @@
   margin: var(--fd-space-3) 0 0;
   text-align: center;
 }
+
+@media (max-width: 479.98px) {
+  .fd-setup-card {
+    padding: var(--fd-space-6) var(--fd-space-5);
+  }
+
+  .fd-setup-error {
+    min-height: calc(var(--fd-text-sm) * 1.4 * 2);
+  }
+}
