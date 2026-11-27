@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { verifyPassword } from '../auth/secrets.ts';
-import { firstManagerSetup } from '../auth/setup.ts';
+import { signInSessions } from '../auth/sessions.ts';
+import { type Setup, firstManagerSetup } from '../auth/setup.ts';
 import type { Database } from '../db/client.ts';
 import { account, accountToken, signInSession } from '../db/schema.ts';
 import { createTestDatabase } from '../test/postgres.ts';
@@ -13,7 +14,6 @@ import {
   unusedStats,
 } from '../test/skill-source.ts';
 import { type OverviewSource, createApp } from './app.ts';
-import type { AuthSource } from './auth-routes.ts';
 import type { SessionSource } from './session-routes.ts';
 
 const CODE = 'AB23CD45';
@@ -32,7 +32,7 @@ const sessions: SessionSource = {
   detail: () => Promise.reject(new Error('Not used')),
 };
 
-function app(auth: AuthSource, up = true) {
+function app(setup: Setup, up = true) {
   return createApp({
     checkDatabase: () => Promise.resolve(up),
     uiDir: '/nonexistent/factorydeck-ui',
@@ -44,7 +44,7 @@ function app(auth: AuthSource, up = true) {
     projects: unusedProjects,
     gitHost: unusedGitHost,
     stats: unusedStats,
-    auth,
+    auth: { ...setup, ...signInSessions(db, { now: () => NOW }) },
   });
 }
 

@@ -15,6 +15,7 @@ import {
   unusedGitHost,
   unusedFeatures,
   unusedStats,
+  signedInAuth,
 } from '../test/skill-source.ts';
 import { databaseCheck } from './health.ts';
 
@@ -32,6 +33,7 @@ const unused = {
   features: unusedFeatures,
   projects: unusedProjects,
   gitHost: unusedGitHost,
+  auth: signedInAuth,
   stats: unusedStats,
 };
 

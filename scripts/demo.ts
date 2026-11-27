@@ -7,6 +7,7 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import pg from 'pg';
 import { loadRootEnvFile, validateEnv } from '../src/config/env.ts';
 import { createDatabase } from '../src/db/client.ts';
+import { createDemoManager, demoSignInLine } from '../src/demo/account.ts';
 import { writeDemoCodexSessions } from '../src/demo/codex-sessions.ts';
 import {
   EXAMPLE_API,
@@ -69,6 +70,8 @@ await writeDemoConfig(config, projects);
 const { db, close } = createDatabase(demoUrl);
 try {
   await migrate(db, { migrationsFolder: join(ROOT, 'drizzle') });
+  await createDemoManager(db, now);
+  console.log(demoSignInLine());
   console.log(summaryLine(await ingest(db, folder, { codexFolder })));
   console.log(collectSummary(await collect(db, { hasFactory })).join('\n'));
   if (values['lost-factory']) {

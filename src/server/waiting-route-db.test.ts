@@ -11,6 +11,7 @@ import {
   unusedRoles,
   unusedSkills,
   unusedStats,
+  signedInAuth,
 } from '../test/skill-source.ts';
 import { createApp } from './app.ts';
 
@@ -143,6 +144,7 @@ function app() {
     features: unusedFeatures,
     projects: unusedProjects,
     gitHost: unusedGitHost,
+    auth: signedInAuth,
     stats: {
       ...unusedStats,
       waiting: (project) => waitingIssues(db, project, hasFactory),

@@ -9,7 +9,7 @@ Who can use a FactoryDeck instance. One instance serves one organisation: there 
 | `manager` | Runs the instance. The first account is always one. |
 | `dev`     | A member of the team.                               |
 
-Accounts do not restrict the API yet: every route but the setup ones answers as before. The pages wait for the first manager only: while the instance has no account, they open the [first-manager screen](#the-first-manager-screen). An account has an email, a name, a password, a role, whether it is active, its creation time and its last sign-in time.
+Every API route needs a signed-in account, except the few listed under [Without a session](#without-a-session); the roles change nothing there: a dev and a manager read every route alike. While the instance has no account, the pages open the [first-manager screen](#the-first-manager-screen). An account has an email, a name, a password, a role, whether it is active, its creation time and its last sign-in time.
 
 - **Email**: trimmed and lowercased, then stored that way: at most 254 characters, with one `@` that has text on both sides. Two accounts cannot share an email, so `Ada@Example.test` and `ada@example.test` are the same one.
 - **Name**: trimmed, 1 to 80 characters.
@@ -69,3 +69,44 @@ A successful setup signs the new manager in: it records their last sign-in time 
 | `Secure`   | When the request came over HTTPS, directly or through a proxy that sets `X-Forwarded-Proto: https`. |
 
 FactoryDeck stores only the SHA-256 hash of the token, with the session's creation time and last use time.
+
+## Signing in and out
+
+```bash
+curl -i -c cookies http://127.0.0.1:4317/api/auth/sign-in \
+  -H 'content-type: application/json' \
+  -d '{"email":"ada@example.test","password":"a long passphrase"}'
+```
+
+| Route                     | Answer                                                                                                                                                                                                                                                                        |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/auth/sign-in`  | `200` with the account (`id`, `email`, `name`, `role`): it opens a new session, sets its cookie and records the last sign-in time. A wrong email, a wrong password, a missing field and a deactivated account all answer `401` with `{ "error": "Wrong email or password" }`. |
+| `POST /api/auth/sign-out` | `204`, with or without a valid session: it deletes the current session and clears the cookie.                                                                                                                                                                                 |
+| `GET /api/auth/me`        | The account of the session, or `401` with `{ "error": "Not signed in" }`.                                                                                                                                                                                                     |
+
+The email is compared the way it is stored: trimmed, in lower case. The password is compared as typed. An account can have several sessions open at once, one per browser or computer; signing out closes only the current one. A sign-in sent with a session cookie deletes that session before it opens the new one; a failed sign-in leaves it open.
+
+## How long a session lasts
+
+A session expires **30 days after its last use**: once 30 days or more have passed since its stored last use. Each request with it moves its last use (written at most once a minute) and sends the cookie again with a fresh `Max-Age` of 30 days, so a session used every day never ends. An expired session is deleted the next time it is sent, and the request is answered as not signed in. A session whose account is deactivated is refused and deleted the same way.
+
+## Without a session
+
+Every route under `/api/` answers `401` with `{ "error": "Not signed in" }` without a valid session, unknown routes included, except:
+
+- `GET /api/health`;
+- `GET /api/auth/state` and `POST /api/auth/setup`;
+- `POST /api/auth/sign-in` and `POST /api/auth/sign-out`.
+
+The built UI (its HTML, scripts and styles) is served without a session. Until it has a sign-in screen, its pages show their usual error state when the API answers `401`. While the database is unreachable, a route that needs a session answers `503` with the usual unreachable body. No setting turns authentication off.
+
+Every `POST`, `PUT`, `PATCH` and `DELETE` under `/api/`, open routes included, goes through two body checks before the session is checked, in this order:
+
+1. A body larger than 1 MB (1,048,576 bytes) answers `413` with `{ "error": "Body too large" }`, without being read further.
+2. A body that is not `application/json` (any letter case, with or without a `charset`) answers `415` with `{ "error": "JSON body expected" }`, so a form on another site cannot send one with the cookie.
+
+A request with no body passes both. Only then does a missing session answer `401`.
+
+## The demo manager
+
+`pnpm demo` creates the manager `demo@example.com` and prints its password when it starts. `pnpm shot` and `pnpm shift` sign in with it before they load a page.

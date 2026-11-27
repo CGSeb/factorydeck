@@ -5,7 +5,10 @@ import type { Hono } from 'hono';
 export const HOST = '127.0.0.1';
 
 /** Starts serving `app` on `HOST:port`, rejecting with a readable message when the port is taken. */
-export function listen(app: Hono, port: number): Promise<ServerType> {
+export function listen(
+  app: Pick<Hono, 'fetch'>,
+  port: number,
+): Promise<ServerType> {
   return new Promise((resolve, reject) => {
     const server = serve({ fetch: app.fetch, hostname: HOST, port }, () =>
       resolve(server),

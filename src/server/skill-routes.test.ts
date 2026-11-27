@@ -8,6 +8,7 @@ import {
   unusedGitHost,
   unusedFeatures,
   unusedStats,
+  signedInAuth,
 } from '../test/skill-source.ts';
 import type { SkillSource } from './skill-routes.ts';
 import { splitTokens } from '../ui/token-fixtures.ts';
@@ -78,6 +79,7 @@ function app(checkDatabase = up) {
     features: unusedFeatures,
     projects: unusedProjects,
     gitHost: unusedGitHost,
+    auth: signedInAuth,
     stats: unusedStats,
   });
 }

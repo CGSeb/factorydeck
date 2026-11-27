@@ -16,6 +16,7 @@ import {
   unusedRoles,
   unusedSkills,
   unusedStats,
+  signedInAuth,
 } from '../test/skill-source.ts';
 import { createApp } from './app.ts';
 
@@ -69,6 +70,7 @@ function app(up = true) {
     features: unusedFeatures,
     projects: unusedProjects,
     gitHost: unusedGitHost,
+    auth: signedInAuth,
     stats: {
       ...unusedStats,
       autonomy: (query) => {

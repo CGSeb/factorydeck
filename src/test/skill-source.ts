@@ -1,3 +1,4 @@
+import type { AuthSource } from '../server/auth-routes.ts';
 import type { FeatureSource } from '../server/feature-routes.ts';
 import type { GitHostSource } from '../server/git-host-routes.ts';
 import type { ProjectSource } from '../server/project-routes.ts';
@@ -42,4 +43,18 @@ export const unusedStats: StatsSource = {
   flow: () => Promise.reject(new Error('Not used')),
   bugs: () => Promise.reject(new Error('Not used')),
   waiting: () => Promise.reject(new Error('Not used')),
+};
+
+export const signedInAuth: AuthSource = {
+  needed: () => Promise.reject(new Error('Not used')),
+  run: () => Promise.reject(new Error('Not used')),
+  signIn: () => Promise.reject(new Error('Not used')),
+  authenticate: () =>
+    Promise.resolve({
+      id: 1,
+      email: 'ada@example.test',
+      name: 'Ada',
+      role: 'manager',
+    }),
+  signOut: () => Promise.reject(new Error('Not used')),
 };

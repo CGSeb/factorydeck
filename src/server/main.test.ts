@@ -3,6 +3,7 @@ import { type Server, createServer } from 'node:net';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
+import { hashPassword } from '../auth/secrets.ts';
 import { createDatabase } from '../db/client.ts';
 import { account } from '../db/schema.ts';
 import { createScratchDatabase } from '../test/postgres.ts';
@@ -191,6 +192,15 @@ describe('pnpm start', () => {
     await writeLog(log, [
       assistant({ uuid: 'a1', at: 0, cwd }, { requestId: 'r1' }),
     ]);
+    const { db, close } = createDatabase(scratch.url);
+    await db.insert(account).values({
+      email: 'ada@example.test',
+      name: 'Ada',
+      passwordHash: await hashPassword('a long passphrase'),
+      role: 'manager',
+      createdAt: new Date(),
+    });
+    await close();
     const free = await occupy();
     const port = portOf(free);
     await new Promise((resolve) => free.close(resolve));
@@ -202,9 +212,11 @@ describe('pnpm start', () => {
       FACTORYDECK_INGEST_INTERVAL_SECONDS: '1',
     });
     running.push(run);
+    let cookie = '';
     const apiCalls = async (): Promise<unknown> => {
       const response = await fetch(
         `http://127.0.0.1:${port}/api/overview?period=all&tz=UTC`,
+        { headers: { cookie } },
       ).catch(() => undefined);
       const body: unknown = await response?.json();
       return typeof body === 'object' && body !== null && 'overview' in body
@@ -214,6 +226,16 @@ describe('pnpm start', () => {
     try {
       let body: unknown;
       await waitFor(() => run.output().includes('FactoryDeck on'));
+      const signIn = await fetch(`http://127.0.0.1:${port}/api/auth/sign-in`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          email: 'ada@example.test',
+          password: 'a long passphrase',
+        }),
+      });
+      expect(signIn.status).toBe(200);
+      cookie = (signIn.headers.get('set-cookie') ?? '').split(';')[0] ?? '';
       for (let i = 0; i < 50; i++) {
         body = await apiCalls();
         if (JSON.stringify(body).includes('"apiCalls":1')) break;
@@ -236,7 +258,9 @@ describe('pnpm start', () => {
       }
       expect(body).toMatchObject({ overview: { totals: { apiCalls: 2 } } });
       const sessions: unknown = await (
-        await fetch(`http://127.0.0.1:${port}/api/sessions?period=all&tz=UTC`)
+        await fetch(`http://127.0.0.1:${port}/api/sessions?period=all&tz=UTC`, {
+          headers: { cookie },
+        })
       ).json();
       expect(sessions).toMatchObject({
         status: 'ok',

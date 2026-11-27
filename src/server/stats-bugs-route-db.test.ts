@@ -12,6 +12,7 @@ import {
   unusedRoles,
   unusedSkills,
   unusedStats,
+  signedInAuth,
 } from '../test/skill-source.ts';
 import { createApp } from './app.ts';
 
@@ -82,6 +83,7 @@ function server() {
     features: unusedFeatures,
     projects: unusedProjects,
     gitHost: unusedGitHost,
+    auth: signedInAuth,
     stats: {
       ...unusedStats,
       bugs: (query) => bugStats(db, query, () => Promise.resolve(true)),
