@@ -30,6 +30,7 @@ import {
 
 type ThemedProps = SidebarProps & { themeControl: ThemeControl };
 
+export type { AccountView, SidebarAccount } from './AccountMenu.tsx';
 export type {
   ProjectSlotControl,
   SidebarBadge,

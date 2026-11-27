@@ -64,6 +64,7 @@ export const EveryIcon: Story = {
       'monitor',
       'sun',
       'moon',
+      'sign-out',
       'refresh',
       'info',
       'github',

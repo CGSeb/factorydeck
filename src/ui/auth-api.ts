@@ -1,3 +1,4 @@
+import type { Account, Role } from '../auth/types.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 
 export type LoadAuthState = () => Promise<{ setup: boolean } | undefined>;
@@ -94,5 +95,87 @@ export function managerSetup(
       return { status: 'invalid', field: body.field, message };
     }
     return { status: 'failed', message };
+  };
+}
+
+export type MeResult =
+  | { status: 'account'; account: Account }
+  | { status: 'signed-out' }
+  | { status: 'unreachable'; message: string };
+
+export type LoadMe = () => Promise<MeResult>;
+
+export type SignOutOutcome =
+  { status: 'signed-out' } | { status: 'failed'; message: string };
+
+export type SignOut = () => Promise<SignOutOutcome>;
+
+export const SIGNED_OUT_PATH = '/';
+
+const ROLES: readonly Role[] = ['manager', 'dev'];
+
+function isAccount(body: unknown): body is Account {
+  return (
+    typeof body === 'object' &&
+    body !== null &&
+    'id' in body &&
+    typeof body.id === 'number' &&
+    'email' in body &&
+    typeof body.email === 'string' &&
+    'name' in body &&
+    typeof body.name === 'string' &&
+    'role' in body &&
+    typeof body.role === 'string' &&
+    (ROLES as readonly string[]).includes(body.role)
+  );
+}
+
+export function meLoader(
+  fetchImpl: typeof fetch = (...args) => fetch(...args),
+): LoadMe {
+  return async () => {
+    try {
+      const response = await fetchImpl('/api/auth/me');
+      if (response.status === 401) return { status: 'signed-out' };
+      if (response.status === 503) {
+        return { status: 'unreachable', message: DATABASE_UNREACHABLE };
+      }
+      const body: unknown = response.ok ? await response.json() : undefined;
+      if (isAccount(body)) {
+        const { id, email, name, role } = body;
+        return { status: 'account', account: { id, email, name, role } };
+      }
+      return { status: 'unreachable', message: SERVER_UNREACHABLE };
+    } catch {
+      return { status: 'unreachable', message: SERVER_UNREACHABLE };
+    }
+  };
+}
+
+export function signOuter(
+  fetchImpl: typeof fetch = (...args) => fetch(...args),
+): SignOut {
+  return async () => {
+    try {
+      const response = await fetchImpl('/api/auth/sign-out', {
+        method: 'POST',
+      });
+      if (response.status === 204) return { status: 'signed-out' };
+      return {
+        status: 'failed',
+        message:
+          response.status === 503 ? DATABASE_UNREACHABLE : SERVER_UNREACHABLE,
+      };
+    } catch {
+      return { status: 'failed', message: SERVER_UNREACHABLE };
+    }
+  };
+}
+
+export function pageLeaver(
+  location: Pick<Location, 'replace'> = window.location,
+): (path: string) => void {
+  return (path) => {
+    location.replace(path);
   };
 }
