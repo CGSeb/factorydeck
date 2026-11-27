@@ -155,7 +155,9 @@ function SignInRoutes({
 export function App(props: AppProps): ReactElement | null {
   const { setupManager, signIn, loadMe, sessionGate } = props;
   const [phase, setPhase, retry] = useAuthPhase(props);
-  const view = useAccountView(loadMe, phase);
+  const view = useAccountView(loadMe, phase, () =>
+    setPhase({ name: 'signed-out' }),
+  );
   const navigate = useNavigate();
   if (phase.name === 'checking') return null;
   if (phase.name === 'unreachable') {

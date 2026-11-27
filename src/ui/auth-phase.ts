@@ -113,10 +113,13 @@ export function signInThenRead(
 export function useAccountView(
   loadMe: LoadMe | undefined,
   phase: AuthPhase,
+  onSignedOut: () => void,
 ): AccountView {
   const known = phase.name === 'ready' ? phase.account : undefined;
   const unread = phase.name === 'ready' && phase.account === undefined;
   const [view, setView] = useState<AccountView>({ status: 'loading' });
+  const signedOut = useRef(onSignedOut);
+  signedOut.current = onSignedOut;
   useEffect(() => {
     if (loadMe === undefined || !unread) return;
     let current = true;
@@ -127,6 +130,7 @@ export function useAccountView(
           ? { status: 'account', account: result.account }
           : { status: 'unavailable' },
       );
+      if (result.status === 'signed-out') signedOut.current();
     });
     return () => {
       current = false;

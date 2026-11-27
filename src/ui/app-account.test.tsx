@@ -94,6 +94,28 @@ describe('the account read', () => {
     expect(loadMe).toHaveBeenCalledTimes(2);
   });
 
+  it('opens the sign-in screen when the read after setup answers 401', async () => {
+    const loadMe = vi.fn<LoadMe>(() =>
+      Promise.resolve({ status: 'signed-out' }),
+    );
+    renderApp(
+      {
+        loadMe,
+        loadAuthState: () => Promise.resolve({ setup: true }),
+        setupManager: () => Promise.resolve({ status: 'created' }),
+        signIn: () => Promise.resolve({ status: 'signed-in', account: ADA }),
+      },
+      '/setup',
+    );
+    const code = await screen.findByLabelText('Setup code');
+    fireEvent.submit(code.closest('form') ?? code);
+    await screen.findByRole('heading', {
+      level: 1,
+      name: 'Sign in to FactoryDeck',
+    });
+    expect(loadMe).toHaveBeenCalledTimes(1);
+  });
+
   it('reads me only once the first manager is created', async () => {
     const loadMe = meOf();
     renderApp(

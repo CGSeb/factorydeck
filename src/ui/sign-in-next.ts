@@ -2,9 +2,13 @@ export const SIGN_IN_PATH = '/sign-in';
 
 const CLOSED_PATHS = new Set([SIGN_IN_PATH, '/setup']);
 
-function pathOf(value: string): string {
+function rawPathOf(value: string): string {
   const end = value.search(/[?#]/);
-  const path = (end === -1 ? value : value.slice(0, end)).toLowerCase();
+  return (end === -1 ? value : value.slice(0, end)).toLowerCase();
+}
+
+function pathOf(value: string): string {
+  const path = rawPathOf(value);
   return path.length > 1 ? path.replace(/\/+$/, '') : path;
 }
 
@@ -18,8 +22,7 @@ export function safeNext(value: string | null | undefined): string {
   ) {
     return '/';
   }
-  const path = pathOf(value);
-  if (CLOSED_PATHS.has(path) || path.startsWith('/api/')) {
+  if (CLOSED_PATHS.has(pathOf(value)) || rawPathOf(value).startsWith('/api/')) {
     return '/';
   }
   return value;
