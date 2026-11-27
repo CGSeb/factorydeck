@@ -37,6 +37,7 @@ import { flowStats } from '../stats/flow.ts';
 import { qualityStats } from '../stats/quality.ts';
 import { teamAccounts } from '../team/accounts.ts';
 import { changeRole } from '../team/change-role.ts';
+import { invitations } from '../team/invitations.ts';
 import { createApp } from './app.ts';
 import type { TeamSource } from './team-routes.ts';
 import { type CollectLoop, startCollectLoop } from './collect-loop.ts';
@@ -94,6 +95,7 @@ function teamSource(db: Database): TeamSource {
   return {
     accounts: () => teamAccounts(db),
     changeRole: (request) => changeRole(db, request),
+    invitations: invitations(db),
   };
 }
 

@@ -26,6 +26,8 @@ describe('routes that need a session', () => {
     'POST /api/auth/setup',
     'POST /api/auth/sign-in',
     'POST /api/auth/sign-out',
+    'POST /api/auth/invitation',
+    'POST /api/auth/invitation/accept',
   ];
 
   function apiRoutes(server: Server) {

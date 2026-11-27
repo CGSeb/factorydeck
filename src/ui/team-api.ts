@@ -1,10 +1,20 @@
-import type { TeamResponse } from '../team/types.ts';
+import type {
+  InvitationsResponse,
+  TeamInvitation,
+  TeamResponse,
+} from '../team/types.ts';
 import { isResponse } from './skills-api.ts';
 
 export const REFUSED_RETRY_SECONDS = 10;
 
+type TeamOk = Extract<TeamResponse, { status: 'ok' }> & {
+  invitations?: readonly TeamInvitation[] | undefined;
+};
+
 export type TeamView =
-  TeamResponse | { status: 'refused'; refreshSeconds: number };
+  | TeamOk
+  | Extract<TeamResponse, { status: 'unreachable' }>
+  | { status: 'refused'; refreshSeconds: number };
 
 export type LoadTeam = () => Promise<TeamView | undefined>;
 
@@ -27,5 +37,21 @@ export function teamLoader(
     } catch {
       return undefined;
     }
+  };
+}
+
+export function withInvitations(
+  loadTeam: LoadTeam,
+  loadInvitations: () => Promise<InvitationsResponse | undefined>,
+): LoadTeam {
+  return async () => {
+    const [team, invitations] = await Promise.all([
+      loadTeam(),
+      loadInvitations(),
+    ]);
+    if (team?.status !== 'ok') return team;
+    if (invitations === undefined) return undefined;
+    if (invitations.status === 'unreachable') return invitations;
+    return { ...team, invitations: invitations.invitations };
   };
 }

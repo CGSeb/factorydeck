@@ -27,6 +27,10 @@ describe('next', () => {
     '/api/?x=1',
     '/api//',
     '/API/overview',
+    '/invite/abc',
+    '/Invite/abc?x=1',
+    '/reset/abc',
+    '/reset/',
     'stats',
     '',
   ])('opens / for %s', (path) => {

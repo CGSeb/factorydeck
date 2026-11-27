@@ -37,7 +37,13 @@ import {
   waitingLoader,
 } from './stats-api.ts';
 import { roleChanger } from './role-change-api.ts';
-import { teamLoader } from './team-api.ts';
+import {
+  invitationAccepter,
+  invitationActions,
+  invitationReader,
+  invitationsLoader,
+} from './invitations-api.ts';
+import { teamLoader, withInvitations } from './team-api.ts';
 
 const gate = authGate();
 const loadOverview = overviewLoader(gate.fetch);
@@ -67,8 +73,14 @@ const setupManager = managerSetup();
 const loadMe = meLoader();
 const signOut = signOuter();
 const leavePage = pageLeaver();
-const loadTeam = teamLoader(gate.fetch);
 const changeRole = roleChanger(gate.fetch);
+const loadTeam = withInvitations(
+  teamLoader(gate.fetch),
+  invitationsLoader(gate.fetch),
+);
+const manageInvitations = invitationActions(gate.fetch);
+const readInvitation = invitationReader();
+const acceptInvitation = invitationAccepter();
 const signIn = signInSender();
 const loadReport = frictionReportLoader(gate.fetch);
 const markReport = frictionReportMarker(gate.fetch);
@@ -106,6 +118,9 @@ if (root) {
         leavePage={leavePage}
         loadTeam={loadTeam}
         changeRole={changeRole}
+        invitationActions={manageInvitations}
+        readInvitation={readInvitation}
+        acceptInvitation={acceptInvitation}
         loadReport={loadReport}
         markReport={markReport}
         signIn={signIn}

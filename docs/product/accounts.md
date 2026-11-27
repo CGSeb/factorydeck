@@ -104,7 +104,7 @@ When the app loads, it reads `GET /api/auth/state`, then `GET /api/auth/me` only
 - While the request runs, the button reads `Signing in…` and is disabled; a second Enter sends nothing.
 - Success reads `GET /api/auth/me`, then opens `next`, replacing the sign-in screen in the history, so Back never shows it again. If that read gets no account, the form shows the message of the unreachable screen and stays.
 - A refusal (`401`, `Wrong email or password`; `429`, `Too many attempts, try again in <n> minutes`; or any other answer with an `error` message) shows the API's message under the form, keeps the email, empties the password and moves the focus to `Password`. A `503` shows `Database unreachable. Start it with pnpm db:up.`; no answer at all, or any other answer without an `error` message, shows `Could not reach the server`; both keep the email and the password and move the focus to `Sign in`. Each message is announced to screen readers, and its place under the button is reserved (one line, two below 480 px wide), so the card keeps its size.
-- `next` is used only when it is a path of this site: it starts with `/` and not with `//`, holds no `\`, and is not `/sign-in`, `/setup` or under `/api/` (in any letter case, with or without a trailing `/`). Anything else, or none, opens `/`. When `next` is repeated, the first value counts. The app opens it inside the app, never by setting the browser's location.
+- `next` is used only when it is a path of this site: it starts with `/` and not with `//`, holds no `\`, and is not `/sign-in`, `/setup`, or under `/api/`, `/invite/` or `/reset/` (in any letter case, with or without a trailing `/`). Anything else, or none, opens `/`. When `next` is repeated, the first value counts. The app opens it inside the app, never by setting the browser's location.
 - Any `401` from the API while the app is open, from any route but `POST /api/auth/sign-in`, writes included, opens the sign-in screen with `next` set to the current page, replacing it in the history. From that first `401`, the app calls no data route until a sign-in succeeds, ignores the answers of requests already sent, and drops the action that got the `401`; after the sign-in, the page loads afresh.
 - A signed-in person who opens `/sign-in` goes to `next`, or `/`. While `setup` is `true`, `/sign-in` opens `/setup` and drops `next`.
 
@@ -124,7 +124,8 @@ Every route under `/api/` answers `401` with `{ "error": "Not signed in" }` with
 
 - `GET /api/health`;
 - `GET /api/auth/state` and `POST /api/auth/setup`;
-- `POST /api/auth/sign-in` and `POST /api/auth/sign-out`.
+- `POST /api/auth/sign-in` and `POST /api/auth/sign-out`;
+- `POST /api/auth/invitation` and `POST /api/auth/invitation/accept` (see [Invitations](#invitations)).
 
 The built UI (its HTML, scripts and styles) is served without a session. When the API answers `401`, its pages open the [sign-in screen](#the-sign-in-screen). While the database is unreachable, a route that needs a session answers `503` with the usual unreachable body. No setting turns authentication off.
 
@@ -143,8 +144,10 @@ A manager sees a `Team` link in the sidebar, the last one, after `Roles`; it ope
 - **Table**: the columns `Name`, `Email`, `Role` (`Manager` or `Dev`), `Status` (`Active` or `Deactivated`) and `Last sign-in`. Every account is listed, with no paging: active accounts first, then by name without letter case, then by email. The email shows as stored. The manager's own row carries a small muted `You` tag after the name. Deactivated rows are in muted text. Long names and emails wrap; a table wider than the page scrolls inside its box.
 - **Last sign-in** reads as elsewhere (`just now`, `3 min ago`, `2 h ago`, `5 d ago`), with the exact date (`22 Nov, 17:33`) in a tooltip; an account that never signed in reads `Never`.
 - **Actions**: each row of another account gets an actions menu once an action exists for it; while it holds none, no menu and no column show. An active dev's menu offers `Make manager`, an active manager's `Make dev` (see [Changing a role](#changing-a-role)); a deactivated row offers no role action.
+- **Invite**: a button in the header, shown unless the page shows the refusal, opens the [invite dialog](#inviting-someone).
+- **Pending invitations**: under the accounts, a section with the columns `Email`, `Role`, `Invited by` and `Expires`, then `New link` and `Revoke` on each row. It is hidden when no invitation is pending. See [Invitations](#invitations).
 
-The page loads like the others: the header keeps the place of its summary while the list loads, under it `Loading…`, and it reloads every `refreshSeconds`.
+The page loads like the others: the header keeps the place of its summary while the list loads, under it `Loading…`, and it reloads every `refreshSeconds`. It reads `GET /api/team/accounts` and `GET /api/team/invitations` together, as one load: a `503` from either shows the unreachable message, and any other failure of either keeps the last data. Invitations are not counted in the summary.
 
 | Answer of `GET /api/team/accounts`         | The page shows                                                                          |
 | ------------------------------------------ | --------------------------------------------------------------------------------------- |
@@ -179,6 +182,53 @@ The new role counts from the person's next request (the role is read at each one
 | `200`  | The account; a role it already has answers it unchanged and writes nothing.                                                                                                                                                                                          |
 
 When several answers apply, the first wins: the chain of the [team routes](#team-routes), then `404`, then `400`, then `409` yourself, then `409` deactivated, then `409` last active manager. The change runs in one transaction that locks the active managers and reads the requester again: one deactivated meanwhile gets `401` `{ "error": "Not signed in" }`, one made dev meanwhile `403` `{ "error": "Managers only" }`. So two changes at the same time never leave the team without an active manager; since changing one's own role is refused and the requester must be an active manager, the last-manager answer only comes from such a race.
+
+## Invitations
+
+A manager invites a developer or another manager with a link they send themselves: FactoryDeck sends no email. An invitation is a row of the account tokens, kind `invitation`, for one email and one role, valid **7 days**: it stops working once 7 × 24 h or more have passed since it was created. The link is `<origin>/invite/<token>`, where `<origin>` is the origin the manager's browser uses (so it works behind a reverse proxy) and `<token>` is 32 random bytes in base64url. FactoryDeck stores only the token's hex SHA-256, so it can show a link only once, when it is created: a lost link is replaced with `New link`. A link works once.
+
+An invitation is **pending** while it is unused and not expired. Creating an invitation for an email (`Invite` or `New link`) and revoking one delete the unused invitations of that email, so an email has at most one pending invitation and the older link stops working. Accepting marks the invitation used. Expired invitations are kept, but never listed. An invitation outlives the manager who sent it, even demoted or deactivated: it keeps working and still names them. A pending `manager` invitation does not count as a manager.
+
+### Inviting someone
+
+`Invite` opens a dialog with `Email`, `Role` (a select, `Dev` first and by default, or `Manager`), `Cancel` and `Create invitation`, with the focus on `Email`. While the request runs, the button reads `Creating…` and is disabled. A `400` shows its message under the field it names and moves the focus there; a `409` (`This email already has an account`) shows under `Email` the same way. A `503` shows `Database unreachable. Start it with pnpm db:up.` and any other failure `Could not reach the server`, under the fields, keeping them.
+
+On `201`, the same dialog shows the link: the title `Invitation link`, the line `Send this link to <email>. It works once, until <expiry>, and is shown only now: if it is lost, make a new one.`, the link in a read-only field, `Copy link` and `Done`. `Copy link` reads `Copied` for 2 seconds; when the browser refuses the copy, it reads `Could not copy` for 4 seconds and the link is left selected in its field, to copy by hand. The dialog stays through the page's refreshes until `Done`, `Escape` or a click outside closes it.
+
+### Pending invitations
+
+The section lists each pending invitation with its email, its role (`Manager` or `Dev`), who invited (the inviter's name, or `—` when that account no longer exists) and when it expires, as an exact date (`29 Nov, 17:33`). It is sorted by soonest expiry, then by email, with no limit and no paging; long values wrap.
+
+- `New link` replaces the invitation with a new one, same email and role, sent by the manager who clicked, valid 7 days from then, and shows its link in the dialog above.
+- `Revoke` deletes the invitation at once, without a confirmation; the row leaves the list.
+- An error of either shows beside the row (`Invitation not found` for one accepted, expired or revoked meanwhile); the next refresh drops a row that is gone.
+
+### Team invitation routes
+
+| Route                                      | Answer                                                                                                                                                                                                                                                                                                              |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/team/invitations`                | `200` with `{ "status": "ok", "refreshSeconds": <n>, "invitations": [...] }`, in the order of the section, each with `id`, `email`, `role`, `invitedBy` (a name or `null`), `createdAt` and `expiresAt` (ISO 8601). `503` while the database is unreachable.                                                        |
+| `POST /api/team/invitations`               | With `{ "email", "role" }`: `201` with `{ id, email, role, invitedBy, createdAt, expiresAt, token }`. `400` with `{ "error", "field": "email" \| "role" }`, email checked first (`Role must be manager or dev`); then `409` with `{ "error": "This email already has an account" }`, deactivated accounts included. |
+| `POST /api/team/invitations/<id>/new-link` | `201` with the same shape for the new invitation. `404` with `{ "error": "Invitation not found" }` when the invitation is not pending, or the id is unknown or not a number.                                                                                                                                        |
+| `DELETE /api/team/invitations/<id>`        | `204`, also when the invitation is already gone.                                                                                                                                                                                                                                                                    |
+
+They answer like every route under `/api/team/` first (`413`, `415`, `401` or `503`, `403` for a dev, `404` for an unknown path), then their own answers. The email is trimmed and lowercased as for an account; unknown fields are ignored and a body that is not a JSON object reads as empty. Two invitations sent at the same time for one email leave one pending.
+
+### The invitation screen
+
+`/invite/<token>` shows, in the card of the sign-in screen, the FactoryDeck logo, the title `Join FactoryDeck`, the invited email (not editable), the fields `Name` and `Password` (hint `At least 12 characters`, filled by the browser as a new password, with a hidden user name field holding the email) and the button `Create account`. Opened while signed in, it also shows above the form, in muted text, `You are signed in as <name>. Creating this account signs you out.` See [Invitation screen](navigation.md#invitation-screen) for how it is reached.
+
+- Nothing shows until the invitation is read. A `503` shows the unreachable card with `Database unreachable. Start it with pnpm db:up.`, and no answer or an unexpected one `Could not reach the server`, both with `Retry`.
+- A dead link shows `This invitation link no longer works. Ask a manager for a new one.` in the card, without the form.
+- Focus starts on `Name`; Enter submits. While the request runs, the button reads `Creating account…` and is disabled.
+- `201` opens `/`, signed in as the new account, replacing the invitation screen in the history. A `400` shows its message under the field it names and moves the focus to it; a `410` shows the screen of a dead link; a `503` or no answer shows its message under the form, keeps the fields and moves the focus to the button. Each message is announced to screen readers.
+
+| Route                              | Answer                                                                                                                                                                                      |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/auth/invitation`        | With `{ "token" }`: `200` with `{ email, role }` for a pending invitation.                                                                                                                  |
+| `POST /api/auth/invitation/accept` | With `{ "token", "name", "password" }`: `201` with the account (`id`, `email`, `name`, `role`) and the session cookie. `400` with `{ "error", "field": "name" \| "password" }`, name first. |
+
+Both work without a session. A dead link (an unknown or malformed token, or one used, replaced, revoked or expired, or an email that got an account since) answers both `410` with `{ "error": "This invitation link no longer works. Ask a manager for a new one." }`, checked before the fields. Accepting creates the account with the invitation's email and role, records its last sign-in time, deletes the session the browser already had, opens a new one, and marks the invitation used; it does not clear the [failed sign-ins](#failed-sign-ins) of the email. Two accepts of one token at the same time create one account, and the other answers `410`; an accept racing a revoke or a new link either succeeds whole or answers `410`.
 
 ## The demo manager
 

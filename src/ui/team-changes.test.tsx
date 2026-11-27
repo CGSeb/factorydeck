@@ -73,6 +73,28 @@ describe('useTeamChanges', () => {
     expect(bruno()?.role).toBe('dev');
   });
 
+  it('reloads at once on request, still ignoring answers sent before a change', async () => {
+    const { answerList, bruno, hook } = setUp();
+    await answerList(withBruno('dev'));
+    act(() => {
+      hook.result.current.reload();
+    });
+    await act(async () => {
+      hook.result.current.run(4, () => Promise.resolve(MADE_MANAGER));
+      await Promise.resolve();
+    });
+    expect(bruno()?.role).toBe('manager');
+    await answerList(withBruno('dev'));
+    expect(bruno()?.role).toBe('manager');
+    act(() => {
+      hook.result.current.reload();
+    });
+    await answerList(withBruno('dev'));
+    await waitFor(() => {
+      expect(bruno()?.role).toBe('dev');
+    });
+  });
+
   it('keeps the message across refreshes until the next action starts', async () => {
     const { answerList, change, hook } = setUp();
     await answerList(withBruno('dev'));

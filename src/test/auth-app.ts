@@ -11,6 +11,7 @@ import { account } from '../db/schema.ts';
 import { type OverviewSource, createApp } from '../server/app.ts';
 import { teamAccounts } from '../team/accounts.ts';
 import { changeRole } from '../team/change-role.ts';
+import { invitations } from '../team/invitations.ts';
 import type { SessionSource } from '../server/session-routes.ts';
 import { createTestDatabase } from './postgres.ts';
 import {
@@ -85,6 +86,7 @@ export async function authHarness(): Promise<AuthHarness> {
         team: {
           accounts: () => teamAccounts(db),
           changeRole: (request) => changeRole(db, request),
+          invitations: invitations(db, { now: () => harness.clock }),
         },
       }),
     addAccount: async (email, options = {}) => {

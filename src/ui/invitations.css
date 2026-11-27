@@ -1,0 +1,139 @@
+.fd-invite-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fd-space-1);
+  margin-top: var(--fd-space-5);
+}
+
+.fd-invite-select {
+  box-sizing: border-box;
+  width: 100%;
+  height: 40px;
+  padding: 0 var(--fd-space-3);
+  font-family: var(--fd-font-body);
+  font-size: var(--fd-text-md);
+  color: var(--fd-ink);
+  background: var(--fd-surface);
+  border: 1px solid var(--fd-field-border);
+  border-radius: var(--fd-radius-sm);
+}
+
+.fd-invite-select:focus-visible {
+  outline: 2px solid var(--fd-accent);
+  outline-offset: 1px;
+}
+
+.fd-invite-form-error {
+  margin: 0;
+}
+
+.fd-invite-link {
+  margin-top: var(--fd-space-5);
+}
+
+.fd-invite-copy {
+  min-width: 9.5rem;
+}
+
+.fd-dialog-button[data-primary='true'] {
+  color: var(--fd-surface);
+  background: var(--fd-ink);
+  border-color: var(--fd-ink);
+}
+
+.fd-dialog-button[data-primary='true']:disabled {
+  opacity: 0.7;
+}
+
+.fd-invite-button {
+  height: 36px;
+  padding: 0 var(--fd-space-4);
+  font-size: var(--fd-text-md);
+  font-weight: 600;
+  color: var(--fd-surface);
+  background: var(--fd-ink);
+  border: 1px solid var(--fd-ink);
+  border-radius: var(--fd-radius-pill);
+}
+
+.fd-invitations {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fd-space-3);
+}
+
+.fd-invitations-title {
+  margin: 0;
+  font-family: var(--fd-font-display);
+  font-size: var(--fd-text-lg);
+  font-weight: 600;
+}
+
+.fd-invitation-by {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.fd-invitation-actions {
+  text-align: right;
+}
+
+.fd-invitation-buttons {
+  display: inline-flex;
+  gap: var(--fd-space-2);
+}
+
+.fd-invitation-button {
+  height: 32px;
+  padding: 0 var(--fd-space-3);
+  font-size: var(--fd-text-sm);
+  font-weight: 600;
+  color: var(--fd-ink);
+  background: var(--fd-surface);
+  border: 1px solid var(--fd-field-border);
+  border-radius: var(--fd-radius-pill);
+}
+
+.fd-invitation-button:hover:not(:disabled) {
+  background: var(--fd-surface-2);
+}
+
+.fd-invitation-button:disabled {
+  opacity: 0.6;
+}
+
+.fd-invitation-error {
+  margin: 0;
+  font-size: var(--fd-text-sm);
+  color: var(--fd-danger);
+  white-space: normal;
+}
+
+.fd-invitation-error:empty {
+  display: none;
+}
+
+.fd-invite-signed-in {
+  color: var(--fd-muted);
+}
+
+.fd-invite-email {
+  margin-bottom: var(--fd-space-4);
+}
+
+.fd-invite-email-label {
+  font-size: var(--fd-text-sm);
+  font-weight: 600;
+}
+
+.fd-invite-email-value {
+  font-size: var(--fd-text-md);
+  overflow-wrap: anywhere;
+}
+
+.fd-invite-dead {
+  margin: 0;
+  font-size: var(--fd-text-md);
+  line-height: 1.5;
+  color: var(--fd-ink-2);
+}

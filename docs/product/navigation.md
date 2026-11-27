@@ -63,6 +63,10 @@ While the instance has no account, every page opens `/setup`, the [first-manager
 
 When the app loads, it reads `GET /api/auth/state`, then `GET /api/auth/me` only when `setup` is `false`, and calls no data route before `/me` answers an account. A page opened without a session shows the [sign-in screen](accounts.md#the-sign-in-screen) at `/sign-in?next=<the page asked for>`, without the sidebar, the banners or the welcome screen; once signed in, the app opens that page, path, query and hash included. The same happens when the API answers `401` while the app is open (a session that expired or was closed elsewhere): the next click or refresh that reaches the API opens the sign-in screen with `next` set to the current page, and the page loads afresh after the sign-in. A signed-in person who opens `/sign-in` goes to its `next`, or `/`.
 
+## Invitation screen
+
+`/invite/<token>` opens the [invitation screen](accounts.md#the-invitation-screen), with or without a session, without the sidebar, the banners or the welcome screen: it skips the sign-in redirect. The app reads `GET /api/auth/state`, then `GET /api/auth/me`, as on any load: `setup: true` opens `/setup`, an account adds a line naming it, a `401` shows the screen without that line, and any other failure shows the unreachable screen. It then reads the invitation and calls only `/api/auth/*`. Creating the account enters the signed-in dashboard as a sign-in does: `/` opens in place of the invitation screen in the history, and the sidebar's account menu and `Team` link come from one `GET /api/auth/me`.
+
 ## Unreachable screen
 
 When the state or the account cannot be read at load (no answer, a `503`, or any other answer than the ones expected), the app shows the [unreachable screen](accounts.md#the-unreachable-screen) at the address asked for, without the sidebar, and loads no data until `Retry` succeeds.
