@@ -67,6 +67,36 @@ function useCloseOnOutside(
   }, [open, box, close]);
 }
 
+export function menuTarget(
+  key: string,
+  index: number,
+  count: number,
+): number | undefined {
+  switch (key) {
+    case 'ArrowDown':
+      return (index + 1) % count;
+    case 'ArrowUp':
+      return (index - 1 + count) % count;
+    case 'Home':
+      return 0;
+    case 'End':
+      return count - 1;
+    default:
+      return undefined;
+  }
+}
+
+function moveFocus(event: KeyboardEvent<HTMLUListElement>): void {
+  const items = [
+    ...event.currentTarget.querySelectorAll<HTMLElement>('[role="menuitem"]'),
+  ];
+  const index = items.findIndex((item) => item === document.activeElement);
+  const target = menuTarget(event.key, index, items.length);
+  if (target === undefined) return;
+  event.preventDefault();
+  items[target]?.focus();
+}
+
 function ActionsMenu({
   id,
   account,
@@ -79,12 +109,18 @@ function ActionsMenu({
   onDone: () => void;
 }): ReactElement {
   return (
-    <ul id={id} role="menu" className="fd-team-actions-menu">
+    <ul
+      id={id}
+      role="menu"
+      className="fd-team-actions-menu"
+      onKeyDown={moveFocus}
+    >
       {actions.map((action) => (
         <li key={action.label} role="none">
           <button
             type="button"
             role="menuitem"
+            tabIndex={-1}
             className="fd-control fd-team-actions-item"
             onClick={() => {
               onDone();
@@ -119,7 +155,12 @@ export function TeamRowActions({
       box.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
   }, [open]);
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
-    if (event.key !== 'Escape' || !open) return;
+    if (!open) return;
+    if (event.key === 'Tab') {
+      setOpen(false);
+      return;
+    }
+    if (event.key !== 'Escape') return;
     event.stopPropagation();
     setOpen(false);
     button.current?.focus();

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { teamLoader } from './team-api.ts';
+import { menuTarget } from './TeamTable.tsx';
 import { aloneManager } from './team-fixtures.ts';
 import { teamSummary } from './team-view.ts';
 
@@ -72,5 +73,22 @@ describe('teamSummary', () => {
     expect(teamSummary([{ ...aloneManager[0]!, role: 'dev' }])).toBe(
       '1 account · 0 managers',
     );
+  });
+});
+
+describe('menuTarget', () => {
+  it.each([
+    ['ArrowDown', 0, 1],
+    ['ArrowDown', 2, 0],
+    ['ArrowUp', 0, 2],
+    ['ArrowUp', 2, 1],
+    ['Home', 2, 0],
+    ['End', 0, 2],
+  ])('moves %s from %i to %i among 3 items', (key, from, to) => {
+    expect(menuTarget(key, from, 3)).toBe(to);
+  });
+
+  it('ignores other keys', () => {
+    expect(menuTarget('a', 0, 3)).toBeUndefined();
   });
 });

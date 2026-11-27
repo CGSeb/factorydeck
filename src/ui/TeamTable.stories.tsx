@@ -50,3 +50,35 @@ export const WithRowActions: Story = {
     await expect(canvas.queryByRole('menu')).toBeNull();
   },
 };
+
+export const MenuKeyboard: Story = {
+  name: 'Menu keyboard: arrows, Home, End, Tab',
+  args: {
+    actionsFor: () => [
+      { label: 'First action', onSelect: fn() },
+      { label: 'Second action', onSelect: fn() },
+      { label: 'Third action', onSelect: fn() },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const chen = canvas.getByRole('button', { name: 'Actions for Chen' });
+    await userEvent.click(chen);
+    const [first, second, third] = canvas.getAllByRole('menuitem');
+    await expect(first).toHaveFocus();
+    await userEvent.keyboard('{ArrowDown}');
+    await expect(second).toHaveFocus();
+    await userEvent.keyboard('{End}');
+    await expect(third).toHaveFocus();
+    await userEvent.keyboard('{ArrowDown}');
+    await expect(first).toHaveFocus();
+    await userEvent.keyboard('{ArrowUp}');
+    await expect(third).toHaveFocus();
+    await userEvent.keyboard('{Home}');
+    await expect(first).toHaveFocus();
+    await expect(first).toHaveAttribute('tabindex', '-1');
+    await userEvent.keyboard('{Tab}');
+    await expect(canvas.queryByRole('menu')).toBeNull();
+    await expect(chen).toHaveAttribute('aria-expanded', 'false');
+  },
+};
