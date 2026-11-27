@@ -218,6 +218,19 @@ describe('session lifetime', () => {
     expect(await h.db.select().from(signInSession)).toEqual([]);
   });
 
+  it('expires at exactly 30 days after its stored last use, and not a millisecond before', async () => {
+    await h.addAccount('ada@example.test');
+    const server = h.app();
+    const cookie = await signedIn(server);
+    const second = await signedIn(server);
+    h.clock = new Date(START.getTime() + 30 * DAY_MS - 1);
+    expect((await get(server, '/api/auth/me', cookie)).status).toBe(200);
+    h.clock = new Date(START.getTime() + 30 * DAY_MS);
+    const expired = await get(server, '/api/auth/me', second);
+    expect(expired.status).toBe(401);
+    expect(await h.db.select().from(signInSession)).toHaveLength(1);
+  });
+
   it('writes the last use at most once a minute and renews the cookie on each request', async () => {
     await h.addAccount('ada@example.test');
     const server = h.app();
