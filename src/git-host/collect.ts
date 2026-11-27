@@ -103,7 +103,8 @@ function readsInFull(
     !state.outcomeSettings ||
     !state.historyRead ||
     !state.fixRead ||
-    !state.stateEventsRead
+    !state.stateEventsRead ||
+    !state.bodyClosesRead
   );
 }
 

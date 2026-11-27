@@ -12,6 +12,7 @@ import {
   type Json,
   PAGE_SIZE,
   byNumber,
+  closedInBody,
   field,
   labelColor,
   list,
@@ -33,7 +34,7 @@ const ISSUE_FIELDS =
   'number,title,state,labels,url,createdAt,closedAt,updatedAt';
 
 const REQUEST_FIELDS =
-  'number,title,state,isDraft,headRefName,url,createdAt,mergedAt,closedAt,updatedAt,closingIssuesReferences,statusCheckRollup,comments';
+  'number,title,state,isDraft,headRefName,url,createdAt,mergedAt,closedAt,updatedAt,body,closingIssuesReferences,statusCheckRollup,comments';
 
 function labelsOf(value: unknown): IssueLabel[] {
   return list(value).flatMap((label) => {
@@ -79,14 +80,15 @@ function sameRepository(reference: Json, repository: string): boolean {
   return `${login}/${name}`.toLowerCase() === repository.toLowerCase();
 }
 
-function closesOf(value: unknown, repository: string): number[] {
+function closesOf(value: unknown, repository: string, body: unknown): number[] {
   const numbers = list(value).flatMap((reference) => {
     const number = positive(reference['number']);
     return number === undefined || !sameRepository(reference, repository)
       ? []
       : [number];
   });
-  return [...new Set(numbers)].sort((a, b) => a - b);
+  const closes = [...new Set(numbers)].sort((a, b) => a - b);
+  return closes.length > 0 ? closes : closedInBody(body);
 }
 
 export function githubRequest(
@@ -108,7 +110,7 @@ export function githubRequest(
     mergedAt: time(row['mergedAt']),
     closedAt: time(row['closedAt']),
     updatedAt: requiredTime(row['updatedAt'], createdAt),
-    closes: closesOf(row['closingIssuesReferences'], repository),
+    closes: closesOf(row['closingIssuesReferences'], repository, row['body']),
     checks: githubChecks(row['statusCheckRollup']),
     ...reportsOf(row['comments']),
   };

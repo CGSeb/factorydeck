@@ -1,0 +1,1 @@
+ALTER TABLE "git_host_project" ADD COLUMN "body_closes_read" boolean DEFAULT false NOT NULL;

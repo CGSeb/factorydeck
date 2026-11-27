@@ -7,6 +7,7 @@ import {
 import { hasFactory } from '../ingest/factory.ts';
 import { T1, T2, ghRequest } from '../test/git-host.ts';
 import {
+  type Row,
   closed,
   comment,
   githubData,
@@ -159,5 +160,22 @@ describe('serenity report and merge', () => {
       stage: 'in-review',
       report: { score: 72 },
     });
+  });
+
+  it('counts an issue closed by the body of a request merged into another branch as merged', async () => {
+    const intoNext = (number: number, issue: number): Row => ({
+      ...merged(number, [], [comment(serenity(85))]),
+      baseRefName: 'next',
+      body: `Closes #${String(issue)}`,
+    });
+    const root = await collected(
+      githubData([closed(1), labelled(2)], [intoNext(20, 1), intoNext(21, 2)]),
+    );
+    for (const issue of [1, 2]) {
+      expect(await outcomeOf(root, issue)).toMatchObject({
+        stage: 'merged',
+        report: { score: 85 },
+      });
+    }
   });
 });
