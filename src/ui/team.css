@@ -94,3 +94,18 @@
 .fd-team-actions-item:hover {
   background: var(--fd-surface-2);
 }
+
+.fd-team-actions-button:disabled {
+  cursor: progress;
+  opacity: 0.5;
+}
+
+.fd-team-table .fd-team-message-row > td {
+  padding-top: 0;
+  white-space: normal;
+}
+
+.fd-team-message {
+  font-size: var(--fd-text-sm);
+  color: var(--fd-danger);
+}

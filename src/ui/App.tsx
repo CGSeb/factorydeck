@@ -53,6 +53,7 @@ import type {
   LoadWaiting,
 } from './stats-api.ts';
 import { StatsPage } from './StatsPage.tsx';
+import type { ChangeRole } from './role-change-api.ts';
 import type { LoadTeam } from './team-api.ts';
 import { TeamPage } from './TeamPage.tsx';
 
@@ -89,6 +90,7 @@ export interface AppProps {
   signOut?: SignOut | undefined;
   leavePage?: ((path: string) => void) | undefined;
   loadTeam?: LoadTeam | undefined;
+  changeRole?: ChangeRole | undefined;
 }
 
 function isManager(view: AccountView): boolean {
@@ -214,6 +216,14 @@ const SIGNED_IN_REDIRECTS = (
   </>
 );
 
+function teamRoute(props: AppProps): ReactElement | undefined {
+  const { loadTeam } = props;
+  if (loadTeam === undefined) return undefined;
+  return (
+    <Route path="team" element={<TeamPage {...props} loadTeam={loadTeam} />} />
+  );
+}
+
 function DashboardRoutes(
   props: AppProps & { account: SidebarAccount | undefined; team: boolean },
 ): ReactElement {
@@ -226,7 +236,6 @@ function DashboardRoutes(
     loadRoles,
     loadFeatures,
     loadFeature,
-    loadTeam,
   } = props;
   return (
     <Routes>
@@ -266,9 +275,7 @@ function DashboardRoutes(
             <RolesPage loadRoles={loadRoles} loadOverview={loadOverview} />
           }
         />
-        {loadTeam !== undefined && (
-          <Route path="team" element={<TeamPage loadTeam={loadTeam} />} />
-        )}
+        {teamRoute(props)}
       </Route>
       {SIGNED_IN_REDIRECTS}
     </Routes>

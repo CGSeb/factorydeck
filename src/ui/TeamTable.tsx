@@ -12,6 +12,8 @@ import type { TeamAccountRow } from '../team/types.ts';
 import { DataTable } from './components/DataTable.tsx';
 import { Icon } from './components/Icon.tsx';
 import { formatAgo, formatDateTime } from './format.ts';
+import type { RowMessage } from './team-changes.ts';
+import { closeOnKey, useFocusWhenDone } from './team-row-focus.ts';
 import { NEVER, roleLabel, statusLabel } from './team-view.ts';
 import './team.css';
 
@@ -26,9 +28,13 @@ export interface TeamTableProps {
   accounts: readonly TeamAccountRow[];
   now: Date;
   actionsFor?: TeamActionsFor | undefined;
+  busy?: ReadonlySet<number> | undefined;
+  message?: RowMessage | undefined;
 }
 
 const NO_ACTIONS: TeamActionsFor = () => [];
+const NONE_BUSY: ReadonlySet<number> = new Set();
+const COLUMNS = 5;
 
 function LastSignIn({
   at,
@@ -138,14 +144,17 @@ function ActionsMenu({
 export function TeamRowActions({
   account,
   actions,
+  busy = false,
 }: {
   account: TeamAccountRow;
   actions: readonly TeamAction[];
+  busy?: boolean;
 }): ReactElement {
   const id = useId();
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
+  useFocusWhenDone(busy, button);
   const close = useCallback(() => {
     setOpen(false);
   }, []);
@@ -154,19 +163,14 @@ export function TeamRowActions({
     if (open)
       box.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
   }, [open]);
-  function onKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
-    if (!open) return;
-    if (event.key === 'Tab') {
-      setOpen(false);
-      return;
-    }
-    if (event.key !== 'Escape') return;
-    event.stopPropagation();
-    setOpen(false);
-    button.current?.focus();
-  }
   return (
-    <div ref={box} className="fd-team-actions" onKeyDown={onKeyDown}>
+    <div
+      ref={box}
+      className="fd-team-actions"
+      onKeyDown={(event) => {
+        if (open) closeOnKey(event, setOpen, button);
+      }}
+    >
       <button
         ref={button}
         type="button"
@@ -175,6 +179,8 @@ export function TeamRowActions({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? id : undefined}
+        aria-busy={busy || undefined}
+        disabled={busy}
         onClick={() => {
           setOpen((current) => !current);
         }}
@@ -198,32 +204,45 @@ function TeamRow({
   now,
   actions,
   withActions,
+  busy,
+  message,
 }: {
   account: TeamAccountRow;
   now: Date;
   actions: readonly TeamAction[];
   withActions: boolean;
+  busy: boolean;
+  message: string | undefined;
 }): ReactElement {
   return (
-    <tr data-deactivated={account.active ? undefined : ''}>
-      <th scope="row">
-        <span className="fd-team-name">{account.name}</span>
-        {account.you && <span className="fd-team-you">You</span>}
-      </th>
-      <td className="fd-team-email">{account.email}</td>
-      <td>{roleLabel(account.role)}</td>
-      <td>{statusLabel(account.active)}</td>
-      <td>
-        <LastSignIn at={account.lastSignInAt} now={now} />
-      </td>
-      {withActions && (
-        <td className="fd-team-actions-cell">
-          {actions.length > 0 && (
-            <TeamRowActions account={account} actions={actions} />
-          )}
+    <>
+      <tr data-deactivated={account.active ? undefined : ''}>
+        <th scope="row">
+          <span className="fd-team-name">{account.name}</span>
+          {account.you && <span className="fd-team-you">You</span>}
+        </th>
+        <td className="fd-team-email">{account.email}</td>
+        <td>{roleLabel(account.role)}</td>
+        <td>{statusLabel(account.active)}</td>
+        <td>
+          <LastSignIn at={account.lastSignInAt} now={now} />
         </td>
+        {withActions && (
+          <td className="fd-team-actions-cell">
+            {actions.length > 0 && (
+              <TeamRowActions account={account} actions={actions} busy={busy} />
+            )}
+          </td>
+        )}
+      </tr>
+      {message !== undefined && (
+        <tr className="fd-team-message-row">
+          <td colSpan={COLUMNS + (withActions ? 1 : 0)}>
+            <div className="fd-team-message">{message}</div>
+          </td>
+        </tr>
       )}
-    </tr>
+    </>
   );
 }
 
@@ -231,6 +250,8 @@ export function TeamTable({
   accounts,
   now,
   actionsFor = NO_ACTIONS,
+  busy = NONE_BUSY,
+  message,
 }: TeamTableProps): ReactElement {
   const rows = accounts.map((account) => ({
     account,
@@ -238,34 +259,43 @@ export function TeamTable({
   }));
   const withActions = rows.some(({ actions }) => actions.length > 0);
   return (
-    <DataTable label="Team">
-      <table className="fd-team-table" aria-label="Team">
-        <thead>
-          <tr>
-            <th scope="col">Name</th>
-            <th scope="col">Email</th>
-            <th scope="col">Role</th>
-            <th scope="col">Status</th>
-            <th scope="col">Last sign-in</th>
-            {withActions && (
-              <th scope="col">
-                <span className="fd-visually-hidden">Actions</span>
-              </th>
-            )}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(({ account, actions }) => (
-            <TeamRow
-              key={account.id}
-              account={account}
-              now={now}
-              actions={actions}
-              withActions={withActions}
-            />
-          ))}
-        </tbody>
-      </table>
-    </DataTable>
+    <>
+      <DataTable label="Team">
+        <table className="fd-team-table" aria-label="Team">
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">Email</th>
+              <th scope="col">Role</th>
+              <th scope="col">Status</th>
+              <th scope="col">Last sign-in</th>
+              {withActions && (
+                <th scope="col">
+                  <span className="fd-visually-hidden">Actions</span>
+                </th>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ account, actions }) => (
+              <TeamRow
+                key={account.id}
+                account={account}
+                now={now}
+                actions={actions}
+                withActions={withActions}
+                busy={busy.has(account.id)}
+                message={
+                  message?.accountId === account.id ? message.text : undefined
+                }
+              />
+            ))}
+          </tbody>
+        </table>
+      </DataTable>
+      <span className="fd-visually-hidden" role="status">
+        {message?.text ?? ''}
+      </span>
+    </>
   );
 }

@@ -142,7 +142,7 @@ A manager sees a `Team` link in the sidebar, the last one, after `Roles`; it ope
 - **Header**: `Team`, with the summary `<n> accounts · <m> managers`. `<n>` counts every account and `<m>` every account with role `manager`, deactivated ones included; one reads `1 account` and `1 manager`. The page has no period pills; the project select stays in the sidebar and changes nothing here.
 - **Table**: the columns `Name`, `Email`, `Role` (`Manager` or `Dev`), `Status` (`Active` or `Deactivated`) and `Last sign-in`. Every account is listed, with no paging: active accounts first, then by name without letter case, then by email. The email shows as stored. The manager's own row carries a small muted `You` tag after the name. Deactivated rows are in muted text. Long names and emails wrap; a table wider than the page scrolls inside its box.
 - **Last sign-in** reads as elsewhere (`just now`, `3 min ago`, `2 h ago`, `5 d ago`), with the exact date (`22 Nov, 17:33`) in a tooltip; an account that never signed in reads `Never`.
-- **Actions**: each row of another account gets an actions menu once an action exists for it; while it holds none, no menu and no column show.
+- **Actions**: each row of another account gets an actions menu once an action exists for it; while it holds none, no menu and no column show. An active dev's menu offers `Make manager`, an active manager's `Make dev` (see [Changing a role](#changing-a-role)); a deactivated row offers no role action.
 
 The page loads like the others: the header keeps the place of its summary while the list loads, under it `Loading…`, and it reloads every `refreshSeconds`.
 
@@ -160,6 +160,25 @@ The refusal also replaces a table already shown: a manager made dev meanwhile se
 `GET /api/team/accounts` answers `200` with `{ "status": "ok", "refreshSeconds": <n>, "accounts": [...] }`, in the order of the table. Each account has `id`, `name`, `email`, `role`, `active`, `lastSignInAt` (ISO 8601, or `null`) and `you` (`true` on the requester's own account only). While the database is unreachable, it answers `503` with `{ "status": "unreachable", "refreshSeconds": <n> }`.
 
 The role is read from the session's account at each request, so a change of role counts from the next request. When several answers apply to a path under `/api/team/`, the first wins: `413`, then `415`, then `401` (or `503`), as for every route; then `403` with `{ "error": "Managers only" }` for a dev, on any path under `/api/team/`, unknown ones included; then `404` with `{ "error": "Not found" }` for a manager on an unknown one.
+
+### Changing a role
+
+`Make manager` and `Make dev` apply at once, with no confirmation. While the change runs, the menu closes and that row's actions button is disabled and busy; the other rows stay usable. Once the API answers, the row shows the new role and the summary `<m> managers` is recounted at once; list answers to requests sent before the change answered are ignored, so a refresh never brings the old role back. Success or failure, the focus goes back to the row's actions button.
+
+A failure keeps the old role and shows its message on one line under the row, spanning the table and announced politely without moving the focus: the API's message on a `409` (or a `400`), `Database unreachable. Start it with pnpm db:up.` on a `503`, and `Could not reach the server` on a `404`, a network error or any other answer without a message. The line stays across auto refreshes and clears when any action on the page starts or succeeds. A `403` replaces the table with the refusal, as a `403` on the list does; a `401` opens the [sign-in screen](#the-sign-in-screen).
+
+The new role counts from the person's next request (the role is read at each one); their sessions stay open. A manager made dev loses the `Team` link at their next [read of the account](#the-team-page), and a dev made manager gains it.
+
+`PATCH /api/team/accounts/<id>` with `{ "role": "manager" | "dev" }` answers `200` with the account, in the shape of one row of `GET /api/team/accounts`, with no envelope. The body takes exactly one of `role` or `active`; unknown fields are ignored, and a body that is not a JSON object is read as empty.
+
+| Answer | When                                                                                                                                                                                                                                                                 |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `404`  | `<id>` is not the decimal id of an existing account (`abc`, `-1`, `1.5`, `007`, an unknown number): `{ "error": "Not found" }`.                                                                                                                                      |
+| `400`  | `role` is `null`, not a string, or not exactly `manager` or `dev`: `{ "error": "Role must be manager or dev", "field": "role" }`. Both `role` and `active`: `{ "error": "Change the role or the status, not both" }`. Neither: `{ "error": "Send role or active" }`. |
+| `409`  | `{ "error": "You cannot change your own role" }`; on a deactivated account, `{ "error": "Reactivate this account first" }`; when the change would leave no active manager, `{ "error": "The team needs at least one active manager" }`.                              |
+| `200`  | The account; a role it already has answers it unchanged and writes nothing.                                                                                                                                                                                          |
+
+When several answers apply, the first wins: the chain of the [team routes](#team-routes), then `404`, then `400`, then `409` yourself, then `409` deactivated, then `409` last active manager. The change runs in one transaction that locks the active managers and reads the requester again: one deactivated meanwhile gets `401` `{ "error": "Not signed in" }`, one made dev meanwhile `403` `{ "error": "Managers only" }`. So two changes at the same time never leave the team without an active manager; since changing one's own role is refused and the requester must be an active manager, the last-manager answer only comes from such a race.
 
 ## The demo manager
 
