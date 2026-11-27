@@ -1,20 +1,30 @@
-import { useEffect, useState, type ReactElement } from 'react';
-import { Navigate, Route, Routes, useNavigate } from 'react-router';
+import type { ReactElement } from 'react';
 import {
-  type LoadAuthState,
-  type LoadMe,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from 'react-router';
+import {
   pageLeaver,
   SIGNED_OUT_PATH,
+  type Account,
+  type LoadAuthState,
+  type LoadMe,
   type SetupManager,
+  type SignIn,
   type SignOut,
 } from './auth-api.ts';
+import type { SessionGate } from './auth-gate.ts';
+import { signInThenRead, useAccountView, useAuthPhase } from './auth-phase.ts';
 import type { LoadBugs } from './bugs-api.ts';
 import { BugsPage } from './BugsPage.tsx';
 import type { DeleteProject, LoadFactory } from './factory-api.ts';
 import { FeaturePage } from './FeaturePage.tsx';
 import type { LoadFeature, LoadFeatures } from './features-api.ts';
 import { FeaturesPage } from './FeaturesPage.tsx';
-import type { LoadFrictions } from './frictions-api.ts';
+import type { LoadFrictions, LoadReport } from './frictions-api.ts';
 import type { LoadOccurrences, LoadOutput } from './occurrences-api.ts';
 import { FrictionsPage } from './FrictionsPage.tsx';
 import type { LoadCollection, RefreshCollection } from './git-host-api.ts';
@@ -25,6 +35,9 @@ import { OverviewPage } from './OverviewPage.tsx';
 import type { LoadRoles } from './roles-api.ts';
 import { RolesPage } from './RolesPage.tsx';
 import { SetupPage } from './SetupPage.tsx';
+import { nextOf, signInPath } from './sign-in-next.ts';
+import { SignInPage } from './SignInPage.tsx';
+import { UnreachableScreen } from './UnreachableScreen.tsx';
 import type { LoadSession, LoadSessions } from './sessions-api.ts';
 import { SessionPage } from './SessionPage.tsx';
 import { SessionsPage } from './SessionsPage.tsx';
@@ -66,56 +79,16 @@ export interface AppProps {
   loadBugStats: LoadBugStats;
   loadWaiting: LoadWaiting;
   loadSidebar?: LoadSidebar | undefined;
+  loadReport?: LoadReport | undefined;
+  markReport?: LoadReport | undefined;
   loadAuthState?: LoadAuthState | undefined;
   setupManager?: SetupManager | undefined;
   loadMe?: LoadMe | undefined;
+  signIn?: SignIn | undefined;
+  sessionGate?: SessionGate | undefined;
   signOut?: SignOut | undefined;
   leavePage?: ((path: string) => void) | undefined;
   loadTeam?: LoadTeam | undefined;
-}
-
-type AuthPhase = 'checking' | 'setup' | 'ready';
-
-function useAuthPhase(
-  loadAuthState: LoadAuthState | undefined,
-): [AuthPhase, (phase: AuthPhase) => void] {
-  const [phase, setPhase] = useState<AuthPhase>(
-    loadAuthState === undefined ? 'ready' : 'checking',
-  );
-  useEffect(() => {
-    if (loadAuthState === undefined) return;
-    let current = true;
-    void loadAuthState().then((state) => {
-      if (current) setPhase(state?.setup === true ? 'setup' : 'ready');
-    });
-    return () => {
-      current = false;
-    };
-  }, [loadAuthState]);
-  return [phase, setPhase];
-}
-
-function useAccountView(
-  loadMe: LoadMe | undefined,
-  entered: boolean,
-): AccountView {
-  const [view, setView] = useState<AccountView>({ status: 'loading' });
-  useEffect(() => {
-    if (loadMe === undefined || !entered) return;
-    let current = true;
-    void loadMe().then((result) => {
-      if (!current) return;
-      setView(
-        result.status === 'account'
-          ? { status: 'account', account: result.account }
-          : { status: 'unavailable' },
-      );
-    });
-    return () => {
-      current = false;
-    };
-  }, [loadMe, entered]);
-  return view;
 }
 
 function isManager(view: AccountView): boolean {
@@ -136,13 +109,77 @@ function accountSlot(
   };
 }
 
-export function App(props: AppProps): ReactElement | null {
-  const { loadAuthState, setupManager, loadMe } = props;
-  const [phase, setPhase] = useAuthPhase(loadAuthState);
-  const view = useAccountView(loadMe, phase === 'ready');
+function RedirectToSignIn(): ReactElement {
+  const { pathname, search, hash } = useLocation();
+  return <Navigate to={signInPath(`${pathname}${search}${hash}`)} replace />;
+}
+
+function SignedInRedirect(): ReactElement {
+  const { search } = useLocation();
+  return <Navigate to={nextOf(search)} replace />;
+}
+
+function SignInRoutes({
+  signIn,
+  loadMe,
+  sessionGate,
+  onAccount,
+}: {
+  signIn: SignIn;
+  loadMe: LoadMe | undefined;
+  sessionGate: SessionGate | undefined;
+  onAccount: (account: Account) => void;
+}): ReactElement {
   const navigate = useNavigate();
-  if (phase === 'checking') return null;
-  if (phase === 'setup' && setupManager !== undefined) {
+  const { search } = useLocation();
+  const send = signInThenRead(signIn, loadMe, sessionGate);
+  return (
+    <Routes>
+      <Route
+        path="sign-in"
+        element={
+          <SignInPage
+            signIn={send}
+            onSignedIn={(account) => {
+              onAccount(account);
+              void navigate(nextOf(search), { replace: true });
+            }}
+          />
+        }
+      />
+      <Route path="*" element={<RedirectToSignIn />} />
+    </Routes>
+  );
+}
+
+export function App(props: AppProps): ReactElement | null {
+  const { setupManager, signIn, loadMe, sessionGate } = props;
+  const [phase, setPhase, retry] = useAuthPhase(props);
+  const view = useAccountView(loadMe, phase, () =>
+    setPhase({ name: 'signed-out' }),
+  );
+  const navigate = useNavigate();
+  if (phase.name === 'checking') return null;
+  if (phase.name === 'unreachable') {
+    return (
+      <UnreachableScreen
+        message={phase.message}
+        retrying={phase.retrying}
+        onRetry={retry}
+      />
+    );
+  }
+  if (phase.name === 'signed-out' && signIn !== undefined) {
+    return (
+      <SignInRoutes
+        signIn={signIn}
+        loadMe={loadMe}
+        sessionGate={sessionGate}
+        onAccount={(account) => setPhase({ name: 'ready', account })}
+      />
+    );
+  }
+  if (phase.name === 'setup' && setupManager !== undefined) {
     return (
       <Routes>
         <Route
@@ -151,7 +188,7 @@ export function App(props: AppProps): ReactElement | null {
             <SetupPage
               setupManager={setupManager}
               onCreated={() => {
-                setPhase('ready');
+                setPhase({ name: 'ready', account: undefined });
                 void navigate('/', { replace: true });
               }}
             />
@@ -169,6 +206,13 @@ export function App(props: AppProps): ReactElement | null {
     />
   );
 }
+
+const SIGNED_IN_REDIRECTS = (
+  <>
+    <Route path="setup" element={<Navigate to="/" replace />} />
+    <Route path="sign-in" element={<SignedInRedirect />} />
+  </>
+);
 
 function DashboardRoutes(
   props: AppProps & { account: SidebarAccount | undefined; team: boolean },
@@ -226,7 +270,7 @@ function DashboardRoutes(
           <Route path="team" element={<TeamPage loadTeam={loadTeam} />} />
         )}
       </Route>
-      <Route path="setup" element={<Navigate to="/" replace />} />
+      {SIGNED_IN_REDIRECTS}
     </Routes>
   );
 }

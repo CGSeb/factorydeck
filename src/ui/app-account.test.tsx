@@ -71,6 +71,51 @@ describe('the account read', () => {
     expect(loadMe).toHaveBeenCalledTimes(1);
   });
 
+  it('reads me once more after a sign-in, and not again for the menu', async () => {
+    const loadMe = vi.fn<LoadMe>();
+    loadMe.mockResolvedValueOnce({ status: 'signed-out' });
+    loadMe.mockResolvedValue({ status: 'account', account: ADA });
+    renderApp(
+      {
+        loadMe,
+        loadAuthState: () => Promise.resolve({ setup: false }),
+        signIn: () => Promise.resolve({ status: 'signed-in', account: ADA }),
+      },
+      '/stats',
+    );
+    const email = await screen.findByLabelText('Email');
+    fireEvent.change(email, { target: { value: ADA.email } });
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'a long passphrase' },
+    });
+    fireEvent.submit(email.closest('form') ?? email);
+    await screen.findByRole('button', { name: ACCOUNT_NAME });
+    await settle();
+    expect(loadMe).toHaveBeenCalledTimes(2);
+  });
+
+  it('opens the sign-in screen when the read after setup answers 401', async () => {
+    const loadMe = vi.fn<LoadMe>(() =>
+      Promise.resolve({ status: 'signed-out' }),
+    );
+    renderApp(
+      {
+        loadMe,
+        loadAuthState: () => Promise.resolve({ setup: true }),
+        setupManager: () => Promise.resolve({ status: 'created' }),
+        signIn: () => Promise.resolve({ status: 'signed-in', account: ADA }),
+      },
+      '/setup',
+    );
+    const code = await screen.findByLabelText('Setup code');
+    fireEvent.submit(code.closest('form') ?? code);
+    await screen.findByRole('heading', {
+      level: 1,
+      name: 'Sign in to FactoryDeck',
+    });
+    expect(loadMe).toHaveBeenCalledTimes(1);
+  });
+
   it('reads me only once the first manager is created', async () => {
     const loadMe = meOf();
     renderApp(
@@ -135,11 +180,11 @@ describe('signing out', () => {
     return { leavePage };
   }
 
-  it('leaves for / with a full load after a 204', async () => {
+  it('leaves for /sign-in with a full load after a 204', async () => {
     const { leavePage } = await signOutWith(() =>
       Promise.resolve({ status: 'signed-out' }),
     );
-    expect(leavePage).toHaveBeenCalledExactlyOnceWith('/');
+    expect(leavePage).toHaveBeenCalledExactlyOnceWith('/sign-in');
   });
 
   it.each([

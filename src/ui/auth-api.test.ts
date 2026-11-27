@@ -3,7 +3,9 @@ import {
   authStateLoader,
   DATABASE_UNREACHABLE,
   managerSetup,
+  meLoader,
   SERVER_UNREACHABLE,
+  signInSender,
 } from './auth-api.ts';
 
 const INPUT = {
@@ -24,7 +26,7 @@ describe('auth state', () => {
     expect(urls).toEqual(['/api/auth/state']);
   });
 
-  it('gives nothing when the database does not answer', async () => {
+  it('names the database when it answers 503', async () => {
     await expect(
       authStateLoader(() =>
         Promise.resolve(
@@ -34,19 +36,24 @@ describe('auth state', () => {
           ),
         ),
       )(),
-    ).resolves.toBeUndefined();
+    ).resolves.toEqual({ unreachable: DATABASE_UNREACHABLE });
   });
 
-  it('gives nothing when the server does not answer', async () => {
+  it('names the server when it does not answer', async () => {
     await expect(
       authStateLoader(() => Promise.reject(new TypeError('offline')))(),
-    ).resolves.toBeUndefined();
+    ).resolves.toEqual({ unreachable: SERVER_UNREACHABLE });
   });
 
-  it('gives nothing for an unexpected body', async () => {
+  it.each([
+    ['an unexpected body', Response.json({ setup: 'yes' })],
+    ['a 500', Response.json({ error: 'Boom' }, { status: 500 })],
+    ['a 502 without a body', new Response('', { status: 502 })],
+    ['a body that is not JSON', new Response('<html>')],
+  ])('names the server for %s', async (_, response) => {
     await expect(
-      authStateLoader(() => Promise.resolve(Response.json({ setup: 'yes' })))(),
-    ).resolves.toBeUndefined();
+      authStateLoader(() => Promise.resolve(response))(),
+    ).resolves.toEqual({ unreachable: SERVER_UNREACHABLE });
   });
 });
 
@@ -121,4 +128,130 @@ describe('manager setup', () => {
       message: SERVER_UNREACHABLE,
     });
   });
+});
+
+const ACCOUNT = {
+  id: 1,
+  email: 'ada@example.test',
+  name: 'Ada',
+  role: 'manager',
+} as const;
+
+function answer(status: number, body?: unknown): typeof fetch {
+  return () =>
+    Promise.resolve(
+      body === undefined
+        ? new Response('', { status })
+        : Response.json(body, { status }),
+    );
+}
+
+describe('me', () => {
+  it('reads the account of the session', async () => {
+    const urls: string[] = [];
+    const me = await meLoader((input) => {
+      urls.push(typeof input === 'string' ? input : '');
+      return Promise.resolve(Response.json(ACCOUNT));
+    })();
+    expect(me).toEqual({ status: 'account', account: ACCOUNT });
+    expect(urls).toEqual(['/api/auth/me']);
+  });
+
+  it('is signed out on a 401', async () => {
+    await expect(
+      meLoader(answer(401, { error: 'Not signed in' }))(),
+    ).resolves.toEqual({ status: 'signed-out' });
+  });
+
+  it('names the database on a 503', async () => {
+    await expect(
+      meLoader(answer(503, { status: 'unreachable', refreshSeconds: 10 }))(),
+    ).resolves.toEqual({
+      status: 'unreachable',
+      message: DATABASE_UNREACHABLE,
+    });
+  });
+
+  it.each([
+    ['a network error', () => Promise.reject(new TypeError('offline'))],
+    ['a 500', answer(500, { error: 'Boom' })],
+    ['a 502 from a proxy', answer(502)],
+    ['a body that is not an account', answer(200, { name: 'Ada' })],
+    ['an unknown role', answer(200, { ...ACCOUNT, role: 'owner' })],
+    ['an id that is not a number', answer(200, { ...ACCOUNT, id: '1' })],
+  ] as [string, typeof fetch][])(
+    'names the server for %s',
+    async (_, fetchImpl) => {
+      await expect(meLoader(fetchImpl)()).resolves.toEqual({
+        status: 'unreachable',
+        message: SERVER_UNREACHABLE,
+      });
+    },
+  );
+});
+
+describe('sign in', () => {
+  const INPUT_SIGN_IN = { email: ' Ada@Example.test', password: '' };
+
+  it('posts the email and password as typed', async () => {
+    const calls: [string, RequestInit | undefined][] = [];
+    const outcome = await signInSender((input, init) => {
+      calls.push([typeof input === 'string' ? input : '', init]);
+      return Promise.resolve(Response.json(ACCOUNT));
+    })(INPUT_SIGN_IN);
+    expect(outcome).toEqual({ status: 'signed-in', account: ACCOUNT });
+    expect(calls).toEqual([
+      [
+        '/api/auth/sign-in',
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(INPUT_SIGN_IN),
+        },
+      ],
+    ]);
+  });
+
+  it('gives the API message of a refusal', async () => {
+    await expect(
+      signInSender(answer(401, { error: 'Wrong email or password' }))(
+        INPUT_SIGN_IN,
+      ),
+    ).resolves.toEqual({
+      status: 'refused',
+      message: 'Wrong email or password',
+    });
+  });
+
+  it('gives the API message of a 429', async () => {
+    await expect(
+      signInSender(
+        answer(429, { error: 'Too many attempts, try again in 15 minutes' }),
+      )(INPUT_SIGN_IN),
+    ).resolves.toEqual({
+      status: 'refused',
+      message: 'Too many attempts, try again in 15 minutes',
+    });
+  });
+
+  it('names the database on a 503', async () => {
+    await expect(
+      signInSender(answer(503, { status: 'unreachable' }))(INPUT_SIGN_IN),
+    ).resolves.toEqual({ status: 'failed', message: DATABASE_UNREACHABLE });
+  });
+
+  it.each([
+    ['a network error', () => Promise.reject(new TypeError('offline'))],
+    ['a 500 without a message', answer(500)],
+    ['a 401 without a message', answer(401, {})],
+    ['a 200 that is not an account', answer(200, {})],
+  ] as [string, typeof fetch][])(
+    'names the server for %s',
+    async (_, fetchImpl) => {
+      await expect(signInSender(fetchImpl)(INPUT_SIGN_IN)).resolves.toEqual({
+        status: 'failed',
+        message: SERVER_UNREACHABLE,
+      });
+    },
+  );
 });

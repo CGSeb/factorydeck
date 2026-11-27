@@ -10,12 +10,18 @@ import {
   managerSetup,
   meLoader,
   pageLeaver,
+  signInSender,
   signOuter,
 } from './auth-api.ts';
+import { authGate } from './auth-gate.ts';
 import { bugsLoader } from './bugs-api.ts';
 import { factoryLoader, projectDeleter } from './factory-api.ts';
 import { featureLoader, featuresLoader } from './features-api.ts';
-import { frictionsLoader } from './frictions-api.ts';
+import {
+  frictionReportLoader,
+  frictionReportMarker,
+  frictionsLoader,
+} from './frictions-api.ts';
 import { occurrencesLoader, outputLoader } from './occurrences-api.ts';
 import { collectionLoader, collectionRefresher } from './git-host-api.ts';
 import { overviewLoader } from './overview-api.ts';
@@ -32,34 +38,38 @@ import {
 } from './stats-api.ts';
 import { teamLoader } from './team-api.ts';
 
-const loadOverview = overviewLoader();
-const loadSessions = sessionsLoader();
-const loadSession = sessionLoader();
-const loadSkills = skillsLoader();
-const loadSkill = skillLoader();
-const loadRoles = rolesLoader();
-const loadFeatures = featuresLoader();
-const loadFeature = featureLoader();
-const loadBugs = bugsLoader();
-const loadFactory = factoryLoader();
-const deleteProject = projectDeleter();
-const loadCollection = collectionLoader();
-const refreshCollection = collectionRefresher();
-const loadAutonomy = autonomyLoader();
-const loadQuality = qualityLoader();
-const loadFrictions = frictionsLoader();
-const loadOccurrences = occurrencesLoader();
-const loadOutput = outputLoader();
-const loadFlow = flowLoader();
-const loadBugStats = bugStatsLoader();
-const loadWaiting = waitingLoader();
-const loadSidebar = sidebarLoader();
+const gate = authGate();
+const loadOverview = overviewLoader(gate.fetch);
+const loadSessions = sessionsLoader(gate.fetch);
+const loadSession = sessionLoader(gate.fetch);
+const loadSkills = skillsLoader(gate.fetch);
+const loadSkill = skillLoader(gate.fetch);
+const loadRoles = rolesLoader(gate.fetch);
+const loadFeatures = featuresLoader(gate.fetch);
+const loadFeature = featureLoader(gate.fetch);
+const loadBugs = bugsLoader(gate.fetch);
+const loadFactory = factoryLoader(gate.fetch);
+const deleteProject = projectDeleter(gate.fetch);
+const loadCollection = collectionLoader(gate.fetch);
+const refreshCollection = collectionRefresher(gate.fetch);
+const loadAutonomy = autonomyLoader(gate.fetch);
+const loadQuality = qualityLoader(gate.fetch);
+const loadFrictions = frictionsLoader(gate.fetch);
+const loadOccurrences = occurrencesLoader(gate.fetch);
+const loadOutput = outputLoader(gate.fetch);
+const loadFlow = flowLoader(gate.fetch);
+const loadBugStats = bugStatsLoader(gate.fetch);
+const loadWaiting = waitingLoader(gate.fetch);
+const loadSidebar = sidebarLoader(gate.fetch);
 const loadAuthState = authStateLoader();
 const setupManager = managerSetup();
 const loadMe = meLoader();
 const signOut = signOuter();
 const leavePage = pageLeaver();
-const loadTeam = teamLoader();
+const loadTeam = teamLoader(gate.fetch);
+const signIn = signInSender();
+const loadReport = frictionReportLoader(gate.fetch);
+const markReport = frictionReportMarker(gate.fetch);
 const root = document.querySelector('#root');
 if (root) {
   createRoot(root).render(
@@ -93,6 +103,10 @@ if (root) {
         signOut={signOut}
         leavePage={leavePage}
         loadTeam={loadTeam}
+        loadReport={loadReport}
+        markReport={markReport}
+        signIn={signIn}
+        sessionGate={gate}
       />
     </BrowserRouter>,
   );
