@@ -1,6 +1,6 @@
 # Navigation and conventions
 
-What every page shares: the first-manager screen, the sign-in screen, the unreachable screen, the sidebar, the project select, the period, the refresh, the theme, the banners, and how figures, empty states and errors read.
+What every page shares: the first-manager screen, the sign-in screen, the reset screen, the unreachable screen, the sidebar, the project select, the period, the refresh, the theme, the banners, and how figures, empty states and errors read.
 
 FactoryDeck serves its pages and its JSON API from one Node process, on `127.0.0.1` only (`FACTORYDECK_PORT`, default 4317). Any path that is not `/api/…` serves the app, so a reload or a shared link works on every page.
 
@@ -66,6 +66,10 @@ When the app loads, it reads `GET /api/auth/state`, then `GET /api/auth/me` only
 ## Invitation screen
 
 `/invite/<token>` opens the [invitation screen](accounts.md#the-invitation-screen), with or without a session, without the sidebar, the banners or the welcome screen: it skips the sign-in redirect. The app reads `GET /api/auth/state`, then `GET /api/auth/me`, as on any load: `setup: true` opens `/setup`, an account adds a line naming it, a `401` shows the screen without that line, and any other failure shows the unreachable screen. It then reads the invitation and calls only `/api/auth/*`. Creating the account enters the signed-in dashboard as a sign-in does: `/` opens in place of the invitation screen in the history, and the sidebar's account menu and `Team` link come from one `GET /api/auth/me`.
+
+## Reset screen
+
+`/reset/<token>`, the [reset screen](accounts.md#the-reset-screen) of a password reset link, opens without the sidebar, the banners or the welcome screen, with or without a session; it never opens the sign-in screen. Once the new password is saved, the app opens `/` signed in as that account. The sign-in screen's `next` never opens a path under `/reset/` or `/invite/`: those open `/`.
 
 ## Unreachable screen
 

@@ -31,6 +31,8 @@ describe('next', () => {
     '/Invite/abc?x=1',
     '/reset/abc',
     '/reset/',
+    '/Reset/abc?x=1',
+    '/INVITE/abc#top',
     'stats',
     '',
   ])('opens / for %s', (path) => {

@@ -3,10 +3,12 @@ import type { ChangeActive } from './account-status-api.ts';
 import type { TeamAccountRow } from '../team/types.ts';
 import { PageHeader } from './components/PageHeader.tsx';
 import { StatusLine } from './components/StatusLine.tsx';
-import type { WriteClipboard } from './frictions-api.ts';
+import { type WriteClipboard, writeClipboard } from './frictions-api.ts';
 import type { InvitationActions } from './invitations-api.ts';
 import { InviteDialog } from './InviteDialog.tsx';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
+import type { CreateResetLink } from './reset-api.ts';
+import { useTeamResetRows } from './ResetLinkPanel.tsx';
 import type { ChangeRole } from './role-change-api.ts';
 import type { LoadTeam, TeamView } from './team-api.ts';
 import { type RowMessage, useTeamChanges } from './team-changes.ts';
@@ -14,6 +16,7 @@ import { REFUSED_MESSAGE, roleActionLabel, teamSummary } from './team-view.ts';
 import {
   type TeamAction,
   type TeamActionsFor,
+  type TeamTableProps,
   TeamTable,
 } from './TeamTable.tsx';
 import { PendingInvitations } from './PendingInvitations.tsx';
@@ -27,6 +30,7 @@ export interface TeamPageProps {
   actionsFor?: TeamActionsFor | undefined;
   changeRole?: ChangeRole | undefined;
   changeActive?: ChangeActive | undefined;
+  createResetLink?: CreateResetLink | undefined;
   now?: Date | undefined;
   invitationActions?: InvitationActions | undefined;
   origin?: string | undefined;
@@ -42,12 +46,14 @@ function TeamContent({
   actionsFor,
   busy,
   message,
+  below,
 }: {
   view: TeamView | undefined;
   now: Date;
   actionsFor: TeamActionsFor | undefined;
   busy: ReadonlySet<number>;
   message: RowMessage | undefined;
+  below: NonNullable<TeamTableProps['below']>;
 }): ReactElement {
   if (view === undefined) return <StatusLine>{LOADING}</StatusLine>;
   if (view.status === 'refused') {
@@ -63,6 +69,7 @@ function TeamContent({
       actionsFor={actionsFor}
       busy={busy}
       message={message}
+      below={below}
     />
   );
 }
@@ -148,18 +155,30 @@ export function TeamPage({
   actionsFor,
   changeRole,
   changeActive,
+  createResetLink,
   now: fixedNow,
   invitationActions,
   origin = window.location.origin,
-  copy,
+  copy = writeClipboard,
 }: TeamPageProps): ReactElement {
   const { view, busy, message, run, reload } = useTeamChanges(loadTeam);
-  const status = useStatusActions(changeActive, run);
+  const resets = useTeamResetRows({
+    createResetLink,
+    origin,
+    copy,
+    team: { busy, message },
+  });
+  const runTeam: RunChange = (id, send) => {
+    resets.teamStarted();
+    run(id, send);
+  };
+  const status = useStatusActions(changeActive, runTeam);
   const now = useNow(fixedNow);
   const invites = useInvitations(invitationActions, reload);
   function rowActions(account: TeamAccountRow): readonly TeamAction[] {
     return status.actionsFor(account, [
-      ...roleActions(account, changeRole, run),
+      ...roleActions(account, changeRole, runTeam),
+      ...resets.actionsOf(account),
       ...(actionsFor?.(account) ?? []),
     ]);
   }
@@ -177,8 +196,9 @@ export function TeamPage({
         view={view}
         now={now}
         actionsFor={rowActions}
-        busy={busy}
-        message={message}
+        busy={resets.busy}
+        message={resets.message}
+        below={resets.below}
       />
       {invitationActions !== undefined && (
         <TeamInvitations

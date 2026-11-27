@@ -26,6 +26,7 @@
     "db:migrate": "drizzle-kit migrate",
     "ingest": "node src/ingest/cli.ts",
     "collect": "node src/git-host/cli.ts",
+    "account:reset-link": "node src/team/reset-link-cli.ts",
     "shot": "node scripts/shot.ts",
     "shift": "node scripts/shift.ts"
   },

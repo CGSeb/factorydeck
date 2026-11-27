@@ -35,6 +35,7 @@ export interface TeamTableProps {
   actionsFor?: TeamActionsFor | undefined;
   busy?: ReadonlySet<number> | undefined;
   message?: RowMessage | undefined;
+  below?: ((account: TeamAccountRow) => ReactElement | undefined) | undefined;
 }
 
 const NO_ACTIONS: TeamActionsFor = () => [];
@@ -214,6 +215,7 @@ function TeamRow({
   withActions,
   busy,
   message,
+  below,
 }: {
   account: TeamAccountRow;
   now: Date;
@@ -221,6 +223,7 @@ function TeamRow({
   withActions: boolean;
   busy: boolean;
   message: string | undefined;
+  below: ReactElement | undefined;
 }): ReactElement {
   return (
     <>
@@ -250,6 +253,11 @@ function TeamRow({
           </td>
         </tr>
       )}
+      {below !== undefined && (
+        <tr className="fd-team-message-row fd-team-below-row">
+          <td colSpan={COLUMNS + (withActions ? 1 : 0)}>{below}</td>
+        </tr>
+      )}
     </>
   );
 }
@@ -260,6 +268,7 @@ export function TeamTable({
   actionsFor = NO_ACTIONS,
   busy = NONE_BUSY,
   message,
+  below,
 }: TeamTableProps): ReactElement {
   const rows = accounts.map((account) => ({
     account,
@@ -296,6 +305,7 @@ export function TeamTable({
                 message={
                   message?.accountId === account.id ? message.text : undefined
                 }
+                below={below?.(account)}
               />
             ))}
           </tbody>

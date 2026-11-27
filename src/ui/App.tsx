@@ -40,6 +40,8 @@ import type { LoadOverview } from './overview-api.ts';
 import { OverviewPage } from './OverviewPage.tsx';
 import type { LoadRoles } from './roles-api.ts';
 import { RolesPage } from './RolesPage.tsx';
+import type { CreateResetLink, ReadReset, SaveReset } from './reset-api.ts';
+import { resetScreen } from './ResetPage.tsx';
 import { SetupPage } from './SetupPage.tsx';
 import { nextOf, signInPath } from './sign-in-next.ts';
 import { SignInPage } from './SignInPage.tsx';
@@ -102,6 +104,9 @@ export interface AppProps {
   readInvitation?: ReadInvitation | undefined;
   acceptInvitation?: AcceptInvitation | undefined;
   changeActive?: ChangeActive | undefined;
+  createResetLink?: CreateResetLink | undefined;
+  readReset?: ReadReset | undefined;
+  saveReset?: SaveReset | undefined;
 }
 
 function isManager(view: AccountView): boolean {
@@ -173,11 +178,14 @@ export function App(props: AppProps): ReactElement | null {
   );
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  if (phase.name === 'checking') return null;
-  const invite = inviteScreen(pathname, phase, props, () => {
-    setPhase({ name: 'ready', account: undefined });
+  function openHome(account?: Account): void {
+    setPhase({ name: 'ready', account });
     void navigate('/', { replace: true });
-  });
+  }
+  const reset = resetScreen(props, pathname, openHome);
+  if (reset !== undefined) return reset;
+  if (phase.name === 'checking') return null;
+  const invite = inviteScreen(pathname, phase, props, () => openHome());
   if (invite !== undefined) return invite;
   if (phase.name === 'unreachable') {
     return (
@@ -206,10 +214,7 @@ export function App(props: AppProps): ReactElement | null {
           element={
             <SetupPage
               setupManager={setupManager}
-              onCreated={() => {
-                setPhase({ name: 'ready', account: undefined });
-                void navigate('/', { replace: true });
-              }}
+              onCreated={() => openHome()}
             />
           }
         />

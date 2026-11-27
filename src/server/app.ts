@@ -18,6 +18,7 @@ import { invitationAuthRoutes } from './invitation-routes.ts';
 import { type GitHostSource, gitHostRoutes } from './git-host-routes.ts';
 import type { DatabaseCheck } from './health.ts';
 import { type ProjectSource, projectRoutes } from './project-routes.ts';
+import { type ResetSource, resetRoutes } from './reset-routes.ts';
 import { type RoleSource, roleRoutes } from './role-routes.ts';
 import { type SessionSource, sessionRoutes } from './session-routes.ts';
 import { type SidebarSource, sidebarRoutes } from './sidebar-routes.ts';
@@ -47,6 +48,7 @@ export interface AppOptions {
   sidebar?: SidebarSource | undefined;
   auth: AuthSource;
   team?: TeamSource | undefined;
+  resets?: ResetSource | undefined;
 }
 
 function mountSections(
@@ -71,6 +73,9 @@ function mountSections(
       '/api/auth/invitation',
       invitationAuthRoutes(options.team.invitations, context),
     );
+  }
+  if (options.resets !== undefined) {
+    app.route('/api/auth/reset', resetRoutes(options.resets, context));
   }
   app.route('/api/auth', authRoutes(options.auth, context));
   app.route('/api/team', teamRoutes(options.team, context));

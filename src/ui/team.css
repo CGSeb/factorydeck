@@ -117,3 +117,62 @@
 .fd-team-page .fd-table-scroll:has(.fd-team-actions-menu) {
   padding-bottom: 160px;
 }
+
+.fd-reset-link {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fd-space-2) var(--fd-space-3);
+  align-items: center;
+}
+
+.fd-reset-link-input {
+  box-sizing: border-box;
+  flex: 1 1 18rem;
+  min-width: 0;
+  height: 36px;
+  padding: 0 var(--fd-space-3);
+  font-family: var(--fd-font-mono);
+  font-size: var(--fd-text-sm);
+  color: var(--fd-ink);
+  background: var(--fd-surface);
+  border: 1px solid var(--fd-field-border);
+  border-radius: var(--fd-radius-sm);
+}
+
+.fd-reset-link-input:focus-visible {
+  outline: 2px solid var(--fd-accent);
+  outline-offset: 1px;
+}
+
+.fd-reset-link-valid {
+  font-size: var(--fd-text-sm);
+  color: var(--fd-muted);
+}
+
+.fd-reset-link-buttons {
+  display: inline-flex;
+  gap: var(--fd-space-2);
+}
+
+.fd-reset-link-button {
+  display: inline-flex;
+  gap: var(--fd-space-2);
+  align-items: center;
+  height: 36px;
+  padding: 0 var(--fd-space-4);
+  font-size: var(--fd-text-md);
+  font-weight: 600;
+  color: var(--fd-ink);
+  background: var(--fd-surface);
+  border: 1px solid var(--fd-field-border);
+  border-radius: var(--fd-radius-pill);
+}
+
+.fd-reset-link-button:hover {
+  background: var(--fd-surface-2);
+}
+
+.fd-reset-link-copy {
+  min-width: 9.5rem;
+  justify-content: center;
+}
