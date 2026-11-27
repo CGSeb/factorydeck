@@ -59,6 +59,39 @@ describe('the Team link', () => {
     expect(loadMe).toHaveBeenCalledTimes(1);
   });
 
+  it('comes from the me read after a sign-in, with no other read', async () => {
+    const ada = {
+      id: 1,
+      email: 'ada@example.test',
+      name: 'Ada',
+      role: 'manager',
+    } as const;
+    const loadMe = vi.fn<LoadMe>();
+    loadMe.mockResolvedValueOnce({ status: 'signed-out' });
+    loadMe.mockResolvedValue({ status: 'account', account: ada });
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App
+          {...loaders}
+          loadTeam={teamLoaderOf(teamResponse(aloneManager))}
+          loadAuthState={() => Promise.resolve({ setup: false })}
+          loadMe={loadMe}
+          signIn={() => Promise.resolve({ status: 'signed-in', account: ada })}
+          signOut={() => Promise.resolve({ status: 'signed-out' })}
+        />
+      </MemoryRouter>,
+    );
+    const email = await screen.findByLabelText('Email');
+    fireEvent.change(email, { target: { value: ada.email } });
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'a long passphrase' },
+    });
+    fireEvent.submit(email.closest('form') ?? email);
+    await screen.findByRole('link', { name: 'Team' });
+    await settle();
+    expect(loadMe).toHaveBeenCalledTimes(2);
+  });
+
   it.each<[string, MeResult]>([
     ['signed out (401)', { status: 'signed-out' }],
     [

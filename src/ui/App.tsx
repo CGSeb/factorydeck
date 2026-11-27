@@ -207,6 +207,13 @@ export function App(props: AppProps): ReactElement | null {
   );
 }
 
+const SIGNED_IN_REDIRECTS = (
+  <>
+    <Route path="setup" element={<Navigate to="/" replace />} />
+    <Route path="sign-in" element={<SignedInRedirect />} />
+  </>
+);
+
 function DashboardRoutes(
   props: AppProps & { account: SidebarAccount | undefined; team: boolean },
 ): ReactElement {
@@ -263,8 +270,7 @@ function DashboardRoutes(
           <Route path="team" element={<TeamPage loadTeam={loadTeam} />} />
         )}
       </Route>
-      <Route path="setup" element={<Navigate to="/" replace />} />
-      <Route path="sign-in" element={<SignedInRedirect />} />
+      {SIGNED_IN_REDIRECTS}
     </Routes>
   );
 }
