@@ -73,19 +73,28 @@ async function chooseReset(canvasElement: HTMLElement): Promise<HTMLElement> {
 }
 
 export const MenuOrder: Story = {
-  name: 'Menu: role, then Reset password link; none for a deactivated row',
+  name: 'Menu: role, Reset password link, Deactivate; only Reactivate when deactivated',
+  args: {
+    changeActive: fn(() =>
+      Promise.resolve<AccountChangeOutcome>({
+        status: 'failed',
+        message: 'Not used',
+      }),
+    ),
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(await canvas.findByRole('button', { name: BRUNO }));
-    await expect(
+    const items = (): (string | null)[] =>
       within(canvas.getByRole('menu'))
         .getAllByRole('menuitem')
-        .map((item) => item.textContent),
-    ).toEqual(['Make manager', RESET_ACTION]);
+        .map((item) => item.textContent);
+    await userEvent.click(await canvas.findByRole('button', { name: BRUNO }));
+    await expect(items()).toEqual(['Make manager', RESET_ACTION, 'Deactivate']);
     await userEvent.keyboard('{Escape}');
-    await expect(
-      canvas.queryByRole('button', { name: 'Actions for Eve' }),
-    ).toBeNull();
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Actions for Eve' }),
+    );
+    await expect(items()).toEqual(['Reactivate']);
   },
 };
 
@@ -212,24 +221,33 @@ export const NetworkError: Story = {
   ...failing(SERVER_UNREACHABLE),
 };
 
-export const OtherActionClearsTheLine: Story = {
-  name: 'Another action of the menu clears a reset failure line',
+export const OneMessageLine: Story = {
+  name: 'One message line: the last action started shows its failure',
   args: {
     createResetLink: answering({ status: 'failed', message: 'Not found' }),
-    actionsFor: () => [{ label: 'Other action', onSelect: fn() }],
+    changeRole: fn(() =>
+      Promise.resolve<AccountChangeOutcome>({
+        status: 'failed',
+        message: 'Role refused',
+      }),
+    ),
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    const lines = (): (string | null)[] =>
+      [...canvasElement.querySelectorAll('.fd-team-message')].map(
+        (line) => line.textContent,
+      );
     await chooseReset(canvasElement);
-    await waitFor(() =>
-      expect(canvasElement.querySelector('.fd-team-message')).not.toBeNull(),
-    );
+    await waitFor(() => expect(lines()).toEqual(['Not found']));
     await userEvent.click(canvas.getByRole('button', { name: BRUNO }));
     await userEvent.click(
-      canvas.getByRole('menuitem', { name: 'Other action' }),
+      canvas.getByRole('menuitem', { name: 'Make manager' }),
     );
-    await waitFor(() =>
-      expect(canvasElement.querySelector('.fd-team-message')).toBeNull(),
-    );
+    await waitFor(() => expect(lines()).toEqual(['Role refused']));
+    await expect(canvas.getAllByRole('status')).toHaveLength(1);
+    await expect(canvas.getByRole('status')).toHaveTextContent('Role refused');
+    await chooseReset(canvasElement);
+    await waitFor(() => expect(lines()).toEqual(['Not found']));
   },
 };

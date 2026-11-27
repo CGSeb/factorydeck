@@ -166,18 +166,14 @@ export function TeamPage({
     createResetLink,
     origin,
     copy,
-    team: { busy, message },
+    team: { busy, message, run },
   });
-  const runTeam: RunChange = (id, send) => {
-    resets.teamStarted();
-    run(id, send);
-  };
-  const status = useStatusActions(changeActive, runTeam);
+  const status = useStatusActions(changeActive, resets.run);
   const now = useNow(fixedNow);
   const invites = useInvitations(invitationActions, reload);
   function rowActions(account: TeamAccountRow): readonly TeamAction[] {
     return status.actionsFor(account, [
-      ...roleActions(account, changeRole, runTeam),
+      ...roleActions(account, changeRole, resets.run),
       ...resets.actionsOf(account),
       ...(actionsFor?.(account) ?? []),
     ]);

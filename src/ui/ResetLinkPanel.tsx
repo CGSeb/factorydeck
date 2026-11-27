@@ -21,6 +21,7 @@ import {
 } from './invite-dialog-state.ts';
 import { useResetLinks } from './reset-links.ts';
 import type { RowMessage } from './team-changes.ts';
+import type { RunChange } from './team-status-actions.ts';
 import type { TeamAction, TeamTableProps } from './TeamTable.tsx';
 import './team.css';
 
@@ -146,6 +147,7 @@ export interface TeamResetRows {
   busy: ReadonlySet<number>;
   message: RowMessage | undefined;
   teamStarted: () => void;
+  run: RunChange;
 }
 
 export function useTeamResetRows({
@@ -157,7 +159,11 @@ export function useTeamResetRows({
   createResetLink: CreateResetLink | undefined;
   origin: string;
   copy: WriteClipboard;
-  team: { busy: ReadonlySet<number>; message: RowMessage | undefined };
+  team: {
+    busy: ReadonlySet<number>;
+    message: RowMessage | undefined;
+    run: RunChange;
+  };
 }): TeamResetRows {
   const { links, busy, message, create, close } =
     useResetLinks(createResetLink);
@@ -194,6 +200,10 @@ export function useTeamResetRows({
     message: last === 'reset' ? message : team.message,
     teamStarted: () => {
       setLast('team');
+    },
+    run: (id, send) => {
+      setLast('team');
+      team.run(id, send);
     },
   };
 }

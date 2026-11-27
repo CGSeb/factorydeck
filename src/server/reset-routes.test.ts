@@ -14,6 +14,16 @@ import {
 import { GONE, NEW_PASSWORD, resetClient } from '../test/reset-client.ts';
 
 let h: AuthHarness;
+
+function setActive(id: number, cookie: string, active: boolean) {
+  return Promise.resolve(
+    h.app().request(`/api/team/accounts/${id}`, {
+      method: 'PATCH',
+      headers: { cookie, 'content-type': 'application/json' },
+      body: JSON.stringify({ active }),
+    }),
+  );
+}
 const { post, team, linkFor, save, sessionsOf } = resetClient(() => h);
 
 beforeEach(async () => {
@@ -130,19 +140,34 @@ describe('POST /api/auth/reset/save', () => {
   it('refuses the link of a deactivated account, even after a reactivation', async () => {
     const { bob, cookie } = await team();
     const token = await linkFor(bob, cookie);
-    await h.db
-      .update(account)
-      .set({ active: false })
-      .where(eq(account.id, bob));
+    expect((await setActive(bob, cookie, false)).status).toBe(200);
     expect((await post('/api/auth/reset', { token })).status).toBe(410);
     expect((await save(token)).status).toBe(410);
-    await h.db
-      .update(accountToken)
-      .set({ usedAt: START })
-      .where(eq(accountToken.accountId, bob));
-    await h.db.update(account).set({ active: true }).where(eq(account.id, bob));
+    expect((await setActive(bob, cookie, true)).status).toBe(200);
     expect((await post('/api/auth/reset', { token })).status).toBe(410);
     expect((await save(token)).status).toBe(410);
+    const [row] = await h.db.select().from(accountToken);
+    expect(row?.usedAt).not.toBeNull();
+  });
+
+  it('never leaves a usable link or an open session when a save races a deactivation', async () => {
+    for (let round = 0; round < 5; round++) {
+      const ada = await h.addAccount(`ada${round}@example.test`, {
+        role: 'manager',
+      });
+      const bob = await h.addAccount(`bob${round}@example.test`);
+      const cookie = await signedIn(h.app(), `ada${round}@example.test`);
+      const token = await linkFor(bob, cookie);
+      const [saved, deactivated] = await Promise.all([
+        save(token),
+        setActive(bob, cookie, false),
+      ]);
+      expect(deactivated.status).toBe(200);
+      expect([200, 410]).toContain(saved.status);
+      expect((await post('/api/auth/reset', { token })).status).toBe(410);
+      expect(await sessionsOf(bob)).toBe(0);
+      expect(ada).toBeGreaterThan(0);
+    }
   });
 
   it('still works after its creator was made dev or deactivated', async () => {

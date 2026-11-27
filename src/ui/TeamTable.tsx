@@ -1,5 +1,4 @@
 import {
-  type KeyboardEvent,
   type ReactElement,
   type RefObject,
   useCallback,
@@ -15,9 +14,12 @@ import { formatAgo, formatDateTime } from './format.ts';
 import type { RowMessage } from './team-changes.ts';
 import {
   closeOnKey,
+  moveFocus,
   useCloseAndFocus,
   useFocusWhenDone,
 } from './team-row-focus.ts';
+
+export { menuTarget } from './team-row-focus.ts';
 import { NEVER, busyLabelOf, roleLabel, statusLabel } from './team-view.ts';
 import './team.css';
 
@@ -77,36 +79,6 @@ function useCloseOnOutside(
       document.removeEventListener('pointerdown', onPointer);
     };
   }, [open, box, close]);
-}
-
-export function menuTarget(
-  key: string,
-  index: number,
-  count: number,
-): number | undefined {
-  switch (key) {
-    case 'ArrowDown':
-      return (index + 1) % count;
-    case 'ArrowUp':
-      return (index - 1 + count) % count;
-    case 'Home':
-      return 0;
-    case 'End':
-      return count - 1;
-    default:
-      return undefined;
-  }
-}
-
-function moveFocus(event: KeyboardEvent<HTMLUListElement>): void {
-  const items = [
-    ...event.currentTarget.querySelectorAll<HTMLElement>('[role="menuitem"]'),
-  ];
-  const index = items.findIndex((item) => item === document.activeElement);
-  const target = menuTarget(event.key, index, items.length);
-  if (target === undefined) return;
-  event.preventDefault();
-  items[target]?.focus();
 }
 
 function ActionsMenu({
