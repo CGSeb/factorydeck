@@ -24,3 +24,12 @@ export function statusLabel(active: boolean): string {
 export function roleActionLabel(role: TeamAccountRow['role']): string {
   return role === 'manager' ? 'Make dev' : 'Make manager';
 }
+
+export const REACTIVATING = 'Reactivating…';
+
+export function busyLabelOf(
+  account: TeamAccountRow,
+  busy: boolean,
+): string | undefined {
+  return busy && !account.active ? REACTIVATING : undefined;
+}

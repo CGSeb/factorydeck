@@ -60,6 +60,7 @@ import type {
 } from './stats-api.ts';
 import { StatsPage } from './StatsPage.tsx';
 import type { ChangeRole } from './role-change-api.ts';
+import type { ChangeActive } from './account-status-api.ts';
 import type { LoadTeam } from './team-api.ts';
 import { TeamPage } from './TeamPage.tsx';
 
@@ -100,6 +101,7 @@ export interface AppProps {
   invitationActions?: InvitationActions | undefined;
   readInvitation?: ReadInvitation | undefined;
   acceptInvitation?: AcceptInvitation | undefined;
+  changeActive?: ChangeActive | undefined;
 }
 
 function isManager(view: AccountView): boolean {

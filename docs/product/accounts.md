@@ -143,7 +143,7 @@ A manager sees a `Team` link in the sidebar, the last one, after `Roles`; it ope
 - **Header**: `Team`, with the summary `<n> accounts · <m> managers`. `<n>` counts every account and `<m>` every account with role `manager`, deactivated ones included; one reads `1 account` and `1 manager`. The page has no period pills; the project select stays in the sidebar and changes nothing here.
 - **Table**: the columns `Name`, `Email`, `Role` (`Manager` or `Dev`), `Status` (`Active` or `Deactivated`) and `Last sign-in`. Every account is listed, with no paging: active accounts first, then by name without letter case, then by email. The email shows as stored. The manager's own row carries a small muted `You` tag after the name. Deactivated rows are in muted text. Long names and emails wrap; a table wider than the page scrolls inside its box.
 - **Last sign-in** reads as elsewhere (`just now`, `3 min ago`, `2 h ago`, `5 d ago`), with the exact date (`22 Nov, 17:33`) in a tooltip; an account that never signed in reads `Never`.
-- **Actions**: each row of another account gets an actions menu once an action exists for it; while it holds none, no menu and no column show. An active dev's menu offers `Make manager`, an active manager's `Make dev` (see [Changing a role](#changing-a-role)); a deactivated row offers no role action.
+- **Actions**: each row of another account gets an actions menu (the `⋯` button at the end of the row); the manager's own row has none. An active dev's menu offers `Make manager`, an active manager's `Make dev` (see [Changing a role](#changing-a-role)), and the menu of an active account ends with `Deactivate`, in the danger colour. A deactivated account's menu offers only `Reactivate` (see [Deactivating an account](#deactivating-an-account)).
 - **Invite**: a button in the header, shown once the list has loaded (not while it loads, on the refusal or while the database is unreachable), opens the [invite dialog](#inviting-someone).
 - **Pending invitations**: under the accounts, a section with the columns `Email`, `Role`, `Invited by` and `Expires`, then `New link` and `Revoke` on each row. It is hidden when no invitation is pending. See [Invitations](#invitations).
 
@@ -229,6 +229,42 @@ They answer like every route under `/api/team/` first (`413`, `415`, `401` or `5
 | `POST /api/auth/invitation/accept` | With `{ "token", "name", "password" }`: `201` with the account (`id`, `email`, `name`, `role`) and the session cookie. `400` with `{ "error", "field": "name" \| "password" }`, name first. |
 
 Both work without a session. A dead link (an unknown or malformed token, or one used, replaced, revoked or expired, or an email that got an account since) answers both `410` with `{ "error": "This invitation link no longer works. Ask a manager for a new one." }`, checked before the fields. Accepting creates the account with the invitation's email and role, records its last sign-in time, deletes the session the browser already had, opens a new one, and marks the invitation used; it does not clear the [failed sign-ins](#failed-sign-ins) of the email. Two accepts of one token at the same time create one account, and the other answers `410`; an accept racing a revoke or a new link either succeeds whole or answers `410`.
+
+## Deactivating an account
+
+A manager deactivates the account of someone who left, and reactivates it if they come back. Accounts are never deleted: a deactivated account keeps its name on everything it did, and the invitations it created keep working and still show who invited.
+
+- **Deactivate**: choosing `Deactivate` in a row's menu opens the dialog `Deactivate <name>?` (a long name wraps in the title), with the text `They are signed out at once.` and the buttons `Cancel` and `Deactivate`. While the request runs, the dialog stays open (Escape and `Cancel` do nothing) and its button reads `Deactivating…` and is disabled. Once the API answers, the dialog closes.
+- **Reactivate**: choosing `Reactivate` sends the change at once, without a dialog. While it runs, the row's actions button keeps its size and place, is disabled, and reads `Reactivating…` (its accessible name and tooltip).
+- **After the answer**: on `200`, the row shows its new status (`Active` or `Deactivated`) at once, from the answer, and moves to its sorted place (active accounts first) at the next refresh; a list that was asked for before the answer does not bring the old status back. A refusal or a failure shows its message on the same line under the row as a role change, announced politely: the API's message on a `409` or a `400` (`You cannot deactivate yourself`, `The team needs at least one active manager`…), `Database unreachable. Start it with pnpm db:up.` on a `503`, and `Could not reach the server` on a `404`, a network error or any other answer without a message. Like the role-change line, it stays across auto refreshes and clears when any action on the page starts or succeeds. A `403` replaces the table with `Only managers can manage the team.`, as on the list; a `401` opens the [sign-in screen](#the-sign-in-screen).
+- **Focus**: when the menu or the dialog closes, the focus goes back to the row's actions button; it stays there after a reactivation.
+
+Deactivating an account, in one transaction:
+
+- sets it inactive, so it cannot sign in (`POST /api/auth/sign-in` answers `401` `Wrong email or password`, as for a wrong password);
+- deletes all its sessions, so its next request is not signed in;
+- marks its unused password reset links as used, so they never work again, even after a reactivation.
+
+It deletes nothing else. If any step fails, the answer is `503` and nothing changes. Reactivating opens no session: the person signs in again with their password. Inviting the email of a deactivated account is refused as for any existing account: a person who comes back is reactivated.
+
+### The status route
+
+```bash
+curl -i -b cookies -X PATCH http://127.0.0.1:4317/api/team/accounts/4 \
+  -H 'content-type: application/json' -d '{"active":false}'
+```
+
+`PATCH /api/team/accounts/<id>` with `{ "active": false }` or `{ "active": true }` answers `200` with the account in the shape of one row of `GET /api/team/accounts` (`id`, `name`, `email`, `role`, `active`, `lastSignInAt`, `you`), with no envelope. A change that changes nothing (deactivating a deactivated account, reactivating an active one) answers `200` with the account unchanged, and deletes no session.
+
+| Answer | When                                                                                                                                                                                                                                                                                 |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `404`  | `<id>` is not a positive whole number without leading zeros (`abc`, `007`, `0`, `-1`, `1.5`), or no account has it: `{ "error": "Not found" }`.                                                                                                                                      |
+| `400`  | The body has both `role` and `active`: `{ "error": "Change the role or the status, not both" }`. It has neither, or is not a JSON object: `{ "error": "Send role or active" }`. `active` is not `true` or `false`: `{ "error": "Active must be true or false", "field": "active" }`. |
+| `409`  | Deactivating yourself: `{ "error": "You cannot deactivate yourself" }`. Deactivating the last active manager (an account with role `manager` that is active): `{ "error": "The team needs at least one active manager" }`.                                                           |
+
+Unknown fields are ignored. When several answers apply, the first wins: the chain of the [team routes](#team-routes) (`413`, `415`, `401` or `503`, `403`), then `404`, then `400`, then `409` yourself, then `409` last active manager. Reactivating yourself changes nothing and answers `200`.
+
+Every change of an account's status runs in one transaction that locks the active managers, as a role change does, and reads the requester again: a requester deactivated meanwhile gets `401` `{ "error": "Not signed in" }`, one made dev meanwhile `403` `{ "error": "Managers only" }`. So two managers deactivating each other, or a demotion and a deactivation of the other manager at the same time, leave one active manager. Since the requester is an active manager and cannot deactivate themselves, the last-manager `409` stays as a guard inside that transaction.
 
 ## The demo manager
 

@@ -44,6 +44,7 @@ import {
   invitationsLoader,
 } from './invitations-api.ts';
 import { teamLoader, withInvitations } from './team-api.ts';
+import { activeChanger } from './account-status-api.ts';
 
 const gate = authGate();
 const loadOverview = overviewLoader(gate.fetch);
@@ -81,6 +82,7 @@ const loadTeam = withInvitations(
 const manageInvitations = invitationActions(gate.fetch);
 const readInvitation = invitationReader();
 const acceptInvitation = invitationAccepter();
+const changeActive = activeChanger(gate.fetch);
 const signIn = signInSender();
 const loadReport = frictionReportLoader(gate.fetch);
 const markReport = frictionReportMarker(gate.fetch);
@@ -121,6 +123,7 @@ if (root) {
         invitationActions={manageInvitations}
         readInvitation={readInvitation}
         acceptInvitation={acceptInvitation}
+        changeActive={changeActive}
         loadReport={loadReport}
         markReport={markReport}
         signIn={signIn}

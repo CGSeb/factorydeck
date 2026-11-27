@@ -1,5 +1,14 @@
 import { type Context, Hono } from 'hono';
-import { accountChangeOf, accountIdOf } from '../team/account-change.ts';
+import {
+  type AccountChange,
+  accountChangeOf,
+  accountIdOf,
+} from '../team/account-change.ts';
+import {
+  type StatusChangeOutcome,
+  type StatusChangeRequest,
+  activeChangeOf,
+} from '../team/account-status.ts';
 import type {
   RoleChangeOutcome,
   RoleChangeRequest,
@@ -18,6 +27,39 @@ export interface TeamSource {
   accounts: () => Promise<TeamAccount[]>;
   changeRole?: (request: RoleChangeRequest) => Promise<RoleChangeOutcome>;
   invitations?: InvitationSource | undefined;
+  changeStatus?: (request: StatusChangeRequest) => Promise<StatusChangeOutcome>;
+}
+
+type ChangeOutcome = RoleChangeOutcome | StatusChangeOutcome;
+
+function sendChange(
+  team: TeamSource,
+  requesterId: number,
+  accountId: number,
+  change: AccountChange,
+): (() => Promise<ChangeOutcome>) | undefined {
+  if (change.kind === 'active') {
+    const { changeStatus } = team;
+    if (changeStatus === undefined) return undefined;
+    return () =>
+      changeStatus({
+        requesterId,
+        accountId,
+        change: activeChangeOf(change.active),
+        now: new Date(),
+      });
+  }
+  const { changeRole } = team;
+  if (changeRole === undefined) return undefined;
+  return () =>
+    changeRole({
+      requesterId,
+      accountId,
+      change:
+        change.kind === 'role'
+          ? { role: change.role }
+          : { refusal: change.refusal },
+    });
 }
 
 function notFound(c: Context): Response {
@@ -26,7 +68,7 @@ function notFound(c: Context): Response {
 
 function roleChangeAnswer(
   c: Context,
-  outcome: RoleChangeOutcome,
+  outcome: ChangeOutcome,
   requesterId: number,
 ): Response {
   switch (outcome.status) {
@@ -73,26 +115,22 @@ export function teamRoutes(
       return c.json(body, body.status === 'ok' ? 200 : 503);
     });
   }
-  const changeRole = team?.changeRole;
-  if (changeRole !== undefined) {
+  if (team !== undefined) {
     routes.patch('/accounts/:id', async (c) => {
       const accountId = accountIdOf(c.req.param('id'));
       if (accountId === undefined) return notFound(c);
       const change = accountChangeOf(
         await c.req.json().catch((): unknown => undefined),
       );
-      if (change.kind === 'active') return notFound(c);
       const requesterId = c.get('account').id;
-      const outcome = await fromDatabase(() =>
-        changeRole({
-          requesterId,
-          accountId,
-          change:
-            change.kind === 'role'
-              ? { role: change.role }
-              : { refusal: change.refusal },
-        }),
-      );
+      const send = sendChange(team, requesterId, accountId, change);
+      if (send === undefined) return notFound(c);
+      const outcome = await fromDatabase(send).catch((error: unknown) => {
+        if (change.kind === 'active') {
+          return { status: 'unreachable' as const, refreshSeconds };
+        }
+        throw error;
+      });
       if (outcome.status === 'unreachable') return c.json(outcome, 503);
       return roleChangeAnswer(c, outcome, requesterId);
     });
