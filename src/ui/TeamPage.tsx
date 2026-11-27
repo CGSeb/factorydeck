@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import type { ReactElement, RefObject } from 'react';
 import type { TeamAccountRow } from '../team/types.ts';
 import { PageHeader } from './components/PageHeader.tsx';
 import { StatusLine } from './components/StatusLine.tsx';
@@ -68,11 +68,13 @@ function inviteSlot(
   actions: InvitationActions | undefined,
   view: TeamView | undefined,
   open: () => void,
+  button: RefObject<HTMLButtonElement | null>,
 ): { slot?: ReactElement } {
-  if (actions === undefined || view?.status === 'refused') return {};
+  if (actions === undefined || view?.status !== 'ok') return {};
   return {
     slot: (
       <button
+        ref={button}
         type="button"
         className="fd-control fd-invite-button"
         onClick={open}
@@ -159,7 +161,7 @@ export function TeamPage({
           ? { summary: teamSummary(view.accounts) }
           : {})}
         pending={view === undefined}
-        {...inviteSlot(invitationActions, view, invites.open)}
+        {...inviteSlot(invitationActions, view, invites.open, invites.button)}
       />
       <TeamContent
         view={view}

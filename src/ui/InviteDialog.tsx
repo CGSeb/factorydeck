@@ -1,4 +1,10 @@
-import { type ReactElement, type RefObject, useId, useRef } from 'react';
+import {
+  type ReactElement,
+  type RefObject,
+  useId,
+  useLayoutEffect,
+  useRef,
+} from 'react';
 import type { Role } from './auth-api.ts';
 import { FORM_STOPS, useDialogFocus } from './components/dialog-focus.ts';
 import { type WriteClipboard, writeClipboard } from './frictions-api.ts';
@@ -166,6 +172,10 @@ function InviteForm({
   );
 }
 
+function ignore(): void {
+  return undefined;
+}
+
 export function InviteDialog({
   view,
   origin,
@@ -177,13 +187,23 @@ export function InviteDialog({
   const title = useId();
   const text = useId();
   const dialog = useRef<HTMLDivElement>(null);
-  const first = useDialogFocus<HTMLElement>(onClose, dialog, false, FORM_STOPS);
+  const cancel = view.kind === 'form' ? onClose : ignore;
+  useLayoutEffect(() => {
+    const opener =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : undefined;
+    return () => {
+      if (opener?.isConnected === true) opener.focus();
+    };
+  }, []);
+  const first = useDialogFocus<HTMLElement>(cancel, dialog, false, FORM_STOPS);
   const ids = { title, text };
   return (
     <div
       className="fd-dialog-backdrop"
       onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
+        if (event.target === event.currentTarget) cancel();
       }}
     >
       <div

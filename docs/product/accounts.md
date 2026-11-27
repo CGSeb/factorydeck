@@ -144,7 +144,7 @@ A manager sees a `Team` link in the sidebar, the last one, after `Roles`; it ope
 - **Table**: the columns `Name`, `Email`, `Role` (`Manager` or `Dev`), `Status` (`Active` or `Deactivated`) and `Last sign-in`. Every account is listed, with no paging: active accounts first, then by name without letter case, then by email. The email shows as stored. The manager's own row carries a small muted `You` tag after the name. Deactivated rows are in muted text. Long names and emails wrap; a table wider than the page scrolls inside its box.
 - **Last sign-in** reads as elsewhere (`just now`, `3 min ago`, `2 h ago`, `5 d ago`), with the exact date (`22 Nov, 17:33`) in a tooltip; an account that never signed in reads `Never`.
 - **Actions**: each row of another account gets an actions menu once an action exists for it; while it holds none, no menu and no column show. An active dev's menu offers `Make manager`, an active manager's `Make dev` (see [Changing a role](#changing-a-role)); a deactivated row offers no role action.
-- **Invite**: a button in the header, shown unless the page shows the refusal, opens the [invite dialog](#inviting-someone).
+- **Invite**: a button in the header, shown once the list has loaded (not while it loads, on the refusal or while the database is unreachable), opens the [invite dialog](#inviting-someone).
 - **Pending invitations**: under the accounts, a section with the columns `Email`, `Role`, `Invited by` and `Expires`, then `New link` and `Revoke` on each row. It is hidden when no invitation is pending. See [Invitations](#invitations).
 
 The page loads like the others: the header keeps the place of its summary while the list loads, under it `Loading…`, and it reloads every `refreshSeconds`. It reads `GET /api/team/accounts` and `GET /api/team/invitations` together, as one load: a `503` from either shows the unreachable message, and any other failure of either keeps the last data. Invitations are not counted in the summary.
@@ -193,14 +193,14 @@ An invitation is **pending** while it is unused and not expired. Creating an inv
 
 `Invite` opens a dialog with `Email`, `Role` (a select, `Dev` first and by default, or `Manager`), `Cancel` and `Create invitation`, with the focus on `Email`. While the request runs, the button reads `Creating…` and is disabled. A `400` shows its message under the field it names and moves the focus there; a `409` (`This email already has an account`) shows under `Email` the same way. A `503` shows `Database unreachable. Start it with pnpm db:up.` and any other failure `Could not reach the server`, under the fields, keeping them.
 
-On `201`, the same dialog shows the link: the title `Invitation link`, the line `Send this link to <email>. It works once, until <expiry>, and is shown only now: if it is lost, make a new one.`, the link in a read-only field, `Copy link` and `Done`. `Copy link` reads `Copied` for 2 seconds; when the browser refuses the copy, it reads `Could not copy` for 4 seconds and the link is left selected in its field, to copy by hand. The dialog stays through the page's refreshes until `Done`, `Escape` or a click outside closes it.
+On `201`, the same dialog shows the link: the title `Invitation link`, the line `Send this link to <email>. It works once, until <expiry>, and is shown only now: if it is lost, make a new one.`, the link in a read-only field, `Copy link` and `Done`. `Copy link` reads `Copied` for 2 seconds; when the browser refuses the copy, it reads `Could not copy` for 4 seconds and the link is left selected in its field, to copy by hand. The link stays through the page's refreshes until `Done` closes it: `Escape` and a click outside leave it open, since a lost link can only be replaced. In the form, `Escape` and a click outside act as `Cancel`. Closing the dialog gives the focus back to `Invite`.
 
 ### Pending invitations
 
 The section lists each pending invitation with its email, its role (`Manager` or `Dev`), who invited (the inviter's name, or `—` when that account no longer exists) and when it expires, as an exact date (`29 Nov, 17:33`). It is sorted by soonest expiry, then by email, with no limit and no paging; long values wrap.
 
 - `New link` replaces the invitation with a new one, same email and role, sent by the manager who clicked, valid 7 days from then, and shows its link in the dialog above.
-- `Revoke` deletes the invitation at once, without a confirmation; the row leaves the list.
+- `Revoke` deletes the invitation at once, without a confirmation; the row leaves the list. After `Revoke` or `New link` succeeds, the focus moves to `Invite`, since the row it was on is gone.
 - An error of either shows beside the row (`Invitation not found` for one accepted, expired or revoked meanwhile); the next refresh drops a row that is gone.
 
 ### Team invitation routes

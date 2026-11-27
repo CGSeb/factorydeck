@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { type RefObject, useRef, useState } from 'react';
 import type { TeamInvitation } from '../team/types.ts';
 import type { InviteDialogView } from './InviteDialog.tsx';
 import type {
@@ -8,6 +8,7 @@ import type {
 import type { RowFeedback } from './PendingInvitations.tsx';
 
 export interface InvitationControls {
+  button: RefObject<HTMLButtonElement | null>;
   dialog: InviteDialogView | undefined;
   feedback: Readonly<Record<number, RowFeedback>>;
   open: () => void;
@@ -18,21 +19,34 @@ export interface InvitationControls {
   visible: (invitations: readonly TeamInvitation[]) => TeamInvitation[];
 }
 
+function withRow(
+  feedback: Record<number, RowFeedback>,
+  id: number,
+  row: RowFeedback | undefined,
+): Record<number, RowFeedback> {
+  const next = { ...feedback };
+  if (row === undefined) delete next[id];
+  else next[id] = row;
+  return next;
+}
+
 export function useInvitations(
   actions: InvitationActions | undefined,
   refresh: () => void,
 ): InvitationControls {
+  const button = useRef<HTMLButtonElement | null>(null);
   const [dialog, setDialog] = useState<InviteDialogView>();
   const [feedback, setFeedback] = useState<Record<number, RowFeedback>>({});
   const [removed, setRemoved] = useState<ReadonlySet<number>>(new Set());
 
   function setRow(id: number, row: RowFeedback | undefined): void {
-    setFeedback((previous) => {
-      const next = { ...previous };
-      if (row === undefined) delete next[id];
-      else next[id] = row;
-      return next;
-    });
+    setFeedback((previous) => withRow(previous, id, row));
+  }
+
+  function gone(id: number): void {
+    button.current?.focus();
+    setRow(id, undefined);
+    setRemoved((previous) => new Set(previous).add(id));
   }
 
   function created(invitation: CreatedInvitation): void {
@@ -48,8 +62,7 @@ export function useInvitations(
       setRow(invitation.id, { error: outcome.message });
       return;
     }
-    setRow(invitation.id, undefined);
-    setRemoved((previous) => new Set(previous).add(invitation.id));
+    gone(invitation.id);
     created(outcome.invitation);
   }
 
@@ -61,12 +74,12 @@ export function useInvitations(
       setRow(invitation.id, { error: outcome.message });
       return;
     }
-    setRow(invitation.id, undefined);
-    setRemoved((previous) => new Set(previous).add(invitation.id));
+    gone(invitation.id);
     refresh();
   }
 
   return {
+    button,
     dialog,
     feedback,
     open: () => {

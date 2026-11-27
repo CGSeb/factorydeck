@@ -112,6 +112,14 @@ export const NewLinkShowsTheLink: Story = {
     );
     const dialog = await canvas.findByRole('dialog', { name: LINK_TITLE });
     await expect(within(dialog).getByText(/fay@example\.test/)).toBeVisible();
+    await userEvent.keyboard('{Escape}');
+    await userEvent.click(dialog.parentElement ?? dialog);
+    await expect(
+      canvas.getByRole('dialog', { name: LINK_TITLE }),
+    ).toBeVisible();
+    await userEvent.click(within(dialog).getByRole('button', { name: DONE }));
+    await expect(canvas.queryByRole('dialog')).toBeNull();
+    await expect(canvas.getByRole('button', { name: INVITE })).toHaveFocus();
   },
 };
 
@@ -134,6 +142,7 @@ export const RevokeAtOnce: Story = {
       expect(invitationEmails(canvasElement)).not.toContain('fay@example.test'),
     );
     await expect(canvas.queryByRole('dialog')).toBeNull();
+    await expect(canvas.getByRole('button', { name: INVITE })).toHaveFocus();
   },
 };
 
@@ -172,5 +181,14 @@ export const AccountsWithoutInvitations: Story = {
     const canvas = within(canvasElement);
     await canvas.findByRole('table', { name: 'Team' });
     await expect(canvas.queryByText(PENDING_TITLE)).toBeNull();
+  },
+};
+
+export const LoadingHidesInvite: Story = {
+  args: { loadTeam: () => new Promise<undefined>(() => undefined) },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Loading…');
+    await expect(canvas.queryByRole('button', { name: INVITE })).toBeNull();
   },
 };
