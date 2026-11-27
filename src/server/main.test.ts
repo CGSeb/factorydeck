@@ -143,7 +143,10 @@ describe('pnpm start', () => {
       for (let i = 0; i < 2; i++) {
         const run = start(await env());
         running.push(run);
-        await waitFor(() => codeLine.test(run.output()));
+        await waitFor(() => run.output().includes('FactoryDeck on'));
+        expect(run.output()).toMatch(
+          /^No account yet\. Setup code: [A-Z2-9]{8}\nFactoryDeck on /,
+        );
         codes.push(codeLine.exec(run.output())?.[1] ?? '');
         expect(run.output().match(/Setup code/g)).toHaveLength(1);
         run.child.kill();
@@ -169,8 +172,9 @@ describe('pnpm start', () => {
         `http://127.0.0.1:${set['FACTORYDECK_PORT']}/api/auth/state`,
       );
       expect(await state.json()).toEqual({ setup: false });
-      expect(run.output()).not.toContain('Setup code');
-      expect(run.output()).not.toContain('No account');
+      expect(run.output()).toBe(
+        `FactoryDeck on http://127.0.0.1:${set['FACTORYDECK_PORT']}\n`,
+      );
       run.child.kill();
       await run.exited;
     } finally {

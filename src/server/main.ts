@@ -100,8 +100,8 @@ function statsSource(db: Database, config: WorkflowConfig): StatsSource {
   };
 }
 
-function startSetup(setup: Setup): void {
-  setup.start().catch((error: unknown) => {
+async function startSetup(setup: Setup): Promise<void> {
+  await setup.start().catch((error: unknown) => {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`Could not check for accounts: ${message}`);
   });
@@ -164,8 +164,8 @@ async function main(): Promise<void> {
     auth: setup,
   });
   await listen(app, env.FACTORYDECK_PORT);
+  await startSetup(setup);
   console.log(`FactoryDeck on http://${HOST}:${env.FACTORYDECK_PORT}`);
-  startSetup(setup);
 }
 
 main().catch((error: unknown) => {

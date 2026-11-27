@@ -21,11 +21,11 @@ While it runs, the server reads new session logs every few seconds and collects 
 
 ## First start
 
-On its first start, while no account exists, the server writes a setup code to its log, next to the address it listens on:
+On its first start, while no account exists, the server writes a setup code to its log, just before the address it listens on:
 
 ```
-FactoryDeck on http://127.0.0.1:4317
 No account yet. Setup code: K7MQ2XRD
+FactoryDeck on http://127.0.0.1:4317
 ```
 
 Use it to create the first account, a manager: see [Accounts](product/accounts.md#the-first-manager). A restart prints a new code until the first account exists, then none.
