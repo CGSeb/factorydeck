@@ -1,6 +1,13 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import { Navigate, Route, Routes, useNavigate } from 'react-router';
-import type { LoadAuthState, SetupManager } from './auth-api.ts';
+import {
+  type LoadAuthState,
+  type LoadMe,
+  pageLeaver,
+  SIGNED_OUT_PATH,
+  type SetupManager,
+  type SignOut,
+} from './auth-api.ts';
 import type { LoadBugs } from './bugs-api.ts';
 import { BugsPage } from './BugsPage.tsx';
 import type { DeleteProject, LoadFactory } from './factory-api.ts';
@@ -11,6 +18,7 @@ import type { LoadFrictions } from './frictions-api.ts';
 import type { LoadOccurrences, LoadOutput } from './occurrences-api.ts';
 import { FrictionsPage } from './FrictionsPage.tsx';
 import type { LoadCollection, RefreshCollection } from './git-host-api.ts';
+import type { AccountView, SidebarAccount } from './components/Sidebar.tsx';
 import { Layout } from './Layout.tsx';
 import type { LoadOverview } from './overview-api.ts';
 import { OverviewPage } from './OverviewPage.tsx';
@@ -58,6 +66,9 @@ export interface AppProps {
   loadSidebar?: LoadSidebar | undefined;
   loadAuthState?: LoadAuthState | undefined;
   setupManager?: SetupManager | undefined;
+  loadMe?: LoadMe | undefined;
+  signOut?: SignOut | undefined;
+  leavePage?: ((path: string) => void) | undefined;
 }
 
 type AuthPhase = 'checking' | 'setup' | 'ready';
@@ -81,9 +92,47 @@ function useAuthPhase(
   return [phase, setPhase];
 }
 
+function useAccountView(
+  loadMe: LoadMe | undefined,
+  entered: boolean,
+): AccountView {
+  const [view, setView] = useState<AccountView>({ status: 'loading' });
+  useEffect(() => {
+    if (loadMe === undefined || !entered) return;
+    let current = true;
+    void loadMe().then((result) => {
+      if (!current) return;
+      setView(
+        result.status === 'account'
+          ? { status: 'account', account: result.account }
+          : { status: 'unavailable' },
+      );
+    });
+    return () => {
+      current = false;
+    };
+  }, [loadMe, entered]);
+  return view;
+}
+
+function accountSlot(
+  view: AccountView,
+  { loadMe, signOut, leavePage }: AppProps,
+): SidebarAccount | undefined {
+  if (loadMe === undefined || signOut === undefined) return undefined;
+  return {
+    view,
+    signOut,
+    onSignedOut: () => {
+      (leavePage ?? pageLeaver())(SIGNED_OUT_PATH);
+    },
+  };
+}
+
 export function App(props: AppProps): ReactElement | null {
-  const { loadAuthState, setupManager } = props;
+  const { loadAuthState, setupManager, loadMe } = props;
   const [phase, setPhase] = useAuthPhase(loadAuthState);
+  const view = useAccountView(loadMe, phase === 'ready');
   const navigate = useNavigate();
   if (phase === 'checking') return null;
   if (phase === 'setup' && setupManager !== undefined) {
@@ -105,10 +154,12 @@ export function App(props: AppProps): ReactElement | null {
       </Routes>
     );
   }
-  return <DashboardRoutes {...props} />;
+  return <DashboardRoutes {...props} account={accountSlot(view, props)} />;
 }
 
-function DashboardRoutes(props: AppProps): ReactElement {
+function DashboardRoutes(
+  props: AppProps & { account: SidebarAccount | undefined },
+): ReactElement {
   const {
     loadOverview,
     loadSessions,

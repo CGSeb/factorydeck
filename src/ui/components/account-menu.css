@@ -1,0 +1,176 @@
+.fd-account {
+  flex: none;
+  min-width: 0;
+}
+
+.fd-account-button {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  height: 48px;
+  padding: 0 var(--fd-space-3);
+  font-size: var(--fd-text-md);
+  color: var(--fd-ink);
+  text-align: left;
+  background: transparent;
+  border: 1px solid var(--fd-border);
+  border-radius: var(--fd-radius-card);
+}
+
+.fd-account-button:not(:disabled):hover,
+.fd-account-button[aria-expanded='true'] {
+  background: var(--fd-surface-2);
+}
+
+.fd-account[data-folded='true'] .fd-account-button {
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  border-color: transparent;
+}
+
+.fd-account-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fd-account-name,
+.fd-account-role {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fd-account-name {
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.fd-account-role {
+  font-size: var(--fd-text-xs);
+  line-height: 16px;
+  color: var(--fd-muted);
+}
+
+.fd-account-text[data-placeholder] {
+  justify-content: center;
+  width: 100%;
+  height: 38px;
+  gap: 6px;
+}
+
+.fd-account-bar {
+  display: block;
+  height: 10px;
+  background: var(--fd-border);
+  border-radius: var(--fd-radius-pill);
+}
+
+.fd-account-bar-name {
+  width: 60%;
+}
+
+.fd-account-bar-role {
+  width: 30%;
+}
+
+.fd-account-initials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  font-size: var(--fd-text-xs);
+  font-weight: 600;
+  color: var(--fd-accent-ink);
+  white-space: nowrap;
+  background: var(--fd-accent-soft);
+  border-radius: 50%;
+}
+
+.fd-account-initials[data-placeholder] {
+  background: var(--fd-border);
+}
+
+.fd-account-menu {
+  position: fixed;
+  z-index: 15;
+  box-sizing: border-box;
+  min-width: 200px;
+  max-width: calc(100vw - 2 * var(--fd-space-4));
+  padding: var(--fd-space-2);
+  font-family: var(--fd-font-body);
+  color: var(--fd-ink);
+  background: var(--fd-surface);
+  border: 1px solid var(--fd-border);
+  border-radius: var(--fd-radius-card);
+  box-shadow: var(--fd-shadow-pop);
+}
+
+.fd-account-menu[data-folded='true'] {
+  width: 240px;
+}
+
+.fd-account-menu:focus {
+  outline: none;
+}
+
+.fd-account-email {
+  margin: 0;
+  padding: var(--fd-space-1) var(--fd-space-2);
+  font-size: var(--fd-text-sm);
+  line-height: 1.4;
+  color: var(--fd-muted);
+  overflow-wrap: anywhere;
+}
+
+.fd-account-separator {
+  margin: var(--fd-space-2) 0;
+  border: 0;
+  border-top: 1px solid var(--fd-border);
+}
+
+.fd-account-sign-out {
+  display: flex;
+  align-items: center;
+  gap: var(--fd-space-2);
+  box-sizing: border-box;
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--fd-space-2);
+  font-family: var(--fd-font-body);
+  font-size: var(--fd-text-md);
+  color: var(--fd-ink);
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: var(--fd-radius-sm);
+}
+
+.fd-account-sign-out:not(:disabled):hover {
+  background: var(--fd-surface-2);
+}
+
+.fd-account-sign-out:disabled {
+  color: var(--fd-muted);
+  cursor: default;
+}
+
+.fd-account-sign-out:focus-visible {
+  outline: 2px solid var(--fd-accent);
+  outline-offset: 2px;
+}
+
+.fd-account-error {
+  margin: var(--fd-space-1) 0 0;
+  padding: 0 var(--fd-space-2);
+  font-size: var(--fd-text-sm);
+  line-height: 1.4;
+  color: var(--fd-danger);
+}

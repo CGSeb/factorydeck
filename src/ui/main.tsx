@@ -5,7 +5,13 @@ import './design/theme-dark.css';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
 import { App } from './App.tsx';
-import { authStateLoader, managerSetup } from './auth-api.ts';
+import {
+  authStateLoader,
+  managerSetup,
+  meLoader,
+  pageLeaver,
+  signOuter,
+} from './auth-api.ts';
 import { bugsLoader } from './bugs-api.ts';
 import { factoryLoader, projectDeleter } from './factory-api.ts';
 import { featureLoader, featuresLoader } from './features-api.ts';
@@ -49,6 +55,9 @@ const loadWaiting = waitingLoader();
 const loadSidebar = sidebarLoader();
 const loadAuthState = authStateLoader();
 const setupManager = managerSetup();
+const loadMe = meLoader();
+const signOut = signOuter();
+const leavePage = pageLeaver();
 const root = document.querySelector('#root');
 if (root) {
   createRoot(root).render(
@@ -78,6 +87,9 @@ if (root) {
         loadSidebar={loadSidebar}
         loadAuthState={loadAuthState}
         setupManager={setupManager}
+        loadMe={loadMe}
+        signOut={signOut}
+        leavePage={leavePage}
       />
     </BrowserRouter>,
   );

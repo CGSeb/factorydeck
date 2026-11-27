@@ -84,7 +84,7 @@ curl -i -c cookies http://127.0.0.1:4317/api/auth/sign-in \
 | `POST /api/auth/sign-out` | `204`, with or without a valid session: it deletes the current session and clears the cookie.                                                                                                                                                                                                                                                                        |
 | `GET /api/auth/me`        | The account of the session, or `401` with `{ "error": "Not signed in" }`.                                                                                                                                                                                                                                                                                            |
 
-The email is compared the way it is stored: trimmed, in lower case. The password is compared as typed. An account can have several sessions open at once, one per browser or computer; signing out closes only the current one. A sign-in sent with a session cookie deletes that session before it opens the new one; a failed sign-in leaves it open.
+The email is compared the way it is stored: trimmed, in lower case. The password is compared as typed. An account can have several sessions open at once, one per browser or computer; signing out closes only the current one. In the app, `Sign out` is in the [account menu](navigation.md#sidebar) at the bottom of the sidebar. A sign-in sent with a session cookie deletes that session before it opens the new one; a failed sign-in leaves it open.
 
 ### Failed sign-ins
 

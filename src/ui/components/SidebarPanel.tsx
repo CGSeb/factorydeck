@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from 'react';
 import { THEME_LABELS, type Theme } from '../design/theme.ts';
+import { AccountMenu, type SidebarAccount } from './AccountMenu.tsx';
 import { Icon, type IconName } from './Icon.tsx';
 import { Logo } from './Logo.tsx';
 import { type RenderLink, renderAnchor } from './link.ts';
@@ -67,6 +68,7 @@ export interface SidebarProps {
   renderLink?: RenderLink;
   project?: SidebarProject | undefined;
   refresh?: SidebarRefresh | undefined;
+  account?: SidebarAccount | undefined;
 }
 
 export interface ThemeControl {
@@ -254,6 +256,7 @@ export function SidebarPanel({
   links,
   renderLink = renderAnchor,
   refresh,
+  account,
   folded,
   themeControl,
   tipFor,
@@ -285,6 +288,9 @@ export function SidebarPanel({
           {bottom}
         </div>
         <Credit folded={folded} tipFor={tipFor} />
+        {account !== undefined && (
+          <AccountMenu account={account} folded={folded} tip={tipFor} />
+        )}
       </div>
     </aside>
   );

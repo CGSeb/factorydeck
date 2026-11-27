@@ -20,6 +20,7 @@ import {
 } from './components/RefreshControl.tsx';
 import {
   Sidebar,
+  type SidebarAccount,
   type SidebarProject,
   type SidebarRefresh,
 } from './components/Sidebar.tsx';
@@ -43,6 +44,7 @@ export interface LayoutProps {
   loadCollection: LoadCollection;
   refreshCollection: RefreshCollection;
   loadSidebar?: LoadSidebar | undefined;
+  account?: SidebarAccount | undefined;
 }
 
 function useFactoryStatus(loadFactory: LoadFactory): {
@@ -231,6 +233,7 @@ export function Layout({
   loadCollection,
   refreshCollection,
   loadSidebar,
+  account,
 }: LayoutProps): ReactElement {
   const { status, forget, reload, version } = useFactoryStatus(loadFactory);
   const { project, choose, onDeleted } = useProjectChoice(forget);
@@ -259,6 +262,7 @@ export function Layout({
         renderLink={renderRouterLink}
         project={welcome ? undefined : projectSlot(project, projects, choose)}
         refresh={refreshSlot(collectedAt, collection)}
+        account={account}
       />
       <div className="fd-shell-content">
         {missing.length + failures.length > 0 && (
