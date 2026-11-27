@@ -15,6 +15,7 @@ import {
   fullOutput,
   hasMoreThan,
   headExcerpt,
+  shortInput,
   tailExcerpt,
 } from './log-texts.ts';
 import {
@@ -86,7 +87,7 @@ interface Located extends LogLocation {
   row: LoadedRow;
 }
 
-function locationOf(source: Row, key: string): LogLocation {
+export function locationOf(source: Row, key: string): LogLocation {
   return {
     agent: text(source['agent']),
     path: text(source['source_path']),
@@ -121,7 +122,12 @@ export function excerptOf(
   }
   const error = shell ? tailExcerpt(texts.output) : headExcerpt(texts.output);
   return {
-    texts: { kind: 'tool-error', input: texts.input, error, shell },
+    texts: {
+      kind: 'tool-error',
+      input: shortInput(texts.input),
+      error,
+      shell,
+    },
     hasMore: hasMoreThan(texts.output, error),
   };
 }

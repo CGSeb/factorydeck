@@ -2,6 +2,7 @@ import { stripVTControlCharacters } from 'node:util';
 import { withHomeAsTilde } from '../ingest/frictions.ts';
 
 export const MAX_TEXT_LENGTH = 300;
+export const MAX_INPUT_LENGTH = 2000;
 export const MAX_TEXT_LINES = 3;
 export const MAX_TAIL_LINES = 5;
 export const MAX_OUTPUT_LINES = 400;
@@ -19,7 +20,7 @@ function isBlank(line: string): boolean {
   return line.trim() === '';
 }
 
-function cutHead(text: string, length: number): string {
+export function cutHead(text: string, length: number): string {
   if (text.length <= length) return text;
   const last = text.charCodeAt(length - 1);
   const end =
@@ -29,7 +30,7 @@ function cutHead(text: string, length: number): string {
   return `${text.slice(0, end)}…`;
 }
 
-function cutTail(text: string, length: number): string {
+export function cutTail(text: string, length: number): string {
   if (text.length <= length) return text;
   const first = text.charCodeAt(text.length - length);
   const start =
@@ -39,11 +40,15 @@ function cutTail(text: string, length: number): string {
   return `…${text.slice(start)}`;
 }
 
-export function cutText(text: string, home: string): string {
-  return cutHead(withHomeAsTilde(text, home), MAX_TEXT_LENGTH);
+function cutInput(text: string, home: string): string {
+  return cutHead(withHomeAsTilde(text, home), MAX_INPUT_LENGTH);
 }
 
-function nonBlankLines(text: string): string[] {
+export function shortInput(text: string): string {
+  return cutHead(text, MAX_TEXT_LENGTH);
+}
+
+export function nonBlankLines(text: string): string[] {
   return text.split(/\r?\n/).filter((line) => !isBlank(line));
 }
 
@@ -118,7 +123,7 @@ export function inputText(
   shellCommand: string | undefined,
   home: string,
 ): string {
-  if (shellCommand !== undefined) return cutText(shellCommand, home);
-  if (typeof input === 'string') return cutText(input, home);
-  return cutText(JSON.stringify(input ?? null), home);
+  if (shellCommand !== undefined) return cutInput(shellCommand, home);
+  if (typeof input === 'string') return cutInput(input, home);
+  return cutInput(JSON.stringify(input ?? null), home);
 }

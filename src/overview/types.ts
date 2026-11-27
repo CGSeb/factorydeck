@@ -6,6 +6,13 @@ export type Period = (typeof PERIODS)[number];
 
 export const DEFAULT_PERIOD: Period = '7d';
 
+export const PERIOD_LABELS: Record<Period, string> = {
+  today: 'Today',
+  '7d': 'Last 7 days',
+  '30d': 'Last 30 days',
+  all: 'All time',
+};
+
 export function isPeriod(value: unknown): value is Period {
   return PERIODS.some((period) => period === value);
 }

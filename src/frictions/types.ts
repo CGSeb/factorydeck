@@ -18,6 +18,19 @@ export const FRICTION_CATEGORIES = [
 
 export type FrictionCategory = (typeof FRICTION_CATEGORIES)[number];
 
+export const KIND_LABELS: Record<FrictionKind, string> = {
+  'tool-error': 'Tool errors',
+  'stop-blocked': 'Stop blocked',
+};
+
+export const CATEGORY_LABELS: Record<FrictionCategory, string> = {
+  'permission-denied': 'Permission denied',
+  'hook-blocked': 'Blocked by a hook',
+  'tool-misuse': 'Tool misuse',
+  'command-failed': 'Command failed',
+  other: 'Other',
+};
+
 export const REPEATED_FAILURES = 3;
 
 export function parseKind(value: unknown): FrictionKind | undefined {

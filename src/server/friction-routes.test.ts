@@ -96,6 +96,7 @@ function app(up = true) {
         return Promise.resolve(occurrences);
       },
       output: () => Promise.reject(new Error('Not used')),
+      report: () => Promise.reject(new Error('Not used')),
     },
   });
   return { app: created, queries, occurrenceQueries };

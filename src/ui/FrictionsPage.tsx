@@ -10,8 +10,12 @@ import { TrendBars } from './components/TrendBars.tsx';
 import {
   type FrictionFilters,
   type LoadFrictions,
+  type LoadReport,
+  type WriteClipboard,
+  frictionReportLoader,
   useFrictionFilters,
   withoutFilter,
+  writeClipboard,
 } from './frictions-api.ts';
 import {
   ALL_KINDS,
@@ -27,6 +31,10 @@ import {
 } from './frictions-view.ts';
 import { FrictionBreakdown } from './FrictionBreakdown.tsx';
 import { FrictionFilterChip } from './FrictionFilterChip.tsx';
+import {
+  FrictionReportButton,
+  type ReportBlock,
+} from './FrictionReportButton.tsx';
 import { FrictionTables } from './FrictionTables.tsx';
 import type { LoadOccurrences, LoadOutput } from './occurrences-api.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
@@ -37,8 +45,12 @@ export interface FrictionsPageProps {
   loadFrictions: LoadFrictions;
   loadOccurrences: LoadOccurrences;
   loadOutput: LoadOutput;
+  loadReport?: LoadReport | undefined;
+  writeClipboard?: WriteClipboard | undefined;
   now?: Date | undefined;
 }
+
+const defaultLoadReport = frictionReportLoader();
 
 export const NO_ACTIVITY = 'No activity in this period.';
 export const NO_FRICTION = 'No friction in this period.';
@@ -131,6 +143,16 @@ function FrictionsContent({
   );
 }
 
+export function reportBlock(
+  response: FrictionsResponse | undefined,
+  project: string | undefined,
+): ReportBlock {
+  if (project === undefined) return 'all-projects';
+  if (response?.status !== 'ok') return 'loading';
+  const stats = response.frictions;
+  return stats.apiCalls === 0 || stats.frictions === 0 ? 'empty' : null;
+}
+
 function frictionControls({
   response,
   filters,
@@ -166,6 +188,8 @@ export function FrictionsPage({
   loadFrictions,
   loadOccurrences,
   loadOutput,
+  loadReport = defaultLoadReport,
+  writeClipboard: write = writeClipboard,
   now = new Date(),
 }: FrictionsPageProps): ReactElement {
   const [filters, setFilters] = useFrictionFilters();
@@ -190,11 +214,17 @@ export function FrictionsPage({
             }}
           />
         }
-        controls={frictionControls({
-          response,
-          filters,
-          onFilters: setFilters,
-        })}
+        controls={
+          <>
+            {frictionControls({ response, filters, onFilters: setFilters })}
+            <FrictionReportButton
+              blocked={reportBlock(response, filters.project)}
+              onCopy={async () => {
+                await write(await loadReport(filters));
+              }}
+            />
+          </>
+        }
       />
       {response?.status === 'ok' ? (
         <FrictionsContent

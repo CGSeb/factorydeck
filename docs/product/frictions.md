@@ -38,6 +38,8 @@ The header `Frictions` says `<n> frictions · <r> per 100 API calls` (one decima
 
 All filters combine. Changing one closes every open row.
 
+After the filters and the filter chip, `Copy friction report` copies the [report](#report) of the selection to the clipboard. It is disabled while the page loads, when the selection has no friction (`No activity in this period.` or `No friction in this period.`), and under `All projects`, where its tooltip, on hover and on keyboard focus, says `Select one project to copy a friction report.`; it stays focusable. While the report is fetched it reads `Copying…`, then `Copied` for 2 seconds, or `Could not copy` for 4 seconds when the request or the clipboard fails. Its width is the same in every label.
+
 ### Blocks
 
 One full-width column, in this order; a block left out leaves no gap:
@@ -72,8 +74,28 @@ Texts are cleaned (colour codes, the `<tool_use_error>` tag, the `Exit code` lin
 
 Texts are read from the session log at each request, line by line up to the record, and never written to the database, a cache, a file or the server's output. When the log or the record is gone: `The session log is no longer on this computer.`
 
+## Report
+
+A Markdown report of every friction of the selection, for one project, to paste into an agent for a retrospective. It holds data only, no instructions, and counts exactly what the page counts for the same parameters.
+
+- `# Friction report`, then `<project name> · <period label> · <from> to <to> (<tz>)` (under `All time`, `<from>` is the day of the earliest API call or friction of the selection), then the active filters (`Kind: Tool errors · Role: worker · Session: <title> · Issue: #<n> <title>`, only those set), then `<n> frictions · <r> per 100 API calls · <c> API calls`. With no friction, `No friction in this period.` follows and the report ends.
+- `## Groups`: one row per **group**, the frictions sharing a key: `tool-error/<category>/<tool>/<program or ->` for a tool error, `stop-blocked/<hook command>` for a stop block. The key holds only recorded fields, never the text of an error or a command, so it stays the same from one report to the next. Rows are sorted by frictions then key, with `#`, `Kind`, `Category`, `Tool`, `Program`, `Hook` (cut at 80 characters with `…`), `Frictions`, `Threads`, `Last`; `—` where a column does not apply. Every group is listed; compactions never are.
+- One section per group, `## <#>. <category or Stop blocked> · <tool or hook> · <program>`, with its `Key`, frictions, threads, roles (`worker (8), reviewer (4)`, by frictions then name), issues (`#12 <title> (5)`, the same order, at most 10 then `, …`, `unassigned` for frictions without one), for a shell command its distinct exit codes and distinct commands, the threads where one command failed 3 times or more when there is one, and its first and last times. Times are in the report's time zone.
+- Under each of the first 20 groups, `### Occurrences`: up to 3, latest first, each the latest of a distinct command (another tool: a distinct input, among its 30 latest frictions; a stop block: any), filled with the next latest ones. Each has a `#### <date time> · <role> · <issue or unassigned> · <session title> (<session id>)` line, then:
+  - a shell error: its command in a `bash` fence (up to 2000 characters), `Exit code <n>` when known, the last 40 non-empty lines of its output in a `text` fence (up to 4000 characters, `…` at the start past that), or `No output.`;
+  - another tool: its input as compact JSON in a `json` fence (up to 2000 characters) and the first 20 non-empty lines of its result in a `text` fence (up to 2000 characters);
+  - a stop block: the hook's message, first 20 non-empty lines, in a `text` fence.
+
+  Texts are cleaned as the [occurrences](#occurrences) are. A fence is one backtick longer than the longest run of backticks in its text, and at least three. When the log or the record is gone: `The session log is no longer on this computer.`
+
+- Past 20 groups: `<k> more groups are listed without occurrences.`
+- `## Context`: `Median context peak: <tokens> · <k> of <n> threads compacted`, as on the page; left out under a kind.
+
+Texts are read from the session logs at each request and never written to the database, a cache, a file or the server's output.
+
 ## API
 
 - `GET /api/frictions` with `period`, `tz`, `project`, `kind`, `role`, `session`, `issue`: the header figures, the kind and role counts, the trend as `unit` and `buckets`, every table and the context peaks.
 - `GET /api/frictions/occurrences`: the same parameters plus the table and the row (`<session>/<sub-agent>/<command hash>` for a repeated failure); at most 5 occurrences, each with its `id`, `exitCode`, texts and `hasMore`. A row that cannot exist answers 400; a row with no friction, an empty list.
+- `GET /api/frictions/report` with the parameters of `GET /api/frictions`: the [report](#report) as `text/markdown; charset=utf-8`. Without `project`, or with an empty one, it answers 400; with the database unreachable, as `GET /api/frictions` does. It writes nothing anywhere.
 - `GET /api/frictions/<id>/output`: the full cleaned text of one tool error or stop block. A non-positive `id` answers 400, an unknown one or a compaction 404. No file path is ever taken from the request.

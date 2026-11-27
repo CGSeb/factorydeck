@@ -1,9 +1,10 @@
 import {
+  CATEGORY_LABELS,
   FRICTION_KINDS,
+  KIND_LABELS,
   type FrictionBucket,
   type FrictionSubject,
   type ThreadPeak,
-  type FrictionCategory,
   type FrictionKind,
   type FrictionStats,
   type KindCounts,
@@ -28,18 +29,7 @@ export const MAX_EXIT_CODES = 5;
 
 export const API_CALL_NOUN = { one: 'API call', other: 'API calls' };
 
-export const KIND_LABELS: Record<FrictionKind, string> = {
-  'tool-error': 'Tool errors',
-  'stop-blocked': 'Stop blocked',
-};
-
-export const CATEGORY_LABELS: Record<FrictionCategory, string> = {
-  'permission-denied': 'Permission denied',
-  'hook-blocked': 'Blocked by a hook',
-  'tool-misuse': 'Tool misuse',
-  'command-failed': 'Command failed',
-  other: 'Other',
-};
+export { CATEGORY_LABELS, KIND_LABELS };
 
 function plural(count: number, one: string, other: string): string {
   return `${formatCount(count)} ${count === 1 ? one : other}`;

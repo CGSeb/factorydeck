@@ -352,3 +352,70 @@
   width: calc(100cqi - 2 * var(--fd-space-3));
   max-width: 100%;
 }
+
+.fd-friction-report {
+  position: relative;
+  display: flex;
+  align-self: flex-start;
+  max-width: 100%;
+}
+
+.fd-friction-report-button.fd-control {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 14px;
+  font-size: var(--fd-text-sm);
+  font-weight: 600;
+  color: var(--fd-ink);
+  white-space: nowrap;
+  background: var(--fd-surface);
+  border: 1px solid var(--fd-field-border);
+  border-radius: var(--fd-radius-pill);
+}
+
+.fd-friction-report-button.fd-control:hover:not([aria-disabled='true']) {
+  background: var(--fd-surface-2);
+}
+
+.fd-friction-report-button.fd-control[aria-disabled='true'] {
+  color: var(--fd-ink-2);
+  cursor: default;
+  background: var(--fd-surface-2);
+}
+
+.fd-friction-report-labels {
+  display: inline-grid;
+  justify-items: center;
+}
+
+.fd-friction-report-label {
+  grid-area: 1 / 1;
+}
+
+.fd-friction-report-label[data-current='false'] {
+  visibility: hidden;
+}
+
+.fd-friction-report-tip {
+  position: absolute;
+  top: calc(100% + var(--fd-space-2));
+  left: 0;
+  z-index: 20;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 32px));
+  padding: var(--fd-space-2) var(--fd-space-3);
+  font-size: var(--fd-text-sm);
+  line-height: 1.4;
+  color: var(--fd-tooltip-ink);
+  white-space: normal;
+  background: var(--fd-tooltip-bg);
+  border-radius: var(--fd-radius-card);
+  box-shadow: var(--fd-shadow-tooltip);
+  pointer-events: none;
+}
+
+.fd-friction-report-tip[hidden] {
+  display: none;
+}

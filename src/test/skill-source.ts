@@ -37,6 +37,7 @@ export const unusedStats: StatsSource = {
   frictions: () => Promise.reject(new Error('Not used')),
   occurrences: () => Promise.reject(new Error('Not used')),
   output: () => Promise.reject(new Error('Not used')),
+  report: () => Promise.reject(new Error('Not used')),
   flow: () => Promise.reject(new Error('Not used')),
   bugs: () => Promise.reject(new Error('Not used')),
   waiting: () => Promise.reject(new Error('Not used')),

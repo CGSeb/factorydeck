@@ -244,9 +244,17 @@ export async function frictionStats(
   query: FrictionQuery,
   config: WorkflowConfig,
 ): Promise<FrictionStats> {
+  return statsOfWindow(db, query, config, await loadWindow(db, query, config));
+}
+
+export async function statsOfWindow(
+  db: Database,
+  query: FrictionQuery,
+  config: WorkflowConfig,
+  loaded: FrictionWindow,
+): Promise<FrictionStats> {
   const kind = query.kind ?? null;
   const { role } = query;
-  const loaded = await loadWindow(db, query, config);
   const inPeriod = inPeriodOf(loaded);
   const ofSelected = (list: readonly LoadedRow[]): LoadedRow[] =>
     kind === null ? [...list] : list.filter((row) => row.kind === kind);
