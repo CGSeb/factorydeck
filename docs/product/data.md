@@ -89,4 +89,6 @@ Figures and labels, not conversations: token counts, models and times, session t
 
 Opening the occurrences of a friction row reads their commands and errors from the logs on this computer for that request only; they are never written to the database, a cache, a file or the server's output ([Frictions](frictions.md#occurrences)).
 
+Accounts are stored with a hash of their password, sign-in sessions with a hash of their token; never a password nor a token ([Accounts](accounts.md)).
+
 Costs are not stored: they are computed when shown, with the API list prices of `src/pricing.ts`.

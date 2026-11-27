@@ -6,6 +6,7 @@ import {
   validateEnv,
   workflowConfigPath,
 } from '../config/env.ts';
+import { type Setup, firstManagerSetup } from '../auth/setup.ts';
 import { type Database, createDatabase } from '../db/client.ts';
 import { listBugs } from '../bugs/query.ts';
 import { listFeatures, versionDetailOf } from '../features/query.ts';
@@ -99,6 +100,13 @@ function statsSource(db: Database, config: WorkflowConfig): StatsSource {
   };
 }
 
+function startSetup(setup: Setup): void {
+  setup.start().catch((error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`Could not check for accounts: ${message}`);
+  });
+}
+
 async function main(): Promise<void> {
   loadRootEnvFile();
   const env = validateEnv(process.env);
@@ -115,6 +123,7 @@ async function main(): Promise<void> {
   const ingestion = startIngestion(db, folder, env, () => {
     collectionLoop();
   });
+  const setup = firstManagerSetup(db, { log: (line) => console.log(line) });
   const app = createApp({
     checkDatabase: databaseCheck(db),
     uiDir: UI_DIST_DIR,
@@ -152,9 +161,11 @@ async function main(): Promise<void> {
     },
     stats: statsSource(db, config),
     sidebar: { ready: (project) => readyCounts(db, project, hasFactory) },
+    auth: setup,
   });
   await listen(app, env.FACTORYDECK_PORT);
   console.log(`FactoryDeck on http://${HOST}:${env.FACTORYDECK_PORT}`);
+  startSetup(setup);
 }
 
 main().catch((error: unknown) => {
