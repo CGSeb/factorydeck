@@ -38,7 +38,7 @@ The header `Frictions` says `<n> frictions · <r> per 100 API calls` (one decima
 
 All filters combine. Changing one closes every open row.
 
-After the filters and the filter chip, `Copy friction report` copies the [report](#report) of the selection to the clipboard. It is disabled while the page loads, when the selection has no friction (`No activity in this period.` or `No friction in this period.`), and under `All projects`, where its tooltip, on hover and on keyboard focus, says `Select one project to copy a friction report.`; it stays focusable. While the report is fetched it reads `Copying…`, then `Copied` for 2 seconds, or `Could not copy` for 4 seconds when the request or the clipboard fails. Its width is the same in every label.
+At the end of the header controls, on the right of the filters and the filter chip and at the height of their first row in every state, `Copy friction report` copies the [report](#report) of the selection to the clipboard. It is disabled while the page loads, when the selection has no friction (`No activity in this period.` or `No friction in this period.`), and under `All projects`, where its tooltip, on hover and on keyboard focus, says `Select one project to copy a friction report.`; it stays focusable. While the report is fetched it reads `Copying…`, then `Copied` for 2 seconds, or `Could not copy` for 4 seconds when the request or the clipboard fails. Its width is the same in every label.
 
 ### Blocks
 
@@ -83,7 +83,7 @@ A Markdown report of every friction of the selection, for one project, to paste 
 - One section per group, `## <#>. <category or Stop blocked> · <tool or hook> · <program>`, with its `Key`, frictions, threads, roles (`worker (8), reviewer (4)`, by frictions then name), issues (`#12 <title> (5)`, the same order, at most 10 then `, …`, `unassigned` for frictions without one), for a shell command its distinct exit codes and distinct commands, the threads where one command failed 3 times or more when there is one, and its first and last times. Times are in the report's time zone.
 - Under each of the first 20 groups, `### Occurrences`: up to 3, latest first, each the latest of a distinct command (another tool: a distinct input, among its 30 latest frictions; a stop block: any), filled with the next latest ones. Each has a `#### <date time> · <role> · <issue or unassigned> · <session title> (<session id>)` line, then:
   - a shell error: its command in a `bash` fence (up to 2000 characters), `Exit code <n>` when known, the last 40 non-empty lines of its output in a `text` fence (up to 4000 characters, `…` at the start past that), or `No output.`;
-  - another tool: its input as compact JSON in a `json` fence (up to 2000 characters) and the first 20 non-empty lines of its result in a `text` fence (up to 2000 characters);
+  - another tool: its input as compact JSON in a `json` fence (up to 2000 characters; an input recorded as plain text is written as a JSON string) and the first 20 non-empty lines of its result in a `text` fence (up to 2000 characters);
   - a stop block: the hook's message, first 20 non-empty lines, in a `text` fence.
 
   Texts are cleaned as the [occurrences](#occurrences) are. A fence is one backtick longer than the longest run of backticks in its text, and at least three. When the log or the record is gone: `The session log is no longer on this computer.`

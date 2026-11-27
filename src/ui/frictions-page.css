@@ -419,3 +419,17 @@
 .fd-friction-report-tip[hidden] {
   display: none;
 }
+
+.fd-friction-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--fd-space-3);
+}
+
+.fd-friction-filters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fd-space-3);
+  min-width: 0;
+}

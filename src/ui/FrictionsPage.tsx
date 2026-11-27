@@ -215,15 +215,17 @@ export function FrictionsPage({
           />
         }
         controls={
-          <>
-            {frictionControls({ response, filters, onFilters: setFilters })}
+          <div className="fd-friction-controls">
+            <div className="fd-friction-filters">
+              {frictionControls({ response, filters, onFilters: setFilters })}
+            </div>
             <FrictionReportButton
               blocked={reportBlock(response, filters.project)}
               onCopy={async () => {
                 await write(await loadReport(filters));
               }}
             />
-          </>
+          </div>
         }
       />
       {response?.status === 'ok' ? (

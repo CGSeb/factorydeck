@@ -48,8 +48,11 @@ export const CopyReport: Story = {
     await frictionsLoaded(canvasElement);
     const copy = copyButton(canvasElement);
     await expect(copy).toHaveAttribute('aria-disabled', 'false');
-    const controls = canvasElement.querySelector('.fd-page-header-controls');
+    const controls = canvasElement.querySelector('.fd-friction-controls');
     await expect(controls?.lastElementChild).toContainElement(copy);
+    await expect(controls?.firstElementChild).toContainElement(
+      within(canvasElement).getByRole('group', { name: 'Kind' }),
+    );
     await userEvent.click(copy);
     await waitFor(() => expect(copy).toHaveAccessibleName(COPIED));
     await expect(args.loadReport).toHaveBeenCalledWith(
@@ -86,6 +89,9 @@ export const WhileLoading: Story = {
   play: async ({ canvasElement }) => {
     const copy = copyButton(canvasElement);
     await expect(copy).toHaveAccessibleName(COPY_REPORT);
+    await expect(
+      canvasElement.querySelector('.fd-friction-controls')?.lastElementChild,
+    ).toContainElement(copy);
     await expect(copy).toHaveAttribute('aria-disabled', 'true');
   },
 };

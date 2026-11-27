@@ -90,6 +90,18 @@ function exitLine(occurrence: ReportOccurrence): string[] {
     : [];
 }
 
+const JSON_START = /^\s*[[{"]/;
+
+export function jsonInput(input: string): string {
+  try {
+    JSON.parse(input);
+    return input;
+  } catch {
+    if (input.endsWith('…') && JSON_START.test(input)) return input;
+    return cutHead(JSON.stringify(input), MAX_INPUT_LENGTH);
+  }
+}
+
 function occurrenceTexts(occurrence: ReportOccurrence): string[] {
   const { texts } = occurrence;
   if (texts === null) return [GONE, ...exitLine(occurrence)];
@@ -104,7 +116,10 @@ function occurrenceTexts(occurrence: ReportOccurrence): string[] {
       ...textBlock(outputTail(texts.output), 'text'),
     ];
   }
-  return [fence(input, 'json'), ...textBlock(resultHead(texts.output), 'text')];
+  return [
+    fence(jsonInput(input), 'json'),
+    ...textBlock(resultHead(texts.output), 'text'),
+  ];
 }
 
 export function occurrenceLines(
