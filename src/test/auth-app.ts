@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { expect } from 'vitest';
 import { hashPassword } from '../auth/secrets.ts';
 import { signInSessions } from '../auth/sessions.ts';
+import { type SignInLimit, signInLimit } from '../auth/sign-in-limit.ts';
 import { firstManagerSetup } from '../auth/setup.ts';
 import type { Database } from '../db/client.ts';
 import { account } from '../db/schema.ts';
@@ -40,6 +41,7 @@ export type Server = ReturnType<typeof createApp>;
 export interface AuthHarness {
   db: Database;
   clock: Date;
+  signInLimit: SignInLimit;
   app: (up?: boolean) => Server;
   addAccount: (
     email: string,
@@ -59,6 +61,7 @@ export async function authHarness(): Promise<AuthHarness> {
   const harness: AuthHarness = {
     db,
     clock: START,
+    signInLimit: signInLimit({ now: () => harness.clock }),
     close,
     app: (up = true) =>
       createApp({
@@ -75,6 +78,7 @@ export async function authHarness(): Promise<AuthHarness> {
         auth: {
           ...firstManagerSetup(db, { log: () => undefined }),
           ...signInSessions(db, { now: () => harness.clock }),
+          signInLimit: harness.signInLimit,
         },
       }),
     addAccount: async (email, options = {}) => {

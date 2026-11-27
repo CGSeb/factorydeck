@@ -9,7 +9,7 @@ function length(value: string): number {
   return Array.from(value).length;
 }
 
-function emailError(value: unknown): string | undefined {
+export function emailError(value: unknown): string | undefined {
   if (typeof value !== 'string' || value.trim() === '') {
     return 'Email is required';
   }
