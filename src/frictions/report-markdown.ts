@@ -17,12 +17,15 @@ import {
   repeatedThreads,
   roleTallies,
 } from './report-groups.ts';
+import type { GroupStatus, NotSeenGroup } from './reported.ts';
 import { CATEGORY_LABELS } from './types.ts';
 
 export const REPORT_TITLE = '# Friction report';
 export const NO_FRICTION = 'No friction in this period.';
 export const MAX_GROUPS_WITH_OCCURRENCES = 20;
 export const MAX_HOOK_CELL = 80;
+export const NEW_TAG = 'New';
+export const NOT_SEEN_HEADING = '## Reported before, not seen since';
 
 export interface ReportHeader {
   projectName: string;
@@ -44,6 +47,8 @@ export interface ReportContext {
 export interface ReportData {
   header: ReportHeader;
   groups: ReportGroup[];
+  statuses: ReadonlyMap<string, GroupStatus>;
+  notSeen: readonly NotSeenGroup[];
   occurrences: ReadonlyMap<string, ReportOccurrence[]>;
   issueTitle: (number: number) => string | null;
   formatAt: (at: string) => string;
@@ -93,17 +98,29 @@ const KIND_TEXT = {
   'stop-blocked': 'Stop blocked',
 };
 
+export function statusTag(
+  status: GroupStatus | undefined,
+  formatAt: (at: string) => string,
+): string {
+  if (status === undefined || status.kind === 'new') return NEW_TAG;
+  const times =
+    status.times >= 2 ? ` (${formatCount(status.times)} times)` : '';
+  return `Reported on ${formatAt(status.reportedAt)}${times}${SEPARATOR}${formatCount(status.since)} since`;
+}
+
 export function groupsTable(
   groups: readonly ReportGroup[],
   formatAt: (at: string) => string,
+  statusOf: (group: ReportGroup) => GroupStatus | undefined = () => undefined,
 ): string[] {
   return [
-    '| # | Kind | Category | Tool | Program | Hook | Frictions | Threads | Last |',
-    '| --: | --- | --- | --- | --- | --- | --: | --: | --- |',
+    '| # | Status | Kind | Category | Tool | Program | Hook | Frictions | Threads | Last |',
+    '| --: | --- | --- | --- | --- | --- | --- | --: | --: | --- |',
     ...groups.map((group, index) => {
       const stop = group.kind === 'stop-blocked';
       const cells = [
         String(index + 1),
+        statusTag(statusOf(group), formatAt),
         KIND_TEXT[group.kind],
         group.category === null ? MISSING : CATEGORY_LABELS[group.category],
         stop ? MISSING : orMissing(group.tool),
@@ -187,6 +204,8 @@ function groupSection(
     '',
     groupTitle(group, index + 1),
     '',
+    statusTag(data.statuses.get(group.key), data.formatAt),
+    '',
     `Key: ${codeSpan(group.key)}`,
     '',
     ...groupFacts(group, data.issueTitle, data.formatAt),
@@ -223,18 +242,47 @@ function contextLines(context: ReportContext | null): string[] {
   ];
 }
 
-export function reportMarkdown(data: ReportData): string {
-  const lines = headerLines(data.header);
-  if (data.groups.length === 0)
-    return [...lines, '', NO_FRICTION, ''].join('\n');
+function notSeenLines(
+  notSeen: readonly NotSeenGroup[],
+  formatAt: (at: string) => string,
+): string[] {
+  if (notSeen.length === 0) return [];
   return [
-    ...lines,
+    '',
+    NOT_SEEN_HEADING,
+    '',
+    ...notSeen.map((group) =>
+      [
+        `- ${codeSpan(group.key)}`,
+        `reported on ${formatAt(group.reportedAt)}`,
+        `${formatCount(group.frictions)} before`,
+      ].join(SEPARATOR),
+    ),
+  ];
+}
+
+function groupLines(data: ReportData): string[] {
+  if (data.groups.length === 0) return [];
+  return [
     '',
     '## Groups',
     '',
-    ...groupsTable(data.groups, data.formatAt),
+    ...groupsTable(data.groups, data.formatAt, (group) =>
+      data.statuses.get(group.key),
+    ),
     ...data.groups.flatMap((group, index) => groupSection(data, group, index)),
     ...moreGroupsLine(data.groups.length - MAX_GROUPS_WITH_OCCURRENCES),
+  ];
+}
+
+export function reportMarkdown(data: ReportData): string {
+  const lines = headerLines(data.header);
+  if (data.groups.length === 0 && data.notSeen.length === 0)
+    return [...lines, '', NO_FRICTION, ''].join('\n');
+  return [
+    ...lines,
+    ...groupLines(data),
+    ...notSeenLines(data.notSeen, data.formatAt),
     ...contextLines(data.context),
     '',
   ].join('\n');

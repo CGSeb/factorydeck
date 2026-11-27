@@ -51,6 +51,7 @@ const frictions: FrictionStats = {
   issues: [],
   context: { threads: [], compacted: 0, medianPeak: null },
   projects: [],
+  lastReportAt: '2026-01-04T18:00:00.000Z',
 };
 
 const occurrences: FrictionOccurrence[] = [
@@ -97,6 +98,7 @@ function app(up = true) {
       },
       output: () => Promise.reject(new Error('Not used')),
       report: () => Promise.reject(new Error('Not used')),
+      markReport: () => Promise.reject(new Error('Not used')),
     },
   });
   return { app: created, queries, occurrenceQueries };

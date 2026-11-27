@@ -14,6 +14,7 @@ const REPORT = '# Friction report\n\nApp · Last 7 days\n';
 
 function app(up = true) {
   const queries: ReportQuery[] = [];
+  const marks: ReportQuery[] = [];
   const created = createApp({
     checkDatabase: () => Promise.resolve(up),
     uiDir: '/nonexistent/factorydeck-ui',
@@ -38,9 +39,13 @@ function app(up = true) {
         queries.push(query);
         return Promise.resolve(REPORT);
       },
+      markReport: (query) => {
+        marks.push(query);
+        return Promise.resolve(REPORT);
+      },
     },
   });
-  return { app: created, queries };
+  return { app: created, queries, marks };
 }
 
 describe('/api/frictions/report', () => {
@@ -64,6 +69,12 @@ describe('/api/frictions/report', () => {
         filter: { issue: 12 },
       },
     ]);
+  });
+
+  it('records nothing', async () => {
+    const { app: server, marks } = app();
+    await server.request('/api/frictions/report?period=7d&tz=UTC&project=a');
+    expect(marks).toEqual([]);
   });
 
   it('passes the session filter on', async () => {
@@ -109,5 +120,54 @@ describe('/api/frictions/report', () => {
     expect(response.status).toBe(page.status);
     expect(await response.json()).toEqual(await page.json());
     expect(queries).toEqual([]);
+  });
+});
+
+describe('POST /api/frictions/reports', () => {
+  it('records the report from the page parameters and answers its Markdown', async () => {
+    const { app: server, queries, marks } = app();
+    const response = await server.request(
+      '/api/frictions/reports?period=30d&tz=Europe/Paris&project=%2Fwork%2Fapp&kind=stop-blocked&session=s-1',
+      { method: 'POST' },
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toBe(
+      'text/markdown; charset=utf-8',
+    );
+    expect(await response.text()).toBe(REPORT);
+    expect(queries).toEqual([]);
+    expect(marks).toEqual([
+      {
+        period: '30d',
+        timeZone: 'Europe/Paris',
+        project: '/work/app',
+        kind: 'stop-blocked',
+        role: undefined,
+        filter: { session: 's-1' },
+      },
+    ]);
+  });
+
+  it.each(['', '&project='])(
+    'answers 400 and records nothing without a project (%s)',
+    async (suffix) => {
+      const { app: server, marks } = app();
+      const response = await server.request(
+        `/api/frictions/reports?period=7d&tz=UTC${suffix}`,
+        { method: 'POST' },
+      );
+      expect(response.status).toBe(400);
+      expect(marks).toEqual([]);
+    },
+  );
+
+  it('answers 503 and records nothing when the database is unreachable', async () => {
+    const { app: server, marks } = app(false);
+    const response = await server.request(
+      '/api/frictions/reports?period=7d&tz=UTC&project=%2Fwork%2Fapp',
+      { method: 'POST' },
+    );
+    expect(response.status).toBe(503);
+    expect(marks).toEqual([]);
   });
 });

@@ -24,6 +24,7 @@ export interface FrictionSource {
   occurrences: (query: OccurrenceQuery) => Promise<FrictionOccurrence[]>;
   output: (id: number) => Promise<FullOutput | undefined>;
   report: (query: ReportQuery) => Promise<string>;
+  markReport: (query: ReportQuery) => Promise<string>;
 }
 
 export const INVALID_OCCURRENCE_ROW = {
@@ -93,17 +94,18 @@ export function frictionRoutes(
     }));
     return c.json(body, body.status === 'ok' ? 200 : 503);
   });
-  routes.get('/report', async (c) => {
-    const query = frictionQuery(c);
-    if (query === undefined) return c.json(INVALID_QUERY, 400);
-    const { project } = query;
-    if (project === undefined) return c.json(REPORT_NEEDS_PROJECT, 400);
-    const report = await fromDatabase(() =>
-      source.report({ ...query, project }),
-    );
-    if (typeof report !== 'string') return c.json(report, 503);
-    return c.body(report, 200, { 'Content-Type': MARKDOWN });
-  });
+  const answerReport =
+    (build: (query: ReportQuery) => Promise<string>) => async (c: Context) => {
+      const query = frictionQuery(c);
+      if (query === undefined) return c.json(INVALID_QUERY, 400);
+      const { project } = query;
+      if (project === undefined) return c.json(REPORT_NEEDS_PROJECT, 400);
+      const report = await fromDatabase(() => build({ ...query, project }));
+      if (typeof report !== 'string') return c.json(report, 503);
+      return c.body(report, 200, { 'Content-Type': MARKDOWN });
+    };
+  routes.get('/report', answerReport(source.report));
+  routes.post('/reports', answerReport(source.markReport));
   routes.get('/:id/output', async (c) => {
     const id = parseFrictionId(c.req.param('id'));
     if (id === undefined) return c.json(INVALID_FRICTION_ID, 400);

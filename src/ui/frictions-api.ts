@@ -69,19 +69,39 @@ export function frictionsLoader(
 
 export type LoadReport = (filters: FrictionFilters) => Promise<string>;
 
-export function frictionReportLoader(
-  fetchImpl: typeof fetch = (...args) => fetch(...args),
-  timeZone: () => string = browserTimeZone,
+function reportFetcher(
+  path: string,
+  init: RequestInit,
+  fetchImpl: typeof fetch,
+  timeZone: () => string,
 ): LoadReport {
   return async (filters) => {
-    const response = await fetchImpl(
-      `/api/frictions/report?${frictionsQuery(filters, timeZone()).toString()}`,
-    );
+    const query = frictionsQuery(filters, timeZone()).toString();
+    const response = await fetchImpl(`${path}?${query}`, init);
     if (!response.ok) {
       throw new Error(`The report answered ${String(response.status)}`);
     }
     return response.text();
   };
+}
+
+export function frictionReportLoader(
+  fetchImpl: typeof fetch = (...args) => fetch(...args),
+  timeZone: () => string = browserTimeZone,
+): LoadReport {
+  return reportFetcher('/api/frictions/report', {}, fetchImpl, timeZone);
+}
+
+export function frictionReportMarker(
+  fetchImpl: typeof fetch = (...args) => fetch(...args),
+  timeZone: () => string = browserTimeZone,
+): LoadReport {
+  return reportFetcher(
+    '/api/frictions/reports',
+    { method: 'POST' },
+    fetchImpl,
+    timeZone,
+  );
 }
 
 export type WriteClipboard = (text: string) => Promise<void>;

@@ -150,6 +150,7 @@ export const frictionStats: FrictionStats = {
     { project: APP, name: 'app' },
     { project: LIB, name: 'lib' },
   ],
+  lastReportAt: null,
 };
 
 export const UNKNOWN_SESSION = 'no-such-session';

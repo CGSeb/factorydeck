@@ -14,6 +14,7 @@ import {
   frictionOutput,
 } from '../frictions/occurrences.ts';
 import { frictionStats } from '../frictions/query.ts';
+import { markFrictionReport } from '../frictions/mark-report.ts';
 import { frictionReport } from '../frictions/report.ts';
 import { collect } from '../git-host/collect.ts';
 import { collectionStatus } from '../git-host/query.ts';
@@ -91,6 +92,7 @@ function statsSource(db: Database, config: WorkflowConfig): StatsSource {
     occurrences: (query) => frictionOccurrences(db, query, config),
     output: (id) => frictionOutput(db, id),
     report: (query) => frictionReport(db, query, config),
+    markReport: (query) => markFrictionReport(db, query, config),
     flow: (query) => flowStats(db, query, config, hasFactory),
     bugs: (query) => bugStats(db, query, hasFactory),
     waiting: (project, kind) => waitingIssues(db, project, hasFactory, kind),

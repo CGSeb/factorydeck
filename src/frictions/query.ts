@@ -26,6 +26,7 @@ import {
   toolRows,
 } from './summarize.ts';
 import { inPeriodOf, roleFrictionsOf, tableSources } from './selection.ts';
+import { lastReportAt } from './reported.ts';
 import type { CallGroup, LoadedRow } from './threads.ts';
 import {
   type ContextPeaks,
@@ -297,5 +298,6 @@ export async function statsOfWindow(
       { calls, rows, compactions },
     )),
     projects: loaded.names.options(),
+    lastReportAt: await lastReportAt(db, query.project),
   };
 }

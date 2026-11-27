@@ -98,13 +98,13 @@ describe('frictionReport groups', () => {
   it('lists every group in a table, by frictions then key', async () => {
     const groups = section(await report(), '## Groups').split('\n');
     expect(groups.slice(2, 6)).toEqual([
-      '| # | Kind | Category | Tool | Program | Hook | Frictions | Threads | Last |',
-      '| --: | --- | --- | --- | --- | --- | --: | --: | --- |',
-      '| 1 | Tool error | Command failed | Bash | pnpm | — | 9 | 3 | 2026-03-17 08:11 |',
-      '| 2 | Tool error | Command failed | Bash | curl | — | 3 | 1 | 2026-03-17 09:45 |',
+      '| # | Status | Kind | Category | Tool | Program | Hook | Frictions | Threads | Last |',
+      '| --: | --- | --- | --- | --- | --- | --- | --: | --: | --- |',
+      '| 1 | New | Tool error | Command failed | Bash | pnpm | — | 9 | 3 | 2026-03-17 08:11 |',
+      '| 2 | New | Tool error | Command failed | Bash | curl | — | 3 | 1 | 2026-03-17 09:45 |',
     ]);
     expect(groups[8]).toBe(
-      `| 5 | Stop blocked | — | — | — | ${LONG_HOOK.slice(0, 80)}… | 2 | 2 | 2026-03-17 11:00 |`,
+      `| 5 | New | Stop blocked | — | — | — | ${LONG_HOOK.slice(0, 80)}… | 2 | 2 | 2026-03-17 11:00 |`,
     );
     expect(groups.filter((line) => /^\| \d+ \|/.test(line))).toHaveLength(10);
   });
@@ -112,8 +112,10 @@ describe('frictionReport groups', () => {
   it('writes a section per group with its key, roles, issues and times', async () => {
     const text = await report();
     const first = section(text, '## 1. Command failed · Bash · pnpm');
-    expect(first.split('\n').slice(0, 13)).toEqual([
+    expect(first.split('\n').slice(0, 15)).toEqual([
       '## 1. Command failed · Bash · pnpm',
+      '',
+      'New',
       '',
       'Key: `tool-error/command-failed/Bash/pnpm`',
       '',
@@ -128,10 +130,10 @@ describe('frictionReport groups', () => {
       '- Last: 2026-03-17 08:11',
     ]);
     expect(text).toContain(
-      '## 4. Stop blocked · make check\n\nKey: `stop-blocked/make check`',
+      '## 4. Stop blocked · make check\n\nNew\n\nKey: `stop-blocked/make check`',
     );
     expect(text).toContain(
-      '## 6. Other · Write\n\nKey: `tool-error/other/Write/-`',
+      '## 6. Other · Write\n\nNew\n\nKey: `tool-error/other/Write/-`',
     );
   });
 

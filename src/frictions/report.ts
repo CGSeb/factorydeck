@@ -27,6 +27,13 @@ import {
   reportMarkdown,
 } from './report-markdown.ts';
 import type { ReportOccurrence } from './report-occurrences.ts';
+import {
+  type EarlierReport,
+  type GroupStatus,
+  earlierReports,
+  rowsSince,
+  tagGroups,
+} from './reported.ts';
 import { inPeriodOf, roleFrictionsOf } from './selection.ts';
 import type { LoadedRow } from './threads.ts';
 import {
@@ -228,18 +235,34 @@ async function issueTitles(
   };
 }
 
-export async function frictionReport(
+function occurrenceGroup(
+  group: ReportGroup,
+  status: GroupStatus | undefined,
+): ReportGroup {
+  return status?.kind === 'reported'
+    ? rowsSince(group, new Date(status.reportedAt))
+    : group;
+}
+
+export interface BuiltReport {
+  markdown: string;
+  groups: ReportGroup[];
+  now: number;
+}
+
+export async function buildReport(
   db: Database,
   query: ReportQuery,
   config: WorkflowConfig,
-  home: string = homedir(),
-): Promise<string> {
+  { home, reports }: { home: string; reports: readonly EarlierReport[] },
+): Promise<BuiltReport> {
   const loaded = await loadWindow(db, query, config);
   const stats = await statsOfWindow(db, query, config, loaded);
   const rows = roleFrictionsOf(loaded, query.role)
     .filter(inPeriodOf(loaded))
     .filter((row) => query.kind === undefined || row.kind === query.kind);
   const groups = reportGroups(rows);
+  const tagged = tagGroups(groups, reports);
   const { date, dateTime } = dateTimeIn(query.timeZone);
   const now = (query.now ?? new Date()).getTime();
   const from = loaded.startMs ?? earliestOf(loaded, rows, query.role) ?? now;
@@ -254,15 +277,33 @@ export async function frictionReport(
     apiCalls: stats.apiCalls,
   };
   const [occurrences, issueTitle] = await Promise.all([
-    occurrencesOf(groups, home),
-    issueTitles(db, query.project, groups),
+    occurrencesOf(
+      tagged.groups.map((group) =>
+        occurrenceGroup(group, tagged.statuses.get(group.key)),
+      ),
+      home,
+    ),
+    issueTitles(db, query.project, tagged.groups),
   ]);
-  return reportMarkdown({
+  const markdown = reportMarkdown({
     header,
-    groups,
+    groups: tagged.groups,
+    statuses: tagged.statuses,
+    notSeen: tagged.notSeen,
     occurrences,
     issueTitle,
     formatAt: dateTime,
     context: contextOf(query, stats),
   });
+  return { markdown, groups, now };
+}
+
+export async function frictionReport(
+  db: Database,
+  query: ReportQuery,
+  config: WorkflowConfig,
+  home: string = homedir(),
+): Promise<string> {
+  const reports = await earlierReports(db, query.project);
+  return (await buildReport(db, query, config, { home, reports })).markdown;
 }
