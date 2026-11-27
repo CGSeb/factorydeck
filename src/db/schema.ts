@@ -284,6 +284,7 @@ export const gitHostProject = pgTable('git_host_project', {
   historyRead: boolean('history_read').notNull().default(false),
   fixRead: boolean('fix_read').notNull().default(false),
   stateEventsRead: boolean('state_events_read').notNull().default(false),
+  bodyClosesRead: boolean('body_closes_read').notNull().default(false),
 });
 
 export const gitHostRun = pgTable('git_host_run', {
