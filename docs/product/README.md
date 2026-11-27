@@ -19,6 +19,7 @@ For installing and running FactoryDeck, see [Getting started](../getting-started
 | [Frictions](frictions.md)                       | Tool errors and blocked stops, by category, tool, command, role and issue, with occurrences. |
 | [Sessions](sessions.md)                         | Session states, the session list and the session page.                                       |
 | [Skills and roles](skills-and-roles.md)         | Skill launches and attribution, tokens by role and by model.                                 |
+| [Accounts](accounts.md)                         | Roles, the setup code of a new instance, the first manager and the session cookie.           |
 | [Interface](interface.md)                       | Design tokens, components, charts, accessibility and layout rules every page follows.        |
 
 ## Glossary

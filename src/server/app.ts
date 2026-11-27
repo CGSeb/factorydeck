@@ -9,6 +9,7 @@ import {
   isPeriod,
 } from '../overview/types.ts';
 import { type ApiContext, apiContext, isTimeZone } from './api-context.ts';
+import { type AuthSource, authRoutes } from './auth-routes.ts';
 import { bugRoutes } from './bug-routes.ts';
 import { type FeatureSource, featureRoutes } from './feature-routes.ts';
 import { frictionRoutes } from './friction-routes.ts';
@@ -41,6 +42,7 @@ export interface AppOptions {
   gitHost: GitHostSource;
   stats: StatsSource;
   sidebar?: SidebarSource | undefined;
+  auth?: AuthSource | undefined;
 }
 
 function mountSections(
@@ -59,6 +61,9 @@ function mountSections(
   app.route('/api/frictions', frictionRoutes(options.stats, context));
   if (options.sidebar !== undefined) {
     app.route('/api/sidebar', sidebarRoutes(options.sidebar, context));
+  }
+  if (options.auth !== undefined) {
+    app.route('/api/auth', authRoutes(options.auth, context));
   }
 }
 

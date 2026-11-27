@@ -3,6 +3,8 @@ import { type Server, createServer } from 'node:net';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
+import { createDatabase } from '../db/client.ts';
+import { account } from '../db/schema.ts';
 import { createScratchDatabase } from '../test/postgres.ts';
 import {
   appendLog,
@@ -120,6 +122,65 @@ describe('pnpm start', () => {
       '  roles[0].description: not a valid regular expression',
     );
   });
+
+  it('logs a setup code at start while no account exists, and nothing once one does', async () => {
+    const scratch = await createScratchDatabase();
+    const folder = await sessionsFolder();
+    const env = async (): Promise<Record<string, string>> => {
+      const free = await occupy();
+      const port = portOf(free);
+      await new Promise((resolve) => free.close(resolve));
+      return {
+        DATABASE_URL: scratch.url,
+        FACTORYDECK_PORT: String(port),
+        CLAUDE_PROJECTS_DIR: folder,
+        CODEX_SESSIONS_DIR: join(folder, 'codex'),
+      };
+    };
+    const codeLine = /No account yet\. Setup code: ([A-Z2-9]{8})\n/;
+    try {
+      const codes: string[] = [];
+      for (let i = 0; i < 2; i++) {
+        const run = start(await env());
+        running.push(run);
+        await waitFor(() => run.output().includes('FactoryDeck on'));
+        expect(run.output()).toMatch(
+          /^No account yet\. Setup code: [A-Z2-9]{8}\nFactoryDeck on /,
+        );
+        codes.push(codeLine.exec(run.output())?.[1] ?? '');
+        expect(run.output().match(/Setup code/g)).toHaveLength(1);
+        run.child.kill();
+        await run.exited;
+      }
+      expect(codes[0]).toMatch(/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{8}$/);
+      expect(codes[1]).not.toBe(codes[0]);
+
+      const { db, close } = createDatabase(scratch.url);
+      await db.insert(account).values({
+        email: 'ada@example.test',
+        name: 'Ada',
+        passwordHash: 'scrypt$c2FsdA$a2V5',
+        role: 'manager',
+        createdAt: new Date(),
+      });
+      await close();
+      const set = await env();
+      const run = start(set);
+      running.push(run);
+      await waitFor(() => run.output().includes('FactoryDeck on'));
+      const state = await fetch(
+        `http://127.0.0.1:${set['FACTORYDECK_PORT']}/api/auth/state`,
+      );
+      expect(await state.json()).toEqual({ setup: false });
+      expect(run.output()).toBe(
+        `FactoryDeck on http://127.0.0.1:${set['FACTORYDECK_PORT']}\n`,
+      );
+      run.child.kill();
+      await run.exited;
+    } finally {
+      await scratch.drop();
+    }
+  }, 20_000);
 
   it('ingests the session logs at start-up, then at every interval', async () => {
     const scratch = await createScratchDatabase();

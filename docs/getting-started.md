@@ -19,6 +19,17 @@ pnpm start              # http://127.0.0.1:4317
 
 While it runs, the server reads new session logs every few seconds and collects from the git host every few minutes. You can also run `pnpm ingest` and `pnpm collect` by hand.
 
+## First start
+
+On its first start, while no account exists, the server writes a setup code to its log, just before the address it listens on:
+
+```
+No account yet. Setup code: K7MQ2XRD
+FactoryDeck on http://127.0.0.1:4317
+```
+
+Use it to create the first account, a manager: see [Accounts](product/accounts.md#the-first-manager). A restart prints a new code until the first account exists, then none.
+
 **Just want to look around?** `pnpm build && pnpm demo` serves synthetic sessions and issues on `http://127.0.0.1:4318`, in a database of its own.
 
 ## Configuration
