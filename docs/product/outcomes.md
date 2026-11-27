@@ -22,7 +22,7 @@ Tones: the three merged stages success; `Closed without merge` and `Blocked` dan
 
 ## Serenity reports
 
-A serenity report is a comment on a pull or merge request with a line `## Serenity: <score>/100 (threshold <threshold>)`, both whole numbers. From the same comment, a line starting `Review: <r> round` gives the review rounds, and a line starting `Gates:` tells whether every gate passed (`Gates: all passed.`). FactoryDeck stores every report, with its time; the format is the one `build-feature` writes and is not configurable.
+A serenity report is a comment on a pull or merge request with a line `## Serenity: <score>/100 (threshold <threshold>)`, both whole numbers. From the same comment, a line starting `Review: <r> round` gives the review rounds, and a line starting `Gates:` tells whether every gate passed (`Gates: all passed.`, or `Gates: passed`, in any letter case); any other gates line counts as failed gates, and a report with no gates line leaves the merge to its score. FactoryDeck stores every report, with its time; the format is the one `build-feature` writes and is not configurable.
 
 - **Fix lines**, written by `fix-bug` only, outside code fences like every line here:
   - `Root cause: <sentence>`: the text after `Root cause: `, trimmed, at most 200 characters (a longer one is cut at 199 with `…`). `Root cause: none`, an empty text or no line gives no root cause.

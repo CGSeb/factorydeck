@@ -8,7 +8,7 @@ export interface ReportComment {
 const FENCE = /^ {0,3}(`{3,}|~{3,})/;
 const HEADING = /^ {0,3}## Serenity: (\d+)\/100 \(threshold (\d+)\)/;
 const ROUNDS = /(?:^|[.;]\s+)Review: (\d+) rounds?\b/;
-const GATES_PASSED = /^Gates: all passed(?:$|[.\s(])/;
+const GATES_PASSED = /^Gates: (?:all )?passed(?:$|[.,;\s(])/i;
 const ROOT_CAUSE = 'Root cause:';
 const REPRODUCED = 'Reproduced:';
 const ROOT_CAUSE_LIMIT = 200;
@@ -79,7 +79,7 @@ export function parseReport(
     score: Number(heading[1]),
     threshold: Number(heading[2]),
     rounds: rounds === undefined ? null : Number(rounds),
-    gatesPassed: gates !== undefined && GATES_PASSED.test(gates),
+    gatesPassed: gates === undefined || GATES_PASSED.test(gates),
     at,
     ...(rootCause === undefined ? {} : { rootCause }),
     ...(reproduced === undefined ? {} : { reproduced }),
