@@ -9,6 +9,7 @@ import {
   unusedGitHost,
   unusedFeatures,
   unusedStats,
+  signedInAuth,
 } from '../test/skill-source.ts';
 
 const builtUi = '/nonexistent/factorydeck-ui';
@@ -73,6 +74,7 @@ describe('GET /api/sessions', () => {
     features: unusedFeatures,
     projects: unusedProjects,
     gitHost: unusedGitHost,
+    auth: signedInAuth,
     stats: unusedStats,
   });
 
@@ -138,6 +140,7 @@ describe('GET /api/sessions', () => {
       features: unusedFeatures,
       projects: unusedProjects,
       gitHost: unusedGitHost,
+      auth: signedInAuth,
       stats: unusedStats,
     }).request('/api/sessions?period=7d&tz=UTC');
     expect(response.status).toBe(503);
@@ -159,6 +162,7 @@ describe('GET /api/sessions/:id', () => {
     features: unusedFeatures,
     projects: unusedProjects,
     gitHost: unusedGitHost,
+    auth: signedInAuth,
     stats: unusedStats,
   });
 

@@ -6,6 +6,7 @@ import {
   validateEnv,
   workflowConfigPath,
 } from '../config/env.ts';
+import { signInSessions } from '../auth/sessions.ts';
 import { type Setup, firstManagerSetup } from '../auth/setup.ts';
 import { type Database, createDatabase } from '../db/client.ts';
 import { listBugs } from '../bugs/query.ts';
@@ -161,7 +162,7 @@ async function main(): Promise<void> {
     },
     stats: statsSource(db, config),
     sidebar: { ready: (project) => readyCounts(db, project, hasFactory) },
-    auth: setup,
+    auth: { ...setup, ...signInSessions(db) },
   });
   await listen(app, env.FACTORYDECK_PORT);
   await startSetup(setup);

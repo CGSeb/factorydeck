@@ -30,7 +30,7 @@ FactoryDeck on http://127.0.0.1:4317
 
 Use it to create the first account, a manager: see [Accounts](product/accounts.md#the-first-manager). A restart prints a new code until the first account exists, then none.
 
-**Just want to look around?** `pnpm build && pnpm demo` serves synthetic sessions and issues on `http://127.0.0.1:4318`, in a database of its own.
+**Just want to look around?** `pnpm build && pnpm demo` serves synthetic sessions and issues on `http://127.0.0.1:4318`, in a database of its own, with a manager account whose email and password it prints.
 
 ## Configuration
 

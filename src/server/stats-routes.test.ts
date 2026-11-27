@@ -14,6 +14,7 @@ import {
   unusedProjects,
   unusedRoles,
   unusedSkills,
+  signedInAuth,
 } from '../test/skill-source.ts';
 import { type OverviewSource, createApp } from './app.ts';
 import type { SessionSource } from './session-routes.ts';
@@ -122,6 +123,7 @@ function app(up = true) {
     features: unusedFeatures,
     projects: unusedProjects,
     gitHost: unusedGitHost,
+    auth: signedInAuth,
     stats: {
       autonomy: (query) => {
         queries.push(query);

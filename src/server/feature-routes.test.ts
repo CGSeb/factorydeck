@@ -12,6 +12,7 @@ import {
   unusedRoles,
   unusedSkills,
   unusedStats,
+  signedInAuth,
 } from '../test/skill-source.ts';
 import { type OverviewSource, createApp } from './app.ts';
 import type { FeatureSource } from './feature-routes.ts';
@@ -98,6 +99,7 @@ function app(checkDatabase = up) {
     features,
     projects: unusedProjects,
     gitHost: unusedGitHost,
+    auth: signedInAuth,
     stats: unusedStats,
   });
 }

@@ -9,7 +9,8 @@ import {
   isPeriod,
 } from '../overview/types.ts';
 import { type ApiContext, apiContext, isTimeZone } from './api-context.ts';
-import { type AuthSource, authRoutes } from './auth-routes.ts';
+import { jsonBodyGuard, sessionGuard } from './auth-guard.ts';
+import { type AuthEnv, type AuthSource, authRoutes } from './auth-routes.ts';
 import { bugRoutes } from './bug-routes.ts';
 import { type FeatureSource, featureRoutes } from './feature-routes.ts';
 import { frictionRoutes } from './friction-routes.ts';
@@ -42,11 +43,11 @@ export interface AppOptions {
   gitHost: GitHostSource;
   stats: StatsSource;
   sidebar?: SidebarSource | undefined;
-  auth?: AuthSource | undefined;
+  auth: AuthSource;
 }
 
 function mountSections(
-  app: Hono,
+  app: Hono<AuthEnv>,
   options: AppOptions,
   context: ApiContext,
 ): void {
@@ -62,21 +63,21 @@ function mountSections(
   if (options.sidebar !== undefined) {
     app.route('/api/sidebar', sidebarRoutes(options.sidebar, context));
   }
-  if (options.auth !== undefined) {
-    app.route('/api/auth', authRoutes(options.auth, context));
-  }
+  app.route('/api/auth', authRoutes(options.auth, context));
 }
 
 /** The FactoryDeck HTTP app: the JSON API under `/api/`, the UI everywhere else. */
-export function createApp(options: AppOptions): Hono {
+export function createApp(options: AppOptions): Hono<AuthEnv> {
   const { checkDatabase, uiDir, overview } = options;
-  const app = new Hono();
+  const app = new Hono<AuthEnv>();
   const context = apiContext(
     checkDatabase,
     overview.refreshSeconds,
     overview.updatedAt,
   );
   const { refreshSeconds, updatedAt, fromDatabase } = context;
+
+  app.use('/api/*', jsonBodyGuard(), sessionGuard(options.auth, context));
 
   app.get('/api/health', async (c) =>
     (await checkDatabase())

@@ -10,6 +10,7 @@ import {
   unusedRoles,
   unusedSkills,
   unusedStats,
+  signedInAuth,
 } from '../test/skill-source.ts';
 import { createApp } from './app.ts';
 import type { SidebarSource } from './sidebar-routes.ts';
@@ -143,6 +144,7 @@ function app(
     features: unusedFeatures,
     projects: unusedProjects,
     gitHost: unusedGitHost,
+    auth: signedInAuth,
     stats: unusedStats,
     sidebar,
   });
