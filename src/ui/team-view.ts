@@ -20,3 +20,7 @@ export function roleLabel(role: TeamAccountRow['role']): string {
 export function statusLabel(active: boolean): string {
   return active ? 'Active' : 'Deactivated';
 }
+
+export function roleActionLabel(role: TeamAccountRow['role']): string {
+  return role === 'manager' ? 'Make dev' : 'Make manager';
+}

@@ -1,4 +1,9 @@
-import { Hono } from 'hono';
+import { type Context, Hono } from 'hono';
+import { accountChangeOf, accountIdOf } from '../team/account-change.ts';
+import type {
+  RoleChangeOutcome,
+  RoleChangeRequest,
+} from '../team/change-role.ts';
 import {
   MANAGERS_ONLY,
   type TeamAccount,
@@ -9,6 +14,35 @@ import type { AuthEnv } from './auth-routes.ts';
 
 export interface TeamSource {
   accounts: () => Promise<TeamAccount[]>;
+  changeRole?: (request: RoleChangeRequest) => Promise<RoleChangeOutcome>;
+}
+
+function notFound(c: Context): Response {
+  return c.json({ error: 'Not found' }, 404);
+}
+
+function roleChangeAnswer(
+  c: Context,
+  outcome: RoleChangeOutcome,
+  requesterId: number,
+): Response {
+  switch (outcome.status) {
+    case 'changed':
+      return c.json(
+        { ...outcome.account, you: outcome.account.id === requesterId },
+        200,
+      );
+    case 'signed-out':
+      return c.json({ error: 'Not signed in' }, 401);
+    case 'managers-only':
+      return c.json({ error: MANAGERS_ONLY }, 403);
+    case 'not-found':
+      return notFound(c);
+    case 'invalid':
+      return c.json(outcome.refusal, 400);
+    case 'conflict':
+      return c.json({ error: outcome.error }, 409);
+  }
 }
 
 export function teamRoutes(
@@ -36,6 +70,30 @@ export function teamRoutes(
       return c.json(body, body.status === 'ok' ? 200 : 503);
     });
   }
-  routes.all('*', (c) => c.json({ error: 'Not found' }, 404));
+  const changeRole = team?.changeRole;
+  if (changeRole !== undefined) {
+    routes.patch('/accounts/:id', async (c) => {
+      const accountId = accountIdOf(c.req.param('id'));
+      if (accountId === undefined) return notFound(c);
+      const change = accountChangeOf(
+        await c.req.json().catch((): unknown => undefined),
+      );
+      if (change.kind === 'active') return notFound(c);
+      const requesterId = c.get('account').id;
+      const outcome = await fromDatabase(() =>
+        changeRole({
+          requesterId,
+          accountId,
+          change:
+            change.kind === 'role'
+              ? { role: change.role }
+              : { refusal: change.refusal },
+        }),
+      );
+      if (outcome.status === 'unreachable') return c.json(outcome, 503);
+      return roleChangeAnswer(c, outcome, requesterId);
+    });
+  }
+  routes.all('*', notFound);
   return routes;
 }

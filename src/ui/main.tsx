@@ -36,6 +36,7 @@ import {
   qualityLoader,
   waitingLoader,
 } from './stats-api.ts';
+import { roleChanger } from './role-change-api.ts';
 import { teamLoader } from './team-api.ts';
 
 const gate = authGate();
@@ -67,6 +68,7 @@ const loadMe = meLoader();
 const signOut = signOuter();
 const leavePage = pageLeaver();
 const loadTeam = teamLoader(gate.fetch);
+const changeRole = roleChanger(gate.fetch);
 const signIn = signInSender();
 const loadReport = frictionReportLoader(gate.fetch);
 const markReport = frictionReportMarker(gate.fetch);
@@ -103,6 +105,7 @@ if (root) {
         signOut={signOut}
         leavePage={leavePage}
         loadTeam={loadTeam}
+        changeRole={changeRole}
         loadReport={loadReport}
         markReport={markReport}
         signIn={signIn}

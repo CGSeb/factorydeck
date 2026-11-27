@@ -10,6 +10,7 @@ import type { Database } from '../db/client.ts';
 import { account } from '../db/schema.ts';
 import { type OverviewSource, createApp } from '../server/app.ts';
 import { teamAccounts } from '../team/accounts.ts';
+import { changeRole } from '../team/change-role.ts';
 import type { SessionSource } from '../server/session-routes.ts';
 import { createTestDatabase } from './postgres.ts';
 import {
@@ -81,7 +82,10 @@ export async function authHarness(): Promise<AuthHarness> {
           ...signInSessions(db, { now: () => harness.clock }),
           signInLimit: harness.signInLimit,
         },
-        team: { accounts: () => teamAccounts(db) },
+        team: {
+          accounts: () => teamAccounts(db),
+          changeRole: (request) => changeRole(db, request),
+        },
       }),
     addAccount: async (email, options = {}) => {
       const [row] = await db

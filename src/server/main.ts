@@ -36,7 +36,9 @@ import { waitingIssues } from '../stats/waiting.ts';
 import { flowStats } from '../stats/flow.ts';
 import { qualityStats } from '../stats/quality.ts';
 import { teamAccounts } from '../team/accounts.ts';
+import { changeRole } from '../team/change-role.ts';
 import { createApp } from './app.ts';
+import type { TeamSource } from './team-routes.ts';
 import { type CollectLoop, startCollectLoop } from './collect-loop.ts';
 import { databaseCheck } from './health.ts';
 import { type IngestLoop, startIngestLoop } from './ingest-loop.ts';
@@ -86,6 +88,13 @@ function startIngestion(
       lastError = message;
     },
   });
+}
+
+function teamSource(db: Database): TeamSource {
+  return {
+    accounts: () => teamAccounts(db),
+    changeRole: (request) => changeRole(db, request),
+  };
 }
 
 function statsSource(db: Database, config: WorkflowConfig): StatsSource {
@@ -163,7 +172,7 @@ async function main(): Promise<void> {
     stats: statsSource(db, config),
     sidebar: { ready: (project) => readyCounts(db, project, hasFactory) },
     auth: { ...setup, ...signInSessions(db), signInLimit: signInLimit() },
-    team: { accounts: () => teamAccounts(db) },
+    team: teamSource(db),
   });
   await listen(app, env.FACTORYDECK_PORT);
   await startSetup(setup);
