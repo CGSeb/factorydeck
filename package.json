@@ -1,6 +1,6 @@
 {
   "name": "factorydeck",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "description": "Local-first dashboard to watch your AI software factory run, find its blockers and frictions, and make it more autonomous.",
