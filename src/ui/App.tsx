@@ -1,5 +1,6 @@
-import type { ReactElement } from 'react';
-import { Route, Routes } from 'react-router';
+import { useEffect, useState, type ReactElement } from 'react';
+import { Navigate, Route, Routes, useNavigate } from 'react-router';
+import type { LoadAuthState, SetupManager } from './auth-api.ts';
 import type { LoadBugs } from './bugs-api.ts';
 import { BugsPage } from './BugsPage.tsx';
 import type { DeleteProject, LoadFactory } from './factory-api.ts';
@@ -15,6 +16,7 @@ import type { LoadOverview } from './overview-api.ts';
 import { OverviewPage } from './OverviewPage.tsx';
 import type { LoadRoles } from './roles-api.ts';
 import { RolesPage } from './RolesPage.tsx';
+import { SetupPage } from './SetupPage.tsx';
 import type { LoadSession, LoadSessions } from './sessions-api.ts';
 import { SessionPage } from './SessionPage.tsx';
 import { SessionsPage } from './SessionsPage.tsx';
@@ -54,9 +56,59 @@ export interface AppProps {
   loadBugStats: LoadBugStats;
   loadWaiting: LoadWaiting;
   loadSidebar?: LoadSidebar | undefined;
+  loadAuthState?: LoadAuthState | undefined;
+  setupManager?: SetupManager | undefined;
 }
 
-export function App(props: AppProps): ReactElement {
+type AuthPhase = 'checking' | 'setup' | 'ready';
+
+function useAuthPhase(
+  loadAuthState: LoadAuthState | undefined,
+): [AuthPhase, (phase: AuthPhase) => void] {
+  const [phase, setPhase] = useState<AuthPhase>(
+    loadAuthState === undefined ? 'ready' : 'checking',
+  );
+  useEffect(() => {
+    if (loadAuthState === undefined) return;
+    let current = true;
+    void loadAuthState().then((state) => {
+      if (current) setPhase(state?.setup === true ? 'setup' : 'ready');
+    });
+    return () => {
+      current = false;
+    };
+  }, [loadAuthState]);
+  return [phase, setPhase];
+}
+
+export function App(props: AppProps): ReactElement | null {
+  const { loadAuthState, setupManager } = props;
+  const [phase, setPhase] = useAuthPhase(loadAuthState);
+  const navigate = useNavigate();
+  if (phase === 'checking') return null;
+  if (phase === 'setup' && setupManager !== undefined) {
+    return (
+      <Routes>
+        <Route
+          path="setup"
+          element={
+            <SetupPage
+              setupManager={setupManager}
+              onCreated={() => {
+                setPhase('ready');
+                void navigate('/', { replace: true });
+              }}
+            />
+          }
+        />
+        <Route path="*" element={<Navigate to="/setup" replace />} />
+      </Routes>
+    );
+  }
+  return <DashboardRoutes {...props} />;
+}
+
+function DashboardRoutes(props: AppProps): ReactElement {
   const {
     loadOverview,
     loadSessions,
@@ -106,6 +158,7 @@ export function App(props: AppProps): ReactElement {
           }
         />
       </Route>
+      <Route path="setup" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

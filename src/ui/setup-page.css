@@ -1,0 +1,108 @@
+.fd-setup {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: var(--fd-space-6) var(--fd-space-4);
+  font-family: var(--fd-font-body);
+  color: var(--fd-ink);
+  background: var(--fd-page);
+}
+
+.fd-setup-card {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 440px;
+  padding: var(--fd-space-8);
+  background: var(--fd-surface);
+  border: 1px solid var(--fd-border);
+  border-radius: var(--fd-radius-dialog);
+}
+
+.fd-setup-title {
+  margin: var(--fd-space-6) 0 var(--fd-space-2);
+  font-family: var(--fd-font-display);
+  font-size: var(--fd-title-lg);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.fd-setup-text {
+  margin: 0 0 var(--fd-space-6);
+  font-size: var(--fd-text-md);
+  line-height: 1.5;
+  color: var(--fd-ink-2);
+}
+
+.fd-setup-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fd-space-1);
+}
+
+.fd-setup-field label {
+  font-size: var(--fd-text-sm);
+  font-weight: 600;
+}
+
+.fd-setup-field input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 40px;
+  padding: 0 var(--fd-space-3);
+  font-family: var(--fd-font-body);
+  font-size: var(--fd-text-md);
+  color: var(--fd-ink);
+  background: var(--fd-surface);
+  border: 1px solid var(--fd-field-border);
+  border-radius: var(--fd-radius-sm);
+}
+
+.fd-setup-field input:focus-visible {
+  outline: 2px solid var(--fd-accent);
+  outline-offset: 1px;
+}
+
+.fd-setup-field input[aria-invalid='true'] {
+  border-color: var(--fd-danger-strong);
+}
+
+.fd-setup-hint {
+  margin: 0;
+  font-size: var(--fd-text-sm);
+  line-height: 1.4;
+  color: var(--fd-muted);
+}
+
+.fd-setup-error {
+  min-height: calc(var(--fd-text-sm) * 1.4);
+  margin: 0 0 var(--fd-space-2);
+  font-size: var(--fd-text-sm);
+  line-height: 1.4;
+  color: var(--fd-danger);
+}
+
+.fd-setup-submit {
+  height: 42px;
+  margin-top: var(--fd-space-2);
+  padding: 0 var(--fd-space-5);
+  font-size: var(--fd-text-md);
+  font-weight: 600;
+  color: var(--fd-surface);
+  background: var(--fd-ink);
+  border: 1px solid var(--fd-ink);
+  border-radius: var(--fd-radius-pill);
+}
+
+.fd-setup-submit:disabled {
+  opacity: 0.7;
+}
+
+.fd-setup-form-error {
+  margin: var(--fd-space-3) 0 0;
+  text-align: center;
+}

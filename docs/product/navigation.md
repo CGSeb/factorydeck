@@ -1,6 +1,6 @@
 # Navigation and conventions
 
-What every page shares: the sidebar, the project select, the period, the refresh, the theme, the banners, and how figures, empty states and errors read.
+What every page shares: the first-manager screen, the sidebar, the project select, the period, the refresh, the theme, the banners, and how figures, empty states and errors read.
 
 FactoryDeck serves its pages and its JSON API from one Node process, on `127.0.0.1` only (`FACTORYDECK_PORT`, default 4317). Any path that is not `/api/…` serves the app, so a reload or a shared link works on every page.
 
@@ -50,6 +50,10 @@ A warning banner above the content of every page lists, one line per project in 
 
 - `Factory configuration not found for <project name>: <root>/docs/agents/factory.yml. Its data is kept, but new sessions are no longer read.`, with a `Delete project` button ([Data](data.md#deleting-a-project));
 - `Could not read <GitHub|GitLab> for <project name>: <reason>.` for a failed collection, without a button.
+
+## First-manager screen
+
+While the instance has no account, every page opens `/setup`, the [first-manager screen](accounts.md#the-first-manager-screen), without the sidebar, the banners or the welcome screen, and the app loads no data. Once the first manager is created, the app opens `/`, and `/setup` opens `/` from then on.
 
 ## Welcome screen
 

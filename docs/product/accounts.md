@@ -9,7 +9,7 @@ Who can use a FactoryDeck instance. One instance serves one organisation: there 
 | `manager` | Runs the instance. The first account is always one. |
 | `dev`     | A member of the team.                               |
 
-Accounts do not restrict the pages or the API yet: every route but the setup ones answers as before. An account has an email, a name, a password, a role, whether it is active, its creation time and its last sign-in time.
+Accounts do not restrict the API yet: every route but the setup ones answers as before. The pages wait for the first manager only: while the instance has no account, they open the [first-manager screen](#the-first-manager-screen). An account has an email, a name, a password, a role, whether it is active, its creation time and its last sign-in time.
 
 - **Email**: trimmed and lowercased, then stored that way: at most 254 characters, with one `@` that has text on both sides. Two accounts cannot share an email, so `Ada@Example.test` and `ada@example.test` are the same one.
 - **Name**: trimmed, 1 to 80 characters.
@@ -25,7 +25,17 @@ No account yet. Setup code: K7MQ2XRD
 
 The code is 8 characters from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (no `0`, `O`, `1` or `I`). It lives in the server's memory only: a restart replaces it, and the first account makes it useless. Once an account exists, the server creates no code and logs nothing about it. Only someone who can read the server's log can set the instance up, so nobody who reaches a new instance first can take it.
 
-The person who installs the instance sends the code with their email, name and password:
+### The first-manager screen
+
+While `GET /api/auth/state` answers `{ "setup": true }`, every page of the app opens `/setup` instead of its content, without the sidebar. The screen shows the FactoryDeck logo, the title `Set up FactoryDeck`, the line `Enter the setup code from the server log, then create the first manager account.`, the fields `Setup code`, `Name`, `Email` and `Password` (hint `At least 12 characters`), and the button `Create manager account`. It follows the light or dark theme chosen before (or the device's).
+
+- Focus starts on `Setup code`; Enter in any field submits. The values are sent as typed: the server trims the code, the email and the name.
+- While the request runs, the button reads `Creating…` and is disabled; a second Enter sends nothing.
+- `201` opens `/`, signed in. A `403` (`Wrong setup code`) or a `409` (`Already set up`) shows the API's message under the form; a `400` shows its message under the field it names, marks that field invalid and moves the focus to it. A `503` shows `Database unreachable. Start it with pnpm db:up.` under the form, and no answer at all shows `Could not reach the server`. Each message is announced to screen readers, and the place of every message is reserved, so the form keeps its size.
+- While the state is not known yet, the app shows nothing and calls no other route; while `setup` is `true`, the app calls only `/api/auth/*`. If the state cannot be read (the database or the server does not answer), the app opens as usual and each page shows its own unreachable message.
+- Once set up, `/setup` opens `/`.
+
+The person who installs the instance can also send the code with their email, name and password from a terminal:
 
 ```bash
 curl -i http://127.0.0.1:4317/api/auth/setup \
