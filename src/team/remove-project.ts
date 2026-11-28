@@ -1,6 +1,7 @@
 import { eq, inArray, or, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import {
+  UNASSIGNED_PROJECT,
   markedReport,
   project,
   projectSession,
@@ -76,6 +77,24 @@ async function forgetSessions(
   });
 }
 
+async function rootsOf(
+  tx: Transaction,
+  slug: string,
+  remote: string,
+): Promise<string[]> {
+  const recorded = await tx
+    .select({ root: rootRemote.root })
+    .from(rootRemote)
+    .where(eq(rootRemote.remote, remote));
+  const linked = await tx
+    .selectDistinct({ root: projectSession.root })
+    .from(projectSession)
+    .where(eq(projectSession.project, slug));
+  return [...new Set([...recorded, ...linked].map((row) => row.root))].filter(
+    (root) => root !== UNASSIGNED_PROJECT,
+  );
+}
+
 async function removeLocked(
   tx: Transaction,
   id: number,
@@ -83,12 +102,7 @@ async function removeLocked(
 ): Promise<RemoveProjectResult> {
   const [found] = await tx.select().from(project).where(eq(project.id, id));
   if (found === undefined) return 'not-found';
-  const roots = (
-    await tx
-      .select({ root: rootRemote.root })
-      .from(rootRemote)
-      .where(eq(rootRemote.remote, found.remote))
-  ).map((row) => row.root);
+  const roots = await rootsOf(tx, found.slug, found.remote);
   await forgetSessions(tx, found.slug, found.name, at);
   if (roots.length > 0) await forgetGitHostData(tx, roots);
   await tx
