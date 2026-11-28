@@ -8,6 +8,7 @@ import {
   type OverviewResponse,
   isPeriod,
 } from '../overview/types.ts';
+import { accountRoutes } from './account-routes.ts';
 import { type AdminSource, adminRoutes } from './admin-routes.ts';
 import { type ApiContext, apiContext, isTimeZone } from './api-context.ts';
 import { bodySizeGuard, jsonBodyGuard, sessionGuard } from './auth-guard.ts';
@@ -73,6 +74,7 @@ function mountAccounts(
   if (options.cli !== undefined) {
     app.route('/api/auth/cli', cliApprovalRoutes(options.cli.logins));
     app.route('/api/cli', cliRoutes(options.cli, context));
+    app.route('/api/account', accountRoutes(options.cli.connections, context));
   }
   app.route('/api/auth', authRoutes(options.auth, context));
   app.route('/api/team', teamRoutes(options.team, context));

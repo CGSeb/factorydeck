@@ -1,9 +1,10 @@
 import { randomBytes } from 'node:crypto';
-import { and, eq, lte } from 'drizzle-orm';
+import { and, desc, eq, gt, lte } from 'drizzle-orm';
 import { hashToken } from '../auth/secrets.ts';
 import type { Account } from '../auth/types.ts';
 import type { Database } from '../db/client.ts';
 import { account, cliConnection } from '../db/schema.ts';
+import type { CliConnectionItem } from './connection-types.ts';
 
 export const CONNECTION_LIFETIME_MS = 30 * 24 * 60 * 60 * 1000;
 const LAST_USE_STEP_MS = 60 * 1000;
@@ -28,6 +29,8 @@ export interface CliConnections {
   ) => Promise<Connected | undefined>;
   authenticate: (token: string | undefined) => Promise<CliSignedIn | undefined>;
   disconnect: (connectionId: number) => Promise<void>;
+  list: (accountId: number) => Promise<CliConnectionItem[]>;
+  remove: (accountId: number, connectionId: number) => Promise<boolean>;
 }
 
 const accountColumns = {
@@ -115,6 +118,54 @@ async function disconnect(db: Database, connectionId: number): Promise<void> {
   await db.delete(cliConnection).where(eq(cliConnection.id, connectionId));
 }
 
+async function list(
+  db: Database,
+  accountId: number,
+  at: Date,
+): Promise<CliConnectionItem[]> {
+  const rows = await db
+    .select({
+      id: cliConnection.id,
+      machine: cliConnection.machine,
+      createdAt: cliConnection.createdAt,
+      lastUsedAt: cliConnection.lastUsedAt,
+    })
+    .from(cliConnection)
+    .where(
+      and(
+        eq(cliConnection.accountId, accountId),
+        gt(
+          cliConnection.lastUsedAt,
+          new Date(at.getTime() - CONNECTION_LIFETIME_MS),
+        ),
+      ),
+    )
+    .orderBy(desc(cliConnection.lastUsedAt), desc(cliConnection.id));
+  return rows.map(({ id, machine, createdAt, lastUsedAt }) => ({
+    id,
+    machine,
+    createdAt: createdAt.toISOString(),
+    lastUsedAt: lastUsedAt.toISOString(),
+  }));
+}
+
+async function remove(
+  db: Database,
+  accountId: number,
+  connectionId: number,
+): Promise<boolean> {
+  const deleted = await db
+    .delete(cliConnection)
+    .where(
+      and(
+        eq(cliConnection.id, connectionId),
+        eq(cliConnection.accountId, accountId),
+      ),
+    )
+    .returning({ id: cliConnection.id });
+  return deleted.length > 0;
+}
+
 export function cliConnections(
   db: Database,
   now: () => Date = () => new Date(),
@@ -123,5 +174,7 @@ export function cliConnections(
     connect: (accountId, machine) => connect(db, accountId, machine, now()),
     authenticate: (token) => authenticate(db, token, now()),
     disconnect: (connectionId) => disconnect(db, connectionId),
+    list: (accountId) => list(db, accountId, now()),
+    remove: (accountId, connectionId) => remove(db, accountId, connectionId),
   };
 }

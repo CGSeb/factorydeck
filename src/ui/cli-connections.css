@@ -1,0 +1,29 @@
+.fd-cli-connections-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fd-space-6);
+}
+
+.fd-cli-connections-table tbody th {
+  min-width: 10rem;
+  font-weight: 600;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.fd-cli-connections-table td {
+  white-space: nowrap;
+}
+
+.fd-cli-connections-page .fd-status-line code {
+  font-family: var(--fd-font-mono);
+  overflow-wrap: anywhere;
+}
+
+.fd-table-scroll .fd-cli-connections-table td.fd-invitation-actions {
+  text-align: right;
+}
+
+.fd-cli-connections-page:focus {
+  outline: none;
+}

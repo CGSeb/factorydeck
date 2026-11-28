@@ -16,6 +16,10 @@ import {
 import { authGate } from './auth-gate.ts';
 import { bugsLoader } from './bugs-api.ts';
 import { cliLoginDecider, cliLoginReader } from './cli-api.ts';
+import {
+  cliConnectionDisconnecter,
+  cliConnectionsLoader,
+} from './cli-connections-api.ts';
 import { factoryLoader, projectDeleter } from './factory-api.ts';
 import { featureLoader, featuresLoader } from './features-api.ts';
 import {
@@ -96,6 +100,8 @@ const loadReport = frictionReportLoader(gate.fetch);
 const markReport = frictionReportMarker(gate.fetch);
 const loadProjects = projectsLoader(gate.fetch);
 const addProject = projectAdder(gate.fetch);
+const loadCliConnections = cliConnectionsLoader(gate.fetch);
+const disconnectCliConnection = cliConnectionDisconnecter(gate.fetch);
 const root = document.querySelector('#root');
 if (root) {
   createRoot(root).render(
@@ -141,6 +147,8 @@ if (root) {
         markReport={markReport}
         loadProjects={loadProjects}
         addProject={addProject}
+        loadCliConnections={loadCliConnections}
+        disconnectCliConnection={disconnectCliConnection}
         signIn={signIn}
         readCliLogin={readCliLogin}
         decideCliLogin={decideCliLogin}

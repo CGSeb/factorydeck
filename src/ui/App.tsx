@@ -21,6 +21,10 @@ import { signInThenRead, useAccountView, useAuthPhase } from './auth-phase.ts';
 import type { LoadBugs } from './bugs-api.ts';
 import { BugsPage } from './BugsPage.tsx';
 import { type CliRouteSources, cliRoute } from './CliPage.tsx';
+import {
+  type CliConnectionsSources,
+  cliConnectionsRoute,
+} from './CliConnectionsPage.tsx';
 import type { DeleteProject, LoadFactory } from './factory-api.ts';
 import { FeaturePage } from './FeaturePage.tsx';
 import type { LoadFeature, LoadFeatures } from './features-api.ts';
@@ -69,7 +73,7 @@ import { teamRoute } from './TeamPage.tsx';
 import type { AddProject, LoadProjects } from './projects-api.ts';
 import { projectsRoute } from './ProjectsPage.tsx';
 
-export interface AppProps extends CliRouteSources {
+export interface AppProps extends CliRouteSources, CliConnectionsSources {
   loadOverview: LoadOverview;
   loadSessions: LoadSessions;
   loadSession: LoadSession;
@@ -296,6 +300,7 @@ function DashboardRoutes(
         />
         {teamRoute(props)}
         {projectsRoute(props)}
+        {cliConnectionsRoute(props)}
       </Route>
       {cliRoute(props)}
       {SIGNED_IN_REDIRECTS}

@@ -5,6 +5,7 @@ export interface LinkProps {
   className?: string;
   'aria-current'?: 'page';
   'aria-label'?: string;
+  onClick?: () => void;
   children: ReactNode;
 }
 

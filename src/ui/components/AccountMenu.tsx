@@ -12,6 +12,7 @@ import type { Account } from '../../auth/types.ts';
 import type { SignOut } from '../auth-api.ts';
 import { ROLE_LABELS, accountName, accountTip, initialsOf } from './account.ts';
 import { Icon } from './Icon.tsx';
+import { type RenderLink, renderAnchor } from './link.ts';
 import { useDismiss, useMenuPlace } from './account-menu-state.ts';
 import type { TipHandlers } from './sidebar-state.ts';
 import './account-menu.css';
@@ -29,6 +30,8 @@ export interface SidebarAccount {
 
 export const SIGN_OUT = 'Sign out';
 export const SIGNING_OUT = 'Signing out…';
+export const CLI_CONNECTIONS = 'CLI connections';
+export const CLI_CONNECTIONS_HREF = '/account/cli';
 
 function ButtonContent({
   account,
@@ -147,20 +150,44 @@ function useAccountMenu(slot: SidebarAccount): {
   };
 }
 
+function CliConnectionsItem({
+  renderLink,
+  onNavigate,
+}: {
+  renderLink: RenderLink;
+  onNavigate: () => void;
+}): ReactElement {
+  return renderLink({
+    href: CLI_CONNECTIONS_HREF,
+    className: 'fd-account-item',
+    onClick: onNavigate,
+    children: (
+      <>
+        <Icon name="monitor" size={16} />
+        {CLI_CONNECTIONS}
+      </>
+    ),
+  });
+}
+
 function MenuPanel({
   id,
   email,
   folded,
   place,
-  signOutButton,
-  signOut: { busy, error, run },
+  menu: {
+    signOutButton,
+    signOut: { busy, error, run },
+    close,
+  },
+  renderLink,
 }: {
   id: string;
   email: string;
   folded: boolean;
   place: CSSProperties | undefined;
-  signOutButton: RefObject<HTMLButtonElement | null>;
-  signOut: ReturnType<typeof useSignOut>;
+  menu: ReturnType<typeof useAccountMenu>;
+  renderLink: RenderLink;
 }): ReactElement {
   const errorId = `${id}-error`;
   return (
@@ -173,10 +200,11 @@ function MenuPanel({
     >
       <p className="fd-account-email">{email}</p>
       <hr className="fd-account-separator" />
+      <CliConnectionsItem renderLink={renderLink} onNavigate={close} />
       <button
         ref={signOutButton}
         type="button"
-        className="fd-account-sign-out"
+        className="fd-account-item fd-account-sign-out"
         disabled={busy}
         aria-busy={busy}
         aria-describedby={error === undefined ? undefined : errorId}
@@ -198,10 +226,12 @@ export function AccountMenu({
   account: slot,
   folded,
   tip,
+  renderLink = renderAnchor,
 }: {
   account: SidebarAccount;
   folded: boolean;
   tip: (text: string) => TipHandlers | undefined;
+  renderLink?: RenderLink | undefined;
 }): ReactElement {
   const id = useId();
   const menu = useAccountMenu(slot);
@@ -244,8 +274,8 @@ export function AccountMenu({
           email={account.email}
           folded={folded}
           place={place}
-          signOutButton={menu.signOutButton}
-          signOut={menu.signOut}
+          menu={menu}
+          renderLink={renderLink}
         />
       )}
     </div>
