@@ -270,6 +270,18 @@ importers:
         specifier: ^5.1.0
         version: 5.1.1(@types/node@24.19.2)(happy-dom@21.0.4)(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(yaml@2.9.1))
 
+  cli:
+    devDependencies:
+      smol-toml:
+        specifier: ^1.4.2
+        version: 1.9.1
+      yaml:
+        specifier: ^2.9.1
+        version: 2.9.1
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+
 packages:
 
   '@adobe/css-tools@4.5.0':
@@ -2160,6 +2172,10 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  smol-toml@1.9.1:
+    resolution: {integrity: sha512-j7WyPdf0CJoutMzMoPLF/bVXHtKZIT9Rb4eGeEbWw8X2t5oirjPgpL+OpaENZrILYaXqYwnVH+qgUwVbl+pUJQ==}
+    engines: {node: '>= 18'}
+
   source-map-js@1.2.2:
     resolution: {integrity: sha512-KGj/8Y43x35aZVDtt+J4mK1hoLGHULMYfSkODJNQjNDC3oW1PqPoxMwo0pLUsWM/UEGzON/NxeHywEfNXNP3Vw==}
     engines: {node: '>=0.10.0'}
@@ -3789,6 +3805,8 @@ snapshots:
   semver@6.3.2: {}
 
   semver@7.8.6: {}
+
+  smol-toml@1.9.1: {}
 
   source-map-js@1.2.2: {}
 

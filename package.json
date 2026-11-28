@@ -1,5 +1,5 @@
 {
-  "name": "factorydeck",
+  "name": "factorydeck-app",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -27,6 +27,7 @@
     "ingest": "node src/ingest/cli.ts",
     "collect": "node src/git-host/cli.ts",
     "account:reset-link": "node src/team/reset-link-cli.ts",
+    "cli": "node cli/src/main.ts",
     "shot": "node scripts/shot.ts",
     "shift": "node scripts/shift.ts"
   },
