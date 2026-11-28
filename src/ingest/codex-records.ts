@@ -11,6 +11,7 @@ import {
   textAt,
 } from './codex-reading.ts';
 import { readModel, readUsage } from './codex-usage.ts';
+import type { KnownCall } from './frictions.ts';
 import {
   type LogRecord,
   type TurnState,
@@ -24,11 +25,7 @@ export {
   type CodexState,
   codexState,
 } from './codex-reading.ts';
-export {
-  codexFrictionRows,
-  codexToolCalls,
-  unresolvedOutputs,
-} from './codex-frictions.ts';
+export { codexFrictionRows, codexToolCalls } from './codex-frictions.ts';
 export { TOKEN_COUNT_KEY } from './codex-usage.ts';
 
 function promptOf(reading: Reading, entry: Entry, recordUuid: string): void {
@@ -112,18 +109,21 @@ export interface CodexChunk {
   state: CodexState;
   span: Span;
   main: TurnState | undefined;
+  toolCalls?: ReadonlyMap<string, KnownCall>;
 }
 
 export function readCodexChunk(
   records: readonly { record: LogRecord; offset: number; line: number }[],
-  { source, state, span, main }: CodexChunk,
+  { source, state, span, main, toolCalls }: CodexChunk,
 ): CodexRows {
+  const rows = emptyRows();
+  for (const [id, call] of toolCalls ?? []) rows.toolCalls.set(id, call);
   const reading: Reading = {
     source,
     state,
     span,
     main,
-    rows: emptyRows(),
+    rows,
     frictionKeys: new Set(),
     callKeys: new Set(),
   };

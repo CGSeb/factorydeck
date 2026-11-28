@@ -18,10 +18,14 @@ export type FileCounts = Pick<
   'files' | 'apiCalls' | 'skillLaunches' | 'frictions' | 'linesSkipped'
 >;
 
-/** The part of a file not read yet: from the stored offset, or from the start if it shrank. */
+/**
+ * The part of a file not read yet: from the stored offset, or from the start if it shrank or if
+ * its stored reader state is not `current`.
+ */
 export async function unreadRange(
   run: Run,
   path: string,
+  current: (state: unknown) => boolean,
 ): Promise<{ start: number; size: number; reset: boolean } | undefined> {
   const size = await stat(path).then(
     (stats) => stats.size,
@@ -31,7 +35,10 @@ export async function unreadRange(
     return undefined;
   }
   const stored = run.storedFiles.get(path);
-  if (stored === undefined) {
+  if (
+    stored === undefined ||
+    (stored.readOffset > 0 && !current(stored.readerState))
+  ) {
     return { start: 0, size, reset: false };
   }
   if (stored.sizeBytes === size) {

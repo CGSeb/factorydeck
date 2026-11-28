@@ -1,5 +1,5 @@
 import type { FrictionRow } from './friction-rows.ts';
-import type { ToolCall } from './frictions.ts';
+import type { KnownCall } from './frictions.ts';
 import { type LogRecord, type TurnState, isObject } from './records.ts';
 import type {
   ApiCallRow,
@@ -30,7 +30,6 @@ export function codexState(value: unknown): CodexState {
 
 export interface CodexSource {
   sourcePath: string;
-  logPath?: string;
   sessionId: string;
   subAgentId: string | null;
   startOffset: number;
@@ -53,7 +52,7 @@ export interface CodexRows {
   prompts: UserPromptRow[];
   closingLines: ClosingLineRow[];
   frictions: FrictionRow[];
-  toolCalls: Map<string, ToolCall>;
+  toolCalls: Map<string, KnownCall>;
   outputs: PendingOutput[];
   dropTokenCountCalls: boolean;
   skipped: number;

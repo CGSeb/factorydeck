@@ -80,6 +80,8 @@ describe('session branches', () => {
     await appendLog(log, [userText(on(2, 'feat/y'), 'More')]);
     await ingest(db, folder, EVERY_PROJECT_HAS_FACTORY);
     expect((await db.select().from(session))[0]?.gitBranches).toEqual([
+      'main',
+      'feat/x',
       'feat/y',
     ]);
   });

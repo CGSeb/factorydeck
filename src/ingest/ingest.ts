@@ -10,34 +10,31 @@ import {
 } from './factory.ts';
 import { findCodexFiles } from './codex-files.ts';
 import { ingestCodexFile } from './codex.ts';
-import { type LogFile, findLogFiles, logFileKey, readRange } from './files.ts';
-import {
-  readFrictionsAgainOnce,
-  storeChunkFrictions,
-} from './ingest-frictions.ts';
+import { type LogFile, findLogFiles } from './files.ts';
+import { readFrictionsAgainOnce } from './ingest-frictions.ts';
+import { localLogOf, readLocalLog, storeLocalRead } from './local-read.ts';
+import { saveSessions } from './local-store.ts';
 import { LOCK_KEY } from './lock.ts';
 import {
   type RemoteReader,
   readOriginRemote,
   storeRootRemotes,
 } from './remote.ts';
-import { isObject, parseLines } from './records.ts';
+import {
+  type SubAgentMeta,
+  parseSubAgentMeta,
+  readClaudeCodeLog,
+} from './readers/claude-code.ts';
+import { decodeClaudeCodeState } from './readers/claude-code-state.ts';
+import { isObject } from './records.ts';
 import {
   type Run,
-  forgetFileRows,
   readMainLogsAgainOnce,
-  insertThreadRows,
-  loadSession,
-  loadSubAgent,
-  resetSession,
   saveOffset,
-  saveSessions,
-  saveSubAgents,
   startRun,
 } from './store.ts';
 import { selectFactorySessions } from './select.ts';
-import { readThread } from './thread.ts';
-import { type FileCounts, type IngestCounts, unreadRange } from './range.ts';
+import type { FileCounts, IngestCounts } from './range.ts';
 import { runsUnderWsl } from './wsl.ts';
 
 export type { IngestCounts } from './range.ts';
@@ -107,13 +104,11 @@ export async function ingest(
     };
     for (const file of selection.files) {
       if (file.codex === undefined) {
-        await ingestFile(run, file, home, counts);
-        await ingestMeta(run, file, counts);
+        await ingestClaudeCodeFile(run, file, home, counts);
       } else {
-        await ingestCodexFile(run, file, counts);
+        await ingestCodexFile(run, file, home, counts);
       }
     }
-    await saveSubAgents(run);
     await saveSessions(run);
     await storeRootRemotes(tx, options.readRemote ?? readOriginRemote);
     return {
@@ -159,138 +154,61 @@ function lockTaken(result: unknown): boolean {
   return isObject(row) && row['locked'] === true;
 }
 
-async function forgetFile(
-  run: Run,
-  file: LogFile,
-  sessionRow: Parameters<typeof resetSession>[0],
-  agentRow: { firstAt: Date | null; lastAt: Date | null } | undefined,
-): Promise<void> {
-  await forgetFileRows(run, logFileKey(file), file.path);
-  if (agentRow === undefined) {
-    resetSession(sessionRow);
-  } else {
-    Object.assign(agentRow, {
-      firstAt: null,
-      lastAt: null,
-      cwd: null,
-      gitBranch: '',
-    });
-  }
+interface MetaRead {
+  meta: SubAgentMeta | undefined;
+  changed: boolean;
 }
 
-async function ingestFile(
+async function readMeta(
+  run: Run,
+  file: LogFile,
+  counts: FileCounts,
+): Promise<MetaRead | undefined> {
+  if (file.subAgent === undefined) return undefined;
+  const { metaPath } = file.subAgent;
+  const size = await stat(metaPath).then(
+    (stats) => stats.size,
+    () => undefined,
+  );
+  const content =
+    size === undefined
+      ? undefined
+      : await readFile(metaPath, 'utf8').catch(() => undefined);
+  if (size === undefined || content === undefined) return undefined;
+  const meta = parseSubAgentMeta(content);
+  const changed = run.storedFiles.get(metaPath)?.sizeBytes !== size;
+  if (changed) {
+    counts.files += 1;
+    if (meta === undefined) counts.linesSkipped += 1;
+    await saveOffset(run, metaPath, { sizeBytes: size, readOffset: size });
+  }
+  return { meta, changed };
+}
+
+async function ingestClaudeCodeFile(
   run: Run,
   file: LogFile,
   home: string,
   counts: FileCounts,
 ): Promise<void> {
-  const range = await unreadRange(run, file.path);
-  const chunk =
-    range === undefined
-      ? undefined
-      : await readRange(file.path, range.start, range.size).catch(
-          () => undefined,
-        );
-  if (range === undefined || chunk === undefined) {
-    return;
-  }
-  counts.files += 1;
-  const sessionRow = await loadSession(run, file.sessionId);
-  const agentRow =
-    file.subAgent === undefined
-      ? undefined
-      : await loadSubAgent(run, file.sessionId, file.subAgent.id);
-  if (range.reset) {
-    await forgetFile(run, file, sessionRow, agentRow);
-  }
-  const { records, skipped, consumed } = parseLines(chunk);
-  const rows = readThread(
-    records,
-    {
-      sourcePath: logFileKey(file),
-      sessionId: file.sessionId,
-      subAgentId: agentRow?.id ?? null,
-      startOffset: range.start,
-    },
-    agentRow ?? sessionRow,
-    agentRow === undefined ? sessionRow : undefined,
-  );
-  keepCwd(agentRow, rows);
-  const inserted = await insertThreadRows(run, file.sessionId, rows);
-  const frictions = await storeChunkFrictions(
+  const metaRead = await readMeta(run, file, counts);
+  const log = localLogOf(file);
+  const found = await readLocalLog(
     run,
-    { file, subAgentId: agentRow?.id ?? null, home },
-    records,
-    range.start,
+    log,
+    {
+      current: (state) => decodeClaudeCodeState(state) !== undefined,
+      read: (from, bytes, readerState) =>
+        readClaudeCodeLog({
+          bytes,
+          from,
+          readerState,
+          home,
+          log: { sessionId: file.sessionId, subAgentId: log.subAgentId },
+          meta: metaRead?.meta,
+        }),
+    },
+    metaRead?.changed === true,
   );
-  Object.assign(counts, {
-    linesSkipped:
-      counts.linesSkipped + skipped + rows.skipped + frictions.untimed,
-    apiCalls: counts.apiCalls + inserted.apiCalls,
-    skillLaunches: counts.skillLaunches + inserted.skillLaunches,
-    frictions: counts.frictions + frictions.stored,
-  });
-  await saveOffset(run, file.path, {
-    sizeBytes: range.size,
-    readOffset: range.start + consumed,
-  });
-}
-
-function keepCwd(
-  agent: { cwd: string | null; gitBranch: string } | undefined,
-  rows: { cwd: string | null; gitBranch: string | null },
-): void {
-  if (agent === undefined) {
-    return;
-  }
-  agent.cwd ??= rows.cwd;
-  agent.gitBranch = rows.gitBranch ?? agent.gitBranch;
-}
-
-/** Reads the meta file of a sub-agent when it is new or changed. */
-async function ingestMeta(
-  run: Run,
-  file: LogFile,
-  counts: FileCounts,
-): Promise<void> {
-  if (file.subAgent === undefined) {
-    return;
-  }
-  const { metaPath, id } = file.subAgent;
-  const size = await stat(metaPath).then(
-    (stats) => stats.size,
-    () => undefined,
-  );
-  if (size === undefined || run.storedFiles.get(metaPath)?.sizeBytes === size) {
-    return;
-  }
-  const content = await readFile(metaPath, 'utf8').catch(() => undefined);
-  if (content === undefined) {
-    return;
-  }
-  counts.files += 1;
-  const row = await loadSubAgent(run, file.sessionId, id);
-  const meta = parseJson(content);
-  if (meta === undefined) {
-    counts.linesSkipped += 1;
-  } else {
-    const text = (key: string): string => {
-      const value = meta[key];
-      return typeof value === 'string' ? value : '';
-    };
-    row.toolUseId = text('toolUseId');
-    row.agentType = text('agentType');
-    row.description = text('description');
-    row.model = text('model');
-  }
-  await saveOffset(run, metaPath, { sizeBytes: size, readOffset: size });
-}
-
-function parseJson(text: string): Record<string, unknown> | undefined {
-  try {
-    const value: unknown = JSON.parse(text);
-    return isObject(value) ? value : undefined;
-  } catch {
-    return undefined;
-  }
+  if (found !== undefined) await storeLocalRead(run, log, found, counts);
 }

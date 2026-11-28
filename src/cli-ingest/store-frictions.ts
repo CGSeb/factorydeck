@@ -1,6 +1,6 @@
 import { friction } from '../db/schema.ts';
 import { type Transaction, insertChunks } from '../ingest/store.ts';
-import type { BatchThread } from './batch-schema.ts';
+import type { BatchThread } from './batch.ts';
 import { frictionColumns } from './friction-schema.ts';
 
 export async function storeFrictions(

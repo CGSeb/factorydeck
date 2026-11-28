@@ -1,11 +1,4 @@
 import {
-  type apiCall,
-  type closingLine,
-  type skillLaunch,
-  type userPrompt,
-  UNASSIGNED_PROJECT,
-} from '../db/schema.ts';
-import {
   type LogRecord,
   type TurnState,
   closingLineOf,
@@ -20,10 +13,41 @@ import {
   usageOf,
 } from './records.ts';
 
-export type ApiCallRow = typeof apiCall.$inferInsert;
-export type SkillLaunchRow = typeof skillLaunch.$inferInsert;
-export type UserPromptRow = typeof userPrompt.$inferInsert;
-export type ClosingLineRow = typeof closingLine.$inferInsert;
+interface RowBase {
+  sourcePath: string;
+  sessionId: string;
+  at: Date;
+}
+
+export interface ApiCallRow extends RowBase {
+  subAgentId: string | null;
+  requestKey: string;
+  model: string;
+  inputTokens: number;
+  cacheWriteTokens: number;
+  cacheReadTokens: number;
+  outputTokens: number;
+}
+
+export interface SkillLaunchRow extends RowBase {
+  subAgentId: string | null;
+  recordUuid: string;
+  skill: string;
+}
+
+export interface UserPromptRow extends RowBase {
+  recordUuid: string;
+  promptId: string | null;
+  command: string | null;
+}
+
+export interface ClosingLineRow extends RowBase {
+  recordUuid: string;
+  position: number;
+  line: string;
+}
+
+export const MAX_BRANCHES = 100;
 
 /** First and last record times of a session or a sub-agent. */
 export interface Span {
@@ -31,14 +55,19 @@ export interface Span {
   lastAt: Date | null;
 }
 
-/** What the main thread of a session tells about it, carried from one run to the next. */
+/** What the main thread of a session tells about it, carried from one read to the next. */
 export interface MainThread extends TurnState {
-  project: string;
   cwd: string | null;
   cwdFromMain: boolean;
   gitBranch: string;
   gitBranches: string[];
   title: string;
+  slash: PendingSlash | null;
+}
+
+export interface PendingSlash {
+  promptId: string;
+  launch: SkillLaunchRow;
 }
 
 /** Where the records come from. */
@@ -56,8 +85,6 @@ export interface ThreadRows {
   launches: SkillLaunchRow[];
   prompts: UserPromptRow[];
   closingLines: ClosingLineRow[];
-  /** Prompt ids of slash skill instructions whose prompt was read by an earlier run. */
-  earlierSkillPrompts: string[];
   /** User and assistant records without a valid timestamp: skipped, and counted. */
   skipped: number;
   /** First working directory of the records, for a session whose main log has none. */
@@ -95,12 +122,12 @@ export function readThread(
     launches: [],
     prompts: [],
     closingLines: [],
-    earlierSkillPrompts: [],
     skipped: 0,
     cwd: null,
     gitBranch: null,
   };
   const commands = new Map<string, SkillLaunchRow>();
+  if (main?.slash != null) commands.set(main.slash.promptId, main.slash.launch);
   for (const { record, offset } of records) {
     const position = source.startOffset + offset;
     const entry: Entry = {
@@ -120,7 +147,15 @@ export function readThread(
       readMainRecord(main, entry, rows, commands);
     }
   }
+  if (main !== undefined) main.slash = lastPending(commands);
   return rows;
+}
+
+function lastPending(
+  commands: ReadonlyMap<string, SkillLaunchRow>,
+): PendingSlash | null {
+  const last = [...commands].at(-1);
+  return last === undefined ? null : { promptId: last[0], launch: last[1] };
 }
 
 function readCwd(record: LogRecord, rows: ThreadRows): void {
@@ -183,6 +218,7 @@ function readMainRecord(
     const command = slashCommandOf(record) ?? null;
     rows.prompts.push({ ...base, recordUuid: uuid, at, promptId, command });
     if (command !== null && promptId !== null) {
+      commands.delete(promptId);
       commands.set(promptId, {
         ...base,
         subAgentId: null,
@@ -194,9 +230,7 @@ function readMainRecord(
   }
   if (promptId !== null && isSlashSkillInstructions(record)) {
     const launch = commands.get(promptId);
-    if (launch === undefined) {
-      rows.earlierSkillPrompts.push(promptId);
-    } else {
+    if (launch !== undefined) {
       rows.launches.push(launch);
       commands.delete(promptId);
     }
@@ -213,14 +247,15 @@ function readContext(main: MainThread, record: LogRecord): void {
     return;
   }
   if (!main.cwdFromMain && cwd !== '') {
-    if (main.cwd !== cwd) {
-      main.project = UNASSIGNED_PROJECT;
-    }
     main.cwd = cwd;
     main.cwdFromMain = true;
   }
   main.gitBranch = stringOf(record, 'gitBranch') ?? '';
-  if (main.gitBranch !== '' && !main.gitBranches.includes(main.gitBranch)) {
+  if (
+    main.gitBranch !== '' &&
+    !main.gitBranches.includes(main.gitBranch) &&
+    main.gitBranches.length < MAX_BRANCHES
+  ) {
     main.gitBranches = [...main.gitBranches, main.gitBranch];
   }
 }

@@ -1,13 +1,13 @@
 import { closingLine, skillLaunch, userPrompt } from '../db/schema.ts';
 import { type Transaction, insertChunks } from '../ingest/store.ts';
-import type { BatchThread } from './batch-schema.ts';
+import type { BatchThread } from './batch.ts';
 
 export async function storeThreadRecords(
   tx: Transaction,
   thread: BatchThread,
-): Promise<void> {
+): Promise<number> {
   const base = { sourcePath: thread.fileKey, sessionId: thread.sessionId };
-  await insertChunks(
+  const skillLaunches = await insertChunks(
     thread.skillLaunches.map((launch) => ({
       ...base,
       subAgentId: thread.subAgentId,
@@ -52,4 +52,5 @@ export async function storeThreadRecords(
         .onConflictDoNothing()
         .returning({ id: closingLine.id }),
   );
+  return skillLaunches;
 }

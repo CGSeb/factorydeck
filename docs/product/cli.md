@@ -211,7 +211,13 @@ The token is checked on the whole `/api/cli/` prefix, before any route, except `
 
 ## Sending sessions
 
-The CLI reads the session logs on the developer's machine and sends their figures with `POST /api/cli/ingest`; the logs themselves never leave the machine. A batch holds what the database stores for sessions, sub-agents, API calls, skill launches, prompts, closing lines and frictions, and nothing more: no prompt text, tool output, command text, error message or file content. The schema of the batch lives in `src/cli-ingest/batch-schema.ts`, which imports nothing from the server or the database, so the CLI imports it.
+The CLI reads the session logs on the developer's machine and sends their figures with `POST /api/cli/ingest`; the logs themselves never leave the machine. A batch holds what the database stores for sessions, sub-agents, API calls, skill launches, prompts, closing lines and frictions, and nothing more: no prompt text, tool output, command text, error message or file content. The plain types of the batch and `PARSER_VERSION` live in `src/cli-ingest/batch.ts`, which imports nothing; its zod schema lives in `src/cli-ingest/batch-schema.ts`, which imports nothing from the server or the database. The CLI imports both.
+
+### The parser
+
+The log readers of `src/ingest/readers/` turn a log into threads of the batch, without the database or the file system, so the CLI and the instance's [local ingestion](data.md#session-logs) share one parser and give the same figures. A reader takes `{ bytes, from, readerState, home }` and the log's identity (and a Claude Code sub-agent's `meta.json` fields), and gives back the thread without `remote` and `frictions`, its frictions apart (with no file key yet: the local ingestion keys them by the log's path), `readTo` (`from` plus the bytes of the complete lines read), the new **reader state** and the counts of lines skipped and records without a time. The reader state is a JSON value of at most 16 KB that holds what the reader needs to continue the log in the middle; a missing or unknown state reads the log from `0`. A reader answers `restart` when the log must be read again from `0`, as when a Codex rollout switches to usage records. An oxlint rule keeps the database, drizzle, the server and `node:fs` out of that folder.
+
+**For contributors:** a change of the parser that changes the records of a log already read raises `PARSER_VERSION` (`src/cli-ingest/batch.ts`), a positive whole number, which the batch carries as `parserVersion`.
 
 ### The batch
 

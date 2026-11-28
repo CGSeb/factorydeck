@@ -1,4 +1,4 @@
-import { CODEX, CODEX_SHELL_TOOLS } from './codex-files.ts';
+import { CODEX, CODEX_SHELL_TOOLS } from './codex-format.ts';
 import {
   type CodexRows,
   type Entry,
@@ -12,10 +12,10 @@ import {
 import type { FrictionRow } from './friction-rows.ts';
 import {
   type FrictionFields,
+  type KnownCall,
   type ToolCall,
   UNKNOWN_TOOL,
-  commandHash,
-  programOf,
+  callSummary,
 } from './frictions.ts';
 import type { LogRecord } from './records.ts';
 
@@ -86,18 +86,15 @@ function outputFailed(output: unknown): boolean {
   return field(parsed, 'success') === false;
 }
 
-function shellFailure(
-  tool: string,
-  command: string | undefined,
-  exitCode: number,
-): FrictionFields {
+function shellFailure(call: KnownCall, exitCode: number): FrictionFields {
+  const { name, program, commandHash } = callSummary(call);
   return {
     kind: 'tool-error',
-    tool,
+    tool: name,
     category: 'command-failed',
-    program: command === undefined ? null : programOf(command),
+    program,
     exitCode,
-    commandHash: command === undefined ? null : commandHash(command),
+    commandHash,
   };
 }
 
@@ -118,13 +115,13 @@ function frictionRow(base: FrictionBase, fields: FrictionFields): FrictionRow {
 
 export function outputFriction(
   output: unknown,
-  call: ToolCall | undefined,
+  call: KnownCall | undefined,
 ): FrictionFields | undefined {
   if (call !== undefined && CODEX_SHELL_TOOLS.has(call.name)) {
     const exitCode = outputExitCode(output);
     return exitCode === null || exitCode === 0
       ? undefined
-      : shellFailure(call.name, call.command, exitCode);
+      : shellFailure(call, exitCode);
   }
   return outputFailed(output)
     ? otherFailure(call?.name ?? UNKNOWN_TOOL)
@@ -139,7 +136,7 @@ function mcpToolName(server: unknown, tool: unknown): string {
 
 function baseOf(reading: Reading, entry: Entry, key: string): FrictionBase {
   return {
-    sourcePath: reading.source.logPath ?? reading.source.sourcePath,
+    sourcePath: reading.source.sourcePath,
     sessionId: reading.source.sessionId,
     subAgentId: reading.source.subAgentId,
     recordUuid: key,
@@ -170,13 +167,14 @@ function execCommandEnd(reading: Reading, entry: Entry): void {
   const callId = textAt(payload, 'call_id');
   const call =
     callId === undefined ? undefined : reading.rows.toolCalls.get(callId);
+  const command = commandText(field(payload, 'command'));
+  const name = call?.name ?? EXEC_COMMAND;
   pushFriction(
     reading,
     entry,
     callKey(callId, entry),
     shellFailure(
-      call?.name ?? EXEC_COMMAND,
-      commandText(field(payload, 'command')) ?? call?.command,
+      command === undefined && call !== undefined ? call : { name, command },
       exitCode,
     ),
   );
@@ -189,7 +187,10 @@ function commandExecution(reading: Reading, entry: Entry, item: unknown): void {
     reading,
     entry,
     callKey(textAt(item, 'id'), entry),
-    shellFailure(EXEC_COMMAND, commandText(field(item, 'command')), exitCode),
+    shellFailure(
+      { name: EXEC_COMMAND, command: commandText(field(item, 'command')) },
+      exitCode,
+    ),
   );
 }
 
@@ -284,13 +285,9 @@ export function readFriction(reading: Reading, entry: Entry): void {
   if (type !== undefined) EVENT_FRICTIONS.get(type)?.(reading, entry);
 }
 
-export function unresolvedOutputs(rows: CodexRows): boolean {
-  return rows.outputs.some((output) => !rows.toolCalls.has(output.callId));
-}
-
 export function codexFrictionRows(
   rows: CodexRows,
-  earlier: ReadonlyMap<string, ToolCall> = new Map(),
+  earlier: ReadonlyMap<string, KnownCall> = new Map(),
 ): FrictionRow[] {
   const keys = new Set(rows.frictions.map((row) => row.recordUuid));
   const frictions = [...rows.frictions];
