@@ -2,16 +2,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Database } from '../db/client.ts';
 import { apiCall, gitHostProject, session, subAgent } from '../db/schema.ts';
 import { DEFAULT_CONFIG } from '../roles/config.ts';
-import {
-  LABELS,
-  NOW,
-  builder,
-  call,
-  factory,
-  query,
-  seed,
-} from '../test/kind-seed.ts';
-import { createTestDatabase } from '../test/postgres.ts';
+import { LABELS, NOW, builder, call, query, seed } from '../test/kind-seed.ts';
+import { createTestDatabase, testRemote } from '../test/postgres.ts';
 import { flowStats } from './flow.ts';
 import { largestRemainder } from './kind-calls.ts';
 
@@ -23,7 +15,7 @@ let close: () => Promise<void>;
 beforeAll(async () => {
   ({ db, close } = await createTestDatabase());
   await db.insert(gitHostProject).values({
-    project: HALF,
+    remote: testRemote(HALF),
     gitHost: 'github',
     syncedFrom: NOW,
     stageLabels: LABELS,
@@ -74,7 +66,7 @@ describe('calls of each kind', () => {
   it('add up to all when a shared call splits half and half', async () => {
     const [all, bug, feature] = await Promise.all(
       [undefined, 'bug' as const, 'feature' as const].map((kind) =>
-        flowStats(db, query('7d', kind, HALF), DEFAULT_CONFIG, factory),
+        flowStats(db, query('7d', kind, HALF), DEFAULT_CONFIG),
       ),
     );
     const calls = (flow: typeof all): number =>

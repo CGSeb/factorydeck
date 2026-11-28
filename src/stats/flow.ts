@@ -10,7 +10,6 @@ import type { IssueRow, RequestRow } from '../git-host/query.ts';
 import type { WorkflowConfig } from '../roles/config.ts';
 import {
   type AutonomyQuery,
-  type FactoryFilter,
   type Window,
   type IssueFacts,
   inside,
@@ -199,15 +198,10 @@ interface FlowIssues {
   scope: KindScope | undefined;
 }
 
-async function flowIssues(
-  db: Database,
-  query: FlowQuery,
-  hasFactory: FactoryFilter,
-): Promise<FlowIssues> {
+async function flowIssues(db: Database, query: FlowQuery): Promise<FlowIssues> {
   const loaded = await loadIssues(
     db,
     query.project,
-    hasFactory,
     kinded((issue, requests, state): LoadedIssue => ({
       issue,
       facts: issueFacts(issue, requests, state),
@@ -235,10 +229,9 @@ export async function flowStats(
   db: Database,
   query: FlowQuery,
   config: WorkflowConfig,
-  hasFactory: FactoryFilter,
 ): Promise<FlowStats> {
   const { project } = query;
-  const { issues, bounds, scope } = await flowIssues(db, query, hasFactory);
+  const { issues, bounds, scope } = await flowIssues(db, query);
   const window = (
     startAt: number | null,
     endAt: number | null,

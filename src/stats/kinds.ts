@@ -2,7 +2,6 @@ import type { Database } from '../db/client.ts';
 import { type IssueKind, kindOf } from '../git-host/kind.ts';
 import {
   type AutonomyQuery,
-  type FactoryFilter,
   type IssueFacts,
   type Window,
   issueFacts,
@@ -23,12 +22,10 @@ export function mergedKinds(
 export async function mergedByKind(
   db: Database,
   query: AutonomyQuery,
-  hasFactory: FactoryFilter,
 ): Promise<Record<IssueKind, number>> {
   const issues = await loadIssues(
     db,
     query.project,
-    hasFactory,
     (issue, requests, state) => ({
       ...issueFacts(issue, requests, state),
       kind: kindOf(issue, state.bugLabel),

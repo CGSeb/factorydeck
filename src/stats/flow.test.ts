@@ -11,12 +11,17 @@ import {
 import { usageOverview } from '../overview/query.ts';
 import type { Period } from '../overview/types.ts';
 import { DEFAULT_CONFIG } from '../roles/config.ts';
-import { createTestDatabase } from '../test/postgres.ts';
+import { createTestDatabase, testRemote } from '../test/postgres.ts';
 import { flowStats } from './flow.ts';
 
 const APP = '/work/app';
 const API = '/work/api';
-const OTHER = '/work/no-factory';
+const OTHER = '/work/no-project';
+const NO_PROJECT_REMOTE = 'github.com/example-org/no-project';
+
+function remoteOf(root: string): string {
+  return root === OTHER ? NO_PROJECT_REMOTE : testRemote(root);
+}
 const NOW = new Date('2026-03-18T12:00:00Z');
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -81,7 +86,7 @@ async function seedIssue({
 }: Seed): Promise<void> {
   const created = new Date(createdAt);
   await db.insert(gitHostIssue).values({
-    project,
+    remote: remoteOf(project),
     number,
     title: `Issue ${String(number)}`,
     state: closed || mergedAt !== undefined ? 'closed' : 'open',
@@ -92,7 +97,7 @@ async function seedIssue({
   });
   if (mergedAt === undefined) return;
   await db.insert(gitHostRequest).values({
-    project,
+    remote: remoteOf(project),
     number: 100 + number,
     title: `Request ${String(number)}`,
     state: 'merged',
@@ -111,7 +116,7 @@ beforeAll(async () => {
   ({ db, close } = await createTestDatabase());
   await db.insert(gitHostProject).values(
     [APP, API, OTHER].map((project) => ({
-      project,
+      remote: remoteOf(project),
       gitHost: 'github',
       syncedFrom: NOW,
       autoMerge: true,
@@ -194,15 +199,11 @@ afterAll(async () => {
   await close();
 });
 
-const factory = (project: string): Promise<boolean> =>
-  Promise.resolve(project !== OTHER);
-
 function stats(period: Period, project?: string) {
   return flowStats(
     db,
     { period, timeZone: 'UTC', project, now: NOW },
     DEFAULT_CONFIG,
-    factory,
   );
 }
 
@@ -285,7 +286,7 @@ describe('flow stats', () => {
     expect(flow).not.toHaveProperty('previous');
   });
 
-  it('counts every factory project together, and leaves the others out', async () => {
+  it("counts every project together, and leaves out a remote that is no project's", async () => {
     const { current } = await stats('7d');
     expect(
       current.issues.map((issue) => `${issue.project}#${String(issue.number)}`),

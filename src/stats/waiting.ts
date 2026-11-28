@@ -3,7 +3,6 @@ import { type IssueKind, kindOf } from '../git-host/kind.ts';
 import type { IssueRow, RequestRow } from '../git-host/query.ts';
 import { projectNames } from '../projects/names.ts';
 import {
-  type FactoryFilter,
   MERGED_STAGES,
   type ProjectState,
   issueFacts,
@@ -119,11 +118,10 @@ export function waitingRows(
 export async function waitingIssues(
   db: Database,
   project: string | undefined,
-  hasFactory: FactoryFilter,
   kind?: IssueKind,
 ): Promise<WaitingList> {
   const [facts, names] = await Promise.all([
-    loadIssues(db, project, hasFactory, waitingFacts),
+    loadIssues(db, project, waitingFacts),
     projectNames(db),
   ]);
   const kept =

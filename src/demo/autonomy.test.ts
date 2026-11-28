@@ -54,11 +54,11 @@ describe('demo autonomy', () => {
   });
 
   it('spreads merged issues over 12 weeks, every reason, and questions still waiting', async () => {
-    const autonomy = await autonomyStats(
-      db,
-      { period: 'all', timeZone: 'UTC', now: NOW },
-      hasFactory,
-    );
+    const autonomy = await autonomyStats(db, {
+      period: 'all',
+      timeZone: 'UTC',
+      now: NOW,
+    });
     expect(autonomy.current.merged).toBeGreaterThanOrEqual(AUTONOMY_MERGED);
     expect(autonomy.buckets.every((week) => week.merged > 0)).toBe(true);
     expect(share(autonomy.buckets.slice(6))).toBeGreaterThan(
@@ -78,17 +78,17 @@ describe('demo autonomy', () => {
   });
 
   it('answers at least 5 stops in the last 7 days', async () => {
-    const week = await autonomyStats(
-      db,
-      { period: '7d', timeZone: 'UTC', now: NOW },
-      hasFactory,
-    );
+    const week = await autonomyStats(db, {
+      period: '7d',
+      timeZone: 'UTC',
+      now: NOW,
+    });
     expect(week.current.stopWaitsMs.length).toBeGreaterThanOrEqual(5);
   });
 
   it('merges at least 5 issues on one of the last 7 days and 3 in one hour of today', async () => {
     const stats = (period: '7d' | 'today') =>
-      autonomyStats(db, { period, timeZone: 'UTC', now: NOW }, hasFactory);
+      autonomyStats(db, { period, timeZone: 'UTC', now: NOW });
     const [week, today] = await Promise.all([stats('7d'), stats('today')]);
     expect(week.unit).toBe('day');
     expect(
@@ -104,7 +104,7 @@ describe('demo autonomy', () => {
 
   it('merges at least 5 bugs in the last 30 days, and a reopened bug over all time', async () => {
     const stats = (period: '30d' | 'all') =>
-      bugStats(db, { period, timeZone: 'UTC', now: NOW }, hasFactory);
+      bugStats(db, { period, timeZone: 'UTC', now: NOW });
     const [month, all] = await Promise.all([stats('30d'), stats('all')]);
     expect(month.bugTickets).toBe(true);
     expect(month.current.bugs).toBeGreaterThanOrEqual(5);

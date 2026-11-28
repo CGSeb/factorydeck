@@ -35,7 +35,7 @@ afterAll(async () => {
 describe('demo quality', () => {
   it('has first reports failed by score and by gates, 1 to 3 review rounds, and reworked merged issues', async () => {
     const merged = (
-      await loadIssues(db, undefined, hasFactory, (issue, requests, state) => ({
+      await loadIssues(db, undefined, (issue, requests, state) => ({
         facts: qualityFacts(issue, requests, state),
         reworked: outcomeOf(issue, requests, state).reworked,
         first: firstReport(requests),
@@ -66,7 +66,7 @@ describe('demo quality', () => {
 
   it('has issues with one, two and three reports whose score rises, and one whose score falls', async () => {
     const merged = (
-      await loadIssues(db, undefined, hasFactory, (issue, requests, state) => ({
+      await loadIssues(db, undefined, (issue, requests, state) => ({
         facts: qualityFacts(issue, requests, state),
         reports: storedReports(requests).length,
       }))
@@ -90,7 +90,6 @@ describe('demo quality', () => {
       await loadIssues(
         db,
         undefined,
-        hasFactory,
         (issue, requests, state) =>
           qualityFacts(issue, requests, state).stage === 'closed' &&
           issue.closedAt !== null,
@@ -98,11 +97,11 @@ describe('demo quality', () => {
     ).filter(Boolean).length;
     expect(closed).toBeGreaterThanOrEqual(5);
     expect(closed).toBeLessThanOrEqual(7);
-    const quality = await qualityStats(
-      db,
-      { period: 'all', timeZone: 'UTC', now: NOW },
-      hasFactory,
-    );
+    const quality = await qualityStats(db, {
+      period: 'all',
+      timeZone: 'UTC',
+      now: NOW,
+    });
     expect(quality.current.firstPassed).toBeLessThan(
       quality.current.mergedWithReport,
     );

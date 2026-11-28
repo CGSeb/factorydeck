@@ -55,9 +55,9 @@ function addProject(slug: string, name: string, remote: string) {
   return db.insert(project).values({ name, slug, remote, createdAt: NOW });
 }
 
-function readyIssue(root: string, number: number, title: string) {
+function readyIssue(remote: string, number: number, title: string) {
   return {
-    project: root,
+    remote,
     number,
     title,
     state: 'open',
@@ -103,19 +103,13 @@ beforeAll(async () => {
     ]);
   await db.insert(gitHostProject).values([
     {
-      project: '/work/web',
+      remote: SHOP,
       gitHost: 'github',
       syncedFrom: new Date('2026-03-12T09:00:00Z'),
       stageLabels: LABELS,
     },
     {
-      project: '/home/dev/shop',
-      gitHost: 'github',
-      syncedFrom: new Date('2026-03-11T09:00:00Z'),
-      stageLabels: LABELS,
-    },
-    {
-      project: '/work/stray',
+      remote: STRAY,
       gitHost: 'github',
       syncedFrom: AT,
       stageLabels: LABELS,
@@ -123,12 +117,7 @@ beforeAll(async () => {
   ]);
   await db
     .insert(gitHostIssue)
-    .values([
-      readyIssue('/work/web', 7, 'Export'),
-      readyIssue('/home/dev/shop', 7, 'Export'),
-      readyIssue('/home/dev/shop', 6, 'Older copy'),
-      readyIssue('/work/stray', 3, 'Stray'),
-    ]);
+    .values([readyIssue(SHOP, 7, 'Export'), readyIssue(STRAY, 3, 'Stray')]);
 });
 
 afterAll(async () => {
@@ -238,12 +227,12 @@ describe('sessions of a project by its remote', () => {
     ]);
   });
 
-  it('reads the git host data of a project from its root collected last', async () => {
-    expect(await readyCounts(db, 'shop', everyFactory)).toEqual({
+  it('reads the git host data of a project from its remote, whatever root collected it', async () => {
+    expect(await readyCounts(db, 'shop')).toEqual({
       feature: 1,
       bug: 0,
     });
-    expect(await readyCounts(db, undefined, everyFactory)).toEqual({
+    expect(await readyCounts(db, undefined)).toEqual({
       feature: 1,
       bug: 0,
     });
@@ -254,7 +243,7 @@ describe('sessions of a project by its remote', () => {
     try {
       const overview = await usageOverview(db, { ...all, project: 'stray' });
       expect(overview.totals).toMatchObject({ sessions: 1, apiCalls: 1 });
-      expect(await readyCounts(db, 'stray', everyFactory)).toEqual({
+      expect(await readyCounts(db, 'stray')).toEqual({
         feature: 1,
         bug: 0,
       });

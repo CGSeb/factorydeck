@@ -1,6 +1,7 @@
 import type { Database } from '../db/client.ts';
 import { gitHostIssue, gitHostRequest } from '../db/schema.ts';
 import type { LabelChange, SerenityReport } from '../git-host/types.ts';
+import { testRemote } from './postgres.ts';
 
 const CREATED = new Date('2026-01-01T00:00:00Z');
 
@@ -37,7 +38,7 @@ export async function seedIssues(
   let next = 1;
   for (const issue of issues) {
     await db.insert(gitHostIssue).values({
-      project: issue.project,
+      remote: testRemote(issue.project),
       number: issue.number,
       title: `Issue ${String(issue.number)}`,
       state: issue.state,
@@ -51,7 +52,7 @@ export async function seedIssues(
     for (const request of issue.requests ?? []) {
       const number = next++;
       await db.insert(gitHostRequest).values({
-        project: issue.project,
+        remote: testRemote(issue.project),
         number,
         title: `Request ${String(number)}`,
         state: request.state,

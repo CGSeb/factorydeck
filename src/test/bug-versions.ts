@@ -10,6 +10,7 @@ import {
 } from '../db/schema.ts';
 import type { FeatureQuery } from '../features/types.ts';
 import type { SerenityReport, StateEvent } from '../git-host/types.ts';
+import { testRemote } from './postgres.ts';
 
 export const APP = '/work/app';
 export const NOW = new Date('2026-03-12T15:30:00Z');
@@ -55,7 +56,7 @@ export function bug(
 ): typeof gitHostIssue.$inferInsert {
   const closedAt = state === 'closed' ? stateEvents.at(-1)?.at : undefined;
   return {
-    project: APP,
+    remote: testRemote(APP),
     number,
     title: `Issue ${String(number)}`,
     state,
@@ -87,7 +88,7 @@ export function request(
   const at = mergedAt ?? createdAt;
   const found = report(score, rootCause, at);
   return {
-    project: APP,
+    remote: testRemote(APP),
     number,
     title: `Request ${String(number)}`,
     state: mergedAt === null ? 'open' : 'merged',
@@ -106,7 +107,7 @@ export function request(
 
 async function seedBugProject(db: Database): Promise<void> {
   await db.insert(gitHostProject).values({
-    project: APP,
+    remote: testRemote(APP),
     gitHost: 'github',
     repository: 'example-org/example-app',
     syncedFrom: NOW,

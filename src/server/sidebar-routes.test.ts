@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Database } from '../db/client.ts';
 import { gitHostIssue, gitHostProject, gitHostRequest } from '../db/schema.ts';
 import { readyCounts } from '../sidebar/ready.ts';
-import { createTestDatabase } from '../test/postgres.ts';
+import { createTestDatabase, testRemote } from '../test/postgres.ts';
 import {
   unusedFeatures,
   unusedGitHost,
@@ -18,7 +18,12 @@ import type { SidebarSource } from './sidebar-routes.ts';
 const APP = '/work/app';
 const LIB = '/work/lib';
 const FAILED = '/work/failed';
-const OTHER = '/work/no-factory';
+const OTHER = '/work/no-project';
+const NO_PROJECT_REMOTE = 'github.com/example-org/no-project';
+
+function remoteOf(root: string): string {
+  return root === OTHER ? NO_PROJECT_REMOTE : testRemote(root);
+}
 const CREATED = new Date('2026-03-01T00:00:00Z');
 const LABELS = {
   ready: 'agent:ready',
@@ -47,7 +52,7 @@ async function seed({
   merged = false,
 }: Seed): Promise<void> {
   await db.insert(gitHostIssue).values({
-    project,
+    remote: remoteOf(project),
     number,
     title: `Issue ${String(number)}`,
     state,
@@ -59,7 +64,7 @@ async function seed({
   });
   if (!merged) return;
   await db.insert(gitHostRequest).values({
-    project,
+    remote: remoteOf(project),
     number: 100 + number,
     title: `Request ${String(number)}`,
     state: 'merged',
@@ -76,7 +81,7 @@ async function seed({
 
 function projectRow(project: string, bugLabel: string | null, error = false) {
   return {
-    project,
+    remote: remoteOf(project),
     gitHost: 'github',
     syncedFrom: CREATED,
     stageLabels: LABELS,
@@ -121,8 +126,7 @@ afterAll(async () => {
 
 function app(
   sidebar: SidebarSource = {
-    ready: (project) =>
-      readyCounts(db, project, (root) => Promise.resolve(root !== OTHER)),
+    ready: (project) => readyCounts(db, project),
   },
   reachable = true,
 ) {
@@ -175,13 +179,13 @@ describe('GET /api/sidebar', () => {
     });
   });
 
-  it('sums every factory project without a project or with an empty one', async () => {
+  it('sums every project without a project or with an empty one', async () => {
     const all = { ready: { feature: 4, bug: 2 } };
     expect(await ready('')).toEqual(all);
     expect(await ready('?project=')).toEqual(all);
   });
 
-  it('answers 0 for an unknown project and a project without the factory', async () => {
+  it("answers 0 for an unknown project and a root whose remote is no project's", async () => {
     const none = { ready: { feature: 0, bug: 0 } };
     expect(await ready('?project=%2Fwork%2Funknown')).toEqual(none);
     expect(await ready(`?project=${encodeURIComponent(`${APP}/`)}`)).toEqual(

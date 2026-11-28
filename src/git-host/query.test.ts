@@ -8,7 +8,7 @@ import {
   subAgent,
 } from '../db/schema.ts';
 import { listSessions, sessionDetail } from '../sessions/query.ts';
-import { createTestDatabase } from '../test/postgres.ts';
+import { createTestDatabase, testRemote } from '../test/postgres.ts';
 
 const NOW = new Date('2026-03-12T12:00:00Z');
 const AT = new Date('2026-03-12T11:00:00Z');
@@ -33,15 +33,15 @@ beforeEach(async () => {
   ]);
   await db.insert(gitHostProject).values([
     {
-      project: COLLECTED,
+      remote: testRemote(COLLECTED),
       gitHost: 'gitlab',
       repository: 'g/p',
       syncedFrom: AT,
     },
-    { project: WAITING, gitHost: 'github', error: 'gh not found' },
+    { remote: testRemote(WAITING), gitHost: 'github', error: 'gh not found' },
   ]);
   await db.insert(gitHostIssue).values({
-    project: COLLECTED,
+    remote: testRemote(COLLECTED),
     number: 52,
     title: 'Export button',
     state: 'closed',
@@ -55,7 +55,7 @@ beforeEach(async () => {
   });
   await db.insert(gitHostRequest).values(
     [11, 12, 13].map((number) => ({
-      project: COLLECTED,
+      remote: testRemote(COLLECTED),
       number,
       title: `Request ${String(number)}`,
       state: number === 11 ? 'merged' : 'open',

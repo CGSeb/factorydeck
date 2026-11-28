@@ -17,7 +17,6 @@ import type {
 } from '../git-host/types.ts';
 
 const issueColumns = () => ({
-  project: text().notNull(),
   number: integer().notNull(),
   title: text().notNull(),
   state: text().notNull(),
@@ -36,12 +35,11 @@ const issueColumns = () => ({
 
 export const gitHostIssue = pgTable(
   'git_host_issue',
-  issueColumns(),
-  (table) => [primaryKey({ columns: [table.project, table.number] })],
+  { remote: text().notNull(), ...issueColumns() },
+  (table) => [primaryKey({ columns: [table.remote, table.number] })],
 );
 
 const requestColumns = () => ({
-  project: text().notNull(),
   number: integer().notNull(),
   title: text().notNull(),
   state: text().notNull(),
@@ -60,8 +58,8 @@ const requestColumns = () => ({
 
 export const gitHostRequest = pgTable(
   'git_host_request',
-  requestColumns(),
-  (table) => [primaryKey({ columns: [table.project, table.number] })],
+  { remote: text().notNull(), ...requestColumns() },
+  (table) => [primaryKey({ columns: [table.remote, table.number] })],
 );
 
 const gitHostSettingColumns = () => ({
@@ -80,7 +78,7 @@ const gitHostSettingColumns = () => ({
 });
 
 export const gitHostProject = pgTable('git_host_project', {
-  project: text().primaryKey(),
+  remote: text().primaryKey(),
   ...gitHostSettingColumns(),
 });
 
@@ -89,22 +87,24 @@ export const gitHostRun = pgTable('git_host_run', {
   finishedAt: timestamp('finished_at', { withTimezone: true }).notNull(),
 });
 
-const CHOSEN_GIT_HOST = sql.raw(
-  '(select distinct on (p.slug) p.slug as project, g.project as root from git_host_project g join root_remote r on r.root = g.project join project p on p.remote = r.remote order by p.slug, g.synced_from desc nulls last, g.project) h',
-);
-
 export const projectGitHost = pgView('project_git_host', {
   project: text().notNull(),
-  root: text().notNull(),
+  remote: text().notNull(),
   ...gitHostSettingColumns(),
 }).as(
-  sql`select h.project, h.root, g.git_host, g.repository, g.synced_from, g.error, g.error_git_host, g.stage_labels, g.auto_merge, g.bug_label, g.history_read, g.fix_read, g.state_events_read, g.body_closes_read from git_host_project g join ${CHOSEN_GIT_HOST} on h.root = g.project`,
+  sql`select p.slug as project, g.remote, g.git_host, g.repository, g.synced_from, g.error, g.error_git_host, g.stage_labels, g.auto_merge, g.bug_label, g.history_read, g.fix_read, g.state_events_read, g.body_closes_read from git_host_project g join project p on p.remote = g.remote`,
 );
 
-export const projectIssue = pgView('project_issue', issueColumns()).as(
-  sql`select h.project, i.number, i.title, i.state, i.labels, i.url, i.created_at, i.closed_at, i.updated_at, i.reopened, i.state_events, i.needs_spec from git_host_issue i join ${CHOSEN_GIT_HOST} on h.root = i.project`,
+export const projectIssue = pgView('project_issue', {
+  project: text().notNull(),
+  ...issueColumns(),
+}).as(
+  sql`select p.slug as project, i.number, i.title, i.state, i.labels, i.url, i.created_at, i.closed_at, i.updated_at, i.reopened, i.state_events, i.needs_spec from git_host_issue i join project p on p.remote = i.remote`,
 );
 
-export const projectRequest = pgView('project_request', requestColumns()).as(
-  sql`select h.project, q.number, q.title, q.state, q.draft, q.head_branch, q.url, q.created_at, q.merged_at, q.closed_at, q.updated_at, q.closes, q.checks, q.report, q.reports from git_host_request q join ${CHOSEN_GIT_HOST} on h.root = q.project`,
+export const projectRequest = pgView('project_request', {
+  project: text().notNull(),
+  ...requestColumns(),
+}).as(
+  sql`select p.slug as project, q.number, q.title, q.state, q.draft, q.head_branch, q.url, q.created_at, q.merged_at, q.closed_at, q.updated_at, q.closes, q.checks, q.report, q.reports from git_host_request q join project p on p.remote = q.remote`,
 );

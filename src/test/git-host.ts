@@ -2,7 +2,8 @@ import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
 import type { Database } from '../db/client.ts';
-import { session } from '../db/schema.ts';
+import { eq } from 'drizzle-orm';
+import { rootRemote, session } from '../db/schema.ts';
 import {
   type FakeGitHostData,
   installFakeGitHost,
@@ -21,6 +22,18 @@ export async function addProject(
   await db.insert(session).values({ id: `session-${name}`, project: root });
   await giveFakeToken(db, root);
   return root;
+}
+
+export async function remoteOfRoot(
+  db: Database,
+  root: string,
+): Promise<string> {
+  const [found] = await db
+    .select({ remote: rootRemote.remote })
+    .from(rootRemote)
+    .where(eq(rootRemote.root, root));
+  if (found === undefined) throw new Error(`No remote for ${root}`);
+  return found.remote;
 }
 
 const CallSchema = z.object({ args: z.array(z.string()), cwd: z.string() });

@@ -53,10 +53,10 @@ export async function seedSessionRows(
 
 export async function seedGitHostRows(
   db: Database,
-  root: string,
+  remote: string,
 ): Promise<void> {
   await db.insert(gitHostIssue).values({
-    project: root,
+    remote,
     number: 1,
     title: 'Issue',
     state: 'open',
@@ -67,7 +67,7 @@ export async function seedGitHostRows(
     needsSpec: [{ added: true, at: AT.toISOString() }],
   });
   await db.insert(gitHostRequest).values({
-    project: root,
+    remote,
     number: 2,
     title: 'Request',
     state: 'open',
@@ -81,5 +81,5 @@ export async function seedGitHostRows(
   });
   await db
     .insert(gitHostProject)
-    .values({ project: root, gitHost: 'github', syncedFrom: AT });
+    .values({ remote, gitHost: 'github', syncedFrom: AT });
 }

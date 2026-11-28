@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Database } from '../db/client.ts';
 import { DEFAULT_CONFIG } from '../roles/config.ts';
 import { createTestDatabase } from '../test/postgres.ts';
-import { APP, factory, query, seedKinds } from '../test/kind-seed.ts';
+import { APP, query, seedKinds } from '../test/kind-seed.ts';
 import { autonomyStats } from './autonomy.ts';
 import { flowStats } from './flow.ts';
 import { qualityStats } from './quality.ts';
@@ -23,9 +23,9 @@ afterAll(async () => {
 describe('stats of one kind', () => {
   it('counts only the merged issues and the stops of that kind on autonomy', async () => {
     const [all, bug, feature] = await Promise.all([
-      autonomyStats(db, query('7d'), factory),
-      autonomyStats(db, query('7d', 'bug'), factory),
-      autonomyStats(db, query('7d', 'feature'), factory),
+      autonomyStats(db, query('7d')),
+      autonomyStats(db, query('7d', 'bug')),
+      autonomyStats(db, query('7d', 'feature')),
     ]);
     expect([
       all.current.merged,
@@ -42,20 +42,15 @@ describe('stats of one kind', () => {
 
   it('counts only the merged issues of that kind on quality', async () => {
     const [bug, feature] = await Promise.all([
-      qualityStats(db, query('7d', 'bug'), factory),
-      qualityStats(db, query('7d', 'feature'), factory),
+      qualityStats(db, query('7d', 'bug')),
+      qualityStats(db, query('7d', 'feature')),
     ]);
     expect([bug.current.merged, feature.current.merged]).toEqual([2, 1]);
     expect(bug.current.firstPassed).toBe(1);
   });
 
   it('times only the merged issues of that kind on flow', async () => {
-    const flow = await flowStats(
-      db,
-      query('7d', 'bug'),
-      DEFAULT_CONFIG,
-      factory,
-    );
+    const flow = await flowStats(db, query('7d', 'bug'), DEFAULT_CONFIG);
     expect(flow.current.issues.map((issue) => issue.number)).toEqual([2, 5]);
     expect(flow.previous?.issues).toHaveLength(1);
   });
@@ -63,7 +58,7 @@ describe('stats of one kind', () => {
   it('shares the tokens of that kind, orchestration split, no work item left out', async () => {
     const [all, bug, feature] = await Promise.all(
       [undefined, 'bug' as const, 'feature' as const].map((kind) =>
-        flowStats(db, query('7d', kind), DEFAULT_CONFIG, factory),
+        flowStats(db, query('7d', kind), DEFAULT_CONFIG),
       ),
     );
     expect(all?.current.tokens).toEqual({
@@ -92,7 +87,7 @@ describe('stats of one kind', () => {
   it('adds the tokens of both kinds up to all with no work item, and the calls exactly', async () => {
     const [all, bug, feature] = await Promise.all(
       [undefined, 'bug' as const, 'feature' as const].map((kind) =>
-        flowStats(db, query('7d', kind), DEFAULT_CONFIG, factory),
+        flowStats(db, query('7d', kind), DEFAULT_CONFIG),
       ),
     );
     const empty = { total: 0, apiCalls: 0, noWorkItem: 0 };
@@ -105,9 +100,9 @@ describe('stats of one kind', () => {
 
   it('lists only the issues of that kind waiting for a person', async () => {
     const [all, bug, feature] = await Promise.all([
-      waitingIssues(db, APP, factory),
-      waitingIssues(db, APP, factory, 'bug'),
-      waitingIssues(db, APP, factory, 'feature'),
+      waitingIssues(db, APP),
+      waitingIssues(db, APP, 'bug'),
+      waitingIssues(db, APP, 'feature'),
     ]);
     expect(all.issues.map((issue) => issue.number)).toEqual([6, 7]);
     expect(bug.issues.map((issue) => issue.number)).toEqual([6]);

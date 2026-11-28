@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Database } from '../db/client.ts';
 import { gitHostProject } from '../db/schema.ts';
-import { createTestDatabase } from '../test/postgres.ts';
+import { createTestDatabase, testRemote } from '../test/postgres.ts';
 import { mergedIssue, report, seedIssues } from '../test/stats-seed.ts';
 import { qualityStats } from './quality.ts';
 
@@ -14,7 +14,7 @@ let close: () => Promise<void>;
 beforeAll(async () => {
   ({ db, close } = await createTestDatabase());
   await db.insert(gitHostProject).values({
-    project: GAIN,
+    remote: testRemote(GAIN),
     autoMerge: true,
     gitHost: 'github',
     syncedFrom: NOW,
@@ -74,15 +74,14 @@ afterAll(async () => {
   await close();
 });
 
-const everyProject = (): Promise<boolean> => Promise.resolve(true);
-
 describe('score gain', () => {
   it('sums the gain from the first to the last report up to the merge, for the period and the previous one', async () => {
-    const quality = await qualityStats(
-      db,
-      { period: '7d', timeZone: 'UTC', project: GAIN, now: NOW },
-      everyProject,
-    );
+    const quality = await qualityStats(db, {
+      period: '7d',
+      timeZone: 'UTC',
+      project: GAIN,
+      now: NOW,
+    });
     expect(quality.current).toMatchObject({
       merged: 7,
       gainSum: 55,

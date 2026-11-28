@@ -165,7 +165,7 @@ describe('collect from GitLab', () => {
       hasFactory,
     });
     expect(failed.failures).toMatchObject([{ gitHost: 'gitlab' }]);
-    expect((await collectionStatus(db, hasFactory)).failures).toMatchObject([
+    expect((await collectionStatus(db)).failures).toMatchObject([
       { gitHost: 'gitlab', reason: '401 Unauthorized' },
     ]);
     expect(await issueDetail(db, root, 1)).toMatchObject({

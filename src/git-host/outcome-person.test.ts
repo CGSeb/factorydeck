@@ -3,7 +3,15 @@ import { describe, expect, it } from 'vitest';
 import { gitHostIssue, gitHostProject, gitHostRequest } from '../db/schema.ts';
 import type { FakeGitHostData } from '../demo/fake-git-host.ts';
 import { hasFactory } from '../ingest/factory.ts';
-import { T0, T1, T2, addProject, calls, ghRequest } from '../test/git-host.ts';
+import {
+  T0,
+  T1,
+  T2,
+  addProject,
+  calls,
+  ghRequest,
+  remoteOfRoot,
+} from '../test/git-host.ts';
 import {
   type Row,
   closed,
@@ -187,7 +195,7 @@ describe('merged after a person', () => {
       .db()
       .insert(gitHostProject)
       .values({
-        project: root,
+        remote: await remoteOfRoot(ctx.db(), root),
         gitHost: 'github',
         repository: 'example-org/example-app',
         syncedFrom: new Date(T2),

@@ -199,7 +199,7 @@ describe('collect', () => {
       'Collected 1 projects: 2 issues and 3 pull or merge requests updated.',
       'Could not read GitHub for app: HTTP 401: Bad credentials (https://api.github.com/graphql).',
     ]);
-    expect(await collectionStatus(db, hasFactory)).toMatchObject({
+    expect(await collectionStatus(db)).toMatchObject({
       failures: [
         {
           project: app,
@@ -213,7 +213,7 @@ describe('collect', () => {
     expect((await issueDetail(db, api, 1))?.title).toBe('Issue 1');
     await writeFakeGitHostData(app, github());
     await collectAll();
-    expect((await collectionStatus(db, hasFactory)).failures).toEqual([]);
+    expect((await collectionStatus(db)).failures).toEqual([]);
   });
 
   it('retries a failed run in full from the previous successful start', async () => {
@@ -264,7 +264,7 @@ describe('collect', () => {
       requests: 0,
       failures: [],
     });
-    expect((await collectionStatus(db, hasFactory)).collectedAt).not.toBeNull();
+    expect((await collectionStatus(db)).collectedAt).not.toBeNull();
   });
 
   it('stops collecting a root once its remote belongs to no project', async () => {

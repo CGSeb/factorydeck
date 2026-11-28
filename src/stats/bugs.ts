@@ -8,7 +8,6 @@ import {
 } from '../git-host/query.ts';
 import {
   type AutonomyQuery,
-  type FactoryFilter,
   MERGED_STAGES,
   type ProjectState,
   type Window,
@@ -165,11 +164,10 @@ export function summarizeBugs(
 export async function bugStats(
   db: Database,
   query: BugQuery,
-  hasFactory: FactoryFilter,
 ): Promise<BugStats> {
   const [issues, projects] = await Promise.all([
-    loadIssues(db, query.project, hasFactory, bugFacts),
-    factoryProjects(db, query.project, hasFactory),
+    loadIssues(db, query.project, bugFacts),
+    factoryProjects(db, query.project),
   ]);
   const bounds = await statsBounds(db, {
     ...query,

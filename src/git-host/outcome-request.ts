@@ -1,8 +1,8 @@
-import type { gitHostRequest } from '../db/schema.ts';
+import type { projectRequest } from '../db/schema.ts';
 import type { OutcomeRequest } from './outcome.ts';
 import type { RequestState } from './types.ts';
 
-export type RequestRow = typeof gitHostRequest.$inferSelect;
+export type RequestRow = typeof projectRequest.$inferSelect;
 
 export function requestState(value: string): RequestState {
   return value === 'merged' || value === 'closed' ? value : 'open';

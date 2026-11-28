@@ -40,9 +40,27 @@ begin
 end $$;
 create trigger link_session_root after insert or update of project on session
   for each row execute function link_test_root();
+create function link_test_remote() returns trigger language plpgsql as $$
+declare
+  root text := substring(new.remote from '^test\\.invalid/(.+)$');
+begin
+  if root is not null then
+    insert into project (name, slug, remote, created_at)
+      values (coalesce(substring(root from '([^/\\\\]+)[/\\\\]*$'), root), root, new.remote, now())
+      on conflict do nothing;
+    insert into root_remote (root, remote) values (root, new.remote)
+      on conflict do nothing;
+  end if;
+  return new;
+end $$;
 create trigger link_git_host_root after insert on git_host_project
-  for each row execute function link_test_root();
+  for each row execute function link_test_remote();
 `;
+
+/** The remote the test trigger gives a root: git host rows seeded under it belong to that root's project. */
+export function testRemote(root: string): string {
+  return `test.invalid/${root}`;
+}
 
 export interface ScratchOptions {
   linkRoots?: boolean;

@@ -90,7 +90,7 @@ describe('factory settings read through the git host', () => {
     expect(collectSummary(result).slice(1)).toEqual([
       'Could not read GitHub for app: factory.yml says GitLab, the remote is on github.',
     ]);
-    expect((await collectionStatus(ctx.db(), hasFactory)).failures).toEqual([
+    expect((await collectionStatus(ctx.db())).failures).toEqual([
       {
         project: root,
         name: 'app',
@@ -143,7 +143,7 @@ describe('factory settings read through the git host', () => {
     expect(await hostCalls(root)).toHaveLength(2);
   });
 
-  it('reads factory.yml once per run for a project with several roots', async () => {
+  it('reads factory.yml once and the git host from one root per run for a project with several roots', async () => {
     const { root, data } = await app();
     const other = join(ctx.work(), 'other');
     await installFakeGitHost(other, { ...data, log: join(other, 'calls.log') });
@@ -162,10 +162,11 @@ describe('factory settings read through the git host', () => {
       .set({ remote: linked?.remote ?? '' })
       .where(eq(rootRemote.root, other));
     const result = await run();
-    expect(result).toMatchObject({ projects: 2, failures: [] });
+    expect(result).toMatchObject({ projects: 1, failures: [] });
     expect(await hostCalls(root)).toHaveLength(2);
     expect(await hostCalls(other)).toHaveLength(0);
-    expect((await calls(other)).length).toBeGreaterThan(0);
+    expect((await calls(root)).length).toBeGreaterThan(0);
+    expect(await calls(other)).toEqual([]);
   });
 
   it('stores the normalised remote in lower case as the repository, reading in full once a project stored another form', async () => {

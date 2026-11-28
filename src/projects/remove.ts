@@ -8,7 +8,6 @@ import {
   skippedFile,
   sourceFile,
 } from '../db/schema.ts';
-import { forgetGitHostData } from '../git-host/store.ts';
 import { type FactoryCheck, factoryFile } from '../ingest/factory.ts';
 import { sessionIdOfPath } from '../ingest/files.ts';
 import type { Transaction } from '../ingest/store.ts';
@@ -38,7 +37,6 @@ export async function forgetProjects(
   { keepSent = false }: { keepSent?: boolean } = {},
 ): Promise<number> {
   if (projects.length === 0) return 0;
-  await forgetGitHostData(tx, [...projects]);
   const ids = new Set(
     (
       await tx

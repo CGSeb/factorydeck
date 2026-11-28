@@ -4,7 +4,7 @@ import type { Database } from '../db/client.ts';
 import { gitHostIssue, gitHostRequest } from '../db/schema.ts';
 import { DEFAULT_CONFIG } from '../roles/config.ts';
 import { APP, seedFeatures, week } from '../test/features.ts';
-import { createTestDatabase } from '../test/postgres.ts';
+import { createTestDatabase, testRemote } from '../test/postgres.ts';
 import { listFeatures } from './query.ts';
 
 let db: Database;
@@ -27,7 +27,7 @@ beforeAll(async () => {
     .set({ state: 'closed' })
     .where(eq(gitHostIssue.number, 9));
   await db.insert(gitHostRequest).values({
-    project: APP,
+    remote: testRemote(APP),
     number: 103,
     title: 'Request 103',
     state: 'merged',

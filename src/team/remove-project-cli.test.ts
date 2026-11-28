@@ -77,11 +77,11 @@ describe('removing a project whose sessions came from the CLI', () => {
     const root = '/work/shop-clone';
     await db.update(session).set({ project: root });
     expect(await db.select().from(rootRemote)).toEqual([]);
-    await seedGitHostRows(db, root);
+    await seedGitHostRows(db, NORMAL_REMOTE);
     await db
       .update(gitHostProject)
       .set({ error: 'gh: 401' })
-      .where(eq(gitHostProject.project, root));
+      .where(eq(gitHostProject.remote, NORMAL_REMOTE));
     await db.insert(markedReport).values({
       project: root,
       reportedAt: AT,

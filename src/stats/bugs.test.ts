@@ -1,14 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Database } from '../db/client.ts';
 import { createTestDatabase } from '../test/postgres.ts';
-import {
-  APP,
-  DAY,
-  PLAIN,
-  factory,
-  query,
-  seedKinds,
-} from '../test/kind-seed.ts';
+import { APP, DAY, PLAIN, query, seedKinds } from '../test/kind-seed.ts';
 import { bugStats } from './bugs.ts';
 import { mergedByKind } from './kinds.ts';
 
@@ -26,7 +19,7 @@ afterAll(async () => {
 
 describe('bug stats', () => {
   it('counts the merged issues, the merged bugs, the reopened ones and their times to fix', async () => {
-    const bugs = await bugStats(db, query('7d'), factory);
+    const bugs = await bugStats(db, query('7d'));
     expect(bugs.current).toEqual({
       merged: 3,
       bugs: 2,
@@ -39,7 +32,7 @@ describe('bug stats', () => {
   });
 
   it('counts a bug merged twice after a reopen once, at its latest merge', async () => {
-    const bugs = await bugStats(db, query('7d'), factory);
+    const bugs = await bugStats(db, query('7d'));
     expect(bugs.issues).toEqual([
       { project: APP, number: 2, title: 'Issue 2', fixMs: 2 * DAY },
       { project: APP, number: 5, title: 'Issue 5', fixMs: DAY },
@@ -47,7 +40,7 @@ describe('bug stats', () => {
   });
 
   it('counts a bug merged before the period in the previous one only', async () => {
-    const bugs = await bugStats(db, query('7d'), factory);
+    const bugs = await bugStats(db, query('7d'));
     expect(bugs.previous).toEqual({
       merged: 1,
       bugs: 1,
@@ -58,7 +51,7 @@ describe('bug stats', () => {
   });
 
   it('cuts the merged issues and bugs by day', async () => {
-    const { unit, buckets } = await bugStats(db, query('7d'), factory);
+    const { unit, buckets } = await bugStats(db, query('7d'));
     expect(unit).toBe('day');
     expect(
       buckets.flatMap(({ start, merged, bugs }) =>
@@ -68,7 +61,7 @@ describe('bug stats', () => {
   });
 
   it('counts the openings of bugs only, by day, with only the creation of a bug whose state events were not collected', async () => {
-    const { buckets } = await bugStats(db, query('7d'), factory);
+    const { buckets } = await bugStats(db, query('7d'));
     expect(
       buckets.flatMap(({ start, opened }) =>
         opened > 0 ? [`${start} ${String(opened)}`] : [],
@@ -77,7 +70,7 @@ describe('bug stats', () => {
   });
 
   it('has no previous period for all time', async () => {
-    const bugs = await bugStats(db, query('all'), factory);
+    const bugs = await bugStats(db, query('all'));
     expect(bugs.current.bugs).toBe(3);
     expect(bugs).not.toHaveProperty('previous');
   });
@@ -85,15 +78,15 @@ describe('bug stats', () => {
   it('counts the merged issues of each kind as the overview does', async () => {
     for (const period of ['today', '7d', '30d', 'all'] as const) {
       const [bugs, overview] = await Promise.all([
-        bugStats(db, query(period), factory),
-        mergedByKind(db, query(period), factory),
+        bugStats(db, query(period)),
+        mergedByKind(db, query(period)),
       ]);
       expect(bugs.kinds).toEqual(overview);
     }
   });
 
   it('says when no project of the selection has a bug label', async () => {
-    const bugs = await bugStats(db, query('7d', undefined, PLAIN), factory);
+    const bugs = await bugStats(db, query('7d', undefined, PLAIN));
     expect(bugs.bugTickets).toBe(false);
     expect(bugs.kinds).toEqual({ feature: 1, bug: 0 });
   });

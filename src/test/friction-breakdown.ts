@@ -8,6 +8,7 @@ import {
   session,
   subAgent,
 } from '../db/schema.ts';
+import { testRemote } from './postgres.ts';
 
 export const APP = '/work/app';
 export const API = '/work/api';
@@ -173,14 +174,14 @@ async function seedRubs(db: Database): Promise<void> {
 
 async function seedGitHost(db: Database): Promise<void> {
   await db.insert(gitHostProject).values({
-    project: APP,
+    remote: testRemote(APP),
     gitHost: 'github',
     repository: 'example-org/example-app',
     syncedFrom: OLD,
     autoMerge: true,
   });
   await db.insert(gitHostIssue).values({
-    project: APP,
+    remote: testRemote(APP),
     number: 7,
     title: 'Fix the login',
     state: 'open',

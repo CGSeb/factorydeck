@@ -76,7 +76,7 @@ describe('factory status', () => {
       { id: 's1', project: '/work/stray' },
     ]);
     await db.insert(gitHostProject).values({
-      project: '/work/web',
+      remote: 'github.com/owner/shop',
       syncedFrom: NOW,
       bugLabel: 'bug',
     });

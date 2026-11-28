@@ -262,7 +262,7 @@ describe('GET /api/overview', () => {
     const app = createApp({
       checkDatabase: databaseCheck(db),
       uiDir: builtUi,
-      overview: { ...source, load: (query) => overviewData(db, query, up) },
+      overview: { ...source, load: (query) => overviewData(db, query) },
       sessions: sessionSource,
       ...unused,
     });
