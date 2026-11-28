@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  MAX_PARSER_VERSION,
   MAX_RECORDS,
   MAX_THREADS,
   checkBatch,
@@ -59,8 +60,17 @@ describe('checkBatch', () => {
     );
   });
 
-  it.each([0, -1, 1.5, '1'])('refuses parserVersion %s', (version) => {
-    expect(invalid([], version)).toMatchObject({ path: 'parserVersion' });
+  it.each([0, -1, 1.5, '1', 2_147_483_648])(
+    'refuses parserVersion %s',
+    (version) => {
+      expect(invalid([], version)).toMatchObject({ path: 'parserVersion' });
+    },
+  );
+
+  it('accepts the largest parserVersion the database stores', () => {
+    expect(
+      checkBatch({ parserVersion: MAX_PARSER_VERSION, threads: [] }).status,
+    ).toBe('ok');
   });
 
   it('names the dotted path of the first problem', () => {

@@ -62,8 +62,8 @@ async function readLocally() {
   return ingest(db, folder, EVERY_PROJECT_HAS_FACTORY);
 }
 
-async function send(threads: unknown[]) {
-  const checked = checkBatch({ parserVersion: 1, threads });
+async function send(threads: unknown[], parserVersion = 1) {
+  const checked = checkBatch({ parserVersion, threads });
   if (checked.status !== 'ok') throw new Error(JSON.stringify(checked));
   const [row] = await db
     .insert(account)
@@ -250,5 +250,13 @@ describe('the source path migration', () => {
     expect(
       (await db.select().from(closingLine)).map((row) => row.sourcePath),
     ).toEqual(['claude-code/s1/main']);
+  });
+});
+
+describe('the largest parserVersion', () => {
+  it('is stored', async () => {
+    expect(await send([mainThread('s-max')], 2_147_483_647)).toMatchObject({
+      status: 'stored',
+    });
   });
 });

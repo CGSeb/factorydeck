@@ -10,6 +10,7 @@ export const MAX_DECOMPRESSED_BYTES = 20 * MB;
 export const MAX_THREADS = 2000;
 export const MAX_RECORDS = 20_000;
 export const MAX_ID_LENGTH = 200;
+export const MAX_PARSER_VERSION = 2_147_483_647;
 
 export function fileKeyOf(
   agent: string,
@@ -113,7 +114,7 @@ const threadSchema = z
 
 export const batchSchema = z
   .object({
-    parserVersion: z.number().int().positive(),
+    parserVersion: z.number().int().positive().max(MAX_PARSER_VERSION),
     threads: z.array(threadSchema),
   })
   .superRefine(({ threads }, context) => {
