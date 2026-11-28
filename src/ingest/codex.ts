@@ -10,7 +10,7 @@ import {
   readCodexChunk,
   unresolvedOutputs,
 } from './codex-records.ts';
-import { type LogFile, readRange } from './files.ts';
+import { type LogFile, logFileKey, readRange } from './files.ts';
 import type { FrictionRow } from './friction-rows.ts';
 import { type FileCounts, unreadRange } from './range.ts';
 import { parseLines } from './records.ts';
@@ -70,7 +70,7 @@ async function newCalls(
       .where(
         and(
           eq(apiCall.sessionId, file.sessionId),
-          ne(apiCall.sourcePath, file.path),
+          ne(apiCall.sourcePath, logFileKey(file)),
           inArray(apiCall.requestKey, keys.slice(index, index + KEY_CHUNK)),
         ),
       );
@@ -106,7 +106,7 @@ async function storeRows(
       .delete(apiCall)
       .where(
         and(
-          eq(apiCall.sourcePath, file.path),
+          eq(apiCall.sourcePath, logFileKey(file)),
           like(apiCall.requestKey, `${TOKEN_COUNT_KEY}%`),
         ),
       );
@@ -150,7 +150,7 @@ async function loadThreads(
       ? undefined
       : await loadSubAgent(run, file.sessionId, codex.subAgentId, CODEX);
   if (range.reset) {
-    await forgetFileRows(run, file.path);
+    await forgetFileRows(run, logFileKey(file), file.path);
     if (agentRow === undefined) resetSession(sessionRow);
     else Object.assign(agentRow, { firstAt: null, lastAt: null, model: '' });
   }
@@ -191,7 +191,8 @@ export async function ingestCodexFile(
   const parsed = parseLines(range.chunk, parseCodexRecord);
   const rows = readCodexChunk(parsed.records, {
     source: {
-      sourcePath: file.path,
+      sourcePath: logFileKey(file),
+      logPath: file.path,
       sessionId: file.sessionId,
       subAgentId: codex.subAgentId ?? null,
       startOffset: range.start,

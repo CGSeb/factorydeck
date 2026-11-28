@@ -141,11 +141,15 @@ export async function readMainLogsAgainOnce(tx: Transaction): Promise<void> {
 }
 
 /** Deletes the rows read from a file, before it is read again from the start. */
-export async function forgetFileRows(run: Run, path: string): Promise<void> {
-  await run.tx.delete(apiCall).where(eq(apiCall.sourcePath, path));
-  await run.tx.delete(skillLaunch).where(eq(skillLaunch.sourcePath, path));
-  await run.tx.delete(userPrompt).where(eq(userPrompt.sourcePath, path));
-  await run.tx.delete(closingLine).where(eq(closingLine.sourcePath, path));
+export async function forgetFileRows(
+  run: Run,
+  fileKey: string,
+  path: string,
+): Promise<void> {
+  await run.tx.delete(apiCall).where(eq(apiCall.sourcePath, fileKey));
+  await run.tx.delete(skillLaunch).where(eq(skillLaunch.sourcePath, fileKey));
+  await run.tx.delete(userPrompt).where(eq(userPrompt.sourcePath, fileKey));
+  await run.tx.delete(closingLine).where(eq(closingLine.sourcePath, fileKey));
   await run.tx.delete(friction).where(eq(friction.sourcePath, path));
 }
 
@@ -163,7 +167,10 @@ export function resetSession(row: SessionRow): void {
     lastStopReason: null,
     userAfterLastAssistant: false,
     lastUserInterrupted: false,
-  } satisfies Omit<SessionRow, 'id' | 'agent'>);
+  } satisfies Omit<
+    SessionRow,
+    'id' | 'agent' | 'remote' | 'sentByAccountId' | 'sentByMachine'
+  >);
 }
 
 export async function insertChunks<T>(

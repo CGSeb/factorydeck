@@ -13,6 +13,7 @@ import {
   unique,
 } from 'drizzle-orm/pg-core';
 import { UNASSIGNED_PROJECT } from '../projects/label.ts';
+import { account } from './auth-schema.ts';
 
 /** A session log already read, so the next ingestion resumes where it stopped. */
 export const sourceFile = pgTable('source_file', {
@@ -51,7 +52,27 @@ export const session = pgTable('session', {
   lastUserInterrupted: boolean('last_user_interrupted')
     .notNull()
     .default(false),
+  remote: text(),
+  sentByAccountId: bigint('sent_by_account_id', {
+    mode: 'number',
+  }).references(() => account.id, { onDelete: 'set null' }),
+  sentByMachine: text('sent_by_machine'),
 });
+
+export const ingestFile = pgTable(
+  'ingest_file',
+  {
+    fileKey: text('file_key').primaryKey(),
+    readTo: bigint('read_to', { mode: 'number' }).notNull(),
+    parserVersion: integer('parser_version').notNull(),
+    readerState: jsonb('reader_state').$type<Record<string, unknown>>(),
+    sessionId: text('session_id')
+      .notNull()
+      .references(() => session.id, { onDelete: 'cascade' }),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
+  },
+  (table) => [index().on(table.sessionId)],
+);
 
 /** A sub-agent started by a session, from `<session id>/subagents/agent-<id>.jsonl`. */
 export const subAgent = pgTable(

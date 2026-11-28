@@ -8,10 +8,12 @@ import {
 } from '../cli-login/pending.ts';
 import type { ApiContext } from './api-context.ts';
 import { overHttps } from './auth-routes.ts';
+import { type StoreBatch, ingestRoute } from './ingest-routes.ts';
 
 export interface CliSource {
   logins: PendingLogins;
   connections: CliConnections;
+  ingest?: StoreBatch | undefined;
 }
 
 export interface CliEnv {
@@ -139,6 +141,7 @@ export function cliRoutes(
   const routes = new Hono<CliEnv>();
   routes.use('*', bearerGuard(source.connections, context));
   loginRoutes(routes, source, context);
+  if (source.ingest !== undefined) ingestRoute(routes, source.ingest, context);
   routes.get('/me', (c) => {
     const { account, machine } = c.get('cli');
     return c.json({ account, machine });

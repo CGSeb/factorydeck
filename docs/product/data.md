@@ -14,7 +14,7 @@ A project has the factory installed when `docs/agents/factory.yml` exists at its
 
 ### Project of a session
 
-A session belongs to the [project](projects.md) whose remote is the remote of its root.
+A session belongs to the [project](projects.md) whose remote is the remote of its root, else its own remote: the one a [CLI sent](cli.md#sending-sessions) with it. A session sent by a CLI has no root on the instance, so its own remote decides.
 
 - **Remote of a root**: at every ingestion run, even with no new session, FactoryDeck reads `git remote get-url origin` in each root it has sessions of, and records it in the normalised form of [Remotes](projects.md#remotes). A root with no `origin`, whose `origin` is not a remote of those forms, or whose folder is gone keeps the last remote recorded for it, or none. Only `origin` is read.
 - **The link is computed when reading**: adding a project shows the sessions of its remote at once, without re-ingesting, and removing one hides them; the sessions themselves never change. When a root's `origin` changes, all its sessions, past ones included, follow the new remote at the next run.
@@ -76,6 +76,7 @@ Every `rollout-*.jsonl`, at any depth, under `CODEX_SESSIONS_DIR` (default `~/.c
 - Two runs never overlap: the second one waits or exits with `Ingestion already running.` (exit code 0).
 - The summary line: `Ingested <n> files: <s> sessions, <a> sub-agents, <c> API calls, <k> skill launches, <f> frictions, <x> lines skipped, <s> sessions skipped (no factory).`
 - A change that needs older logs read again (a new kind of row) reads every file once more for that row only, then records that it is done.
+- The API calls, skill launches, prompts and closing lines of a log are stored under its file key, `<agent>/<session id>/<main | sub-agent id>`, as a [CLI sends them](cli.md#sending-sessions), so a session read here and sent by a CLI counts once. The read offsets and the frictions stay keyed by the path of the log on this computer, which the [occurrences](frictions.md#occurrences) read.
 
 ## Git host
 

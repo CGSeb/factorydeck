@@ -8,6 +8,7 @@ import {
   setSessionCookie,
 } from './auth-routes.ts';
 import { CLI_PATH_PREFIX } from './cli-routes.ts';
+import { INGEST_PATH } from './ingest-routes.ts';
 
 const OPEN_ROUTES = new Set([
   'GET /api/health',
@@ -29,6 +30,10 @@ function isOpen(c: Context): boolean {
   return OPEN_ROUTES.has(`${method} ${c.req.path}`);
 }
 
+function ownsItsBody(c: Context): boolean {
+  return c.req.method === 'POST' && c.req.path === INGEST_PATH;
+}
+
 function isJson(contentType: string | undefined): boolean {
   const mediaType = (contentType ?? '').split(';')[0] ?? '';
   return mediaType.trim().toLowerCase() === 'application/json';
@@ -45,13 +50,16 @@ export function bodySizeGuard(): MiddlewareHandler {
     onError: (c) => c.json({ error: 'Body too large' }, 413),
   });
   return (c, next) =>
-    WRITE_METHODS.has(c.req.method) ? limit(c, next) : next();
+    WRITE_METHODS.has(c.req.method) && !ownsItsBody(c)
+      ? limit(c, next)
+      : next();
 }
 
 export function jsonBodyGuard(): MiddlewareHandler {
   return async (c, next) => {
     if (
       WRITE_METHODS.has(c.req.method) &&
+      !ownsItsBody(c) &&
       !isJson(c.req.header('content-type')) &&
       (await hasBody(c))
     ) {

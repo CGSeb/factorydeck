@@ -139,7 +139,7 @@ function mcpToolName(server: unknown, tool: unknown): string {
 
 function baseOf(reading: Reading, entry: Entry, key: string): FrictionBase {
   return {
-    sourcePath: reading.source.sourcePath,
+    sourcePath: reading.source.logPath ?? reading.source.sourcePath,
     sessionId: reading.source.sessionId,
     subAgentId: reading.source.subAgentId,
     recordUuid: key,

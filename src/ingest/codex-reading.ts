@@ -30,6 +30,7 @@ export function codexState(value: unknown): CodexState {
 
 export interface CodexSource {
   sourcePath: string;
+  logPath?: string;
   sessionId: string;
   subAgentId: string | null;
   startOffset: number;
