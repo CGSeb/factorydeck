@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { MemoryRouter, Route, Routes } from 'react-router';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { SAVE, SAVED, SAVING } from './project-settings-form.ts';
@@ -14,6 +13,7 @@ import {
 } from './projects-list-fixtures.ts';
 import { PROJECTS_REFUSED } from './projects-view.ts';
 import { ProjectSettingsPage } from './ProjectSettingsPage.tsx';
+import { memoryDataRouter } from './story-router.ts';
 
 function projectAt(index: number): ListedProject {
   const project = someProjects[index];
@@ -31,20 +31,16 @@ const meta = {
     saveProject: fn(savingAnswer({ status: 'saved', project: renamed })),
   },
   decorators: [
-    (Story, { parameters }) => (
-      <MemoryRouter
-        initialEntries={[
-          typeof parameters['entry'] === 'string'
-            ? parameters['entry']
-            : '/projects/atlas',
-        ]}
-      >
-        <Routes>
-          <Route path="/projects/:slug" element={<Story />} />
-          <Route path="/projects" element={<p>Project list</p>} />
-        </Routes>
-      </MemoryRouter>
-    ),
+    (Story, { parameters }) =>
+      memoryDataRouter(
+        typeof parameters['entry'] === 'string'
+          ? parameters['entry']
+          : '/projects/atlas',
+        [
+          { path: '/projects/:slug', element: <Story /> },
+          { path: '/projects', element: <p>Project list</p> },
+        ],
+      ),
   ],
 } satisfies Meta<typeof ProjectSettingsPage>;
 

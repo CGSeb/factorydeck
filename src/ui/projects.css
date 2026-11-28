@@ -63,3 +63,90 @@
   font-weight: 400;
   color: var(--fd-muted);
 }
+
+.fd-rules-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fd-space-1);
+}
+
+.fd-rules-form > .fd-setup-error {
+  margin: 0;
+}
+
+.fd-table-scroll .fd-rules-table td {
+  vertical-align: top;
+  padding-bottom: 0;
+}
+
+.fd-rules-table .fd-rule-cell:first-child {
+  min-width: 7rem;
+  width: 22%;
+}
+
+.fd-rules-table .fd-rule-cell {
+  min-width: 8rem;
+}
+
+.fd-rule-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--fd-space-2);
+  font-family: var(--fd-font-body);
+  font-size: var(--fd-text-md);
+  color: var(--fd-ink);
+  background: var(--fd-surface);
+  border: 1px solid var(--fd-field-border);
+  border-radius: var(--fd-radius-sm);
+}
+
+.fd-rule-input[data-pattern='true'] {
+  font-family: var(--fd-font-mono);
+  font-size: var(--fd-text-sm);
+}
+
+.fd-rule-input:focus-visible {
+  outline: 2px solid var(--fd-accent);
+  outline-offset: 1px;
+}
+
+.fd-rule-input[aria-invalid='true'] {
+  border-color: var(--fd-danger-strong);
+}
+
+.fd-rules-table .fd-rule-cell > .fd-setup-error {
+  margin: var(--fd-space-1) 0;
+}
+
+.fd-table-scroll .fd-rules-table td.fd-rule-actions {
+  white-space: nowrap;
+  padding-top: 10px;
+}
+
+.fd-rule-buttons {
+  display: flex;
+  gap: var(--fd-space-1);
+}
+
+.fd-rule-button {
+  min-width: 36px;
+  padding: 0 var(--fd-space-2);
+  font-size: var(--fd-text-sm);
+  color: var(--fd-ink);
+  background: var(--fd-surface);
+  border: 1px solid var(--fd-field-border);
+  border-radius: var(--fd-radius-sm);
+}
+
+.fd-rule-button:disabled {
+  color: var(--fd-muted);
+  opacity: 0.6;
+}
+
+.fd-rules-edit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fd-space-2);
+  margin-top: var(--fd-space-3);
+}

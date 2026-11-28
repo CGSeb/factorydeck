@@ -25,6 +25,8 @@ import {
   noProject,
   projectSummary,
 } from './projects-view.ts';
+import type { LoadRoleRules, SaveRoleRules } from './role-rules-api.ts';
+import { RoleRulesSection } from './RoleRulesSection.tsx';
 import { useRefreshing } from './skills-api.ts';
 import './invitations.css';
 import './projects.css';
@@ -32,6 +34,8 @@ import './projects.css';
 export interface ProjectSettingsPageProps {
   loadProjects: LoadProjects;
   saveProject: SaveProject;
+  loadRoleRules?: LoadRoleRules | undefined;
+  saveRoleRules?: SaveRoleRules | undefined;
 }
 
 const LOADING = 'Loading…';
@@ -168,6 +172,8 @@ function useSettings(loadProjects: LoadProjects, slug: string) {
 export function ProjectSettingsPage({
   loadProjects,
   saveProject,
+  loadRoleRules,
+  saveRoleRules,
 }: ProjectSettingsPageProps): ReactElement {
   const { slug = '' } = useParams();
   const selected = useProject();
@@ -186,12 +192,22 @@ export function ProjectSettingsPage({
         slug={slug}
         project={project}
         section={(shown) => (
-          <GeneralSection
-            key={shown.id}
-            project={shown}
-            saveProject={saveProject}
-            onSaved={onSaved}
-          />
+          <>
+            <GeneralSection
+              key={shown.id}
+              project={shown}
+              saveProject={saveProject}
+              onSaved={onSaved}
+            />
+            {loadRoleRules !== undefined && saveRoleRules !== undefined && (
+              <RoleRulesSection
+                key={`rules-${String(shown.id)}`}
+                project={shown}
+                loadRoleRules={loadRoleRules}
+                saveRoleRules={saveRoleRules}
+              />
+            )}
+          </>
         )}
       />
     </div>

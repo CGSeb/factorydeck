@@ -56,7 +56,7 @@ function errorsOf(
   return { form: outcome.message };
 }
 
-function useSavedFlag(): [boolean, (shown: boolean) => void] {
+export function useSavedFlag(): [boolean, (shown: boolean) => void] {
   const [shown, setShown] = useState(false);
   useEffect(() => {
     if (!shown) return undefined;

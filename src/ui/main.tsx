@@ -3,7 +3,7 @@ import '@fontsource-variable/space-grotesk';
 import './design/tokens.css';
 import './design/theme-dark.css';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router';
+import { RouterProvider, createBrowserRouter } from 'react-router';
 import { App } from './App.tsx';
 import {
   authStateLoader,
@@ -58,6 +58,7 @@ import {
   projectsLoader,
 } from './projects-api.ts';
 import { activeChanger } from './account-status-api.ts';
+import { roleRulesLoader, roleRulesSaver } from './role-rules-api.ts';
 
 const gate = authGate();
 const loadOverview = overviewLoader(gate.fetch);
@@ -108,62 +109,66 @@ const loadProjects = projectsLoader(gate.fetch);
 const addProject = projectAdder(gate.fetch);
 const saveProject = projectSaver(gate.fetch);
 const removeProject = projectRemover(gate.fetch);
+const loadRoleRules = roleRulesLoader(gate.fetch);
+const saveRoleRules = roleRulesSaver(gate.fetch);
 const loadCliConnections = cliConnectionsLoader(gate.fetch);
 const disconnectCliConnection = cliConnectionDisconnecter(gate.fetch);
 const root = document.querySelector('#root');
 if (root) {
-  createRoot(root).render(
-    <BrowserRouter>
-      <App
-        loadOverview={loadOverview}
-        loadSessions={loadSessions}
-        loadSession={loadSession}
-        loadSkills={loadSkills}
-        loadSkill={loadSkill}
-        loadRoles={loadRoles}
-        loadFeatures={loadFeatures}
-        loadFeature={loadFeature}
-        loadBugs={loadBugs}
-        loadFactory={loadFactory}
-        loadCollection={loadCollection}
-        refreshCollection={refreshCollection}
-        loadAutonomy={loadAutonomy}
-        loadQuality={loadQuality}
-        loadFrictions={loadFrictions}
-        loadOccurrences={loadOccurrences}
-        loadOutput={loadOutput}
-        loadFlow={loadFlow}
-        loadBugStats={loadBugStats}
-        loadWaiting={loadWaiting}
-        loadSidebar={loadSidebar}
-        loadAuthState={loadAuthState}
-        setupManager={setupManager}
-        loadMe={loadMe}
-        signOut={signOut}
-        leavePage={leavePage}
-        loadTeam={loadTeam}
-        changeRole={changeRole}
-        invitationActions={manageInvitations}
-        readInvitation={readInvitation}
-        acceptInvitation={acceptInvitation}
-        changeActive={changeActive}
-        createResetLink={createResetLink}
-        cliActions={cliActions}
-        readReset={readReset}
-        saveReset={saveReset}
-        loadReport={loadReport}
-        markReport={markReport}
-        loadProjects={loadProjects}
-        addProject={addProject}
-        saveProject={saveProject}
-        removeProject={removeProject}
-        loadCliConnections={loadCliConnections}
-        disconnectCliConnection={disconnectCliConnection}
-        signIn={signIn}
-        readCliLogin={readCliLogin}
-        decideCliLogin={decideCliLogin}
-        sessionGate={gate}
-      />
-    </BrowserRouter>,
+  const app = (
+    <App
+      loadOverview={loadOverview}
+      loadSessions={loadSessions}
+      loadSession={loadSession}
+      loadSkills={loadSkills}
+      loadSkill={loadSkill}
+      loadRoles={loadRoles}
+      loadFeatures={loadFeatures}
+      loadFeature={loadFeature}
+      loadBugs={loadBugs}
+      loadFactory={loadFactory}
+      loadCollection={loadCollection}
+      refreshCollection={refreshCollection}
+      loadAutonomy={loadAutonomy}
+      loadQuality={loadQuality}
+      loadFrictions={loadFrictions}
+      loadOccurrences={loadOccurrences}
+      loadOutput={loadOutput}
+      loadFlow={loadFlow}
+      loadBugStats={loadBugStats}
+      loadWaiting={loadWaiting}
+      loadSidebar={loadSidebar}
+      loadAuthState={loadAuthState}
+      setupManager={setupManager}
+      loadMe={loadMe}
+      signOut={signOut}
+      leavePage={leavePage}
+      loadTeam={loadTeam}
+      changeRole={changeRole}
+      invitationActions={manageInvitations}
+      readInvitation={readInvitation}
+      acceptInvitation={acceptInvitation}
+      changeActive={changeActive}
+      createResetLink={createResetLink}
+      cliActions={cliActions}
+      readReset={readReset}
+      saveReset={saveReset}
+      loadReport={loadReport}
+      markReport={markReport}
+      loadProjects={loadProjects}
+      addProject={addProject}
+      saveProject={saveProject}
+      removeProject={removeProject}
+      loadRoleRules={loadRoleRules}
+      saveRoleRules={saveRoleRules}
+      loadCliConnections={loadCliConnections}
+      disconnectCliConnection={disconnectCliConnection}
+      signIn={signIn}
+      readCliLogin={readCliLogin}
+      decideCliLogin={decideCliLogin}
+      sessionGate={gate}
+    />
   );
+  const router = createBrowserRouter([{ path: '*', element: app }]);
+  createRoot(root).render(<RouterProvider router={router} />);
 }

@@ -52,6 +52,19 @@ Both routes check, in order, the checks shared by every route under `/api/admin/
 | `description` or `agentType` | `At most 500 characters`, then `Not a valid regular expression: <reason>` (also a pattern that is not text).                                                                                                     |
 | `description`                | `Give a description or an agent type pattern`: the rule has neither pattern.                                                                                                                                     |
 
+#### Role rules section
+
+A manager edits a project's role rules in the `Role rules` section of its [settings page](projects.md#project-settings), after `General`. It reads and saves through the routes above.
+
+- **Rows**: one row per rule, in order, with `Name`, `Description pattern` and `Agent type pattern` (the patterns in a monospace font; an absent pattern shows empty), then `Move up` (↑), `Move down` (↓) and `Delete`. Each control names its rule by its position for assistive technology: `Name of rule 2`, `Description pattern of rule 2`, `Agent type pattern of rule 2`, `Move rule 2 up`, `Move rule 2 down`, `Delete rule 2`. `Move up` is disabled on the first row and `Move down` on the last. A moved row keeps the focus on the same button, or on the other move button once it reaches an edge; `Delete` moves the focus to the next row's `Delete` (the previous row's for the last row, `Add rule` when no row is left).
+- **No rule**: `No role rule: sub-agents take their type as role.` in place of the rows.
+- Under the rows, `Add rule` appends an empty row and focuses its `Name`; `Reset to defaults` fills the section with the [default role rules](#role-rules), without confirmation. Nothing is saved before `Save rules`.
+- **Save rules** sends the whole list, an empty pattern as absent and every value as typed. It is disabled while the rows equal the rules last read (an edit undone counts as no change). While the request runs it reads `Saving…` and is disabled; the fields stay enabled. Once saved, the section shows the rules the API answered (names trimmed) and `Saved` shows beside the button for 3 seconds, or until the next edit.
+- **Refusals** keep the edits. A `400` shows its message under the field it names (`name`, `description` or `agentType`) of the rule at its `rule` index, and the focus moves to that field; a `400` on `rules` shows under the section. If the project was removed meanwhile, `<name> is no longer in FactoryDeck.` shows under the section; a `503` shows `Database unreachable. Start it with pnpm db:up.` there, and any other failure the API's message or `Could not reach the server`.
+- **Loading**: `Loading…` until the rules are read; `Database unreachable. Start it with pnpm db:up.` while the database is unreachable.
+- **Refresh**: the section reloads the rules every `refreshSeconds`. Without unsaved changes it shows the new rules; with unsaved changes it keeps them.
+- **Leaving with unsaved changes**: an in-app link to another page asks `Leave without saving the rules?` in a dialog, with `Stay` (focused; also `Escape` or a click outside) and `Leave`. Closing or reloading the tab shows the browser's own prompt.
+
 **Default role rules**, each on the sub-agent's description; they match the descriptions `build-feature` and `fix-bug` give their agents:
 
 | Role           | Pattern                      |

@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { MemoryRouter } from 'react-router';
 import { expect, waitFor, within } from 'storybook/test';
 import { App } from './App.tsx';
 import { loaders } from './app-fixtures.ts';
@@ -12,6 +11,7 @@ import {
   someProjects,
 } from './projects-list-fixtures.ts';
 import { PROJECTS_REFUSED } from './projects-view.ts';
+import { memoryDataRouter } from './story-router.ts';
 
 const meta = {
   component: App,
@@ -21,15 +21,11 @@ const meta = {
     loadProjects: projectsLoaderOf(projectsResponse(someProjects)),
   },
   decorators: [
-    (Story, { parameters }) => (
-      <MemoryRouter
-        initialEntries={[
-          typeof parameters['path'] === 'string' ? parameters['path'] : '/',
-        ]}
-      >
-        <Story />
-      </MemoryRouter>
-    ),
+    (Story, { parameters }) =>
+      memoryDataRouter(
+        typeof parameters['path'] === 'string' ? parameters['path'] : '/',
+        [{ path: '*', element: <Story /> }],
+      ),
   ],
 } satisfies Meta<typeof App>;
 

@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { MemoryRouter, Route, Routes } from 'react-router';
 import { expect, userEvent, within } from 'storybook/test';
 import { SAVE, SAVED } from './project-settings-form.ts';
 import type {
@@ -13,6 +12,12 @@ import {
   someProjects,
 } from './projects-list-fixtures.ts';
 import { ProjectSettingsPage } from './ProjectSettingsPage.tsx';
+import {
+  customRules,
+  pendingRulesSave,
+  rulesView,
+} from './role-rules-fixtures.ts';
+import { memoryDataRouter } from './story-router.ts';
 
 function projectAt(index: number): ListedProject {
   const project = someProjects[index];
@@ -29,13 +34,10 @@ const meta = {
     saveProject: pendingSave(),
   },
   decorators: [
-    (Story) => (
-      <MemoryRouter initialEntries={['/projects/atlas']}>
-        <Routes>
-          <Route path="/projects/:slug" element={<Story />} />
-        </Routes>
-      </MemoryRouter>
-    ),
+    (Story) =>
+      memoryDataRouter('/projects/atlas', [
+        { path: '/projects/:slug', element: <Story /> },
+      ]),
   ],
 } satisfies Meta<typeof ProjectSettingsPage>;
 
@@ -127,5 +129,44 @@ export const RefreshKeepsEdits: Story = {
     await expect(canvas.getByLabelText('Git remote')).toHaveValue(
       'github.com/example/atlas',
     );
+  },
+};
+
+function refreshingProjects(): LoadProjects {
+  return () =>
+    Promise.resolve({
+      status: 'ok',
+      refreshSeconds: 0.05,
+      secretKey: true,
+      projects: [atlas],
+      pendingRemotes: [],
+      noRemote: null,
+    });
+}
+
+export const RoleRulesAfterGeneral: Story = {
+  name: 'Role rules: after General, kept with unsaved changes while the page refreshes',
+  args: {
+    loadProjects: refreshingProjects(),
+    loadRoleRules: () => Promise.resolve(rulesView(customRules, 0.05)),
+    saveRoleRules: pendingRulesSave(),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const rules = await canvas.findByRole('table');
+    await expect(
+      canvas.getAllByRole('heading', { level: 2 }).map((h) => h.textContent),
+    ).toEqual(['General', 'Role rules']);
+    const field = within(rules).getAllByLabelText(/^Name of rule \d+$/)[0];
+    if (field === undefined) throw new Error('No rule');
+    await userEvent.clear(field);
+    await userEvent.type(field, 'maker');
+    await new Promise((done) => setTimeout(done, 200));
+    await expect(
+      within(rules).getAllByLabelText(/^Name of rule \d+$/)[0],
+    ).toHaveValue('maker');
+    await expect(
+      canvas.getByRole('button', { name: 'Save rules' }),
+    ).toBeEnabled();
   },
 };

@@ -23,6 +23,7 @@ import {
   projectsSummary,
 } from './projects-view.ts';
 import { ProjectSettingsPage } from './ProjectSettingsPage.tsx';
+import type { LoadRoleRules, SaveRoleRules } from './role-rules-api.ts';
 import { type ProjectRow, useRemoval } from './project-removal.ts';
 import { RemoveProjectDialog } from './RemoveProjectDialog.tsx';
 import { RemotesNotAdded } from './RemotesNotAdded.tsx';
@@ -261,6 +262,8 @@ export interface ProjectsSources {
   addProject?: AddProject | undefined;
   saveProject?: SaveProject | undefined;
   removeProject?: RemoveProject | undefined;
+  loadRoleRules?: LoadRoleRules | undefined;
+  saveRoleRules?: SaveRoleRules | undefined;
 }
 
 export function projectsRoute({
@@ -268,6 +271,8 @@ export function projectsRoute({
   addProject,
   saveProject,
   removeProject,
+  loadRoleRules,
+  saveRoleRules,
 }: ProjectsSources): ReactElement | undefined {
   if (loadProjects === undefined) return undefined;
   return (
@@ -289,6 +294,8 @@ export function projectsRoute({
             <ProjectSettingsPage
               loadProjects={loadProjects}
               saveProject={saveProject}
+              loadRoleRules={loadRoleRules}
+              saveRoleRules={saveRoleRules}
             />
           }
         />
