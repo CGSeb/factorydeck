@@ -81,7 +81,10 @@ function accountSources(
       invitations: invitations(db, { now: () => harness.clock }),
       changeStatus: (request) => changeStatus(db, request),
       resetLink: resetLinks(db, () => harness.clock).create,
-      cliConnections: teamCliConnections(db, () => harness.clock),
+      cliConnections: teamCliConnections(
+        db,
+        cliConnections(db, () => harness.clock),
+      ),
     },
     resets: resetLinks(db, () => harness.clock),
     admin: { projects: projectStore(db, () => harness.clock) },

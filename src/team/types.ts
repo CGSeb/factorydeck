@@ -1,4 +1,8 @@
 import type { Role } from '../auth/types.ts';
+import type {
+  CliConnectionItem,
+  CliConnectionsResponse,
+} from '../cli-login/connection-types.ts';
 
 export interface TeamAccount {
   id: number;
@@ -18,16 +22,9 @@ export type TeamResponse =
   | { status: 'ok'; refreshSeconds: number; accounts: TeamAccountRow[] }
   | { status: 'unreachable'; refreshSeconds: number };
 
-export interface TeamCliConnection {
-  id: number;
-  machine: string;
-  createdAt: string;
-  lastUsedAt: string;
-}
+export type TeamCliConnection = CliConnectionItem;
 
-export type TeamCliConnectionsResponse =
-  | { status: 'ok'; refreshSeconds: number; connections: TeamCliConnection[] }
-  | { status: 'unreachable'; refreshSeconds: number };
+export type TeamCliConnectionsResponse = CliConnectionsResponse;
 
 export const MANAGERS_ONLY = 'Managers only';
 

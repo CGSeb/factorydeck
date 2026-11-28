@@ -104,7 +104,7 @@ function teamSource(db: Database): TeamSource {
     invitations: invitations(db),
     changeStatus: (request) => changeStatus(db, request),
     resetLink: resetLinks(db).create,
-    cliConnections: teamCliConnections(db),
+    cliConnections: teamCliConnections(db, cliConnections(db)),
   };
 }
 

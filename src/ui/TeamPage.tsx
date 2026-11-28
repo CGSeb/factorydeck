@@ -32,6 +32,13 @@ import {
 import { useNow } from './use-now.ts';
 import './team.css';
 
+export interface TeamSources {
+  loadTeam?: LoadTeam | undefined;
+  changeRole?: ChangeRole | undefined;
+  changeActive?: ChangeActive | undefined;
+  cliActions?: TeamCliActions | undefined;
+}
+
 export interface TeamPageProps {
   loadTeam: LoadTeam;
   actionsFor?: TeamActionsFor | undefined;
