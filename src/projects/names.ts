@@ -1,4 +1,3 @@
-import { eq } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import { project, projectRoot } from '../db/schema.ts';
 import type { Transaction } from '../ingest/store.ts';
@@ -55,16 +54,4 @@ export async function projectNames(
         )
         .map(({ project: slug, name }) => ({ project: slug, name })),
   };
-}
-
-export async function rootsOfProject(
-  db: Database | Transaction,
-  slug: string,
-): Promise<string[]> {
-  const rows = await db
-    .select({ root: projectRoot.root })
-    .from(projectRoot)
-    .where(eq(projectRoot.project, slug))
-    .orderBy(projectRoot.root);
-  return rows.map((row) => row.root);
 }
