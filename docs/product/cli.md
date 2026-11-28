@@ -6,9 +6,31 @@ The FactoryDeck CLI runs on a developer's machine and sends their sessions to th
 
 The CLI is the `factorydeck` command, in the `cli/` package of the repository (a pnpm workspace package named `factorydeck`; the root package, private, is `factorydeck-app`). It has no runtime dependency and uses only Node 22 APIs.
 
+### Installing
+
+The CLI is published on npm as `factorydeck` and needs Node 22 or later:
+
+```sh
+npm i -g factorydeck
+factorydeck login https://deck.example.test
+```
+
+`npm i -g factorydeck@latest` upgrades it. `factorydeck --version` (or `-v`) prints `factorydeck <version>`, then `parser <n>`, the version of the log parser it sends sessions with, on stdout with exit 0. A usage error still wins over it, as over `--help`.
+
+The published package holds one bundled file, `dist/main.js`, with the shared modules of `src/` it imports and the code of the libraries it uses (today `zod`; `yaml` and `smol-toml` once the CLI reads logs and configuration), so it installs no dependency; plus its `README.md` and `LICENSE`. No test, story or source map is published.
+
 ### Installing for development
 
-From a clone of the repository, `pnpm install`, then `pnpm cli <command>` runs `factorydeck <command>` from the TypeScript sources (`node cli/src/main.ts`), which needs Node 22.18 or later. Its tests run with the others in `pnpm check`. Publishing the package to npm is not done yet.
+From a clone of the repository, `pnpm install`, then `pnpm cli <command>` runs `factorydeck <command>` from the TypeScript sources (`node cli/src/main.ts`), which needs Node 22.18 or later; `--version` then reads the version of `cli/package.json`. Its tests run with the others in `pnpm check`. `pnpm --filter factorydeck build` bundles it into `cli/dist/main.js` (a Vite library build for Node 22, without source maps).
+
+### Releasing
+
+`cli/package.json` holds the version. The `Release CLI` workflow (`.github/workflows/release-cli.yml`) publishes the package when a tag `cli-v<version>` is pushed: it runs `pnpm check`, runs the pack test on Node 22, then publishes with `npm publish --provenance`, using the `NPM_TOKEN` secret (a publish-only npm token for `factorydeck`). A version with a `-` (`1.3.0-beta.1`) goes to the `next` dist-tag, any other to `latest`.
+
+- It fails when the tag is not `cli-v` followed by the version of `cli/package.json`, and when that version is already on npm.
+- A dry run (`npm publish --dry-run`) runs on every pull request that touches `cli/` or `src/cli-ingest/`, and from the Actions tab (`workflow_dispatch`, whose `dry-run` input defaults to true). A real publish needs a `cli-v<version>` tag; a dry run checks the tag too when it runs on one, and only warns when the version is already on npm.
+
+To release: raise the version in `cli/package.json`, merge it, then push the tag, for example `git tag cli-v1.2.0 && git push origin cli-v1.2.0`.
 
 `--server <url>` on any command overrides the server it uses, for example `pnpm cli status --server http://127.0.0.1:4317` against a local instance. `--server` and a different `<url>` argument together are a usage error.
 

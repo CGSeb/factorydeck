@@ -4,10 +4,11 @@ import { invalidServerUrl, serverOrigin } from './origin.ts';
 
 export type Parsed =
   | { kind: 'help'; command: CommandName | undefined }
+  | { kind: 'version' }
   | { kind: 'run'; command: CommandName; origin: string | undefined }
   | { kind: 'usage'; command: CommandName | undefined; message: string };
 
-const KNOWN_OPTIONS = new Set(['help', 'server']);
+const KNOWN_OPTIONS = new Set(['help', 'server', 'version']);
 
 interface Raw {
   values: Record<string, string | boolean | undefined>;
@@ -20,6 +21,7 @@ function read(argv: string[]): Raw {
     options: {
       help: { type: 'boolean', short: 'h' },
       server: { type: 'string' },
+      version: { type: 'boolean', short: 'v' },
     },
     allowPositionals: true,
     strict: false,
@@ -34,6 +36,8 @@ function optionError({ values }: Raw): string | undefined {
   }
   if (typeof values['help'] === 'string')
     return 'Option --help takes no value.';
+  if (typeof values['version'] === 'string')
+    return 'Option --version takes no value.';
   if (values['server'] === true) return 'Option --server needs a URL.';
   return undefined;
 }
@@ -66,6 +70,15 @@ function serverOf(command: CommandName, raw: Raw): Origin {
   return { origin: flagged ?? given };
 }
 
+function shownInstead(
+  { values }: Raw,
+  command: CommandName | undefined,
+): Parsed | undefined {
+  if (values['version'] === true) return { kind: 'version' };
+  if (values['help'] === true) return { kind: 'help', command };
+  return undefined;
+}
+
 export function parseArguments(argv: string[]): Parsed {
   const raw = read(argv);
   const name = raw.positionals[0];
@@ -77,15 +90,15 @@ export function parseArguments(argv: string[]): Parsed {
   if (name !== undefined && command === undefined) {
     return { kind: 'usage', command, message: `Unknown command: ${name}.` };
   }
-  const help = raw.values['help'] === true;
   if (command === undefined) {
-    return help
-      ? { kind: 'help', command }
-      : { kind: 'usage', command, message: '' };
+    return (
+      shownInstead(raw, command) ?? { kind: 'usage', command, message: '' }
+    );
   }
   const server = serverOf(command, raw);
   if ('message' in server) return { kind: 'usage', command, ...server };
-  if (help) return { kind: 'help', command };
+  const shown = shownInstead(raw, command);
+  if (shown !== undefined) return shown;
   if (command !== 'status' && server.origin === undefined) {
     return { kind: 'usage', command, message: 'Missing server URL.' };
   }

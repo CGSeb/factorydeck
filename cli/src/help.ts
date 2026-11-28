@@ -17,6 +17,7 @@ export const MAIN_HELP = [
   'Options:',
   '  --server <url>  Use this server instead, e.g. http://127.0.0.1:4317 in development',
   '  -h, --help      Show the help of a command',
+  '  -v, --version   Show the version of the CLI and of its parser',
 ];
 
 const SERVER_LINE =
