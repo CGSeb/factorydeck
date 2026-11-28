@@ -2,6 +2,97 @@
 
 The FactoryDeck CLI runs on a developer's machine and sends their sessions to the instance under their account. It connects once, by asking the instance for a login that the developer approves in their browser: nobody copies a token.
 
+## The command
+
+The CLI is the `factorydeck` command, in the `cli/` package of the repository (a pnpm workspace package named `factorydeck`; the root package, private, is `factorydeck-app`). It has no runtime dependency and uses only Node 22 APIs.
+
+### Installing for development
+
+From a clone of the repository, `pnpm install`, then `pnpm cli <command>` runs `factorydeck <command>` from the TypeScript sources (`node cli/src/main.ts`), which needs Node 22.18 or later. Its tests run with the others in `pnpm check`. Publishing the package to npm is not done yet.
+
+`--server <url>` on any command overrides the server it uses, for example `pnpm cli status --server http://127.0.0.1:4317` against a local instance. `--server` and a different `<url>` argument together are a usage error.
+
+### Servers
+
+A server is named by its **origin**: `<url>` is trimmed and needs `http://` or `https://`; its path, query and trailing `/` are dropped, its host is compared without letter case (and in punycode), and a default port is dropped. So `https://Deck.example.test/team/` and `https://deck.example.test:443` are the same server, `https://deck.example.test`. A URL without `http://` or `https://`, or with a user name or password, prints `Invalid server URL: <url>. It needs http:// or https://.` and exits with code 2.
+
+### factorydeck login \<url\>
+
+Runs the [login flow](#connecting-the-cli) against the server, under the machine's host name (trimmed, cut to 80 characters, `unknown` when empty):
+
+1. It prints `Open <verificationUrl> and check the code <XXXX-XXXX>.` and opens that URL in the browser when it can: with `open` on macOS, `cmd /c start` on Windows, `wslview` (else `explorer.exe`) under WSL, `xdg-open` on Linux with a display; on Linux without `DISPLAY` or `WAYLAND_DISPLAY`, or when the opener fails, the URL is only printed.
+2. It polls every `interval` seconds the server gives (never less than 5), until `expiresIn`. A `429` waits one more interval; a network error or a `503` keeps polling.
+3. Once the login is approved, it prints `Logged in to <origin> as <name> (<email>).` and saves the token.
+
+Logging in again to a server keeps the old token until the new one arrives, then logs the old connection out (`POST /api/cli/logout`) and replaces it.
+
+Errors, all with exit code 1:
+
+| Case                                              | Message                                                             |
+| ------------------------------------------------- | ------------------------------------------------------------------- |
+| The login is cancelled in the browser, or expires | `Login cancelled or expired. Run factorydeck login <origin> again.` |
+| No answer, or none within 10 seconds              | `Could not reach <origin>.`                                         |
+| `404` to the login request                        | `<origin> is not a FactoryDeck server with CLI login.`              |
+| `503` to the login request                        | the server's error, e.g. `Too many pending logins, try again later` |
+| A redirect (never followed) or another answer     | `Unexpected answer from <origin> (HTTP <status>).`                  |
+
+### factorydeck logout \<url\>
+
+Calls `POST /api/cli/logout` with the server's token, then forgets the token on this machine whatever the answer:
+
+- `204` or `401` (the token was already refused): `Logged out of <origin>.`, exit 0.
+- Anything else, or no answer: `Logged out of <origin> on this machine; could not reach it to end the connection.`, exit 1. The connection then stays on the server until it expires or is disconnected from the [CLI connections page](#the-cli-connections-page).
+- Without a token for that server: `Not logged in to <origin>.`, exit 0.
+
+### factorydeck status
+
+Checks every server that has a token, in parallel, with `GET /api/cli/me`, and prints one line per server, sorted by origin:
+
+```
+https://deck.example.test  Ada ada@example.test  ada-laptop  ok
+```
+
+The line is the origin, the account's name and email, the machine name, and the result: `ok`, `token refused` (`401`), `unreachable` (no answer within 10 seconds, or `503`) or `unexpected answer (HTTP <n>)`. Columns are padded only on a terminal. The account and the machine come from the credentials file, so they show even when the server cannot be reached. `status` never rewrites the file: a refused token stays until `logout` or the next `login`.
+
+- It exits with code 1 when a server is not `ok`, 0 otherwise.
+- With no token: `Not logged in. Run factorydeck login <url>.` (exit 0).
+- With `--server <url>`, it checks only that server, or prints `Not logged in to <origin>.` (exit 0).
+
+### Help and exit codes
+
+`factorydeck --help` prints `Usage: factorydeck <command> [options]` and one line per command and for `--server`; `factorydeck <command> --help` describes the command. Both go to stdout with exit 0.
+
+Exit codes: 0 success, 1 failure, 2 usage error. A usage error (an unknown command or option, a missing or extra argument, an invalid URL) is checked first, before any file or server is read, and wins over `--help`: `factorydeck login not-a-url --help` is a usage error, while `factorydeck login --help` without a URL prints the help. An unknown command prints the help, and no command at all prints the help on stderr, both with exit 2. Ctrl-C exits with code 130 and saves nothing.
+
+Errors go to stderr and everything else to stdout, with no colour and no spinner, the same with or without a terminal.
+
+### Files
+
+The CLI keeps its state in the folder `FACTORYDECK_CLI_HOME`, by default `~/.config/factorydeck` (`%APPDATA%\factorydeck` on Windows; under WSL, the Linux home). An empty `FACTORYDECK_CLI_HOME` counts as unset, `~/` is expanded, a relative path is resolved from the current folder, and `XDG_CONFIG_HOME` is not read. The folder is created with mode `700`.
+
+The tokens live in `credentials.json` there, and nowhere else: one entry per server origin, readable only by the user (mode `600` where the file system has modes; on Windows, the rights of the profile apply). It is UTF-8 JSON indented with 2 spaces:
+
+```json
+{
+  "version": 1,
+  "servers": {
+    "https://deck.example.test": {
+      "token": "fdk_…",
+      "account": {
+        "id": 7,
+        "email": "ada@example.test",
+        "name": "Ada",
+        "role": "dev"
+      },
+      "machine": "ada-laptop",
+      "loggedInAt": "2026-03-02T09:30:00.000Z"
+    }
+  }
+}
+```
+
+The file is written atomically (a temporary file with mode `600`, then a rename), and read again right before each write, so two logins at once keep both servers. A missing or empty file holds no server. A file that cannot be read or is not valid prints `Could not read <path>.`, exits with code 1, and is left as it is; one that cannot be written prints `Could not write <path>.` with exit 1.
+
 ## Connecting the CLI
 
 1. The CLI sends `POST /api/cli/login` with `{ "machine": "<name of the machine>" }`, without a session. The instance answers:
