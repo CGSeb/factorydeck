@@ -59,7 +59,8 @@ export function rowAt(canvasElement: HTMLElement, index: number): HTMLElement {
 
 export function ruleNames(canvasElement: HTMLElement): string[] {
   return ruleRows(canvasElement).map(
-    (row) => within(row).getByLabelText<HTMLInputElement>('Name').value,
+    (row) =>
+      within(row).getByLabelText<HTMLInputElement>(/^Name of rule \d+$/).value,
   );
 }
 
@@ -72,7 +73,9 @@ export async function renameFirst(
   name: string,
 ): Promise<void> {
   await loadedRules(canvasElement);
-  const field = within(rowAt(canvasElement, 0)).getByLabelText('Name');
+  const field = within(rowAt(canvasElement, 0)).getByLabelText(
+    /^Name of rule \d+$/,
+  );
   await userEvent.clear(field);
   await userEvent.type(field, name);
 }

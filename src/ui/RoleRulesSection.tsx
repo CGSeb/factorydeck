@@ -46,8 +46,8 @@ const MOVES: readonly {
   label: string;
   glyph: string;
 }[] = [
-  { by: -1, control: 'up', label: 'Move up', glyph: '↑' },
-  { by: 1, control: 'down', label: 'Move down', glyph: '↓' },
+  { by: -1, control: 'up', label: 'up', glyph: '↑' },
+  { by: 1, control: 'down', label: 'down', glyph: '↓' },
 ];
 
 function LeavePrompt({ changed }: { changed: boolean }): ReactElement | null {
@@ -123,8 +123,8 @@ function RuleButtons({
             type="button"
             className="fd-control fd-rule-button"
             data-control={control}
-            aria-label={label}
-            title={label}
+            aria-label={`Move rule ${String(index + 1)} ${label}`}
+            title={`Move ${label}`}
             disabled={by === -1 ? index === 0 : index === count - 1}
             onClick={() => {
               form.move(index, by);
@@ -137,6 +137,7 @@ function RuleButtons({
           type="button"
           className="fd-control fd-rule-button"
           data-control="delete"
+          aria-label={`Delete rule ${String(index + 1)}`}
           onClick={() => {
             form.remove(index);
           }}
@@ -169,7 +170,7 @@ function RuleRowView({
           key={field}
           id={`${id}-${field}`}
           field={field}
-          label={label}
+          label={`${label} of rule ${String(index + 1)}`}
           value={row[field]}
           error={errors?.[field]}
           onChange={(value) => {

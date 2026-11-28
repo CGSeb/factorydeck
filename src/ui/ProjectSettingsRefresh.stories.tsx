@@ -156,14 +156,14 @@ export const RoleRulesAfterGeneral: Story = {
     await expect(
       canvas.getAllByRole('heading', { level: 2 }).map((h) => h.textContent),
     ).toEqual(['General', 'Role rules']);
-    const field = within(rules).getAllByLabelText('Name')[0];
+    const field = within(rules).getAllByLabelText(/^Name of rule \d+$/)[0];
     if (field === undefined) throw new Error('No rule');
     await userEvent.clear(field);
     await userEvent.type(field, 'maker');
     await new Promise((done) => setTimeout(done, 200));
-    await expect(within(rules).getAllByLabelText('Name')[0]).toHaveValue(
-      'maker',
-    );
+    await expect(
+      within(rules).getAllByLabelText(/^Name of rule \d+$/)[0],
+    ).toHaveValue('maker');
     await expect(
       canvas.getByRole('button', { name: 'Save rules' }),
     ).toBeEnabled();

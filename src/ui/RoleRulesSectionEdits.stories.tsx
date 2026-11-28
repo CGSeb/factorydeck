@@ -40,8 +40,10 @@ export const AddRule: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('button', { name: 'Add rule' }));
     const added = within(rowAt(canvasElement, defaultRules.length));
-    await expect(added.getByLabelText('Name')).toHaveValue('');
-    await waitFor(() => expect(added.getByLabelText('Name')).toHaveFocus());
+    await expect(added.getByLabelText(/^Name of rule \d+$/)).toHaveValue('');
+    await waitFor(() =>
+      expect(added.getByLabelText(/^Name of rule \d+$/)).toHaveFocus(),
+    );
     await expect(
       canvas.getByRole('button', { name: SAVE_RULES }),
     ).toBeEnabled();
@@ -55,7 +57,7 @@ export const MoveAndDelete: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(
       within(rowAt(canvasElement, 0)).getByRole('button', {
-        name: 'Move down',
+        name: /^Move rule \d+ down$/,
       }),
     );
     await expect(ruleNames(canvasElement)).toEqual([
@@ -65,9 +67,13 @@ export const MoveAndDelete: Story = {
     ]);
     const moved = within(rowAt(canvasElement, 1));
     await waitFor(() =>
-      expect(moved.getByRole('button', { name: 'Move down' })).toHaveFocus(),
+      expect(
+        moved.getByRole('button', { name: /^Move rule \d+ down$/ }),
+      ).toHaveFocus(),
     );
-    await userEvent.click(moved.getByRole('button', { name: 'Move down' }));
+    await userEvent.click(
+      moved.getByRole('button', { name: /^Move rule \d+ down$/ }),
+    );
     await expect(ruleNames(canvasElement)).toEqual([
       'auditor',
       'explorer',
@@ -76,12 +82,14 @@ export const MoveAndDelete: Story = {
     await waitFor(() =>
       expect(
         within(rowAt(canvasElement, 2)).getByRole('button', {
-          name: 'Move up',
+          name: /^Move rule \d+ up$/,
         }),
       ).toHaveFocus(),
     );
     await userEvent.click(
-      within(rowAt(canvasElement, 1)).getByRole('button', { name: 'Delete' }),
+      within(rowAt(canvasElement, 1)).getByRole('button', {
+        name: /^Delete rule \d+$/,
+      }),
     );
     await expect(ruleNames(canvasElement)).toEqual(['auditor', 'implementer']);
     await expect(
@@ -121,7 +129,9 @@ export const UndoneEditKeepsSaveDisabled: Story = {
     await expect(
       canvas.getByRole('button', { name: SAVE_RULES }),
     ).toBeEnabled();
-    const field = within(rowAt(canvasElement, 0)).getByLabelText('Name');
+    const field = within(rowAt(canvasElement, 0)).getByLabelText(
+      /^Name of rule \d+$/,
+    );
     await userEvent.clear(field);
     await userEvent.type(field, 'builder');
     await expect(
@@ -142,7 +152,7 @@ export const UnsavedChanges: Story = {
     await userEvent.click(within(dialog).getByRole('button', { name: 'Stay' }));
     await expect(canvas.queryByRole('dialog')).toBeNull();
     await expect(
-      within(rowAt(canvasElement, 0)).getByLabelText('Name'),
+      within(rowAt(canvasElement, 0)).getByLabelText(/^Name of rule \d+$/),
     ).toHaveValue('maker');
     await userEvent.click(canvas.getByRole('link', { name: 'Roles' }));
     await userEvent.click(

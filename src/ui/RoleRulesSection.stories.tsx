@@ -61,17 +61,36 @@ export const Defaults: Story = {
       canvas.getAllByRole('columnheader').map((cell) => cell.textContent),
     ).toEqual(['Name', 'Description pattern', 'Agent type pattern', 'Actions']);
     const first = within(rowAt(canvasElement, 0));
-    await expect(first.getByLabelText('Description pattern')).toHaveValue(
-      '^(Build|Worker for) ',
-    );
-    await expect(first.getByLabelText('Agent type pattern')).toHaveValue('');
-    await expect(first.getByRole('button', { name: 'Move up' })).toBeDisabled();
+    const second = within(rowAt(canvasElement, 1));
+    for (const label of [
+      'Name of rule 2',
+      'Description pattern of rule 2',
+      'Agent type pattern of rule 2',
+    ]) {
+      await expect(second.getByLabelText(label)).toBeVisible();
+    }
+    for (const name of [
+      'Move rule 2 up',
+      'Move rule 2 down',
+      'Delete rule 2',
+    ]) {
+      await expect(second.getByRole('button', { name })).toBeVisible();
+    }
     await expect(
-      first.getByRole('button', { name: 'Move down' }),
+      first.getByLabelText(/^Description pattern of rule \d+$/),
+    ).toHaveValue('^(Build|Worker for) ');
+    await expect(
+      first.getByLabelText(/^Agent type pattern of rule \d+$/),
+    ).toHaveValue('');
+    await expect(
+      first.getByRole('button', { name: /^Move rule \d+ up$/ }),
+    ).toBeDisabled();
+    await expect(
+      first.getByRole('button', { name: /^Move rule \d+ down$/ }),
     ).toBeEnabled();
     const last = within(rowAt(canvasElement, defaultRules.length - 1));
     await expect(
-      last.getByRole('button', { name: 'Move down' }),
+      last.getByRole('button', { name: /^Move rule \d+ down$/ }),
     ).toBeDisabled();
     await expect(
       canvas.getByRole('button', { name: SAVE_RULES }),
@@ -95,12 +114,12 @@ export const CustomList: Story = {
       'explorer',
     ]);
     const explorer = within(rowAt(canvasElement, 2));
-    await expect(explorer.getByLabelText('Description pattern')).toHaveValue(
-      '',
-    );
-    await expect(explorer.getByLabelText('Agent type pattern')).toHaveValue(
-      '^Explore$',
-    );
+    await expect(
+      explorer.getByLabelText(/^Description pattern of rule \d+$/),
+    ).toHaveValue('');
+    await expect(
+      explorer.getByLabelText(/^Agent type pattern of rule \d+$/),
+    ).toHaveValue('^Explore$');
   },
 };
 
@@ -154,7 +173,7 @@ export const Saved: Story = {
     await expect(await canvas.findByText(SAVED)).toBeVisible();
     await waitFor(() =>
       expect(
-        within(rowAt(canvasElement, 0)).getByLabelText('Name'),
+        within(rowAt(canvasElement, 0)).getByLabelText(/^Name of rule \d+$/),
       ).toHaveValue('maker'),
     );
     await expect(
@@ -172,12 +191,14 @@ async function refused(
   const canvas = within(canvasElement);
   await userEvent.click(canvas.getByRole('button', { name: SAVE_RULES }));
   await expect(await canvas.findByText(message)).toBeVisible();
-  const field = within(rowAt(canvasElement, 1)).getByLabelText(label);
+  const field = within(rowAt(canvasElement, 1)).getByLabelText(
+    `${label} of rule 2`,
+  );
   await expect(field).toHaveAttribute('aria-invalid', 'true');
   await expect(field).toHaveAccessibleDescription(message);
   await waitFor(() => expect(field).toHaveFocus());
   await expect(
-    within(rowAt(canvasElement, 0)).getByLabelText('Name'),
+    within(rowAt(canvasElement, 0)).getByLabelText(/^Name of rule \d+$/),
   ).toHaveValue('maker');
 }
 
