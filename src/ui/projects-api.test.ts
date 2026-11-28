@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { DATABASE_UNREACHABLE, SERVER_UNREACHABLE } from './auth-api.ts';
-import { projectAdder, projectSaver, projectsLoader } from './projects-api.ts';
+import {
+  projectAdder,
+  projectRemover,
+  projectSaver,
+  projectsLoader,
+} from './projects-api.ts';
 import { addedProject, someProjects } from './projects-list-fixtures.ts';
 
 function answering(status: number, body: unknown): typeof fetch {
@@ -164,5 +169,31 @@ describe('projectSaver', () => {
     await expect(
       projectSaver(() => Promise.reject(new Error('offline')))(1, {}),
     ).resolves.toEqual({ status: 'failed', message: SERVER_UNREACHABLE });
+  });
+});
+
+describe('projectRemover', () => {
+  it.each([
+    [204, 'removed'],
+    [404, 'not-found'],
+    [503, 'failed'],
+    [403, 'failed'],
+    [500, 'failed'],
+  ] as const)('reads HTTP %i as %s', async (status, outcome) => {
+    const requests: [string, string | undefined][] = [];
+    const remove = projectRemover((input, init) => {
+      requests.push([typeof input === 'string' ? input : '', init?.method]);
+      return Promise.resolve(
+        new Response(status === 204 ? null : '{}', { status }),
+      );
+    });
+    await expect(remove(addedProject)).resolves.toBe(outcome);
+    expect(requests).toEqual([['/api/admin/projects/4', 'DELETE']]);
+  });
+
+  it('reads a network failure as failed', async () => {
+    await expect(
+      projectRemover(() => Promise.reject(new Error('offline')))(addedProject),
+    ).resolves.toBe('failed');
   });
 });

@@ -54,6 +54,11 @@ export const projectRule = pgTable(
     ),
   ],
 );
+export const removedSession = pgTable('removed_session', {
+  sessionId: text('session_id').primaryKey(),
+  projectName: text('project_name').notNull(),
+  removedAt: timestamp('removed_at', { withTimezone: true }).notNull(),
+});
 
 export const rootRemote = pgTable('root_remote', {
   root: text().primaryKey(),

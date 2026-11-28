@@ -98,7 +98,7 @@ Texts are read from the session logs at each request and never written to the da
 
 ### Reported frictions
 
-`Copy and mark as reported` records a **report**: its time, the project, the period, the filters (kind, role, session, issue) and each group of the selection with its key and frictions. It never holds a text of an error, a command, an output or a hook message: only the keys, which hold only recorded fields, and the counts. Reports are kept with no limit, and deleting a session does not delete them. A report is recorded even when the selection has no friction (it then holds no group).
+`Copy and mark as reported` records a **report**: its time, the project, the period, the filters (kind, role, session, issue) and each group of the selection with its key and frictions. It never holds a text of an error, a command, an output or a hook message: only the keys, which hold only recorded fields, and the counts. Reports are kept with no limit, and deleting a session does not delete them; [removing a project](projects.md#removing-a-project) deletes its reports. A report is recorded even when the selection has no friction (it then holds no group).
 
 Each later report of the same project tags each group, on its `## Groups` row and as the first line of its section:
 

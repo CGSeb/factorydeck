@@ -1,4 +1,4 @@
-import { and, count, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { and, count, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import {
   UNASSIGNED_PROJECT,
@@ -11,10 +11,9 @@ import {
 import { forgetGitHostData } from '../git-host/store.ts';
 import { type FactoryCheck, factoryFile } from '../ingest/factory.ts';
 import { sessionIdOfPath } from '../ingest/files.ts';
-import { LOCK_KEY } from '../ingest/lock.ts';
 import type { Transaction } from '../ingest/store.ts';
 import { projectNames } from './names.ts';
-import type { DeleteResult, FactoryStatus, MissingFactory } from './types.ts';
+import type { FactoryStatus, MissingFactory } from './types.ts';
 
 const CHUNK = 1000;
 export const STATE_ID = 'ingestion';
@@ -146,24 +145,4 @@ export async function factoryStatus(
 
 function compare(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
-}
-
-export async function deleteProject(
-  db: Database,
-  project: string,
-  hasFactory: FactoryCheck,
-): Promise<DeleteResult> {
-  return db.transaction(async (tx) => {
-    await tx.execute(sql`select pg_advisory_xact_lock(${LOCK_KEY})`);
-    const [found] = await tx
-      .select({ sessions: count() })
-      .from(session)
-      .where(eq(session.project, project));
-    if (project === UNASSIGNED_PROJECT || (found?.sessions ?? 0) === 0) {
-      return 'not-found';
-    }
-    if (await hasFactory(project)) return 'has-factory';
-    await forgetProjects(tx, [project]);
-    return 'deleted';
-  });
 }

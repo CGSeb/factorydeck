@@ -3,11 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { expect, within } from 'storybook/test';
 import type { ReadyCounts } from '../sidebar/types.ts';
 import { chooseOption } from './components/select-test.ts';
-import {
-  deleterOf,
-  factoryLoaderOf,
-  factoryResponse,
-} from './factory-fixtures.ts';
+import { factoryLoaderOf, factoryResponse } from './factory-fixtures.ts';
 import {
   collectionLoaderOf,
   collectionResponse,
@@ -51,7 +47,6 @@ const meta = {
     loadFactory: factoryLoaderOf(
       factoryResponse([], true, optionsOf([APP_ROOT, LIB_ROOT]), [APP_ROOT]),
     ),
-    deleteProject: deleterOf('deleted'),
     loadCollection: collectionLoaderOf(collectionResponse(null)),
     refreshCollection: refresherOf(collectionResponse()),
     loadSidebar: loaderOf(),

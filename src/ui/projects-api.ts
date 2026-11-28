@@ -39,6 +39,11 @@ export type SaveProject = (
   id: number,
   changes: Partial<ProjectInput>,
 ) => Promise<SaveProjectOutcome>;
+export type RemoveProjectOutcome = 'removed' | 'not-found' | 'failed';
+
+export type RemoveProject = (
+  project: TeamProject,
+) => Promise<RemoveProjectOutcome>;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -169,5 +174,22 @@ export function projectSaver(
       return { status: 'failed', message: DATABASE_UNREACHABLE };
     }
     return refusalOf(response.status, body);
+  };
+}
+
+export function projectRemover(
+  fetchImpl: typeof fetch = (...args) => fetch(...args),
+): RemoveProject {
+  return async (project) => {
+    try {
+      const response = await fetchImpl(
+        `${PROJECTS_URL}/${String(project.id)}`,
+        { method: 'DELETE' },
+      );
+      if (response.status === 204) return 'removed';
+      return response.status === 404 ? 'not-found' : 'failed';
+    } catch {
+      return 'failed';
+    }
   };
 }

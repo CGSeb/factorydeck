@@ -17,7 +17,6 @@ export const unusedRoles: RoleSource = {
 
 export const unusedProjects: ProjectSource = {
   factoryStatus: () => Promise.reject(new Error('Not used')),
-  remove: () => Promise.reject(new Error('Not used')),
 };
 
 export const unusedGitHost: GitHostSource = {

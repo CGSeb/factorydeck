@@ -1,6 +1,11 @@
 import { stat } from 'node:fs/promises';
 import { inArray } from 'drizzle-orm';
-import { UNASSIGNED_PROJECT, session, skippedFile } from '../db/schema.ts';
+import {
+  UNASSIGNED_PROJECT,
+  removedSession,
+  session,
+  skippedFile,
+} from '../db/schema.ts';
 import { type FactoryCheck, sessionCwd } from './factory.ts';
 import { codexSessionCwd } from './codex-files.ts';
 import type { LogFile } from './files.ts';
@@ -129,7 +134,13 @@ export async function selectFactorySessions(
   hasFactory: FactoryCheck,
 ): Promise<Selection> {
   const choices = await startChoices(run, hasFactory);
+  const removed = new Set(
+    (
+      await run.tx.select({ id: removedSession.sessionId }).from(removedSession)
+    ).map((row) => row.id),
+  );
   for (const [id, sessionFiles] of groupBySession(files)) {
+    if (removed.has(id)) continue;
     const group = await describeGroup(run, id, sessionFiles, choices.skipped);
     const project = choices.stored.get(id);
     await (project === undefined

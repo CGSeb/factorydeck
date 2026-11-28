@@ -20,7 +20,7 @@ import {
   cliConnectionDisconnecter,
   cliConnectionsLoader,
 } from './cli-connections-api.ts';
-import { factoryLoader, projectDeleter } from './factory-api.ts';
+import { factoryLoader } from './factory-api.ts';
 import { featureLoader, featuresLoader } from './features-api.ts';
 import {
   frictionReportLoader,
@@ -51,7 +51,12 @@ import {
 import { resetLinkCreator, resetReader, resetSaver } from './reset-api.ts';
 import { teamLoader, withInvitations } from './team-api.ts';
 import { teamCliActions } from './team-cli-api.ts';
-import { projectAdder, projectSaver, projectsLoader } from './projects-api.ts';
+import {
+  projectAdder,
+  projectRemover,
+  projectSaver,
+  projectsLoader,
+} from './projects-api.ts';
 import { activeChanger } from './account-status-api.ts';
 
 const gate = authGate();
@@ -65,7 +70,6 @@ const loadFeatures = featuresLoader(gate.fetch);
 const loadFeature = featureLoader(gate.fetch);
 const loadBugs = bugsLoader(gate.fetch);
 const loadFactory = factoryLoader(gate.fetch);
-const deleteProject = projectDeleter(gate.fetch);
 const loadCollection = collectionLoader(gate.fetch);
 const refreshCollection = collectionRefresher(gate.fetch);
 const loadAutonomy = autonomyLoader(gate.fetch);
@@ -103,6 +107,7 @@ const markReport = frictionReportMarker(gate.fetch);
 const loadProjects = projectsLoader(gate.fetch);
 const addProject = projectAdder(gate.fetch);
 const saveProject = projectSaver(gate.fetch);
+const removeProject = projectRemover(gate.fetch);
 const loadCliConnections = cliConnectionsLoader(gate.fetch);
 const disconnectCliConnection = cliConnectionDisconnecter(gate.fetch);
 const root = document.querySelector('#root');
@@ -120,7 +125,6 @@ if (root) {
         loadFeature={loadFeature}
         loadBugs={loadBugs}
         loadFactory={loadFactory}
-        deleteProject={deleteProject}
         loadCollection={loadCollection}
         refreshCollection={refreshCollection}
         loadAutonomy={loadAutonomy}
@@ -152,6 +156,7 @@ if (root) {
         loadProjects={loadProjects}
         addProject={addProject}
         saveProject={saveProject}
+        removeProject={removeProject}
         loadCliConnections={loadCliConnections}
         disconnectCliConnection={disconnectCliConnection}
         signIn={signIn}

@@ -6,6 +6,8 @@ import type {
   ProjectsView,
   SaveProject,
   SaveProjectOutcome,
+  RemoveProject,
+  RemoveProjectOutcome,
   TeamProject,
 } from './projects-api.ts';
 
@@ -66,4 +68,12 @@ export function savingAnswer(outcome: SaveProjectOutcome): SaveProject {
 
 export function pendingSave(): SaveProject {
   return () => new Promise<SaveProjectOutcome>(() => undefined);
+}
+
+export function removerOf(outcome: RemoveProjectOutcome): RemoveProject {
+  return () => Promise.resolve(outcome);
+}
+
+export function pendingRemover(): RemoveProject {
+  return () => new Promise<RemoveProjectOutcome>(() => undefined);
 }

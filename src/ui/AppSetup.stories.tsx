@@ -24,7 +24,6 @@ function spied(): typeof loaders {
     loadFeature: fn(loaders.loadFeature),
     loadBugs: fn(loaders.loadBugs),
     loadFactory: fn(loaders.loadFactory),
-    deleteProject: fn(loaders.deleteProject),
     loadCollection: fn(loaders.loadCollection),
     refreshCollection: fn(loaders.refreshCollection),
     loadAutonomy: fn(loaders.loadAutonomy),

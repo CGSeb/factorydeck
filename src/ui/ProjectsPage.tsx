@@ -7,11 +7,13 @@ import { StatusLine } from './components/StatusLine.tsx';
 import { formatDateTime } from './format.ts';
 import { useProject, withProject } from './project-param.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
+import { useProjectRemoved } from './layout-outlet.ts';
 import type {
   AddProject,
   LoadProjects,
   ProjectsView,
   SaveProject,
+  RemoveProject,
   TeamProject,
 } from './projects-api.ts';
 import {
@@ -23,6 +25,8 @@ import {
   withAdded,
 } from './projects-view.ts';
 import { ProjectSettingsPage } from './ProjectSettingsPage.tsx';
+import { type ProjectRow, useRemoval } from './project-removal.ts';
+import { RemoveProjectDialog } from './RemoveProjectDialog.tsx';
 import { useRefreshing } from './skills-api.ts';
 import './invitations.css';
 import './projects.css';
@@ -30,18 +34,45 @@ import './projects.css';
 export interface ProjectsPageProps {
   loadProjects: LoadProjects;
   addProject?: AddProject | undefined;
+  removeProject?: RemoveProject | undefined;
+  onRemoved?: ((slug: string) => void) | undefined;
 }
 
 const LOADING = 'Loading…';
 
 type ListView =
   | Exclude<ProjectsView, { status: 'ok' }>
-  | { status: 'ok'; projects: readonly TeamProject[] };
+  | { status: 'ok'; projects: readonly ProjectRow[] };
+
+function RemoveCell({
+  project,
+  onRemove,
+}: {
+  project: ProjectRow;
+  onRemove: (project: ProjectRow) => void;
+}): ReactElement {
+  return (
+    <td className="fd-projects-actions">
+      <button
+        type="button"
+        className="fd-control fd-invitation-button"
+        aria-label={`Remove ${project.name}`}
+        onClick={() => {
+          onRemove(project);
+        }}
+      >
+        Remove
+      </button>
+    </td>
+  );
+}
 
 function ProjectsTable({
   projects,
+  onRemove,
 }: {
-  projects: readonly TeamProject[];
+  projects: readonly ProjectRow[];
+  onRemove: ((project: ProjectRow) => void) | undefined;
 }): ReactElement {
   const selected = useProject();
   return (
@@ -53,6 +84,11 @@ function ProjectsTable({
             <th scope="col">Remote</th>
             <th scope="col">Slug</th>
             <th scope="col">Added</th>
+            {onRemove !== undefined && (
+              <th scope="col">
+                <span className="fd-visually-hidden">Actions</span>
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>
@@ -76,6 +112,9 @@ function ProjectsTable({
                   {formatAddedDate(project.createdAt)}
                 </time>
               </td>
+              {onRemove !== undefined && (
+                <RemoveCell project={project} onRemove={onRemove} />
+              )}
             </tr>
           ))}
         </tbody>
@@ -86,8 +125,10 @@ function ProjectsTable({
 
 function ProjectsContent({
   view,
+  onRemove,
 }: {
   view: ListView | undefined;
+  onRemove: ((project: ProjectRow) => void) | undefined;
 }): ReactElement {
   if (view === undefined) return <StatusLine>{LOADING}</StatusLine>;
   if (view.status === 'refused') {
@@ -99,15 +140,17 @@ function ProjectsContent({
   if (view.projects.length === 0) {
     return <StatusLine>{NO_PROJECT}</StatusLine>;
   }
-  return <ProjectsTable projects={view.projects} />;
+  return <ProjectsTable projects={view.projects} onRemove={onRemove} />;
 }
 
 function useProjects(loadProjects: LoadProjects): {
   view: ListView | undefined;
   added: (project: TeamProject) => void;
+  removed: (project: TeamProject) => void;
 } {
   const [version, setVersion] = useState(0);
   const [local, setLocal] = useState<readonly TeamProject[]>([]);
+  const [gone, setGone] = useState<ReadonlySet<number>>(new Set());
   const loaded = useRefreshing(
     `projects:${String(version)}`,
     loadProjects,
@@ -115,20 +158,53 @@ function useProjects(loadProjects: LoadProjects): {
   );
   const view: ListView | undefined =
     loaded?.status === 'ok'
-      ? { status: 'ok', projects: withAdded(loaded.projects, local) }
+      ? {
+          status: 'ok',
+          projects: withAdded<ProjectRow>(loaded.projects, local).filter(
+            ({ id }) => !gone.has(id),
+          ),
+        }
       : loaded;
   const added = useCallback((project: TeamProject) => {
     setLocal((previous) => [...previous, project]);
     setVersion((previous) => previous + 1);
   }, []);
-  return { view, added };
+  const removed = useCallback((project: TeamProject) => {
+    setGone((previous) => new Set([...previous, project.id]));
+    setVersion((previous) => previous + 1);
+  }, []);
+  return { view, added, removed };
+}
+
+function RemovalDialog({
+  removal,
+}: {
+  removal: ReturnType<typeof useRemoval>;
+}): ReactElement | undefined {
+  const current = removal.removal;
+  if (current === undefined) return undefined;
+  return (
+    <RemoveProjectDialog
+      name={current.project.name}
+      sessions={current.sessions}
+      state={current.state}
+      onCancel={removal.close}
+      onConfirm={() => void removal.confirm(current)}
+    />
+  );
 }
 
 export function ProjectsPage({
   loadProjects,
   addProject,
+  removeProject,
+  onRemoved,
 }: ProjectsPageProps): ReactElement {
-  const { view, added } = useProjects(loadProjects);
+  const { view, added, removed } = useProjects(loadProjects);
+  const removal = useRemoval(loadProjects, removeProject, (project) => {
+    removed(project);
+    onRemoved?.(project.slug);
+  });
   const [adding, setAdding] = useState(false);
   const close = useCallback(() => {
     setAdding(false);
@@ -157,7 +233,8 @@ export function ProjectsPage({
             }
           : {})}
       />
-      <ProjectsContent view={view} />
+      <ProjectsContent view={view} onRemove={removal.open} />
+      <RemovalDialog removal={removal} />
       {adding && addProject !== undefined && (
         <AddProjectDialog
           addProject={addProject}
@@ -172,22 +249,35 @@ export function ProjectsPage({
   );
 }
 
+function ProjectsRoutePage(props: ProjectsPageProps): ReactElement {
+  const onRemoved = useProjectRemoved();
+  return <ProjectsPage {...props} onRemoved={onRemoved} />;
+}
+
+export interface ProjectsSources {
+  loadProjects?: LoadProjects | undefined;
+  addProject?: AddProject | undefined;
+  saveProject?: SaveProject | undefined;
+  removeProject?: RemoveProject | undefined;
+}
+
 export function projectsRoute({
   loadProjects,
   addProject,
   saveProject,
-}: {
-  loadProjects?: LoadProjects | undefined;
-  addProject?: AddProject | undefined;
-  saveProject?: SaveProject | undefined;
-}): ReactElement | undefined {
+  removeProject,
+}: ProjectsSources): ReactElement | undefined {
   if (loadProjects === undefined) return undefined;
   return (
     <>
       <Route
         path="projects"
         element={
-          <ProjectsPage loadProjects={loadProjects} addProject={addProject} />
+          <ProjectsRoutePage
+            loadProjects={loadProjects}
+            addProject={addProject}
+            removeProject={removeProject}
+          />
         }
       />
       {saveProject !== undefined && (

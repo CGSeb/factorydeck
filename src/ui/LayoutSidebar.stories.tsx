@@ -4,11 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { storeBugTickets } from './bug-tickets-state.ts';
 import { expect, within } from 'storybook/test';
 import { withStoredFold } from './components/sidebar-stories.ts';
-import {
-  deleterOf,
-  factoryLoaderOf,
-  factoryResponse,
-} from './factory-fixtures.ts';
+import { factoryLoaderOf, factoryResponse } from './factory-fixtures.ts';
 import {
   collectionLoaderOf,
   collectionResponse,
@@ -39,7 +35,6 @@ const meta = {
         optionsOf(['/home/dev/example-app', '/home/dev/example-lib']),
       ),
     ),
-    deleteProject: deleterOf('deleted'),
     loadCollection: collectionLoaderOf(collectionResponse(null)),
     refreshCollection: refresherOf(collectionResponse()),
   },

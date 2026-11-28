@@ -12,7 +12,6 @@ import {
   subAgent,
   userPrompt,
 } from '../db/schema.ts';
-import { deleteProject } from '../projects/remove.ts';
 import { createTestDatabase } from '../test/postgres.ts';
 import {
   type Line,
@@ -256,17 +255,6 @@ describe('friction ingestion', () => {
     await run();
     expect(await frictions()).toHaveLength(3);
     await db.delete(session).where(eq(session.id, 'session-f'));
-    expect(await frictions()).toEqual([]);
-  });
-
-  it('deletes frictions with their project', async () => {
-    await writeLog(log, FIRST);
-    await writeLog(agentLog, [bashCall(4, 'x'), failed(4, 'Exit code 2')]);
-    await run();
-    const [row] = await db.select({ project: session.project }).from(session);
-    expect(
-      await deleteProject(db, row?.project ?? '', () => Promise.resolve(false)),
-    ).toBe('deleted');
     expect(await frictions()).toEqual([]);
   });
 });

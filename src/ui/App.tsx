@@ -25,7 +25,7 @@ import {
   type CliConnectionsSources,
   cliConnectionsRoute,
 } from './CliConnectionsPage.tsx';
-import type { DeleteProject, LoadFactory } from './factory-api.ts';
+import type { LoadFactory } from './factory-api.ts';
 import { FeaturePage } from './FeaturePage.tsx';
 import type { LoadFeature, LoadFeatures } from './features-api.ts';
 import { FeaturesPage } from './FeaturesPage.tsx';
@@ -67,11 +67,10 @@ import type {
 } from './stats-api.ts';
 import { StatsPage } from './StatsPage.tsx';
 import { type TeamSources, teamRoute } from './TeamPage.tsx';
-import type { AddProject, LoadProjects, SaveProject } from './projects-api.ts';
-import { projectsRoute } from './ProjectsPage.tsx';
+import { type ProjectsSources, projectsRoute } from './ProjectsPage.tsx';
 
 export interface AppProps
-  extends CliRouteSources, CliConnectionsSources, TeamSources {
+  extends CliRouteSources, CliConnectionsSources, TeamSources, ProjectsSources {
   loadOverview: LoadOverview;
   loadSessions: LoadSessions;
   loadSession: LoadSession;
@@ -82,7 +81,6 @@ export interface AppProps
   loadFeature: LoadFeature;
   loadBugs: LoadBugs;
   loadFactory: LoadFactory;
-  deleteProject: DeleteProject;
   loadCollection: LoadCollection;
   refreshCollection: RefreshCollection;
   loadAutonomy: LoadAutonomy;
@@ -109,9 +107,6 @@ export interface AppProps
   createResetLink?: CreateResetLink | undefined;
   readReset?: ReadReset | undefined;
   saveReset?: SaveReset | undefined;
-  loadProjects?: LoadProjects | undefined;
-  addProject?: AddProject | undefined;
-  saveProject?: SaveProject | undefined;
 }
 
 function isManager(view: AccountView): boolean {
