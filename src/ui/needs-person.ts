@@ -25,6 +25,16 @@ export interface NeedsPersonRow {
   wait: string;
 }
 
+export function reasonLabel(
+  reason: WaitReason,
+  score: number | undefined,
+): string {
+  const label = WAIT_REASON_LABELS[reason];
+  return reason === 'below-threshold' && score !== undefined
+    ? `${label} (${String(score)})`
+    : label;
+}
+
 export function waitText(since: string | null, now: Date): string {
   return since === null
     ? MISSING
@@ -47,7 +57,7 @@ export function needsPersonRows(
         ? `#${String(issue.number)}`
         : `#${String(issue.number)} ${issue.title}`,
     href: featurePath(issue, filters),
-    reasons: issue.reasons.map((reason) => WAIT_REASON_LABELS[reason]),
+    reasons: issue.reasons.map((reason) => reasonLabel(reason, issue.score)),
     since: issue.since,
     wait: waitText(issue.since, now),
   }));

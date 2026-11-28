@@ -9,7 +9,14 @@ import {
   issueFacts,
   loadIssues,
 } from './autonomy.ts';
-import { refusing, reportStops, storedReports } from './stops.ts';
+import type { SerenityReport } from '../git-host/types.ts';
+import {
+  type Stop,
+  latestReport,
+  refusing,
+  reportStops,
+  storedReports,
+} from './stops.ts';
 import type { WaitReason, WaitingIssue, WaitingList } from './types.ts';
 
 export interface WaitingFacts {
@@ -19,6 +26,26 @@ export interface WaitingFacts {
   kind: IssueKind;
   reasons: WaitReason[];
   since: number | null;
+  score?: number;
+}
+
+function reportReasons(
+  reports: readonly SerenityReport[],
+  openStops: readonly Stop[],
+): { reasons: WaitReason[]; score?: number } {
+  if (openStops.length === 0) return { reasons: [] };
+  const starts = new Set(openStops.map((stop) => stop.at));
+  const below = latestReport(
+    reports.filter(
+      (report) =>
+        refusing(report) &&
+        starts.has(Date.parse(report.at)) &&
+        report.score < report.threshold,
+    ),
+  );
+  return below === null
+    ? { reasons: ['gates-failed'] }
+    : { reasons: ['below-threshold'], score: below.score };
 }
 
 export function waitingFacts(
@@ -41,16 +68,11 @@ export function waitingFacts(
   if (openEpisodes.length > 0 || facts.stage === 'needs-spec') {
     reasons.push('spec-question');
   }
-  if (openReports.length > 0) {
-    const starts = new Set(openReports.map((stop) => stop.at));
-    const below = reports.some(
-      (report) =>
-        refusing(report) &&
-        starts.has(Date.parse(report.at)) &&
-        report.score < report.threshold,
-    );
-    reasons.push(below ? 'below-threshold' : 'gates-failed');
-  }
+  const { reasons: stopReasons, ...scored } = reportReasons(
+    reports,
+    openReports,
+  );
+  reasons.push(...stopReasons);
   if (reasons.length === 0) return null;
   const starts = [
     ...openEpisodes.map((episode) => episode.at),
@@ -63,6 +85,7 @@ export function waitingFacts(
     kind: kindOf(issue, state.bugLabel),
     reasons,
     since: starts.length === 0 ? null : Math.min(...starts),
+    ...scored,
   };
 }
 
@@ -89,6 +112,7 @@ export function waitingRows(
       kind: fact.kind,
       reasons: fact.reasons,
       since: fact.since === null ? null : new Date(fact.since).toISOString(),
+      ...(fact.score === undefined ? {} : { score: fact.score }),
     }));
 }
 

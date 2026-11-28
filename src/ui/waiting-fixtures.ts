@@ -36,7 +36,10 @@ const PROJECTS = optionsOf([APP, LIB]);
 
 export const someWaiting: WaitingList = {
   issues: [
-    waitingIssue([58, 'Retry failed exports'], ['below-threshold'], 28),
+    {
+      ...waitingIssue([58, 'Retry failed exports'], ['below-threshold'], 28),
+      score: 48,
+    },
     waitingIssue(
       [63, 'Audit log filters'],
       ['blocked', 'spec-question'],

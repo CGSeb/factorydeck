@@ -112,7 +112,32 @@ describe('waitingFacts', () => {
     expect(facts).toMatchObject({
       reasons: ['below-threshold'],
       since: Date.parse('2026-03-06T08:00:00Z'),
+      score: 60,
     });
+  });
+
+  it('gives the score of the open report below its threshold, not of an earlier one', () => {
+    const facts = waitingFacts(
+      issue(11, { labels: ['agent:review'] }),
+      [
+        request(11, [
+          report('2026-03-05T08:00:00Z', 30),
+          report('2026-03-06T08:00:00Z', 48),
+        ]),
+      ],
+      STATE,
+    );
+    expect(facts).toMatchObject({ reasons: ['below-threshold'], score: 48 });
+  });
+
+  it('treats a score equal to the threshold as passing, with no score', () => {
+    const facts = waitingFacts(
+      issue(12, { labels: ['agent:review'] }),
+      [request(12, [report('2026-03-06T08:00:00Z', 80, false)])],
+      STATE,
+    );
+    expect(facts?.reasons).toEqual(['gates-failed']);
+    expect(facts).not.toHaveProperty('score');
   });
 
   it('names a refusing report with only failed gates', () => {
@@ -122,6 +147,7 @@ describe('waitingFacts', () => {
       STATE,
     );
     expect(facts?.reasons).toEqual(['gates-failed']);
+    expect(facts).not.toHaveProperty('score');
   });
 
   it('skips a refusing report answered by a later report', () => {
@@ -159,6 +185,7 @@ describe('waitingFacts', () => {
     expect(facts?.reasons).toContain('blocked');
     expect(facts?.reasons).toContain('spec-question');
     expect(facts?.reasons).toContain('below-threshold');
+    expect(facts?.score).toBe(70);
     expect(facts?.since).toBe(Date.parse('2026-03-06T00:00:00Z'));
   });
 
@@ -212,5 +239,32 @@ describe('waitingRows', () => {
       since: new Date(1000).toISOString(),
     });
     expect(rows[2]?.since).toBeNull();
+  });
+
+  it('keeps the score of a below-threshold issue only', () => {
+    const rows = waitingRows(
+      [
+        {
+          project: APP,
+          number: 1,
+          title: 'Issue 1',
+          kind: 'feature',
+          reasons: ['below-threshold'],
+          since: 1000,
+          score: 48,
+        },
+        {
+          project: APP,
+          number: 2,
+          title: 'Issue 2',
+          kind: 'feature',
+          reasons: ['gates-failed'],
+          since: 2000,
+        },
+      ],
+      () => 'app',
+    );
+    expect(rows[0]?.score).toBe(48);
+    expect(rows[1]).not.toHaveProperty('score');
   });
 });
