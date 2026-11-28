@@ -26,6 +26,7 @@ export interface HostCliOptions {
   commands?: Partial<Record<GitHostKind, string>>;
   timeoutMs?: number;
   serverEnv?: NodeJS.ProcessEnv;
+  tempRoot?: string;
 }
 
 export const CLI_OF: Record<GitHostKind, string> = {
@@ -136,17 +137,39 @@ function run({
   });
 }
 
+interface Folders {
+  folder: string;
+  configDir: string;
+  workDir: string;
+}
+
+async function temporaryFolders(root: string): Promise<Folders | undefined> {
+  let folder: string | undefined;
+  try {
+    folder = await mkdtemp(join(root, 'factorydeck-host-cli-'));
+    const configDir = join(folder, 'config');
+    const workDir = join(folder, 'work');
+    await Promise.all([mkdir(configDir), mkdir(workDir)]);
+    return { folder, configDir, workDir };
+  } catch {
+    if (folder !== undefined) {
+      await rm(folder, { recursive: true, force: true }).catch(() => undefined);
+    }
+    return undefined;
+  }
+}
+
 export function hostCliRunner({
   commands = {},
   timeoutMs = HOST_CLI_TIMEOUT_MS,
   serverEnv = process.env,
+  tempRoot = tmpdir(),
 }: HostCliOptions = {}): RunHostCli {
   return async (call) => {
-    const folder = await mkdtemp(join(tmpdir(), 'factorydeck-host-cli-'));
+    const folders = await temporaryFolders(tempRoot);
+    if (folders === undefined) return { ok: false, failure: 'unreachable' };
+    const { folder, configDir, workDir } = folders;
     try {
-      const configDir = join(folder, 'config');
-      const workDir = join(folder, 'work');
-      await Promise.all([mkdir(configDir), mkdir(workDir)]);
       const env = {
         ...inherited(serverEnv),
         ...tokenEnv(call, configDir),

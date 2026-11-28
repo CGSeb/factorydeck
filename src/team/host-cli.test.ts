@@ -140,6 +140,22 @@ describe('hostCliRunner', () => {
     }
   });
 
+  it('answers unreachable without running the CLI when its temporary folder cannot be made', async () => {
+    const run = hostCliRunner({
+      ...fake.options(SERVER_ENV),
+      tempRoot: `${fake.folder}/no-such-folder`,
+    });
+    await expect(
+      run({
+        gitHost: 'github',
+        host: 'github.com',
+        token: 't',
+        args: ['api', 'x'],
+      }),
+    ).resolves.toEqual({ ok: false, failure: 'unreachable' });
+    expect(await fake.calls()).toEqual([]);
+  });
+
   it('answers missing when the CLI is not installed', async () => {
     const run = hostCliRunner({
       commands: { github: `${fake.folder}/no-such-gh` },

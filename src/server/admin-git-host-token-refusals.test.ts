@@ -223,6 +223,22 @@ describe('PUT /api/admin/projects/<id>/git-host refuses, in order', () => {
   });
 });
 
+describe('PUT /api/admin/projects/<id>/git-host without a temporary folder', () => {
+  it('answers 422 Could not reach <host> instead of a 500, storing nothing', async () => {
+    const cookie = await manager(t);
+    const id = await addProject(t, cookie, SHOP);
+    await goodGitHub(t);
+    t.h.hostCli = hostCliRunner({
+      ...t.fake.options(),
+      tempRoot: `${t.fake.folder}/answers.json`,
+    });
+    expect(
+      await answerOf(putToken(t, id, cookie, { token: 'ghp_secret' })),
+    ).toEqual([422, token('Could not reach github.com')]);
+    await nothingStored(id);
+  });
+});
+
 describe('PUT /api/admin/projects/<id>/git-host under the project lock', () => {
   it('answers 409 when the remote changed during the check, and 404 when the project was removed', async () => {
     const cookie = await manager(t);

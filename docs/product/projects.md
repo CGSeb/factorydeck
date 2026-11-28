@@ -103,18 +103,18 @@ Before storing a token, the server reads, with that token, the repository of the
 - GitHub: `gh api --hostname <host> repos/<owner>/<repo>` reads `default_branch`, then `gh api --hostname <host> "repos/<owner>/<repo>/contents/docs/agents/factory.yml?ref=<branch>"`.
 - GitLab: `glab api --hostname <host> projects/<url-encoded path>`, then `glab api --hostname <host> "projects/<path>/repository/files/docs%2Fagents%2Ffactory.yml?ref=<branch>"`.
 
-The file must exist and be a file. Each `gh` or `glab` call gets the token for that call only: `GH_TOKEN` and `GH_ENTERPRISE_TOKEN` (and `GH_HOST` for a host other than `github.com`), or `GITLAB_TOKEN` and `GITLAB_HOST`, plus `GH_PROMPT_DISABLED=1`. It gets only `PATH`, the proxy variables (`HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY`, `ALL_PROXY`, also in lower case) and the certificate variables (`SSL_CERT_FILE`, `SSL_CERT_DIR`, `NODE_EXTRA_CA_CERTS`) from the server's environment, an empty temporary `GH_CONFIG_DIR` or `GLAB_CONFIG_DIR`, and an empty temporary working folder: it never uses a token or a login of the server's own environment. Each call has 30 seconds. Nothing is written to `.env` or to the server's environment, and the token is never logged or written in an error.
+The file must exist and be a file. On GitHub, a remote whose path is not exactly `<owner>/<repo>` answers `Repository not found or not visible with this token` without calling `gh`. Each `gh` or `glab` call gets the token for that call only: `GH_TOKEN` and `GH_ENTERPRISE_TOKEN` (and `GH_HOST` for a host other than `github.com`), or `GITLAB_TOKEN` and `GITLAB_HOST`, plus `GH_PROMPT_DISABLED=1`. It gets only `PATH`, the proxy variables (`HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY`, `ALL_PROXY`, also in lower case) and the certificate variables (`SSL_CERT_FILE`, `SSL_CERT_DIR`, `NODE_EXTRA_CA_CERTS`) from the server's environment, an empty temporary `GH_CONFIG_DIR` or `GLAB_CONFIG_DIR`, and an empty temporary working folder: it never uses a token or a login of the server's own environment. Each call has 30 seconds. Nothing is written to `.env` or to the server's environment, and the token is never logged or written in an error.
 
 A failed check answers a fixed message, never the git host's output:
 
-| The git host answers                               | Message                                               |
-| -------------------------------------------------- | ----------------------------------------------------- |
-| `401`                                              | `Bad token`                                           |
-| `403` or `429` (missing scope, SSO, rate limit)    | `Token cannot read this repository`                   |
-| `404` on the repository                            | `Repository not found or not visible with this token` |
-| An empty GitLab project (no default branch)        | `Repository is empty`                                 |
-| `404` on the file, or a folder at its path         | `No docs/agents/factory.yml on <branch>`              |
-| A timeout, a DNS or connection failure, or a `5xx` | `Could not reach <host>`                              |
+| The git host answers                                                                                                                                         | Message                                               |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
+| `401`                                                                                                                                                        | `Bad token`                                           |
+| `403` or `429` (missing scope, SSO, rate limit)                                                                                                              | `Token cannot read this repository`                   |
+| `404` on the repository                                                                                                                                      | `Repository not found or not visible with this token` |
+| An empty GitLab project (no default branch)                                                                                                                  | `Repository is empty`                                 |
+| `404` on the file, or a folder at its path                                                                                                                   | `No docs/agents/factory.yml on <branch>`              |
+| A timeout, a DNS or connection failure, a `5xx`, any other HTTP status (`400`, `410`, `451`…), or a server that cannot make its temporary folder for the CLI | `Could not reach <host>`                              |
 
 ## Admin routes
 
