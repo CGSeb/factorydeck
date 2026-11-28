@@ -29,12 +29,14 @@ export interface CliPageProps {
 
 function CodeForm({
   error,
+  typed,
   onCode,
 }: {
   error: string | undefined;
+  typed: string;
   onCode: (code: string) => void;
 }): ReactElement {
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(typed);
   const input = useRef<HTMLInputElement | null>(null);
   useEffect(() => {
     input.current?.focus();
@@ -132,7 +134,9 @@ function Body({ state }: { state: ReturnType<typeof useCliPage> }) {
     case 'loading':
       return null;
     case 'enter':
-      return <CodeForm error={screen.error} onCode={read} />;
+      return (
+        <CodeForm error={screen.error} typed={screen.code} onCode={read} />
+      );
     case 'ask':
       return <Ask screen={screen} decide={decide} />;
     case 'connected':

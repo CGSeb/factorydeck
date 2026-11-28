@@ -2,13 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   CODE_INVALID,
   type CliDecision,
+  type CliDecisionOutcome,
   type CliLogin,
   type DecideCliLogin,
   type ReadCliLogin,
 } from './cli-api.ts';
 
 export type CliScreen =
-  | { name: 'enter'; error: string | undefined }
+  | { name: 'enter'; error: string | undefined; code: string }
   | { name: 'loading' }
   | {
       name: 'ask';
@@ -27,8 +28,26 @@ export interface CliPageState {
 
 function initial(code: string | undefined): CliScreen {
   return code === undefined || code.trim() === ''
-    ? { name: 'enter', error: undefined }
+    ? { name: 'enter', error: undefined, code: '' }
     : { name: 'loading' };
+}
+
+type AskScreen = Extract<CliScreen, { name: 'ask' }>;
+
+function decidedScreen(
+  asked: AskScreen,
+  decision: CliDecision,
+  outcome: CliDecisionOutcome,
+): CliScreen {
+  if (outcome.status === 'done') {
+    return decision === 'approve'
+      ? { name: 'connected' }
+      : { name: 'cancelled' };
+  }
+  if (outcome.status === 'invalid') {
+    return { name: 'enter', error: CODE_INVALID, code: asked.login.userCode };
+  }
+  return { ...asked, deciding: undefined, error: outcome.message };
 }
 
 export function useCliPage(
@@ -55,6 +74,7 @@ export function useCliPage(
         }
         setScreen({
           name: 'enter',
+          code: typed,
           error: outcome.status === 'invalid' ? CODE_INVALID : outcome.message,
         });
       });
@@ -76,17 +96,7 @@ export function useCliPage(
     void decideCliLogin(asked.login.userCode, decision).then((outcome) => {
       busy.current = false;
       if (!mounted.current) return;
-      if (outcome.status === 'done') {
-        setScreen(
-          decision === 'approve'
-            ? { name: 'connected' }
-            : { name: 'cancelled' },
-        );
-      } else if (outcome.status === 'invalid') {
-        setScreen({ name: 'enter', error: CODE_INVALID });
-      } else {
-        setScreen({ ...asked, deciding: undefined, error: outcome.message });
-      }
+      setScreen(decidedScreen(asked, decision, outcome));
     });
   }
   return { screen, read, decide };

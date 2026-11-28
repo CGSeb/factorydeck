@@ -124,6 +124,7 @@ export const InvalidCode: Story = {
     const field = canvas.getByLabelText(CODE_LABEL);
     await expect(field).toHaveAttribute('aria-invalid', 'true');
     await expect(field).toHaveAccessibleDescription(CODE_INVALID);
+    await expect(field).toHaveValue(LOGIN.userCode);
     await expect(canvas.queryByRole('button', { name: CONNECT })).toBeNull();
   },
 };
