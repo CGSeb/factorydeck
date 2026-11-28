@@ -72,6 +72,17 @@ describe('readerState of a thread', () => {
     });
   });
 
+  it('refuses a state too deeply nested to serialise with its path, without throwing', () => {
+    const depth = 200_000;
+    const readerState: unknown = JSON.parse(
+      '['.repeat(depth) + ']'.repeat(depth),
+    );
+    expect(check({ readerState })).toEqual({
+      error: 'readerState cannot be serialised as JSON',
+      path: 'threads.0.readerState',
+    });
+  });
+
   it('counts the UTF-8 bytes, not the characters', () => {
     const chars = (MAX_READER_STATE_BYTES - '""'.length) / 2;
     expect(check({ readerState: 'é'.repeat(chars) })).toBe('ok');

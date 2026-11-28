@@ -69,6 +69,42 @@ describe('POST /api/cli/ingest/offsets', () => {
     });
   });
 
+  it('stores a deeply nested reader state under 16 KB and gives it back', async () => {
+    const depth = 3000;
+    const text = '['.repeat(depth) + ']'.repeat(depth);
+    const sent = JSON.stringify(
+      batch(part(mainThread('s-1'), 0, 10, null)),
+    ).replace('"readerState":null', `"readerState":${text}`);
+    expect((await send(sent)).status).toBe(200);
+    const response = await app
+      .h()
+      .app()
+      .request(
+        '/api/cli/ingest/offsets',
+        ingestRequest({ fileKeys: [MAIN] }, app.token()),
+      );
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain(`"readerState":${text}`);
+  });
+
+  it('answers 400 with its path to a reader state too deep to serialise', async () => {
+    const depth = 200_000;
+    const sent = JSON.stringify(
+      batch(part(mainThread('s-1'), 0, 10, null)),
+    ).replace(
+      '"readerState":null',
+      `"readerState":${'['.repeat(depth) + ']'.repeat(depth)}`,
+    );
+    expect(await send(sent)).toEqual({
+      status: 400,
+      body: {
+        error: 'readerState cannot be serialised as JSON',
+        path: 'threads.0.readerState',
+      },
+    });
+    expect((await stored()).files).toEqual([]);
+  });
+
   it('gives back the reader state as an equal JSON value', async () => {
     const readerState = {
       b: [1, 2.5, 'é', null, true],

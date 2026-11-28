@@ -40,18 +40,44 @@ export function isFileKey(value: string): boolean {
   );
 }
 
-function jsonBytes(value: unknown): number {
-  return new TextEncoder().encode(JSON.stringify(value)).byteLength;
+export type ReaderState =
+  | string
+  | number
+  | boolean
+  | null
+  | ReaderState[]
+  | { [key: string]: ReaderState };
+
+function serialised(value: unknown): string | undefined {
+  try {
+    const text: unknown = JSON.stringify(value);
+    return typeof text === 'string' ? text : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 const readerStateSchema = z
-  .json({ error: 'Expected a JSON value, null allowed' })
-  .refine(
-    (value) => jsonBytes(value) <= MAX_READER_STATE_BYTES,
-    `readerState is over ${MAX_READER_STATE_BYTES} bytes`,
-  );
-
-export type ReaderState = z.infer<typeof readerStateSchema>;
+  .custom<ReaderState>(
+    (value) => value !== undefined,
+    'Expected a JSON value, null allowed',
+  )
+  .superRefine((value, context) => {
+    const text = serialised(value);
+    if (text === undefined) {
+      context.addIssue({
+        code: 'custom',
+        message: 'readerState cannot be serialised as JSON',
+      });
+    } else if (
+      new TextEncoder().encode(text).byteLength > MAX_READER_STATE_BYTES
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: `readerState is over ${MAX_READER_STATE_BYTES} bytes`,
+      });
+    }
+  });
 
 const whole = z.number().int().nonnegative();
 const time = z.iso.datetime({
