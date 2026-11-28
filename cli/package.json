@@ -2,13 +2,24 @@
   "name": "factorydeck",
   "version": "0.0.0",
   "type": "module",
-  "description": "Command line of FactoryDeck: logs in to a FactoryDeck server and sends it your agent sessions.",
+  "description": "Local-first dashboard to watch your AI software factory run, find its blockers and frictions, and make it more autonomous.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CGSeb/factorydeck.git",
+    "directory": "cli"
+  },
   "bin": {
-    "factorydeck": "src/main.ts"
+    "factorydeck": "dist/main.js"
+  },
+  "files": [
+    "dist/main.js"
+  ],
+  "scripts": {
+    "build": "node scripts/build.ts"
   },
   "engines": {
-    "node": ">=22.18"
+    "node": ">=22"
   },
   "devDependencies": {
     "smol-toml": "^1.4.2",

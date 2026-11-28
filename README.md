@@ -98,6 +98,14 @@ FactoryDeck reads only the projects where the factory is installed, and everythi
 
 1. Install the factory in your projects: follow the [factorydeck-skills install steps](https://github.com/CGSeb/factorydeck-skills#install), then run `/setup-factory`.
 2. Run FactoryDeck from source: see [Getting started](docs/getting-started.md) for the setup and the configuration.
+3. Connect your machine to your team's FactoryDeck with the CLI (Node 22 or later):
+
+   ```sh
+   npm i -g factorydeck
+   factorydeck login https://deck.example.test
+   ```
+
+   Approve the login in the browser page it opens. [The CLI](docs/product/cli.md) describes its commands.
 
 > [!NOTE]
 > FactoryDeck is in early development. There is no release yet. Want to look around first? `pnpm demo` serves synthetic data.

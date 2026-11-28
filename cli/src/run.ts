@@ -1,16 +1,17 @@
 import { type Parsed, parseArguments } from './arguments.ts';
 import type { Context } from './context.ts';
 import { CredentialsError } from './credentials.ts';
-import { COMMAND_HELP, MAIN_HELP } from './help.ts';
+import { COMMAND_HELP, type CommandName, MAIN_HELP } from './help.ts';
 import { login } from './login.ts';
 import { logout } from './logout.ts';
 import { status } from './status.ts';
+import { VERSION_LINES } from './version.ts';
 
 export const EXIT_OK = 0;
 export const EXIT_FAILURE = 1;
 export const EXIT_USAGE = 2;
 
-function helpOf(command: Parsed['command']): string[] {
+function helpOf(command: CommandName | undefined): string[] {
   return command === undefined ? MAIN_HELP : COMMAND_HELP[command];
 }
 
@@ -27,6 +28,10 @@ function dispatch(
 export async function run(argv: string[], context: Context): Promise<number> {
   const parsed = parseArguments(argv);
   const { output } = context;
+  if (parsed.kind === 'version') {
+    for (const line of VERSION_LINES) output.out(line);
+    return EXIT_OK;
+  }
   if (parsed.kind === 'help') {
     for (const line of helpOf(parsed.command)) output.out(line);
     return EXIT_OK;

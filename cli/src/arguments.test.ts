@@ -1,5 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import packageJson from '../package.json' with { type: 'json' };
+import { PARSER_VERSION } from '../../src/cli-ingest/parser-version.ts';
 import { COMMAND_HELP, MAIN_HELP } from './help.ts';
 import {
   type FakeContext,
@@ -82,6 +84,46 @@ describe('help', () => {
       stdout: [],
       stderr: ['Unknown command: push.', ...MAIN_HELP],
     });
+  });
+});
+
+describe('version', () => {
+  const lines = [
+    `factorydeck ${packageJson.version}`,
+    `parser ${PARSER_VERSION}`,
+  ];
+
+  it.each([
+    [['--version']],
+    [['-v']],
+    [['--help', '--version']],
+    [['login', '--version']],
+    [['status', '-v', '--server', 'http://a.test']],
+  ])('prints the CLI and parser versions on stdout for %j', async (argv) => {
+    expect(await runIn(context, argv)).toEqual({
+      code: 0,
+      stdout: lines,
+      stderr: [],
+    });
+  });
+
+  it('reads the CLI version from cli/package.json', () => {
+    expect(packageJson.version).toMatch(/^\d+\.\d+\.\d+/);
+    expect(Number.isInteger(PARSER_VERSION) && PARSER_VERSION > 0).toBe(true);
+  });
+
+  it.each([
+    [['--version=2'], 'Option --version takes no value.'],
+    [['push', '--version'], 'Unknown command: push.'],
+    [
+      ['login', 'not-a-url', '--version'],
+      'Invalid server URL: not-a-url. It needs http:// or https://.',
+    ],
+  ])('lets a usage error win over --version in %j', async (argv, message) => {
+    const ran = await runIn(context, argv);
+    expect(ran.code).toBe(2);
+    expect(ran.stdout).toEqual([]);
+    expect(ran.stderr[0]).toBe(message);
   });
 });
 
