@@ -64,7 +64,10 @@ function isProject(value: unknown): value is TeamProject {
 
 function isListed(value: unknown): value is ListedProject {
   return (
-    isProject(value) && isRecord(value) && typeof value['sessions'] === 'number'
+    isProject(value) &&
+    isRecord(value) &&
+    typeof value['sessions'] === 'number' &&
+    typeof value['tokenSet'] === 'boolean'
   );
 }
 
@@ -108,7 +111,14 @@ function okView(
   ) {
     return undefined;
   }
-  return { status: 'ok', refreshSeconds, projects, pendingRemotes, noRemote };
+  return {
+    status: 'ok',
+    refreshSeconds,
+    secretKey: body['secretKey'] === true,
+    projects,
+    pendingRemotes,
+    noRemote,
+  };
 }
 
 function errorOf(body: unknown): string | undefined {

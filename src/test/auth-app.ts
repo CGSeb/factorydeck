@@ -22,7 +22,10 @@ import { changeStatus } from '../team/account-status.ts';
 import { changeRole } from '../team/change-role.ts';
 import { invitations } from '../team/invitations.ts';
 import { roleRuleStore } from '../roles/project-rules.ts';
+import { gitHostTokenStore } from '../team/git-host-token.ts';
+import type { RunHostCli } from '../team/host-cli.ts';
 import { projectStore } from '../team/projects.ts';
+import { secretKey } from '../team/token-cipher.ts';
 import { resetLinks } from '../team/reset-links.ts';
 import type { SessionSource } from '../server/session-routes.ts';
 import { type ScratchOptions, createTestDatabase } from './postgres.ts';
@@ -59,6 +62,8 @@ export interface AuthHarness {
   signInLimit: SignInLimit;
   cliLogins: PendingLogins;
   lockWaitMs: number;
+  secretKey: string | undefined;
+  hostCli: RunHostCli;
   app: (up?: boolean) => Server;
   addAccount: (
     email: string,
@@ -71,7 +76,12 @@ function accountSources(
   db: Database,
   harness: Pick<
     AuthHarness,
-    'clock' | 'signInLimit' | 'cliLogins' | 'lockWaitMs'
+    | 'clock'
+    | 'signInLimit'
+    | 'cliLogins'
+    | 'lockWaitMs'
+    | 'secretKey'
+    | 'hostCli'
   >,
 ): Pick<AppOptions, 'auth' | 'team' | 'resets' | 'admin' | 'cli'> {
   return {
@@ -96,6 +106,11 @@ function accountSources(
     admin: {
       projects: projectStore(db, () => harness.clock),
       roleRules: roleRuleStore(db),
+      gitHostTokens: {
+        secretKey: secretKey(harness.secretKey),
+        store: gitHostTokenStore(db, () => harness.clock),
+        run: (call) => harness.hostCli(call),
+      },
     },
     cli: {
       logins: harness.cliLogins,
@@ -122,6 +137,8 @@ export async function authHarness(
     signInLimit: signInLimit({ now: () => harness.clock }),
     cliLogins: pendingLogins({ now: () => harness.clock.getTime() }),
     lockWaitMs: 30_000,
+    secretKey: undefined,
+    hostCli: () => Promise.reject(new Error('Not used')),
     close,
     app: (up = true) =>
       createApp({

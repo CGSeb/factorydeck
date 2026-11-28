@@ -1,0 +1,221 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "2fa61d85-428a-4ed6-9b8c-2786e6825a15",
+  "prevIds": [
+    "2dc86335-1538-4304-b1aa-63fec4d08b44"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "project",
+        "git_host"
+      ],
+      "writes": [
+        "s|col|public.project.git_host",
+        "n|col|public.project.git_host",
+        "e|col|public.project.git_host"
+      ],
+      "reads": [
+        "n|tbl|public.project",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "project",
+        "token_ciphertext"
+      ],
+      "writes": [
+        "s|col|public.project.token_ciphertext",
+        "n|col|public.project.token_ciphertext",
+        "e|col|public.project.token_ciphertext"
+      ],
+      "reads": [
+        "n|tbl|public.project",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "project",
+        "token_set_at"
+      ],
+      "writes": [
+        "s|col|public.project.token_set_at",
+        "n|col|public.project.token_set_at",
+        "e|col|public.project.token_set_at"
+      ],
+      "reads": [
+        "n|tbl|public.project",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "project",
+        "token_set_by"
+      ],
+      "writes": [
+        "s|col|public.project.token_set_by",
+        "n|col|public.project.token_set_by",
+        "e|col|public.project.token_set_by"
+      ],
+      "reads": [
+        "n|tbl|public.project",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "project"
+      ],
+      "writes": [
+        "s|fk|public.project.project_token_set_by_account_id_fkey",
+        "n|fk|public.project.project_token_set_by_account_id_fkey",
+        "e|fk|public.project.project_token_set_by_account_id_fkey",
+        "n|con|public.project.project_token_set_by_account_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.project",
+        "n|sch|public",
+        "n|tbl|public.account",
+        "n|sch|public",
+        "n|col|public.project.token_set_by",
+        "n|col|public.account.id",
+        "e|uniqueness|public.account.id"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "project"
+      ],
+      "writes": [
+        "s|ck|public.project.project_git_host",
+        "n|ck|public.project.project_git_host",
+        "e|ck|public.project.project_git_host",
+        "n|con|public.project.project_git_host"
+      ],
+      "reads": [
+        "n|tbl|public.project",
+        "n|sch|public",
+        "n|col|public.project.git_host"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project",
+        "name": "git_host",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project",
+        "name": "token_ciphertext",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project",
+        "name": "token_set_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project",
+        "name": "token_set_by",
+        "type": "bigint",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project",
+        "name": "project_token_set_by_account_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "token_set_by"
+        ],
+        "schemaTo": "public",
+        "tableTo": "account",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project",
+        "name": "project_git_host",
+        "value": "\"git_host\" is null or \"git_host\" in ('github', 'gitlab')",
+        "entityType": "checks"
+      }
+    }
+  ]
+}

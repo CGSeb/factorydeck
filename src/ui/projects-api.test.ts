@@ -28,6 +28,7 @@ describe('projectsLoader', () => {
     const body = {
       status: 'ok',
       refreshSeconds: 10,
+      secretKey: true,
       projects: someProjects,
       pendingRemotes: somePendingRemotes,
       noRemote: someNoRemote,

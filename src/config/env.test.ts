@@ -201,3 +201,23 @@ describe('workflowConfigPath', () => {
     );
   });
 });
+
+describe('FACTORYDECK_SECRET_KEY', () => {
+  const DATABASE_URL = 'postgres://user:secret@localhost:5434/factorydeck';
+  const key = (value?: string): string | undefined =>
+    validateEnv(
+      value === undefined
+        ? { DATABASE_URL }
+        : { DATABASE_URL, FACTORYDECK_SECRET_KEY: value },
+    ).FACTORYDECK_SECRET_KEY;
+
+  it('counts an empty value as unset', () => {
+    expect(key()).toBeUndefined();
+    expect(key('')).toBeUndefined();
+    expect(key('  ')).toBeUndefined();
+  });
+
+  it('keeps any other value, so an invalid key never stops the server', () => {
+    expect(key('too short')).toBe('too short');
+  });
+});

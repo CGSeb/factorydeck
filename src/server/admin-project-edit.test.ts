@@ -113,6 +113,10 @@ describe('PATCH /api/admin/projects/:id', () => {
       remote: SHOP,
       createdAt: START.toISOString(),
       sessions: 1,
+      gitHost: 'github',
+      tokenSet: false,
+      tokenSetAt: null,
+      tokenSetBy: null,
     });
     expect((await listed(cookie))[0]?.name).toBe('Shop front');
   });
@@ -188,7 +192,14 @@ describe('PATCH /api/admin/projects/:id', () => {
       const response = await patch(shop.id, body, cookie);
 
       expect(response.status).toBe(200);
-      expect(await response.json()).toEqual({ ...shop, sessions: 0 });
+      expect(await response.json()).toEqual({
+        ...shop,
+        sessions: 0,
+        gitHost: 'github',
+        tokenSet: false,
+        tokenSetAt: null,
+        tokenSetBy: null,
+      });
     },
   );
 

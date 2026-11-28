@@ -13,17 +13,33 @@ import {
 } from 'drizzle-orm/pg-core';
 import { account } from './auth-schema.ts';
 
-export const project = pgTable('project', {
-  id: bigserial({ mode: 'number' }).primaryKey(),
-  name: text().notNull(),
-  slug: text().notNull().unique(),
-  remote: text().notNull().unique(),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
-  createdBy: bigint('created_by', { mode: 'number' }).references(
-    () => account.id,
-    { onDelete: 'set null' },
-  ),
-});
+export const project = pgTable(
+  'project',
+  {
+    id: bigserial({ mode: 'number' }).primaryKey(),
+    name: text().notNull(),
+    slug: text().notNull().unique(),
+    remote: text().notNull().unique(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+    createdBy: bigint('created_by', { mode: 'number' }).references(
+      () => account.id,
+      { onDelete: 'set null' },
+    ),
+    gitHost: text('git_host'),
+    tokenCiphertext: text('token_ciphertext'),
+    tokenSetAt: timestamp('token_set_at', { withTimezone: true }),
+    tokenSetBy: bigint('token_set_by', { mode: 'number' }).references(
+      () => account.id,
+      { onDelete: 'set null' },
+    ),
+  },
+  (table) => [
+    check(
+      'project_git_host',
+      sql`${table.gitHost} is null or ${table.gitHost} in ('github', 'gitlab')`,
+    ),
+  ],
+);
 
 export const projectRule = pgTable(
   'project_rule',

@@ -44,7 +44,10 @@ import { teamCliConnections } from '../team/cli-connections.ts';
 import { changeStatus } from '../team/account-status.ts';
 import { changeRole } from '../team/change-role.ts';
 import { invitations } from '../team/invitations.ts';
+import { gitHostTokenStore } from '../team/git-host-token.ts';
+import { hostCliRunner } from '../team/host-cli.ts';
 import { projectStore } from '../team/projects.ts';
+import { secretKey } from '../team/token-cipher.ts';
 import { resetLinks } from '../team/reset-links.ts';
 import { type AppOptions, createApp } from './app.ts';
 import type { TeamSource } from './team-routes.ts';
@@ -112,11 +115,20 @@ function teamSource(db: Database): TeamSource {
 
 function accountSources(
   db: Database,
+  env: Pick<Env, 'FACTORYDECK_SECRET_KEY'>,
 ): Pick<AppOptions, 'team' | 'resets' | 'admin' | 'cli'> {
   return {
     team: teamSource(db),
     resets: resetLinks(db),
-    admin: { projects: projectStore(db), roleRules: roleRuleStore(db) },
+    admin: {
+      projects: projectStore(db),
+      roleRules: roleRuleStore(db),
+      gitHostTokens: {
+        secretKey: secretKey(env.FACTORYDECK_SECRET_KEY),
+        store: gitHostTokenStore(db),
+        run: hostCliRunner(),
+      },
+    },
     cli: {
       logins: pendingLogins(),
       connections: cliConnections(db),
@@ -212,7 +224,7 @@ async function main(): Promise<void> {
     stats: statsSource(db, rules),
     sidebar: { ready: (project) => readyCounts(db, project, hasFactory) },
     auth: { ...setup, ...signInSessions(db), signInLimit: signInLimit() },
-    ...accountSources(db),
+    ...accountSources(db, env),
   });
   await listen(app, env.FACTORYDECK_PORT);
   await startSetup(setup);

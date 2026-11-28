@@ -223,6 +223,7 @@ describe('GET /api/admin/projects', () => {
     expect(body).toEqual({
       status: 'ok',
       refreshSeconds: 10,
+      secretKey: false,
       projects: [
         {
           id: body.projects[0]?.id,
@@ -231,6 +232,10 @@ describe('GET /api/admin/projects', () => {
           remote: 'gitlab.example.test/group/sub/alpha',
           createdAt: new Date(START.getTime() + 3 * DAY_MS).toISOString(),
           sessions: 0,
+          gitHost: null,
+          tokenSet: false,
+          tokenSetAt: null,
+          tokenSetBy: null,
         },
         {
           id: body.projects[1]?.id,
@@ -239,6 +244,10 @@ describe('GET /api/admin/projects', () => {
           remote: 'github.com/owner/alpha',
           createdAt: new Date(START.getTime() + 2 * DAY_MS).toISOString(),
           sessions: 0,
+          gitHost: 'github',
+          tokenSet: false,
+          tokenSetAt: null,
+          tokenSetBy: null,
         },
         {
           id: body.projects[2]?.id,
@@ -247,6 +256,10 @@ describe('GET /api/admin/projects', () => {
           remote: 'github.com/owner/zeta',
           createdAt: new Date(START.getTime() + DAY_MS).toISOString(),
           sessions: 0,
+          gitHost: 'github',
+          tokenSet: false,
+          tokenSetAt: null,
+          tokenSetBy: null,
         },
       ],
       pendingRemotes: [],
@@ -262,6 +275,7 @@ describe('GET /api/admin/projects', () => {
     expect(await response.json()).toEqual({
       status: 'ok',
       refreshSeconds: 10,
+      secretKey: false,
       projects: [],
       pendingRemotes: [],
       noRemote: null,

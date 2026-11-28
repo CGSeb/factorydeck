@@ -81,7 +81,16 @@ export const Empty: Story = {
 export const OneProject: Story = {
   args: {
     loadProjects: projectsLoaderOf(
-      projectsResponse([{ ...addedProject, sessions: 0 }]),
+      projectsResponse([
+        {
+          ...addedProject,
+          sessions: 0,
+          gitHost: 'github',
+          tokenSet: false,
+          tokenSetAt: null,
+          tokenSetBy: null,
+        },
+      ]),
     ),
   },
   play: async ({ canvasElement }) => {
