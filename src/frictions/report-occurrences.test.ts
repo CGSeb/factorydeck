@@ -30,6 +30,7 @@ describe('occurrenceLines', () => {
     const lines = occurrenceLines(
       {
         ...BASE,
+        details: 'local',
         texts: {
           kind: 'tool-error',
           input: '*** Begin Patch\nx',

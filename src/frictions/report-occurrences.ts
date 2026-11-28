@@ -4,10 +4,11 @@ import {
   cutTail,
   nonBlankLines,
 } from './log-texts.ts';
-import type { LogTexts } from './occurrence-types.ts';
+import type { LogTexts, OccurrenceDetails } from './occurrence-types.ts';
 import { UNASSIGNED_ISSUE } from './report-groups.ts';
 
 export const GONE = 'The session log is no longer on this computer.';
+export const REMOTE_DETAILS = "Details stay on the developer's machine.";
 export const NO_OUTPUT = 'No output.';
 export const MAX_OUTPUT_TAIL_LINES = 40;
 export const MAX_OUTPUT_TAIL_LENGTH = 4000;
@@ -25,6 +26,7 @@ export interface ReportOccurrence {
   sessionTitle: string;
   shell: boolean;
   exitCode: number | null;
+  details: OccurrenceDetails;
   texts: LogTexts | null;
 }
 
@@ -104,7 +106,12 @@ export function jsonInput(input: string): string {
 
 function occurrenceTexts(occurrence: ReportOccurrence): string[] {
   const { texts } = occurrence;
-  if (texts === null) return [GONE, ...exitLine(occurrence)];
+  if (texts === null) {
+    return [
+      occurrence.details === 'remote' ? REMOTE_DETAILS : GONE,
+      ...exitLine(occurrence),
+    ];
+  }
   if (texts.kind === 'stop-blocked') {
     return textBlock(messageHead(texts.message), 'text');
   }

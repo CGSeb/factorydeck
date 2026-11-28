@@ -10,6 +10,7 @@ import {
   hookOccurrences,
   outputLoaderOf,
   pendingOutput,
+  remoteOutput,
   unreachableOutput,
 } from './occurrence-fixtures.ts';
 import {
@@ -17,6 +18,7 @@ import {
   LOG_GONE,
   NO_OUTPUT,
   OccurrenceTexts,
+  REMOTE_DETAILS,
   SHOW_FULL_OUTPUT,
   fullOutputLabel,
 } from './OccurrenceTexts.tsx';
@@ -208,6 +210,41 @@ export const OutputGone: Story = {
     const box = await openOutput(canvasElement);
     await expect(await within(box).findByText(LOG_GONE)).toBeVisible();
   },
+};
+
+export const OutputRemote: Story = {
+  name: 'A full output of an occurrence sent by a CLI',
+  args: { loadOutput: remoteOutput },
+  play: async ({ canvasElement }) => {
+    const box = await openOutput(canvasElement);
+    await expect(await within(box).findByText(REMOTE_DETAILS)).toBeVisible();
+  },
+};
+
+export const SentByCli: Story = {
+  name: 'An occurrence sent by a CLI',
+  args: {
+    occurrence: {
+      ...shellError,
+      details: 'remote',
+      hasMore: false,
+      texts: null,
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText(REMOTE_DETAILS)).toBeVisible();
+    await expect(
+      canvas.getByText(`Exit code ${String(shellError.exitCode)}`),
+    ).toBeVisible();
+    await expect(canvas.queryByRole('button')).toBeNull();
+  },
+};
+
+export const SentByCliDark: Story = {
+  ...SentByCli,
+  name: 'An occurrence sent by a CLI, dark',
+  globals: { theme: 'dark' },
 };
 
 export const Keyboard: Story = {

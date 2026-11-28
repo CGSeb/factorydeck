@@ -16,7 +16,11 @@ import {
   toolOccurrences,
   unreachableOccurrences,
 } from './occurrence-fixtures.ts';
-import { LOG_GONE, fullOutputLabel } from './OccurrenceTexts.tsx';
+import {
+  LOG_GONE,
+  REMOTE_DETAILS,
+  fullOutputLabel,
+} from './OccurrenceTexts.tsx';
 import type { OccurrenceRequest } from './occurrences-api.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 
@@ -148,12 +152,39 @@ export const LogGone: Story = {
   name: 'An occurrence whose log is gone',
   args: {
     loadOccurrences: occurrencesLoaderOf(
-      toolOccurrences.map((item) => ({ ...item, texts: null })),
+      toolOccurrences.map((item) => ({
+        ...item,
+        details: 'gone' as const,
+        texts: null,
+      })),
     ),
   },
   play: async ({ canvasElement }) => {
     const table = await openGit(canvasElement);
     await expect(within(table).getAllByText(LOG_GONE)).toHaveLength(3);
+  },
+};
+
+export const SentByCli: Story = {
+  name: 'An occurrence sent by a CLI',
+  args: {
+    loadOccurrences: occurrencesLoaderOf(
+      toolOccurrences.map((item) => ({
+        ...item,
+        details: 'remote' as const,
+        hasMore: false,
+        texts: null,
+      })),
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const table = await openGit(canvasElement);
+    await expect(within(table).getAllByText(REMOTE_DETAILS)).toHaveLength(3);
+    await expect(within(table).getByText('Exit code 128')).toBeVisible();
+    await expect(within(table).queryByText(LOG_GONE)).toBeNull();
+    await expect(
+      within(table).queryByRole('button', { name: /Show full output/ }),
+    ).toBeNull();
   },
 };
 

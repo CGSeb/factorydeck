@@ -17,6 +17,7 @@ import type {
   BatchCounts,
   BatchThread,
 } from './batch-schema.ts';
+import { storeFrictions } from './store-frictions.ts';
 import { storeThreadRecords } from './store-records.ts';
 
 export interface Sender {
@@ -290,6 +291,7 @@ export async function storeBatch(
         await storeSubAgent(tx, thread);
         apiCalls += await storeCalls(tx, thread);
         await storeThreadRecords(tx, thread);
+        await storeFrictions(tx, thread);
         await storeOffset(tx, thread, batch.parserVersion, at);
       }
       await useSubAgentCwds(tx, [...sessionIds]);

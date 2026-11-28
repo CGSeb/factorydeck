@@ -8,6 +8,7 @@ import type { WorkflowConfig } from '../roles/config.ts';
 import { formatTokens } from '../ui/format.ts';
 import { type FrictionQuery, type FrictionWindow, loadWindow } from './load.ts';
 import {
+  detailsOf,
   isShellTool,
   latestOccurrences,
   locationOf,
@@ -160,6 +161,7 @@ function rowKey(row: LoadedRow): string {
 }
 
 async function occurrencesOf(
+  db: Database,
   groups: readonly ReportGroup[],
   home: string,
 ): Promise<Map<string, ReportOccurrence[]>> {
@@ -167,12 +169,11 @@ async function occurrencesOf(
   const candidates = new Map(
     shown.map((group) => [group.key, candidatesOf(group)]),
   );
-  const found = await readLogTexts(
-    [...candidates.values()]
-      .flat()
-      .map((row) => locationOf(row.source, rowKey(row))),
-    home,
-  );
+  const located = [...candidates.values()]
+    .flat()
+    .map((row) => locationOf(row.source, rowKey(row)));
+  const found = await readLogTexts(located, home);
+  const details = await detailsOf(db, located, found);
   const textsOf = (row: LoadedRow) => found.get(rowKey(row)) ?? null;
   return new Map(
     shown.map((group) => {
@@ -203,6 +204,7 @@ async function occurrencesOf(
               : row.sessionTitle,
           shell: isShellTool(agentOf(row), row.tool),
           exitCode: row.exitCode,
+          details: details.get(rowKey(row)) ?? 'gone',
           texts: textsOf(row),
         })),
       ];
@@ -278,6 +280,7 @@ export async function buildReport(
   };
   const [occurrences, issueTitle] = await Promise.all([
     occurrencesOf(
+      db,
       tagged.groups.map((group) =>
         occurrenceGroup(group, tagged.statuses.get(group.key)),
       ),

@@ -15,6 +15,7 @@ import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import './frictions-page.css';
 
 export const LOG_GONE = 'The session log is no longer on this computer.';
+export const REMOTE_DETAILS = "Details stay on the developer's machine.";
 export const NO_OUTPUT = 'No output.';
 export const SHOW_FULL_OUTPUT = 'Show full output';
 export const HIDE_FULL_OUTPUT = 'Hide full output';
@@ -30,7 +31,8 @@ function FullOutputBody({
 }): ReactNode {
   if (response === null) return 'Loading…';
   if (response?.status !== 'ok') return UNREACHABLE_MESSAGE;
-  return response.gone ? LOG_GONE : response.text;
+  if (!response.gone) return response.text;
+  return response.remote === true ? REMOTE_DETAILS : LOG_GONE;
 }
 
 function FullOutput({
@@ -124,6 +126,16 @@ export function OccurrenceTexts({
   loadOutput: LoadOutput;
 }): ReactNode {
   const { texts } = occurrence;
+  if (texts === null && occurrence.details === 'remote') {
+    return (
+      <>
+        {occurrence.exitCode !== null && (
+          <p className="fd-occurrence-exit">Exit code {occurrence.exitCode}</p>
+        )}
+        <p className="fd-occurrence-gone">{REMOTE_DETAILS}</p>
+      </>
+    );
+  }
   if (texts === null) {
     return <p className="fd-occurrence-gone">{LOG_GONE}</p>;
   }

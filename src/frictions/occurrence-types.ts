@@ -103,6 +103,10 @@ export type OccurrenceTexts =
   | { kind: 'tool-error'; input: string; error: string; shell: boolean }
   | { kind: 'stop-blocked'; message: string };
 
+export const OCCURRENCE_DETAILS = ['local', 'gone', 'remote'] as const;
+
+export type OccurrenceDetails = (typeof OCCURRENCE_DETAILS)[number];
+
 export interface FrictionOccurrence {
   id: number;
   at: string;
@@ -113,10 +117,12 @@ export interface FrictionOccurrence {
   sessionTitle: string;
   exitCode: number | null;
   hasMore: boolean;
+  details: OccurrenceDetails;
   texts: OccurrenceTexts | null;
 }
 
-export type FullOutput = { gone: true } | { gone: false; text: string };
+export type FullOutput =
+  { gone: true; remote?: true } | { gone: false; text: string };
 
 export type FullOutputResponse = ({ status: 'ok' } & FullOutput) | Unreachable;
 
