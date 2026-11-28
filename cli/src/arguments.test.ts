@@ -31,18 +31,42 @@ describe('help', () => {
   });
 
   it.each(['login', 'logout', 'status'] as const)(
-    'prints the help of %s for <command> --help, whatever else is given',
+    'prints the help of %s for <command> --help, without its server URL',
     async (command) => {
       expect(await runIn(context, [command, '--help'])).toEqual({
         code: 0,
         stdout: COMMAND_HELP[command],
         stderr: [],
       });
-      expect((await runIn(context, ['-h', command, 'x', 'y'])).stdout).toEqual(
-        COMMAND_HELP[command],
-      );
+      const url = command === 'status' ? [] : ['http://a.test/x'];
+      expect(await runIn(context, ['-h', command, ...url])).toEqual({
+        code: 0,
+        stdout: COMMAND_HELP[command],
+        stderr: [],
+      });
     },
   );
+
+  it.each([
+    [
+      ['login', 'not-a-url', '--help'],
+      'Invalid server URL: not-a-url. It needs http:// or https://.',
+    ],
+    [['status', 'extra', '--help'], 'Unexpected argument: extra.'],
+    [
+      ['logout', 'http://a.test', 'http://b.test', '-h'],
+      'Unexpected argument: http://b.test.',
+    ],
+    [
+      ['login', '--help', '--server', 'ftp://a.test'],
+      'Invalid server URL: ftp://a.test. It needs http:// or https://.',
+    ],
+  ])('lets a usage error win over --help in %j', async (argv, message) => {
+    const ran = await runIn(context, argv);
+    expect(ran.code).toBe(2);
+    expect(ran.stdout).toEqual([]);
+    expect(ran.stderr[0]).toBe(message);
+  });
 
   it('prints the help on stderr with exit 2 without a command', async () => {
     expect(await runIn(context, [])).toEqual({

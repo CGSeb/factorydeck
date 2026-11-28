@@ -62,7 +62,7 @@ The line is the origin, the account's name and email, the machine name, and the 
 
 `factorydeck --help` prints `Usage: factorydeck <command> [options]` and one line per command and for `--server`; `factorydeck <command> --help` describes the command. Both go to stdout with exit 0.
 
-Exit codes: 0 success, 1 failure, 2 usage error. A usage error (an unknown command or option, a missing or extra argument, an invalid URL) is checked first, before any file or server is read. An unknown command prints the help, and no command at all prints the help on stderr, both with exit 2. Ctrl-C exits with code 130 and saves nothing.
+Exit codes: 0 success, 1 failure, 2 usage error. A usage error (an unknown command or option, a missing or extra argument, an invalid URL) is checked first, before any file or server is read, and wins over `--help`: `factorydeck login not-a-url --help` is a usage error, while `factorydeck login --help` without a URL prints the help. An unknown command prints the help, and no command at all prints the help on stderr, both with exit 2. Ctrl-C exits with code 130 and saves nothing.
 
 Errors go to stderr and everything else to stdout, with no colour and no spinner, the same with or without a terminal.
 

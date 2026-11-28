@@ -63,10 +63,7 @@ function serverOf(command: CommandName, raw: Raw): Origin {
       message: `--server ${flagged} and ${given} name different servers.`,
     };
   }
-  const origin = flagged ?? given;
-  if (takesUrl && origin === undefined)
-    return { message: 'Missing server URL.' };
-  return { origin };
+  return { origin: flagged ?? given };
 }
 
 export function parseArguments(argv: string[]): Parsed {
@@ -80,9 +77,17 @@ export function parseArguments(argv: string[]): Parsed {
   if (name !== undefined && command === undefined) {
     return { kind: 'usage', command, message: `Unknown command: ${name}.` };
   }
-  if (raw.values['help'] === true) return { kind: 'help', command };
-  if (command === undefined) return { kind: 'usage', command, message: '' };
+  const help = raw.values['help'] === true;
+  if (command === undefined) {
+    return help
+      ? { kind: 'help', command }
+      : { kind: 'usage', command, message: '' };
+  }
   const server = serverOf(command, raw);
   if ('message' in server) return { kind: 'usage', command, ...server };
+  if (help) return { kind: 'help', command };
+  if (command !== 'status' && server.origin === undefined) {
+    return { kind: 'usage', command, message: 'Missing server URL.' };
+  }
   return { kind: 'run', command, origin: server.origin };
 }
