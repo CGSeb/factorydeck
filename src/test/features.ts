@@ -9,6 +9,7 @@ import {
 } from '../db/schema.ts';
 import type { FeatureQuery } from '../features/types.ts';
 import type { SerenityReport } from '../git-host/types.ts';
+import { testRemote } from './postgres.ts';
 
 export const NOW = new Date('2026-03-12T15:30:00Z');
 const RECENT = new Date('2026-03-12T10:00:00Z');
@@ -72,7 +73,7 @@ function report(score: number): SerenityReport {
 
 function issue(number: number, issueState: string) {
   return {
-    project: APP,
+    remote: testRemote(APP),
     number,
     title: `Issue ${String(number)}`,
     state: issueState,
@@ -85,7 +86,7 @@ function issue(number: number, issueState: string) {
 
 function mergedRequest(number: number, closes: number, score: number) {
   return {
-    project: APP,
+    remote: testRemote(APP),
     number,
     title: `Request ${String(number)}`,
     state: 'merged',
@@ -144,7 +145,7 @@ export async function seedFeatures(db: Database): Promise<void> {
 
 async function seedGitHost(db: Database): Promise<void> {
   await db.insert(gitHostProject).values({
-    project: APP,
+    remote: testRemote(APP),
     gitHost: 'github',
     repository: 'example-org/example-app',
     syncedFrom: OLD,

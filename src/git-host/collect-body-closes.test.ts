@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { gitHostProject } from '../db/schema.ts';
 import { hasFactory } from '../ingest/factory.ts';
-import { T2, addProject, calls } from '../test/git-host.ts';
+import { T2, addProject, calls, remoteOfRoot } from '../test/git-host.ts';
 import {
   closed,
   comment,
@@ -36,7 +36,7 @@ describe('reading the closing keywords of requests already stored', () => {
       .db()
       .insert(gitHostProject)
       .values({
-        project: root,
+        remote: await remoteOfRoot(ctx.db(), root),
         gitHost: 'github',
         repository: 'example-org/example-app',
         syncedFrom: new Date(T2),

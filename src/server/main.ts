@@ -143,16 +143,16 @@ function statsSource(
   rules: () => Promise<WorkflowConfig>,
 ): StatsSource {
   return {
-    autonomy: (query) => autonomyStats(db, query, hasFactory),
-    quality: (query) => qualityStats(db, query, hasFactory),
+    autonomy: (query) => autonomyStats(db, query),
+    quality: (query) => qualityStats(db, query),
     frictions: async (query) => frictionStats(db, query, await rules()),
     occurrences: async (query) => frictionOccurrences(db, query, await rules()),
     output: (id) => frictionOutput(db, id),
     report: async (query) => frictionReport(db, query, await rules()),
     markReport: async (query) => markFrictionReport(db, query, await rules()),
-    flow: async (query) => flowStats(db, query, await rules(), hasFactory),
-    bugs: (query) => bugStats(db, query, hasFactory),
-    waiting: (project, kind) => waitingIssues(db, project, hasFactory, kind),
+    flow: async (query) => flowStats(db, query, await rules()),
+    bugs: (query) => bugStats(db, query),
+    waiting: (project, kind) => waitingIssues(db, project, kind),
   };
 }
 
@@ -206,7 +206,7 @@ async function main(): Promise<void> {
     checkDatabase: databaseCheck(db),
     uiDir: UI_DIST_DIR,
     overview: {
-      load: (query) => overviewData(db, query, hasFactory),
+      load: (query) => overviewData(db, query),
       sessionsFolder: folder,
       refreshSeconds: env.FACTORYDECK_INGEST_INTERVAL_SECONDS,
       updatedAt: ingestion.lastFinishedAt,
@@ -220,11 +220,11 @@ async function main(): Promise<void> {
       factoryStatus: () => factoryStatus(db, hasFactory),
     },
     gitHost: {
-      status: () => collectionStatus(db, hasFactory),
+      status: () => collectionStatus(db),
       refresh: () => collectionLoop().refresh(),
     },
     stats: statsSource(db, rules),
-    sidebar: { ready: (project) => readyCounts(db, project, hasFactory) },
+    sidebar: { ready: (project) => readyCounts(db, project) },
     auth: { ...setup, ...signInSessions(db), signInLimit: signInLimit() },
     ...accountSources(db, env),
   });

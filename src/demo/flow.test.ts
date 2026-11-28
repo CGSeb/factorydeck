@@ -44,7 +44,6 @@ describe('demo flow', () => {
       db,
       { period: 'all', timeZone: 'UTC', now: NOW },
       DEFAULT_CONFIG,
-      hasFactory,
     );
     const added = flow.current.issues.filter(
       (issue) => issue.number >= mergedIssueNumber(0),
@@ -86,7 +85,7 @@ describe('demo flow', () => {
 
   it('gives merged issues calls after their first refused report, and one issue calls after a first report that passed', async () => {
     const [issues, usage, flow] = await Promise.all([
-      loadIssues(db, undefined, hasFactory, (issue, requests, state) => ({
+      loadIssues(db, undefined, (issue, requests, state) => ({
         merged: issueFacts(issue, requests, state).mergedAt !== null,
         key: issueKey(issue.project, issue.number),
         refusedAt: firstRefusal(requests),
@@ -97,7 +96,6 @@ describe('demo flow', () => {
         db,
         { period: 'all', timeZone: 'UTC', now: NOW },
         DEFAULT_CONFIG,
-        hasFactory,
       ),
     ]);
     const lastCall = (key: string): number => {

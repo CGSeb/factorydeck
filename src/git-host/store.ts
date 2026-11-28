@@ -5,7 +5,7 @@ import {
   gitHostProject,
   gitHostRequest,
   gitHostRun,
-  session,
+  project,
 } from '../db/schema.ts';
 import { LOCK_KEY } from '../ingest/lock.ts';
 import type { Transaction } from '../ingest/store.ts';
@@ -33,12 +33,12 @@ function isGitHost(value: string | null): value is GitHostName {
 
 export async function projectState(
   db: Database,
-  project: string,
+  remote: string,
 ): Promise<ProjectState | undefined> {
   const [row] = await db
     .select()
     .from(gitHostProject)
-    .where(eq(gitHostProject.project, project));
+    .where(eq(gitHostProject.remote, remote));
   if (row === undefined) return undefined;
   return {
     gitHost: isGitHost(row.gitHost) ? row.gitHost : null,
@@ -54,14 +54,14 @@ export async function projectState(
 
 export async function pendingRequests(
   db: Database,
-  project: string,
+  remote: string,
 ): Promise<number[]> {
   const rows = await db
     .select({ number: gitHostRequest.number })
     .from(gitHostRequest)
     .where(
       and(
-        eq(gitHostRequest.project, project),
+        eq(gitHostRequest.remote, remote),
         eq(gitHostRequest.state, 'open'),
         eq(gitHostRequest.checks, 'pending'),
       ),
@@ -69,30 +69,27 @@ export async function pendingRequests(
   return rows.map((row) => row.number).sort((a, b) => a - b);
 }
 
-async function lockedProject(
-  tx: Transaction,
-  project: string,
-): Promise<boolean> {
+async function lockedRemote(tx: Transaction, remote: string): Promise<boolean> {
   await tx.execute(sql`select pg_advisory_xact_lock(${LOCK_KEY})`);
   const [found] = await tx
-    .select({ sessions: count() })
-    .from(session)
-    .where(eq(session.project, project));
-  return (found?.sessions ?? 0) > 0;
+    .select({ projects: count() })
+    .from(project)
+    .where(eq(project.remote, remote));
+  return (found?.projects ?? 0) > 0;
 }
 
 export async function forgetGitHostData(
   tx: Transaction,
-  projects: string[],
+  remotes: string[],
 ): Promise<void> {
-  if (projects.length === 0) return;
-  await tx.delete(gitHostIssue).where(inArray(gitHostIssue.project, projects));
+  if (remotes.length === 0) return;
+  await tx.delete(gitHostIssue).where(inArray(gitHostIssue.remote, remotes));
   await tx
     .delete(gitHostRequest)
-    .where(inArray(gitHostRequest.project, projects));
+    .where(inArray(gitHostRequest.remote, remotes));
   await tx
     .delete(gitHostProject)
-    .where(inArray(gitHostProject.project, projects));
+    .where(inArray(gitHostProject.remote, remotes));
 }
 
 async function inChunks<T>(
@@ -162,7 +159,7 @@ export function labelChanges(
 
 async function saveChanges(
   tx: Transaction,
-  project: string,
+  remote: string,
   changes: Changes,
   needsSpecLabel: string,
 ): Promise<void> {
@@ -173,14 +170,14 @@ async function saveChanges(
         chunk.map(({ labelEvents, ...issue }) => ({
           ...issue,
           needsSpec: labelChanges(labelEvents, needsSpecLabel),
-          project,
+          remote,
           createdAt: new Date(issue.createdAt),
           closedAt: dateOrNull(issue.closedAt),
           updatedAt: new Date(issue.updatedAt),
         })),
       )
       .onConflictDoUpdate({
-        target: [gitHostIssue.project, gitHostIssue.number],
+        target: [gitHostIssue.remote, gitHostIssue.number],
         set: EXCLUDED_ISSUE,
       }),
   );
@@ -190,7 +187,7 @@ async function saveChanges(
       .values(
         chunk.map((request) => ({
           ...request,
-          project,
+          remote,
           createdAt: new Date(request.createdAt),
           mergedAt: dateOrNull(request.mergedAt),
           closedAt: dateOrNull(request.closedAt),
@@ -198,7 +195,7 @@ async function saveChanges(
         })),
       )
       .onConflictDoUpdate({
-        target: [gitHostRequest.project, gitHostRequest.number],
+        target: [gitHostRequest.remote, gitHostRequest.number],
         set: EXCLUDED_REQUEST,
       }),
   );
@@ -206,13 +203,13 @@ async function saveChanges(
 
 export async function saveSuccess(
   db: Database,
-  project: string,
+  remote: string,
   { gitHost, repository, startedAt, replace, changes, settings }: Success,
 ): Promise<void> {
   await db.transaction(async (tx) => {
-    if (!(await lockedProject(tx, project))) return;
-    if (replace) await forgetGitHostData(tx, [project]);
-    await saveChanges(tx, project, changes, settings.labels.needs_spec);
+    if (!(await lockedRemote(tx, remote))) return;
+    if (replace) await forgetGitHostData(tx, [remote]);
+    await saveChanges(tx, remote, changes, settings.labels.needs_spec);
     const state = {
       gitHost,
       repository,
@@ -229,24 +226,24 @@ export async function saveSuccess(
     };
     await tx
       .insert(gitHostProject)
-      .values({ project, ...state })
-      .onConflictDoUpdate({ target: gitHostProject.project, set: state });
+      .values({ remote, ...state })
+      .onConflictDoUpdate({ target: gitHostProject.remote, set: state });
   });
 }
 
 export async function saveFailure(
   db: Database,
-  project: string,
+  remote: string,
   gitHost: GitHostName | null,
   error: string,
 ): Promise<void> {
   await db.transaction(async (tx) => {
-    if (!(await lockedProject(tx, project))) return;
+    if (!(await lockedRemote(tx, remote))) return;
     await tx
       .insert(gitHostProject)
-      .values({ project, errorGitHost: gitHost, error })
+      .values({ remote, errorGitHost: gitHost, error })
       .onConflictDoUpdate({
-        target: gitHostProject.project,
+        target: gitHostProject.remote,
         set: { error, errorGitHost: gitHost },
       });
   });

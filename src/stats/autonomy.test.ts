@@ -2,13 +2,18 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Database } from '../db/client.ts';
 import { gitHostIssue, gitHostProject, gitHostRequest } from '../db/schema.ts';
 import type { LabelChange, SerenityReport } from '../git-host/types.ts';
-import { createTestDatabase } from '../test/postgres.ts';
+import { createTestDatabase, testRemote } from '../test/postgres.ts';
 import { autonomyStats } from './autonomy.ts';
 import { statsBounds } from './bounds.ts';
 
 const APP = '/work/app';
 const API = '/work/api';
-const OTHER = '/work/no-factory';
+const OTHER = '/work/no-project';
+const NO_PROJECT_REMOTE = 'github.com/example-org/no-project';
+
+function remoteOf(root: string): string {
+  return root === OTHER ? NO_PROJECT_REMOTE : testRemote(root);
+}
 const NOW = new Date('2026-03-18T12:00:00Z');
 const HOUR = 3_600_000;
 const LABELS = {
@@ -46,7 +51,7 @@ interface Seed {
 async function seed(issue: Seed): Promise<void> {
   const created = new Date('2026-01-01T00:00:00Z');
   await db.insert(gitHostIssue).values({
-    project: issue.project,
+    remote: remoteOf(issue.project),
     number: issue.number,
     title: `Issue ${String(issue.number)}`,
     state: issue.state ?? (issue.merged === undefined ? 'open' : 'closed'),
@@ -60,7 +65,7 @@ async function seed(issue: Seed): Promise<void> {
   const reports = issue.reports ?? [];
   const mergedAt = issue.merged.at === null ? null : new Date(issue.merged.at);
   await db.insert(gitHostRequest).values({
-    project: issue.project,
+    remote: remoteOf(issue.project),
     number: 100 + issue.number,
     title: `Request ${String(issue.number)}`,
     state: 'merged',
@@ -81,9 +86,9 @@ beforeAll(async () => {
   ({ db, close } = await createTestDatabase());
   await db.insert(gitHostProject).values(
     [
-      { project: APP, autoMerge: true },
-      { project: API, autoMerge: false },
-      { project: OTHER, autoMerge: true },
+      { remote: remoteOf(APP), autoMerge: true },
+      { remote: remoteOf(API), autoMerge: false },
+      { remote: remoteOf(OTHER), autoMerge: true },
     ].map((row) => ({
       ...row,
       gitHost: 'github',
@@ -170,19 +175,12 @@ afterAll(async () => {
   await close();
 });
 
-const factory = (project: string): Promise<boolean> =>
-  Promise.resolve(project !== OTHER);
-
 function stats(period: 'today' | '7d' | '30d' | 'all', project?: string) {
-  return autonomyStats(
-    db,
-    { period, timeZone: 'UTC', project, now: NOW },
-    factory,
-  );
+  return autonomyStats(db, { period, timeZone: 'UTC', project, now: NOW });
 }
 
 describe('autonomy stats', () => {
-  it('counts the merges of the period, its previous period and the reasons, across factory projects', async () => {
+  it('counts the merges of the period, its previous period and the reasons, across projects, none of which has a factory file on disk', async () => {
     const autonomy = await stats('7d');
     expect(autonomy.current).toEqual({
       merged: 6,

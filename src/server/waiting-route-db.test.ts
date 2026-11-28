@@ -3,7 +3,7 @@ import type { Database } from '../db/client.ts';
 import { gitHostIssue, gitHostProject, gitHostRequest } from '../db/schema.ts';
 import type { LabelChange, SerenityReport } from '../git-host/types.ts';
 import { waitingIssues } from '../stats/waiting.ts';
-import { createTestDatabase } from '../test/postgres.ts';
+import { createTestDatabase, testRemote } from '../test/postgres.ts';
 import {
   unusedFeatures,
   unusedGitHost,
@@ -16,7 +16,12 @@ import {
 import { createApp } from './app.ts';
 
 const APP = '/work/app';
-const OTHER = '/work/no-factory';
+const OTHER = '/work/no-project';
+const NO_PROJECT_REMOTE = 'github.com/example-org/no-project';
+
+function remoteOf(root: string): string {
+  return root === OTHER ? NO_PROJECT_REMOTE : testRemote(root);
+}
 const CREATED = new Date('2026-03-01T00:00:00Z');
 const LABELS = {
   ready: 'agent:ready',
@@ -55,7 +60,7 @@ async function seed({
   reports = [],
 }: Seed): Promise<void> {
   await db.insert(gitHostIssue).values({
-    project,
+    remote: remoteOf(project),
     number,
     title: `Issue ${String(number)}`,
     state,
@@ -68,7 +73,7 @@ async function seed({
   });
   if (reports.length === 0) return;
   await db.insert(gitHostRequest).values({
-    project,
+    remote: remoteOf(project),
     number: 100 + number,
     title: `Request ${String(number)}`,
     state: 'open',
@@ -88,7 +93,7 @@ beforeAll(async () => {
   ({ db, close } = await createTestDatabase());
   await db.insert(gitHostProject).values(
     [APP, OTHER].map((project) => ({
-      project,
+      remote: remoteOf(project),
       gitHost: 'github',
       syncedFrom: CREATED,
       stageLabels: LABELS,
@@ -124,8 +129,6 @@ afterAll(async () => {
 });
 
 function app() {
-  const hasFactory = (project: string): Promise<boolean> =>
-    Promise.resolve(project !== OTHER);
   return createApp({
     checkDatabase: () => Promise.resolve(true),
     uiDir: '/nonexistent/factorydeck-ui',
@@ -147,7 +150,7 @@ function app() {
     auth: signedInAuth,
     stats: {
       ...unusedStats,
-      waiting: (project) => waitingIssues(db, project, hasFactory),
+      waiting: (project) => waitingIssues(db, project),
     },
   });
 }
@@ -187,7 +190,7 @@ describe('GET /api/stats/waiting on the database', () => {
     expect(issues[1]).not.toHaveProperty('score');
   });
 
-  it('leaves out projects without the factory with every project', async () => {
+  it("leaves out the git host data of a remote that is no project's with every project", async () => {
     const response = await app().request('/api/stats/waiting');
     const body = (await response.json()) as { waiting: { issues: object[] } };
     expect(body).toMatchObject({

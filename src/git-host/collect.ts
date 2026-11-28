@@ -1,4 +1,4 @@
-import { eq, isNotNull } from 'drizzle-orm';
+import { desc, eq, isNotNull, max, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import { UNASSIGNED_PROJECT, project, projectSession } from '../db/schema.ts';
 import type { FactoryCheck } from '../ingest/factory.ts';
@@ -66,8 +66,9 @@ async function tokenRoots(
   db: Database,
   hasFactory: FactoryCheck,
 ): Promise<CollectedRoot[]> {
+  const lastAt = max(projectSession.lastAt);
   const rows = await db
-    .selectDistinct({
+    .select({
       root: projectSession.root,
       id: project.id,
       remote: project.remote,
@@ -76,12 +77,22 @@ async function tokenRoots(
     })
     .from(projectSession)
     .innerJoin(project, eq(project.slug, projectSession.project))
-    .where(isNotNull(project.tokenCiphertext));
+    .where(isNotNull(project.tokenCiphertext))
+    .groupBy(
+      projectSession.root,
+      project.id,
+      project.remote,
+      project.gitHost,
+      project.tokenCiphertext,
+    )
+    .orderBy(sql`${desc(lastAt)} nulls last`, projectSession.root);
+  const chosen = new Set<string>();
   const roots: CollectedRoot[] = [];
   for (const { root, id, remote, storedGitHost, ciphertext } of rows) {
     const gitHost = gitHostOf(remote, storedGitHost);
-    if (ciphertext === null || gitHost === null) continue;
+    if (ciphertext === null || gitHost === null || chosen.has(remote)) continue;
     if (root === UNASSIGNED_PROJECT || !(await hasFactory(root))) continue;
+    chosen.add(remote);
     roots.push({ root, project: { id, remote, gitHost, ciphertext } });
   }
   return roots.sort((a, b) => (a.root < b.root ? -1 : a.root > b.root ? 1 : 0));
@@ -89,14 +100,14 @@ async function tokenRoots(
 
 async function changesOf(
   db: Database,
-  root: string,
+  remote: string,
   reader: GitHostReader,
   since: Date | null,
 ): Promise<Changes> {
   const changes = await reader.changes(since);
   if (since === null) return changes;
   const updated = new Set(changes.requests.map((request) => request.number));
-  const pending = (await pendingRequests(db, root)).filter(
+  const pending = (await pendingRequests(db, remote)).filter(
     (number) => !updated.has(number),
   );
   return {
@@ -186,12 +197,12 @@ async function collectRoot(
     const factory = await remoteFactory(run, target);
     if (!factory.ok) throw new Error(factory.reason);
     const repository = target.remote.toLowerCase();
-    const state = await projectState(db, root);
+    const state = await projectState(db, target.remote);
     const replace = readsInFull(state, gitHost, repository);
     const since = replace || state === undefined ? null : state.syncedFrom;
     const reader = readerFor(run, target, root);
-    const changes = await changesOf(db, root, reader, since);
-    await saveSuccess(db, root, {
+    const changes = await changesOf(db, target.remote, reader, since);
+    await saveSuccess(db, target.remote, {
       gitHost,
       repository,
       startedAt,
@@ -202,7 +213,7 @@ async function collectRoot(
     return { changes };
   } catch (error) {
     const reason = reasonOf(error);
-    await saveFailure(db, root, gitHost, reason);
+    await saveFailure(db, target.remote, gitHost, reason);
     const name = folderName(root);
     return { failure: { project: root, name, gitHost, reason } };
   }

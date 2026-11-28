@@ -1,12 +1,6 @@
 import { and, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
-import {
-  gitHostProject,
-  projectGitHost,
-  projectIssue,
-  projectRequest,
-} from '../db/schema.ts';
-import type { FactoryCheck } from '../ingest/factory.ts';
+import { projectGitHost, projectIssue, projectRequest } from '../db/schema.ts';
 import { projectNames } from '../projects/names.ts';
 import { type IssueKind, kindOf } from './kind.ts';
 import { issueMilestones } from './milestones.ts';
@@ -212,23 +206,22 @@ export async function issueDetail(
 
 export async function collectionStatus(
   db: Database,
-  hasFactory: FactoryCheck,
 ): Promise<CollectionStatus> {
   const [finishedAt, rows, names] = await Promise.all([
     runFinishedAt(db),
     db
       .select()
-      .from(gitHostProject)
-      .where(isNotNull(gitHostProject.error))
-      .orderBy(gitHostProject.project),
+      .from(projectGitHost)
+      .where(isNotNull(projectGitHost.error))
+      .orderBy(projectGitHost.project),
     projectNames(db),
   ]);
   const failures: CollectionFailure[] = [];
   for (const row of rows) {
-    if (row.error === null || !(await hasFactory(row.project))) continue;
+    if (row.error === null) continue;
     failures.push({
       project: row.project,
-      name: names.rootLabel(row.project),
+      name: names.label(row.project),
       gitHost: gitHostOf(row.errorGitHost) ?? gitHostOf(row.gitHost),
       reason: row.error,
     });

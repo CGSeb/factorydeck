@@ -4,7 +4,14 @@ import { describe, expect, it } from 'vitest';
 import { gitHostProject } from '../db/schema.ts';
 import { FACTORY_WORKFLOW, reopenedOnce } from '../demo/fake-git-host.ts';
 import { hasFactory } from '../ingest/factory.ts';
-import { T1, T2, addProject, calls, ghRequest } from '../test/git-host.ts';
+import {
+  T1,
+  T2,
+  addProject,
+  calls,
+  ghRequest,
+  remoteOfRoot,
+} from '../test/git-host.ts';
 import {
   closed,
   comment,
@@ -118,7 +125,7 @@ describe('upgrade', () => {
       .db()
       .insert(gitHostProject)
       .values({
-        project: root,
+        remote: await remoteOfRoot(ctx.db(), root),
         gitHost: 'github',
         repository: 'example-org/example-app',
         syncedFrom: new Date(T2),

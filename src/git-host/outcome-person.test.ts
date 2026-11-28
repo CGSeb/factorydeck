@@ -12,9 +12,11 @@ import {
   merged,
   open,
   outcomeContext,
+  remoteOfRoot,
   serenity,
 } from '../test/outcome.ts';
 import { fakeCollection } from '../demo/fake-git-host-token.ts';
+import { LABELS } from '../test/kind-seed.ts';
 import { collect } from './collect.ts';
 
 const ctx = outcomeContext();
@@ -187,17 +189,11 @@ describe('merged after a person', () => {
       .db()
       .insert(gitHostProject)
       .values({
-        project: root,
+        remote: await remoteOfRoot(ctx.db(), root),
         gitHost: 'github',
         repository: 'example-org/example-app',
         syncedFrom: new Date(T2),
-        stageLabels: {
-          ready: 'agent:ready',
-          working: 'agent:working',
-          needs_spec: 'agent:needs-spec',
-          review: 'agent:review',
-          blocked: 'agent:blocked',
-        },
+        stageLabels: LABELS,
         autoMerge: true,
       });
     await collect(ctx.db(), {

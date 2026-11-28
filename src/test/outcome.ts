@@ -12,6 +12,8 @@ import { hasFactory } from '../ingest/factory.ts';
 import { T1, T2, addProject, ghIssue, ghRequest, success } from './git-host.ts';
 import { createTestDatabase } from './postgres.ts';
 
+export { remoteOfRoot } from './git-host.ts';
+
 export type Row = Record<string, unknown>;
 
 const PASSED = 'Gates: all passed. Review: 2 rounds, confidence high.';

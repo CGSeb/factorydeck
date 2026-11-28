@@ -59,8 +59,8 @@ beforeEach(async () => {
   await seedSessionRows(db, 's2', '/home/dev/shop');
   await seedSessionRows(db, 'k1', '/work/lib');
   await seedSessionRows(db, 'u1', '/work/stray');
-  for (const root of ['/work/shop', '/work/lib']) {
-    await seedGitHostRows(db, root);
+  for (const remote of [SHOP, LIB]) {
+    await seedGitHostRows(db, remote);
   }
   await db.insert(markedReport).values(
     ['shop', '/work/shop', 'lib', '/work/lib'].map((key) => ({
@@ -102,11 +102,11 @@ async function sessionsOf(
     .sort();
 }
 
-async function projectsOf(
+async function remotesOf(
   table: typeof gitHostIssue | typeof gitHostRequest | typeof gitHostProject,
 ): Promise<string[]> {
-  return (await db.select({ project: table.project }).from(table))
-    .map((row) => row.project)
+  return (await db.select({ remote: table.remote }).from(table))
+    .map((row) => row.remote)
     .sort();
 }
 
@@ -131,7 +131,7 @@ describe('removing a project', () => {
       expect(await sessionsOf(table)).toEqual(kept);
     }
     for (const table of [gitHostIssue, gitHostRequest, gitHostProject]) {
-      expect(await projectsOf(table)).toEqual(['/work/lib']);
+      expect(await remotesOf(table)).toEqual([LIB]);
     }
     expect(
       (await db.select({ project: markedReport.project }).from(markedReport))
@@ -269,8 +269,8 @@ describe('removing a project', () => {
   it('lets a git host collection that was running write nothing for the removed project', async () => {
     await removeProject(db, shopId, REMOVED_AT);
 
-    await saveFailure(db, '/work/shop', 'github', 'gh: 401');
+    await saveFailure(db, SHOP, 'github', 'gh: 401');
 
-    expect(await projectsOf(gitHostProject)).toEqual(['/work/lib']);
+    expect(await remotesOf(gitHostProject)).toEqual([LIB]);
   });
 });

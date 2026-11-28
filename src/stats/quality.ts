@@ -8,7 +8,6 @@ import {
 import type { IssueStage, SerenityReport } from '../git-host/types.ts';
 import {
   type AutonomyQuery,
-  type FactoryFilter,
   MERGED_STAGES,
   type ProjectState,
   type Window,
@@ -165,14 +164,8 @@ export function summarizeQuality(
 export async function qualityStats(
   db: Database,
   query: QualityQuery,
-  hasFactory: FactoryFilter,
 ): Promise<QualityStats> {
-  const issues = await loadIssues(
-    db,
-    query.project,
-    hasFactory,
-    kinded(qualityFacts),
-  );
+  const issues = await loadIssues(db, query.project, kinded(qualityFacts));
   const bounds = await statsBounds(db, {
     ...query,
     earliestMerge: earliestMerge(valuesOf(issues)),

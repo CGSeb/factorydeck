@@ -11,7 +11,15 @@ import {
   writeFakeGitHostData,
 } from '../demo/fake-git-host.ts';
 import { hasFactory, factoryFile } from '../ingest/factory.ts';
-import { addProject, calls, clock, ghIssue, T1, T2 } from '../test/git-host.ts';
+import {
+  addProject,
+  calls,
+  clock,
+  ghIssue,
+  T1,
+  T2,
+  remoteOfRoot,
+} from '../test/git-host.ts';
 import { createTestDatabase } from '../test/postgres.ts';
 import { fakeCollection } from '../demo/fake-git-host-token.ts';
 import { collect } from './collect.ts';
@@ -74,7 +82,7 @@ async function storedBugLabel(root: string): Promise<string | null> {
   const [row] = await db
     .select({ bugLabel: gitHostProject.bugLabel })
     .from(gitHostProject)
-    .where(eq(gitHostProject.project, root));
+    .where(eq(gitHostProject.remote, await remoteOfRoot(db, root)));
   return row?.bugLabel ?? null;
 }
 
@@ -86,7 +94,7 @@ async function collectedProject(factory: string): Promise<string> {
     now: () => new Date(T2),
   });
   expect(result.failures).toEqual([]);
-  expect((await collectionStatus(db, hasFactory)).failures).toEqual([]);
+  expect((await collectionStatus(db)).failures).toEqual([]);
   return root;
 }
 

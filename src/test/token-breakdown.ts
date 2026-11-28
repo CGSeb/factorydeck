@@ -10,6 +10,7 @@ import {
 } from '../db/schema.ts';
 import type { FeatureQuery } from '../features/types.ts';
 import type { TokenCounts } from '../overview/types.ts';
+import { testRemote } from './postgres.ts';
 
 export const NOW = new Date('2026-03-12T15:30:00Z');
 export const APP = '/work/app';
@@ -116,14 +117,14 @@ export async function seedTokenBreakdown(db: Database): Promise<void> {
 
 async function seedOutcome(db: Database): Promise<void> {
   await db.insert(gitHostProject).values({
-    project: APP,
+    remote: testRemote(APP),
     gitHost: 'github',
     repository: 'example-org/example-app',
     syncedFrom: new Date('2026-01-01T00:00:00Z'),
     autoMerge: true,
   });
   await db.insert(gitHostIssue).values({
-    project: APP,
+    remote: testRemote(APP),
     number: 1,
     title: 'Issue 1',
     state: 'closed',
@@ -133,7 +134,7 @@ async function seedOutcome(db: Database): Promise<void> {
     updatedAt: NOW,
   });
   await db.insert(gitHostRequest).values({
-    project: APP,
+    remote: testRemote(APP),
     number: 11,
     title: 'Request 11',
     state: 'merged',

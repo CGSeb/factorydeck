@@ -1,0 +1,220 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "de2a596a-c37c-431c-91a3-9aa69a4f54e1",
+  "prevIds": [
+    "2fa61d85-428a-4ed6-9b8c-2786e6825a15"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_view",
+      "statementTarget": [
+        "view",
+        "public",
+        "project_git_host"
+      ],
+      "writes": [
+        "s|view|public.project_git_host",
+        "n|view|public.project_git_host",
+        "e|view|public.project_git_host",
+        "n|rel|public.project_git_host",
+        "n|type|public.project_git_host"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_view",
+      "statementTarget": [
+        "view",
+        "public",
+        "project_issue"
+      ],
+      "writes": [
+        "s|view|public.project_issue",
+        "n|view|public.project_issue",
+        "e|view|public.project_issue",
+        "n|rel|public.project_issue",
+        "n|type|public.project_issue"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_view",
+      "statementTarget": [
+        "view",
+        "public",
+        "project_request"
+      ],
+      "writes": [
+        "s|view|public.project_request",
+        "n|view|public.project_request",
+        "e|view|public.project_request",
+        "n|rel|public.project_request",
+        "n|type|public.project_request"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "git_host_issue",
+        "project"
+      ],
+      "writes": [
+        "s|col|public.git_host_issue.project",
+        "n|col|public.git_host_issue.project",
+        "s|col|public.git_host_issue.remote",
+        "n|col|public.git_host_issue.remote"
+      ],
+      "reads": [
+        "n|tbl|public.git_host_issue",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "git_host_project",
+        "project"
+      ],
+      "writes": [
+        "s|col|public.git_host_project.project",
+        "n|col|public.git_host_project.project",
+        "s|col|public.git_host_project.remote",
+        "n|col|public.git_host_project.remote"
+      ],
+      "reads": [
+        "n|tbl|public.git_host_project",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "git_host_request",
+        "project"
+      ],
+      "writes": [
+        "s|col|public.git_host_request.project",
+        "n|col|public.git_host_request.project",
+        "s|col|public.git_host_request.remote",
+        "n|col|public.git_host_request.remote"
+      ],
+      "reads": [
+        "n|tbl|public.git_host_request",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_view",
+      "statementTarget": [
+        "view",
+        "public",
+        "project_git_host"
+      ],
+      "writes": [
+        "s|view|public.project_git_host",
+        "n|view|public.project_git_host",
+        "e|view|public.project_git_host",
+        "n|rel|public.project_git_host",
+        "n|type|public.project_git_host"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_view",
+      "statementTarget": [
+        "view",
+        "public",
+        "project_issue"
+      ],
+      "writes": [
+        "s|view|public.project_issue",
+        "n|view|public.project_issue",
+        "e|view|public.project_issue",
+        "n|rel|public.project_issue",
+        "n|type|public.project_issue"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_view",
+      "statementTarget": [
+        "view",
+        "public",
+        "project_request"
+      ],
+      "writes": [
+        "s|view|public.project_request",
+        "n|view|public.project_request",
+        "e|view|public.project_request",
+        "n|rel|public.project_request",
+        "n|type|public.project_request"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"git_host_issue\",\"project\"]",
+      "set": {
+        "name": "remote"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"git_host_project\",\"project\"]",
+      "set": {
+        "name": "remote"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"git_host_request\",\"project\"]",
+      "set": {
+        "name": "remote"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "views\u0000[\"public\",\"project_git_host\"]",
+      "set": {
+        "definition": "select p.slug as project, g.remote, g.git_host, g.repository, g.synced_from, g.error, g.error_git_host, g.stage_labels, g.auto_merge, g.bug_label, g.history_read, g.fix_read, g.state_events_read, g.body_closes_read from git_host_project g join project p on p.remote = g.remote"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "views\u0000[\"public\",\"project_issue\"]",
+      "set": {
+        "definition": "select p.slug as project, i.number, i.title, i.state, i.labels, i.url, i.created_at, i.closed_at, i.updated_at, i.reopened, i.state_events, i.needs_spec from git_host_issue i join project p on p.remote = i.remote"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "views\u0000[\"public\",\"project_request\"]",
+      "set": {
+        "definition": "select p.slug as project, q.number, q.title, q.state, q.draft, q.head_branch, q.url, q.created_at, q.merged_at, q.closed_at, q.updated_at, q.closes, q.checks, q.report, q.reports from git_host_request q join project p on p.remote = q.remote"
+      }
+    }
+  ]
+}

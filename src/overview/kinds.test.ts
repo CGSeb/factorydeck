@@ -4,13 +4,18 @@ import type { Database } from '../db/client.ts';
 import { gitHostIssue, gitHostProject, gitHostRequest } from '../db/schema.ts';
 import { DEFAULT_CONFIG } from '../roles/config.ts';
 import { autonomyStats } from '../stats/autonomy.ts';
-import { createTestDatabase } from '../test/postgres.ts';
+import { createTestDatabase, testRemote } from '../test/postgres.ts';
 import { overviewKinds } from './kinds.ts';
 import { PERIODS, type Period } from './types.ts';
 
 const APP = '/work/app';
 const API = '/work/api';
-const OTHER = '/work/no-factory';
+const OTHER = '/work/no-project';
+const NO_PROJECT_REMOTE = 'github.com/example-org/no-project';
+
+function remoteOf(root: string): string {
+  return root === OTHER ? NO_PROJECT_REMOTE : testRemote(root);
+}
 const NOW = new Date('2026-03-18T12:00:00Z');
 const LABELS = {
   ready: 'agent:ready',
@@ -36,7 +41,7 @@ async function seed(issue: Seed): Promise<void> {
   const created = new Date('2026-01-01T00:00:00Z');
   const ended = issue.merged ?? issue.closed;
   await db.insert(gitHostIssue).values({
-    project: issue.project,
+    remote: remoteOf(issue.project),
     number: issue.number,
     title: `Issue ${String(issue.number)}`,
     state: ended === undefined ? 'open' : 'closed',
@@ -50,7 +55,7 @@ async function seed(issue: Seed): Promise<void> {
   if (issue.merged === undefined && issue.review !== true) return;
   const at = issue.merged === undefined ? created : new Date(issue.merged);
   await db.insert(gitHostRequest).values({
-    project: issue.project,
+    remote: remoteOf(issue.project),
     number: 100 + issue.number,
     title: `Request ${String(issue.number)}`,
     state: issue.merged === undefined ? 'open' : 'merged',
@@ -71,9 +76,9 @@ beforeAll(async () => {
   ({ db, close } = await createTestDatabase());
   await db.insert(gitHostProject).values(
     [
-      { project: APP, bugLabel: 'Bug' },
-      { project: API, bugLabel: null },
-      { project: OTHER, bugLabel: 'bug' },
+      { remote: remoteOf(APP), bugLabel: 'Bug' },
+      { remote: remoteOf(API), bugLabel: null },
+      { remote: remoteOf(OTHER), bugLabel: 'bug' },
     ].map((row) => ({
       ...row,
       autoMerge: true,
@@ -133,15 +138,12 @@ afterAll(async () => {
   await close();
 });
 
-const factory = (project: string): Promise<boolean> =>
-  Promise.resolve(project !== OTHER);
-
 function query(period: Period, project?: string) {
   return { period, timeZone: 'UTC', project, now: NOW };
 }
 
 function kinds(period: Period, project?: string) {
-  return overviewKinds(db, query(period, project), factory);
+  return overviewKinds(db, query(period, project));
 }
 
 describe('overview kinds', () => {
@@ -159,11 +161,7 @@ describe('overview kinds', () => {
     for (const project of [undefined, APP, API]) {
       for (const period of PERIODS) {
         const { merged } = await kinds(period, project);
-        const autonomy = await autonomyStats(
-          db,
-          query(period, project),
-          factory,
-        );
+        const autonomy = await autonomyStats(db, query(period, project));
         expect(merged.feature + merged.bug).toBe(autonomy.current.merged);
       }
     }

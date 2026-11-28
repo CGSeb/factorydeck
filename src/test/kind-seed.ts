@@ -15,6 +15,7 @@ import type {
 } from '../git-host/types.ts';
 import type { Period } from '../overview/types.ts';
 import type { AutonomyQuery } from '../stats/autonomy.ts';
+import { testRemote } from './postgres.ts';
 
 export const APP = '/work/app';
 export const PLAIN = '/work/plain';
@@ -66,7 +67,7 @@ async function insertMerges(
     requestNumber += 1;
     const reports = merge.reports ?? [report(merge.at, 90)];
     await db.insert(gitHostRequest).values({
-      project,
+      remote: testRemote(project),
       number: requestNumber,
       title: `Request ${String(requestNumber)}`,
       state: 'merged',
@@ -100,7 +101,7 @@ export async function seed(
 ): Promise<void> {
   const closed = merges.at(-1)?.at ?? closedAt;
   await db.insert(gitHostIssue).values({
-    project,
+    remote: testRemote(project),
     number,
     title: `Issue ${String(number)}`,
     state: closed === undefined ? 'open' : 'closed',
@@ -219,7 +220,7 @@ const ISSUES: Seed[] = [
 export async function seedKinds(db: Database): Promise<void> {
   await db.insert(gitHostProject).values([
     {
-      project: APP,
+      remote: testRemote(APP),
       gitHost: 'github',
       syncedFrom: NOW,
       stageLabels: LABELS,
@@ -227,7 +228,7 @@ export async function seedKinds(db: Database): Promise<void> {
       bugLabel: 'bug',
     },
     {
-      project: PLAIN,
+      remote: testRemote(PLAIN),
       gitHost: 'github',
       syncedFrom: NOW,
       stageLabels: LABELS,
@@ -252,8 +253,6 @@ export async function seedKinds(db: Database): Promise<void> {
       call('s2', '2026-03-15T00:00:00Z', 400_000),
     ]);
 }
-
-export const factory = (): Promise<boolean> => Promise.resolve(true);
 
 export function query(
   period: Period,

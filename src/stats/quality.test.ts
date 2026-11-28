@@ -2,12 +2,17 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Database } from '../db/client.ts';
 import { gitHostIssue, gitHostProject, gitHostRequest } from '../db/schema.ts';
 import type { SerenityReport } from '../git-host/types.ts';
-import { createTestDatabase } from '../test/postgres.ts';
+import { createTestDatabase, testRemote } from '../test/postgres.ts';
 import { qualityStats } from './quality.ts';
 
 const APP = '/work/app';
 const API = '/work/api';
-const OTHER = '/work/no-factory';
+const OTHER = '/work/no-project';
+const NO_PROJECT_REMOTE = 'github.com/example-org/no-project';
+
+function remoteOf(root: string): string {
+  return root === OTHER ? NO_PROJECT_REMOTE : testRemote(root);
+}
 const NOW = new Date('2026-03-18T12:00:00Z');
 const CREATED = new Date('2026-01-01T00:00:00Z');
 
@@ -43,7 +48,7 @@ interface Seed {
 
 async function seed(issue: Seed): Promise<void> {
   await db.insert(gitHostIssue).values({
-    project: issue.project,
+    remote: remoteOf(issue.project),
     number: issue.number,
     title: `Issue ${String(issue.number)}`,
     state: issue.state,
@@ -57,7 +62,7 @@ async function seed(issue: Seed): Promise<void> {
   for (const request of issue.requests ?? []) {
     const reports = request.reports ?? [];
     await db.insert(gitHostRequest).values({
-      project: issue.project,
+      remote: remoteOf(issue.project),
       number: request.number,
       title: `Request ${String(request.number)}`,
       state: request.state,
@@ -88,9 +93,9 @@ beforeAll(async () => {
   ({ db, close } = await createTestDatabase());
   await db.insert(gitHostProject).values(
     [
-      { project: APP, autoMerge: true },
-      { project: API, autoMerge: false },
-      { project: OTHER, autoMerge: true },
+      { remote: remoteOf(APP), autoMerge: true },
+      { remote: remoteOf(API), autoMerge: false },
+      { remote: remoteOf(OTHER), autoMerge: true },
     ].map((row) => ({ ...row, gitHost: 'github', syncedFrom: NOW })),
   );
   await seed({
@@ -210,19 +215,12 @@ afterAll(async () => {
   await close();
 });
 
-const factory = (project: string): Promise<boolean> =>
-  Promise.resolve(project !== OTHER);
-
 function stats(period: 'today' | '7d' | '30d' | 'all', project?: string) {
-  return qualityStats(
-    db,
-    { period, timeZone: 'UTC', project, now: NOW },
-    factory,
-  );
+  return qualityStats(db, { period, timeZone: 'UTC', project, now: NOW });
 }
 
 describe('quality stats', () => {
-  it('counts first reports, rounds and score gains of the period across factory projects', async () => {
+  it('counts first reports, rounds and score gains of the period across projects', async () => {
     const quality = await stats('7d');
     expect(quality.current).toEqual({
       merged: 5,

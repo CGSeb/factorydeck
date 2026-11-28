@@ -4,7 +4,7 @@ import { gitHostProject } from '../db/schema.ts';
 import { bugStats } from '../stats/bugs.ts';
 import type { BugResponse } from '../stats/types.ts';
 import { APP, DAY, LABELS, seed } from '../test/kind-seed.ts';
-import { createTestDatabase } from '../test/postgres.ts';
+import { createTestDatabase, testRemote } from '../test/postgres.ts';
 import {
   unusedFeatures,
   unusedGitHost,
@@ -25,7 +25,7 @@ const ago = (days: number): string =>
 beforeAll(async () => {
   ({ db, close } = await createTestDatabase());
   await db.insert(gitHostProject).values({
-    project: APP,
+    remote: testRemote(APP),
     gitHost: 'github',
     syncedFrom: new Date(),
     stageLabels: LABELS,
@@ -86,7 +86,7 @@ function server() {
     auth: signedInAuth,
     stats: {
       ...unusedStats,
-      bugs: (query) => bugStats(db, query, () => Promise.resolve(true)),
+      bugs: (query) => bugStats(db, query),
     },
   });
 }

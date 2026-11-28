@@ -10,7 +10,7 @@ import {
 } from '../db/schema.ts';
 import type { Period } from '../overview/types.ts';
 import { DEFAULT_CONFIG } from '../roles/config.ts';
-import { createTestDatabase } from '../test/postgres.ts';
+import { createTestDatabase, testRemote } from '../test/postgres.ts';
 import { flowStats } from './flow.ts';
 
 const APP = '/work/app';
@@ -66,7 +66,7 @@ function report(at: string, score: number, gatesPassed = true) {
 
 function issue(number: number, closed = false, project = APP) {
   return {
-    project,
+    remote: testRemote(project),
     number,
     title: `Issue ${String(number)}`,
     state: closed ? ('closed' as const) : ('open' as const),
@@ -84,7 +84,7 @@ function pull(
   reports: ReturnType<typeof report>[],
 ) {
   return {
-    project: APP,
+    remote: testRemote(APP),
     number,
     title: `Request ${String(number)}`,
     state,
@@ -103,7 +103,7 @@ beforeAll(async () => {
   ({ db, close } = await createTestDatabase());
   await db.insert(gitHostProject).values(
     [APP, API].map((project) => ({
-      project,
+      remote: testRemote(project),
       gitHost: 'github',
       syncedFrom: NOW,
       autoMerge: true,
@@ -176,7 +176,6 @@ function stats(period: Period, project?: string) {
     db,
     { period, timeZone: 'UTC', project, now: NOW },
     DEFAULT_CONFIG,
-    () => Promise.resolve(true),
   );
 }
 

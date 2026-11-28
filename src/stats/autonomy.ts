@@ -35,8 +35,6 @@ export interface AutonomyQuery {
   now?: Date;
 }
 
-export type FactoryFilter = (project: string) => Promise<boolean>;
-
 export interface Episode {
   at: number;
   removedAt: number | null;
@@ -231,12 +229,10 @@ export type FactoryProject = Pick<
 export async function factoryProjects(
   db: Database,
   project: string | undefined,
-  hasFactory: FactoryFilter,
 ): Promise<FactoryProject[]> {
-  const rows = await db
+  return db
     .select({
       project: projectGitHost.project,
-      root: projectGitHost.root,
       stageLabels: projectGitHost.stageLabels,
       autoMerge: projectGitHost.autoMerge,
       bugLabel: projectGitHost.bugLabel,
@@ -248,11 +244,6 @@ export async function factoryProjects(
         project === undefined ? undefined : eq(projectGitHost.project, project),
       ),
     );
-  const kept: FactoryProject[] = [];
-  for (const row of rows) {
-    if (await hasFactory(row.root)) kept.push(row);
-  }
-  return kept;
 }
 
 export type ProjectState = Parameters<typeof issueFacts>[2] & {
@@ -262,10 +253,9 @@ export type ProjectState = Parameters<typeof issueFacts>[2] & {
 export async function loadIssues<T>(
   db: Database,
   project: string | undefined,
-  hasFactory: FactoryFilter,
   build: (issue: IssueRow, requests: RequestRow[], state: ProjectState) => T,
 ): Promise<T[]> {
-  const projects = await factoryProjects(db, project, hasFactory);
+  const projects = await factoryProjects(db, project);
   if (projects.length === 0) return [];
   const names = projects.map((row) => row.project);
   const [issues, requests] = await Promise.all([
@@ -300,14 +290,8 @@ export async function loadIssues<T>(
 export async function autonomyStats(
   db: Database,
   query: AutonomyQuery,
-  hasFactory: FactoryFilter,
 ): Promise<AutonomyStats> {
-  const issues = await loadIssues(
-    db,
-    query.project,
-    hasFactory,
-    kinded(issueFacts),
-  );
+  const issues = await loadIssues(db, query.project, kinded(issueFacts));
   const bounds = await statsBounds(db, {
     ...query,
     earliestMerge: earliestMerge(valuesOf(issues)),

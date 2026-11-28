@@ -104,7 +104,7 @@ async function removeLocked(
   if (found === undefined) return 'not-found';
   const roots = await rootsOf(tx, found.slug, found.remote);
   await forgetSessions(tx, found.slug, found.name, at);
-  if (roots.length > 0) await forgetGitHostData(tx, roots);
+  await forgetGitHostData(tx, [found.remote]);
   await tx
     .delete(markedReport)
     .where(

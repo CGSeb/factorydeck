@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Database } from '../db/client.ts';
 import { gitHostProject } from '../db/schema.ts';
 import type { SerenityReport } from '../git-host/types.ts';
-import { createTestDatabase } from '../test/postgres.ts';
+import { createTestDatabase, testRemote } from '../test/postgres.ts';
 import {
   type IssueSeed,
   mergedIssue,
@@ -40,8 +40,8 @@ beforeAll(async () => {
   ({ db, close } = await createTestDatabase());
   await db.insert(gitHostProject).values(
     [
-      { project: APP, autoMerge: true },
-      { project: API, autoMerge: false },
+      { remote: testRemote(APP), autoMerge: true },
+      { remote: testRemote(API), autoMerge: false },
     ].map((row) => ({ ...row, gitHost: 'github', syncedFrom: NOW })),
   );
   await seedIssues(db, [
@@ -124,15 +124,13 @@ afterAll(async () => {
   await close();
 });
 
-const factory = (): Promise<boolean> => Promise.resolve(true);
-
 describe('stops', () => {
   it('times the stops answered in the period, ended by a next report, the merge, the close or the label removal', async () => {
-    const autonomy = await autonomyStats(
-      db,
-      { period: '7d', timeZone: 'UTC', now: NOW },
-      factory,
-    );
+    const autonomy = await autonomyStats(db, {
+      period: '7d',
+      timeZone: 'UTC',
+      now: NOW,
+    });
     expect(autonomy.current.stopWaitsMs).toEqual(
       [1, 2, 3, 3, 4, 4, 5, 24].map((hours) => hours * HOUR),
     );
@@ -140,20 +138,20 @@ describe('stops', () => {
   });
 
   it('counts open issues with an open stop, including two reports at the same time', async () => {
-    const autonomy = await autonomyStats(
-      db,
-      { period: '7d', timeZone: 'UTC', now: NOW },
-      factory,
-    );
+    const autonomy = await autonomyStats(db, {
+      period: '7d',
+      timeZone: 'UTC',
+      now: NOW,
+    });
     expect(autonomy.waitingNow).toBe(3);
   });
 
   it('puts each merged issue a person helped in one row, with the rounds of its refusing reports', async () => {
-    const autonomy = await autonomyStats(
-      db,
-      { period: '7d', timeZone: 'UTC', now: NOW },
-      factory,
-    );
+    const autonomy = await autonomyStats(db, {
+      period: '7d',
+      timeZone: 'UTC',
+      now: NOW,
+    });
     expect(autonomy.reasons).toEqual({
       below1To5: 1,
       below6To15: 2,
@@ -168,11 +166,12 @@ describe('stops', () => {
   });
 
   it('keeps to one project', async () => {
-    const autonomy = await autonomyStats(
-      db,
-      { period: '7d', timeZone: 'UTC', project: API, now: NOW },
-      factory,
-    );
+    const autonomy = await autonomyStats(db, {
+      period: '7d',
+      timeZone: 'UTC',
+      project: API,
+      now: NOW,
+    });
     expect(autonomy.reasons).toMatchObject({ autoMergeOff: 1, total: 1 });
     expect(autonomy.current.stopWaitsMs).toEqual([]);
   });

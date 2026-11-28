@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { gitHostIssue, gitHostProject } from '../db/schema.ts';
 import { reopenedOnce } from '../demo/fake-git-host.ts';
 import { hasFactory } from '../ingest/factory.ts';
-import { T1, T2, addProject, calls, ghIssue } from '../test/git-host.ts';
+import {
+  T1,
+  T2,
+  addProject,
+  calls,
+  ghIssue,
+  remoteOfRoot,
+} from '../test/git-host.ts';
 import { githubData, outcomeContext } from '../test/outcome.ts';
 import { fakeCollection } from '../demo/fake-git-host-token.ts';
 import { collect } from './collect.ts';
@@ -23,7 +30,7 @@ describe('reading the close and reopen events of issues already stored', () => {
       .db()
       .insert(gitHostProject)
       .values({
-        project: root,
+        remote: await remoteOfRoot(ctx.db(), root),
         gitHost: 'github',
         repository: 'example-org/example-app',
         syncedFrom: new Date(T2),
