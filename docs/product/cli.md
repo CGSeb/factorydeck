@@ -17,7 +17,7 @@ factorydeck login https://deck.example.test
 
 `npm i -g factorydeck@latest` upgrades it. `factorydeck --version` (or `-v`) prints `factorydeck <version>`, then `parser <n>`, the version of the log parser it sends sessions with, on stdout with exit 0. A usage error still wins over it, as over `--help`.
 
-The published package holds one bundled file, `dist/main.js`, with the shared modules of `src/` and the `yaml`, `smol-toml` and `zod` code it uses, so it installs no dependency; plus its `README.md` and `LICENSE`. No test, story or source map is published.
+The published package holds one bundled file, `dist/main.js`, with the shared modules of `src/` it imports and the code of the libraries it uses (today `zod`; `yaml` and `smol-toml` once the CLI reads logs and configuration), so it installs no dependency; plus its `README.md` and `LICENSE`. No test, story or source map is published.
 
 ### Installing for development
 
@@ -28,7 +28,7 @@ From a clone of the repository, `pnpm install`, then `pnpm cli <command>` runs `
 `cli/package.json` holds the version. The `Release CLI` workflow (`.github/workflows/release-cli.yml`) publishes the package when a tag `cli-v<version>` is pushed: it runs `pnpm check`, runs the pack test on Node 22, then publishes with `npm publish --provenance`, using the `NPM_TOKEN` secret (a publish-only npm token for `factorydeck`). A version with a `-` (`1.3.0-beta.1`) goes to the `next` dist-tag, any other to `latest`.
 
 - It fails when the tag is not `cli-v` followed by the version of `cli/package.json`, and when that version is already on npm.
-- A dry run (`npm publish --dry-run`) runs on every pull request that touches `cli/`, and from the Actions tab (`workflow_dispatch`, whose `dry-run` input defaults to true). A real publish needs a `cli-v<version>` tag; a dry run checks the tag too when it runs on one, and only warns when the version is already on npm.
+- A dry run (`npm publish --dry-run`) runs on every pull request that touches `cli/` or `src/cli-ingest/`, and from the Actions tab (`workflow_dispatch`, whose `dry-run` input defaults to true). A real publish needs a `cli-v<version>` tag; a dry run checks the tag too when it runs on one, and only warns when the version is already on npm.
 
 To release: raise the version in `cli/package.json`, merge it, then push the tag, for example `git tag cli-v1.2.0 && git push origin cli-v1.2.0`.
 

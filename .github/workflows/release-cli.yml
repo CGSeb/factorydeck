@@ -6,6 +6,7 @@ on:
   pull_request:
     paths:
       - 'cli/**'
+      - 'src/cli-ingest/**'
       - '.github/workflows/release-cli.yml'
   workflow_dispatch:
     inputs:
