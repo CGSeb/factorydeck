@@ -23,3 +23,7 @@
 .fd-table-scroll .fd-cli-connections-table td.fd-invitation-actions {
   text-align: right;
 }
+
+.fd-cli-connections-page:focus {
+  outline: none;
+}

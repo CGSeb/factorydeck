@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import { type ReactElement, useRef } from 'react';
 import { Route } from 'react-router';
 import { DataTable } from './components/DataTable.tsx';
 import { Dialog } from './components/Dialog.tsx';
@@ -22,7 +22,11 @@ import {
 import { formatAgo, formatDateTime } from './format.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { formatAddedDate } from './projects-view.ts';
-import { useConnections, useDisconnect } from './cli-connections-state.ts';
+import {
+  useConnections,
+  useDisconnect,
+  useRowFocus,
+} from './cli-connections-state.ts';
 import { useNow } from './use-now.ts';
 import './DeleteProjectDialog.css';
 import './invitations.css';
@@ -198,13 +202,24 @@ export function CliConnectionsPage({
   now: fixedNow,
 }: CliConnectionsPageProps): ReactElement {
   const now = useNow(fixedNow);
+  const page = useRef<HTMLDivElement>(null);
+  const focusRow = useRowFocus(page);
   const { view, removed } = useConnections(loadCliConnections);
   const { confirming, ask, cancel, confirm } = useDisconnect(
     disconnectCliConnection,
-    removed,
+    (connection) => {
+      const rows = view?.status === 'ok' ? view.connections : [];
+      focusRow(
+        Math.max(
+          0,
+          rows.findIndex(({ id }) => id === connection.id),
+        ),
+      );
+      removed(connection.id);
+    },
   );
   return (
-    <div className="fd-cli-connections-page">
+    <div ref={page} className="fd-cli-connections-page" tabIndex={-1}>
       <PageHeader
         title={CLI_CONNECTIONS_TITLE}
         {...(view?.status === 'ok'

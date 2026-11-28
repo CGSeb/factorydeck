@@ -169,6 +169,36 @@ export const Disconnected: Story = {
       ]),
     );
     await expect(canvas.getByText('2 machines')).toBeVisible();
+    await waitFor(() =>
+      expect(
+        canvas.getByRole('button', {
+          name: 'Disconnect build-box.example.test',
+        }),
+      ).toHaveFocus(),
+    );
+  },
+};
+
+export const DisconnectedLast: Story = {
+  args: {
+    loadCliConnections: connectionsLoaderOf(
+      connectionsResponse(someConnections.slice(0, 1)),
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const dialog = await askToDisconnect(canvasElement);
+    await userEvent.click(
+      within(dialog).getByRole('button', { name: 'Disconnect' }),
+    );
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText(/^No machine connected\./),
+    ).toBeVisible();
+    await waitFor(() =>
+      expect(
+        canvasElement.querySelector('.fd-cli-connections-page'),
+      ).toHaveFocus(),
+    );
   },
 };
 

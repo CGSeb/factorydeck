@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { type RefObject, useCallback, useEffect, useState } from 'react';
 import type {
   CliConnectionItem,
   CliConnectionsView,
@@ -40,7 +40,7 @@ export function useConnections(load: LoadCliConnections): {
 
 export function useDisconnect(
   disconnect: DisconnectCliConnection,
-  removed: (id: number) => void,
+  onDisconnected: (connection: CliConnectionItem) => void,
 ): {
   confirming: Confirming | undefined;
   ask: (connection: CliConnectionItem) => void;
@@ -52,7 +52,7 @@ export function useDisconnect(
     setConfirming({ connection, busy: true });
     const outcome = await disconnect(connection.id);
     if (outcome.status === 'disconnected') {
-      removed(connection.id);
+      onDisconnected(connection);
       setConfirming(undefined);
       return;
     }
@@ -72,4 +72,18 @@ export function useDisconnect(
       }
     },
   };
+}
+
+export function useRowFocus(
+  page: RefObject<HTMLElement | null>,
+): (index: number) => void {
+  const [target, setTarget] = useState<number>();
+  useEffect(() => {
+    const root = page.current;
+    if (target === undefined || root === null) return;
+    const buttons = [...root.querySelectorAll<HTMLElement>('tbody button')];
+    (buttons[Math.min(target, buttons.length - 1)] ?? root).focus();
+    setTarget(undefined);
+  }, [target, page]);
+  return setTarget;
 }
