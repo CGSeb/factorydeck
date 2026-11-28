@@ -46,6 +46,17 @@ describe('POST /api/cli/ingest refusing frictions', () => {
     ],
     [
       {
+        kind: 'stop-blocked',
+        recordId: 'r',
+        position: 0,
+        at: minutes(1),
+        hookCommand: '',
+      },
+      'threads.0.frictions.0.hookCommand',
+    ],
+    [{ ...failedCommand(), tool: '' }, 'threads.0.frictions.0.tool'],
+    [
+      {
         kind: 'compaction',
         recordId: 'r',
         position: 0,

@@ -51,7 +51,7 @@ const toolErrorSchema = z.object({
 const stopBlockedSchema = z.object({
   ...base,
   kind: z.literal('stop-blocked'),
-  hookCommand: z.string(),
+  hookCommand: z.string().min(1, 'Hook command is empty'),
   tool: notFor('stop-blocked'),
   category: notFor('stop-blocked'),
   program: notFor('stop-blocked'),

@@ -313,10 +313,10 @@ A thread may hold `frictions`, the tool errors, stop blocks and compactions of i
 - `position`: a whole number from 0 that tells apart several errors of one record;
 - `at`: the record's time, ISO 8601 with an offset;
 - for a `tool-error`: `tool` (`unknown` when the call is not found), `category` (`permission-denied`, `hook-blocked`, `tool-misuse`, `command-failed` or `other`), and `program`, `exitCode` and `commandHash` (the SHA-256 of the trimmed command, 64 lower-case hex characters), each `null` or left out when unknown;
-- for a `stop-blocked`: `hookCommand`, the command of the refusing hook, with the home folder written `~`;
+- for a `stop-blocked`: `hookCommand`, the command of the refusing hook (not empty), with the home folder written `~`;
 - for a `compaction`: `trigger` (`auto`, `manual` or `null`), `preTokens` and `postTokens` (whole numbers or `null`).
 
-A friction is known by its file key, `recordId`, `kind` and `position`: the first one stored wins, and the same batch sent twice stores it once. A field of another kind set to a value other than `null` (a `hookCommand` on a tool error), an unknown `kind` or `category`, or a missing `tool`, `category`, `hookCommand` or `at` answers `400` with its path (`threads.0.frictions.2.kind`). The command, error message and output of a friction are never sent: opening its [occurrences](frictions.md#occurrences) shows `Details stay on the developer's machine.`
+A friction is known by its file key, `recordId`, `kind` and `position`: the first one stored wins, and the same batch sent twice stores it once. A field of another kind set to a value other than `null` (a `hookCommand` on a tool error), an unknown `kind` or `category`, a missing `tool`, `category`, `hookCommand` or `at`, or an empty `tool` or `hookCommand` answers `400` with its path (`threads.0.frictions.2.kind`). The command, error message and output of a friction are never sent: opening its [occurrences](frictions.md#occurrences) shows `Details stay on the developer's machine.`
 
 ### Project and sender
 
