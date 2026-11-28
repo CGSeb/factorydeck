@@ -52,10 +52,10 @@ export const CodeInUrl: Story = {
   name: 'Code in the URL',
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
+    await expect(await canvas.findByText(askLine(LOGIN))).toBeVisible();
     await expect(
       canvas.getByRole('heading', { level: 1, name: CLI_TITLE }),
     ).toBeVisible();
-    await expect(await canvas.findByText(askLine(LOGIN))).toBeVisible();
     await expect(
       canvas.getByText(
         'ada-laptop asks to send sessions as Ada Lovelace (ada@example.test).',
@@ -155,5 +155,27 @@ export const ConnectFailed: Story = {
       expect(canvas.getByRole('alert')).toHaveTextContent(DATABASE_UNREACHABLE),
     );
     await expect(canvas.getByRole('button', { name: CONNECT })).toBeEnabled();
+  },
+};
+
+export const ReadingTypedCode: Story = {
+  name: 'Typed code while it is read: the form stays',
+  args: {
+    code: '',
+    readCliLogin: fn(
+      (_code: string) => new Promise<CliLoginRead>(() => undefined),
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const card = canvasElement.querySelector('.fd-setup-card');
+    const before = card?.getBoundingClientRect().height;
+    await userEvent.type(canvas.getByLabelText(CODE_LABEL), 'wdjb-mjht{Enter}');
+    await waitFor(() =>
+      expect(canvas.getByRole('button', { name: CONTINUE })).toBeDisabled(),
+    );
+    await expect(canvas.getByLabelText(CODE_LABEL)).toHaveValue('wdjb-mjht');
+    await expect(canvasElement.querySelector('.fd-setup-card')).toBe(card);
+    await expect(card?.getBoundingClientRect().height).toBe(before);
   },
 };

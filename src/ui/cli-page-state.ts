@@ -9,7 +9,7 @@ import {
 } from './cli-api.ts';
 
 export type CliScreen =
-  | { name: 'enter'; error: string | undefined; code: string }
+  | { name: 'enter'; error: string | undefined; code: string; reading: boolean }
   | { name: 'loading' }
   | {
       name: 'ask';
@@ -28,7 +28,7 @@ export interface CliPageState {
 
 function initial(code: string | undefined): CliScreen {
   return code === undefined || code.trim() === ''
-    ? { name: 'enter', error: undefined, code: '' }
+    ? { name: 'enter', error: undefined, code: '', reading: false }
     : { name: 'loading' };
 }
 
@@ -45,7 +45,12 @@ function decidedScreen(
       : { name: 'cancelled' };
   }
   if (outcome.status === 'invalid') {
-    return { name: 'enter', error: CODE_INVALID, code: asked.login.userCode };
+    return {
+      name: 'enter',
+      error: CODE_INVALID,
+      code: asked.login.userCode,
+      reading: false,
+    };
   }
   return { ...asked, deciding: undefined, error: outcome.message };
 }
@@ -60,7 +65,11 @@ export function useCliPage(
   const busy = useRef(false);
   const read = useCallback(
     (typed: string) => {
-      setScreen({ name: 'loading' });
+      setScreen((previous) =>
+        previous.name === 'enter'
+          ? { ...previous, code: typed, error: undefined, reading: true }
+          : { name: 'loading' },
+      );
       void readCliLogin(typed).then((outcome) => {
         if (!mounted.current) return;
         if (outcome.status === 'ok') {
@@ -75,6 +84,7 @@ export function useCliPage(
         setScreen({
           name: 'enter',
           code: typed,
+          reading: false,
           error: outcome.status === 'invalid' ? CODE_INVALID : outcome.message,
         });
       });

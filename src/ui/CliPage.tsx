@@ -30,10 +30,12 @@ export interface CliPageProps {
 function CodeForm({
   error,
   typed,
+  reading,
   onCode,
 }: {
   error: string | undefined;
   typed: string;
+  reading: boolean;
   onCode: (code: string) => void;
 }): ReactElement {
   const [code, setCode] = useState(typed);
@@ -45,9 +47,10 @@ function CodeForm({
   return (
     <form
       noValidate
+      aria-busy={reading}
       onSubmit={(event) => {
         event.preventDefault();
-        if (code.trim() !== '') onCode(code);
+        if (!reading && code.trim() !== '') onCode(code);
       }}
     >
       <div className="fd-setup-field fd-auth-field">
@@ -70,6 +73,7 @@ function CodeForm({
       <button
         type="submit"
         className="fd-control fd-setup-submit fd-cli-submit"
+        disabled={reading}
       >
         {CONTINUE}
       </button>
@@ -135,7 +139,12 @@ function Body({ state }: { state: ReturnType<typeof useCliPage> }) {
       return null;
     case 'enter':
       return (
-        <CodeForm error={screen.error} typed={screen.code} onCode={read} />
+        <CodeForm
+          error={screen.error}
+          typed={screen.code}
+          reading={screen.reading}
+          onCode={read}
+        />
       );
     case 'ask':
       return <Ask screen={screen} decide={decide} />;
@@ -158,15 +167,12 @@ export function CliPage({
   code,
   readCliLogin,
   decideCliLogin,
-}: CliPageProps): ReactElement {
+}: CliPageProps): ReactElement | null {
   const state = useCliPage(code, readCliLogin, decideCliLogin);
+  if (state.screen.name === 'loading') return null;
   return (
     <main className="fd-setup">
-      <section
-        className="fd-setup-card"
-        aria-labelledby="fd-cli-title"
-        aria-busy={state.screen.name === 'loading'}
-      >
+      <section className="fd-setup-card" aria-labelledby="fd-cli-title">
         <AuthBrand />
         <h1 id="fd-cli-title" className="fd-setup-title fd-auth-title">
           {CLI_TITLE}
