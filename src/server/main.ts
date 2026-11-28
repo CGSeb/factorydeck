@@ -8,6 +8,7 @@ import {
 } from '../config/env.ts';
 import { signInSessions } from '../auth/sessions.ts';
 import { signInLimit } from '../auth/sign-in-limit.ts';
+import { readOffsets } from '../cli-ingest/offsets.ts';
 import { storeBatch } from '../cli-ingest/store-batch.ts';
 import { cliConnections } from '../cli-login/connections.ts';
 import { pendingLogins } from '../cli-login/pending.ts';
@@ -134,6 +135,7 @@ function accountSources(
       logins: pendingLogins(),
       connections: cliConnections(db),
       ingest: (batch, sender) => storeBatch(db, batch, sender),
+      offsets: (fileKeys) => readOffsets(db, fileKeys),
     },
   };
 }

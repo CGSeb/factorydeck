@@ -24,6 +24,7 @@ function mainThread(sessionId = 's1', apiCalls = [call('r1')]) {
     remote: 'git@github.com:acme/app.git',
     from: 0,
     readTo: 100,
+    readerState: null,
     session: { cwd: '/work/app', firstAt: AT, lastAt: AT },
     apiCalls,
   };

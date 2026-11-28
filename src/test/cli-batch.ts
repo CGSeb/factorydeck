@@ -49,6 +49,7 @@ export function mainThread(
     remote: options.remote === undefined ? REMOTE : options.remote,
     from: 0,
     readTo: 4096,
+    readerState: null,
     session: {
       cwd: options.cwd === undefined ? '/home/dev/shop' : options.cwd,
       gitBranch: 'feat/12-cart',
@@ -82,6 +83,7 @@ export function subAgentThread(
     remote: options.remote === undefined ? REMOTE : options.remote,
     from: 0,
     readTo: 2048,
+    readerState: null,
     subAgent: {
       toolUseId: `toolu_${subAgentId}`,
       agentType: 'general-purpose',

@@ -13,6 +13,7 @@ export const MAX_THREADS = 2000;
 export const MAX_RECORDS = 20_000;
 export const MAX_ID_LENGTH = 200;
 export const MAX_PARSER_VERSION = 2_147_483_647;
+export const MAX_READER_STATE_BYTES = 16_384;
 
 export function fileKeyOf(
   agent: string,
@@ -27,6 +28,55 @@ const id = z
   .min(1, 'Id is empty')
   .max(MAX_ID_LENGTH, `Id is over ${MAX_ID_LENGTH} characters`)
   .refine((value) => !value.includes('/'), 'Id contains /');
+
+export function isFileKey(value: string): boolean {
+  const [agent = '', sessionId, thread, ...rest] = value.split('/');
+  return (
+    rest.length === 0 &&
+    (AGENTS as readonly string[]).includes(agent) &&
+    id.safeParse(sessionId).success &&
+    id.safeParse(thread).success
+  );
+}
+
+export type ReaderState =
+  | string
+  | number
+  | boolean
+  | null
+  | ReaderState[]
+  | { [key: string]: ReaderState };
+
+function serialised(value: unknown): string | undefined {
+  try {
+    const text: unknown = JSON.stringify(value);
+    return typeof text === 'string' ? text : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+const readerStateSchema = z
+  .custom<ReaderState>(
+    (value) => value !== undefined,
+    'Expected a JSON value, null allowed',
+  )
+  .superRefine((value, context) => {
+    const text = serialised(value);
+    if (text === undefined) {
+      context.addIssue({
+        code: 'custom',
+        message: 'readerState cannot be serialised as JSON',
+      });
+    } else if (
+      new TextEncoder().encode(text).byteLength > MAX_READER_STATE_BYTES
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: `readerState is over ${MAX_READER_STATE_BYTES} bytes`,
+      });
+    }
+  });
 
 const whole = z.number().int().nonnegative();
 const time = z.iso.datetime({
@@ -106,6 +156,7 @@ const threadSchema = z
     remote: z.string().nullable().default(null),
     from: whole,
     readTo: whole,
+    readerState: readerStateSchema,
     session: sessionFieldsSchema.optional(),
     subAgent: subAgentFieldsSchema.optional(),
     apiCalls: z.array(apiCallSchema).default([]),
@@ -220,16 +271,21 @@ export type BatchCheck =
   | { status: 'invalid'; error: string; path: string }
   | { status: 'too-large'; limit: BatchLimit };
 
+export function firstIssue(
+  error: z.ZodError,
+  fallback: string,
+): { status: 'invalid'; error: string; path: string } {
+  const [issue] = error.issues;
+  return {
+    status: 'invalid',
+    error: issue?.message ?? fallback,
+    path: issue?.path.map(String).join('.') ?? '',
+  };
+}
+
 export function checkBatch(value: unknown): BatchCheck {
   const parsed = batchSchema.safeParse(value);
-  if (!parsed.success) {
-    const [issue] = parsed.error.issues;
-    return {
-      status: 'invalid',
-      error: issue?.message ?? 'Invalid batch',
-      path: issue?.path.map(String).join('.') ?? '',
-    };
-  }
+  if (!parsed.success) return firstIssue(parsed.error, 'Invalid batch');
   const { threads } = parsed.data;
   if (threads.length > MAX_THREADS) {
     return { status: 'too-large', limit: 'threads' };
