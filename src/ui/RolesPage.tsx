@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactElement } from 'react';
 import type { OverviewResponse, Period } from '../overview/types.ts';
-import type { RoleListResponse, RoleSourceFile } from '../roles/types.ts';
+import type { RoleListResponse } from '../roles/types.ts';
 import { PageHeader } from './components/PageHeader.tsx';
 import { PeriodPills } from './components/PeriodPills.tsx';
 import { StatusLine } from './components/StatusLine.tsx';
@@ -29,11 +29,7 @@ const page: CSSProperties = {
   gap: 'var(--fd-space-6)',
 };
 
-export function roleSourceText({ path, exists }: RoleSourceFile): string {
-  return exists
-    ? `Rules from ${path}`
-    : `No configuration file at ${path}: default roles of the factorydeck-skills workflows.`;
-}
+export const ROLE_SOURCE_TEXT = 'Role rules of each project';
 
 function ModelsContent({
   response,
@@ -92,9 +88,7 @@ export function RolesPage({
     <div style={page}>
       <PageHeader
         title="Roles"
-        {...(response?.status === 'ok'
-          ? { summary: roleSourceText(response.config) }
-          : {})}
+        {...(response?.status === 'ok' ? { summary: ROLE_SOURCE_TEXT } : {})}
         pending={response === undefined}
         slot={
           <PeriodPills

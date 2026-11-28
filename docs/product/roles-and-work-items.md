@@ -2,38 +2,55 @@
 
 Every thread (a session's main thread, each sub-agent) gets a **role** and a **work item** (the issue it works on). Every API call then belongs to exactly one role and to at most one issue, so the totals of every page add up and nothing is dropped.
 
-The rules come from a configuration file; without one, the defaults fit the `build-feature` and `fix-bug` workflows of factorydeck-skills.
+Role rules belong to each project and live in the database ([below](#role-rules)); a session of no project uses the default role rules. Work item rules come from a configuration file; without one, the defaults fit the `build-feature` and `fix-bug` workflows of factorydeck-skills.
 
 ## The configuration file
 
 `factorydeck.yml` at the repository root (ignored by git), or the path in `FACTORYDECK_CONFIG` (relative to the repository root; `~` is the home folder). [`factorydeck.example.yml`](../../factorydeck.example.yml) documents every key and holds the defaults.
 
 - It is read once at start-up and applies to all data already ingested, without re-ingesting. It is never written by FactoryDeck and never holds secrets. `pnpm ingest` does not read it.
-- A missing file is not an error: the defaults apply. A missing key takes its default; an empty list is a value (`roles: []` means no role rule).
-- An invalid file ends `pnpm start` and `pnpm dev` with exit code 1 and `Invalid configuration in <path>:`, then one line per error naming its key path (`roles[2].description`). Invalid: YAML that does not parse, an unknown key, a wrong type, `roles:` with no value, a pattern that does not compile, a work item pattern without exactly one capture group, a role named `main` or `unassigned`, a project key that is not absolute or `~`-based (`~bob/x` is invalid), two project keys equal after `~` expansion and without a trailing `/`.
+- A missing file is not an error: the defaults apply. A missing key takes its default; an empty list is a value (`work_items: []` means no work item rule).
+- The `roles` keys, global and per project, are ignored, whatever they hold: role rules come only from the database.
+- An invalid file ends `pnpm start` and `pnpm dev` with exit code 1 and `Invalid configuration in <path>:`, then one line per error naming its key path (`work_items[2].pattern`). Invalid: YAML that does not parse, an unknown key, a wrong type, a pattern that does not compile, a work item pattern without exactly one capture group, a project key that is not absolute or `~`-based (`~bob/x` is invalid), two project keys equal after `~` expansion and without a trailing `/`.
 
 ```yaml
 version: 1
-roles: # the first rule that matches wins
-  - name: builder
-    description: '^(Build|Worker for) ' # optional pattern
-    agent_type: 'general-purpose' # optional pattern; with both, both must match
 work_items: # the first rule that matches wins
   - from: marker # marker | description | branch | title
     pattern: '^Work item: #(\d+)(?: \((?<role>[a-z][a-z0-9-]*)\))?$'
 projects: # optional, keyed by project root
   ~/code/my-app:
-    roles: [...] # replaces the global list for that project
-    work_items: [...]
+    work_items: [...] # replaces the global list for that project
 ```
 
-Patterns are JavaScript regular expressions, case-insensitive, matched anywhere unless anchored. A project's `roles` or `work_items` replace the global list for that project; they are not merged.
+Patterns are JavaScript regular expressions, case-insensitive, matched anywhere unless anchored. A project's `work_items` replace the global list for that project; they are not merged.
 
 ## Roles
 
 - A session's main thread has the role `main`, except for calls a [marker](#work-item-marker) gives a role.
 - A sub-agent takes the name of the first role rule matching its type and description. With no match, its role is its type (`Explore`, `general-purpose`); with an empty type, `unassigned`.
-- Several rules may share a name, and a rule named like a sub-agent type shares that type's row.
+- Several rules may share a name, and a rule named like a lower-case sub-agent type (such as `general-purpose`) shares that type's row.
+
+### Role rules
+
+Each project holds its own ordered list of role rules, in the table `project_rule` (`kind` `role`, by `position` from 0, with `name`, `description` and `agent_type`; the table also holds the work item rules of a later version). A rule has a name and one or two patterns: `description`, matched against the description the sub-agent was started with, and `agent_type`, matched against its type. Patterns are JavaScript regular expressions, case-insensitive, matched anywhere unless anchored; with both, both must match. The first matching rule wins.
+
+- A project added gets the default role rules below, in their order; the projects that existed before role rules were stored got them too. A project with no role rule has none: its sub-agents take their type as role, never the defaults.
+- The rules are read from the database at each request, for the project each session belongs to ([data](data.md)): a saved change applies at once to every page and to every stored thread, without re-ingesting. When two managers save at once, the last save wins.
+- Patterns are stored exactly as typed (the defaults end with a space), without slashes or flags; an empty pattern is stored as absent.
+
+`GET /api/admin/projects/<id>/rules/role` answers `200` with `{ "status": "ok", "refreshSeconds": <n>, "rules": [{ "name", "description", "agentType" }] }` in order, an absent pattern as `null`; `503` with `{ "status": "unreachable", "refreshSeconds": <n> }` while the database is unreachable.
+
+`PUT /api/admin/projects/<id>/rules/role` with `{ "rules": [{ "name", "description", "agentType" }] }` replaces the project's role rules and answers `200` with `{ "rules": [...] }` in the same shape. A missing, `null` or empty pattern is absent. Names are trimmed and keep their letter case. Lengths count UTF-16 code units.
+
+Both routes check, in order, the checks shared by every route under `/api/admin/` ([projects](projects.md#admin-routes)), then `404` with `{ "error": "Not found" }` when `<id>` is not a positive integer or no project has it (also one removed meanwhile), then the body. A refused body saves nothing and answers `400` with `{ "error", "rule", "field" }`: `rule` counts from 0, and the first failing rule in list order wins, then its fields in the order `name`, `description`, `agentType`.
+
+| `field`                      | `error`                                                                                                                                                                                                          |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rules` (no `rule`)          | `Give a list of rules` when `rules` is missing or not a list (also a body that is not a JSON object); `At most 50 rules`.                                                                                        |
+| `name`                       | `Name is required` (missing, not text or blank), `At most 40 characters`, `main and unassigned are reserved`, then `Use lower-case letters, digits and -, starting with a letter` (outside `^[a-z][a-z0-9-]*$`). |
+| `description` or `agentType` | `At most 500 characters`, then `Not a valid regular expression: <reason>` (also a pattern that is not text).                                                                                                     |
+| `description`                | `Give a description or an agent type pattern`: the rule has neither pattern.                                                                                                                                     |
 
 **Default role rules**, each on the sub-agent's description; they match the descriptions `build-feature` and `fix-bug` give their agents:
 
@@ -47,7 +64,7 @@ Patterns are JavaScript regular expressions, case-insensitive, matched anywhere 
 | `debugger`     | `^Debug `                    |
 | `bug-checker`  | `check-bug`                  |
 
-The Roles page says where its roles come from: `Rules from <path>` when the file exists, else `No configuration file at <path>: default roles of the factorydeck-skills workflows.`
+The Roles page says where its roles come from: `Role rules of each project`.
 
 ## Work items
 

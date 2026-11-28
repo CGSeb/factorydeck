@@ -236,9 +236,6 @@ export function demoProjectOverride(projects: string): string {
   return `
 projects:
   ${demoProjectRoot(projects, EXAMPLE_API)}:
-    roles:
-      - name: api-builder
-        description: '^Add '
     work_items:
       - from: branch
         pattern: '^[a-z]+/(\\d+)-'

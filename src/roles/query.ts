@@ -3,20 +3,15 @@ import type { Database } from '../db/client.ts';
 import { byCostDescending, periodStart, select } from '../overview/query.ts';
 import { addCounts, countsOf, emptyCounts } from '../overview/tokens.ts';
 import { costOf } from '../pricing.ts';
-import { projectNames, rootsOfProject } from '../projects/names.ts';
-import {
-  MAIN_ROLE,
-  type WorkflowConfig,
-  configuredRoles,
-  roleOf,
-  rulesFor,
-} from './config.ts';
+import { projectNames } from '../projects/names.ts';
+import { MAIN_ROLE, type WorkflowConfig, roleOf, rulesFor } from './config.ts';
 import {
   type SessionMarkers,
   loadMarkers,
   markerOfRow,
   markerSegments,
 } from './markers.ts';
+import { roleOrder } from './project-rules.ts';
 import type { RoleList, RoleQuery, RoleUsage } from './types.ts';
 
 type Row = Record<string, unknown>;
@@ -36,7 +31,7 @@ function roleOfRow(
 ): string {
   const subAgent = text(row['sub_agent']);
   if (subAgent === '') return markerOfRow(markers, row)?.role ?? MAIN_ROLE;
-  return roleOf(rulesFor(config, text(row['root'])), {
+  return roleOf(rulesFor(config, text(row['root']), text(row['project'])), {
     agentType: text(row['agent_type']),
     description: text(row['description']),
   });
@@ -118,7 +113,7 @@ export async function listRoles(
   const startAt = await periodStart(db, query);
   const project = query.project ?? null;
   const markers = await loadMarkers(db, config, { project: query.project });
-  const [usageRows, names, roots] = await Promise.all([
+  const [usageRows, names, order] = await Promise.all([
     select(
       db,
       sql`select a.session_id, s.project, s.root, coalesce(a.sub_agent_id, '') as sub_agent,
@@ -138,12 +133,12 @@ export async function listRoles(
           marker.idx, a.model`,
     ),
     projectNames(db),
-    project === null ? undefined : rootsOfProject(db, project),
+    roleOrder(db, query.project),
   ]);
   const roles = summarizeRoles(config, usageRows, markers);
   return {
     roles,
-    order: configuredRoles(config, roots),
+    order,
     apiCalls: roles.reduce((sum, row) => sum + row.apiCalls, 0),
     projects: names.options(),
   };

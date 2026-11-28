@@ -5,7 +5,6 @@ import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { CATEGORY_COLORS, UNASSIGNED_COLOR } from './design/palette.ts';
 import {
   CUSTOM_ORDER,
-  NO_CONFIG_FILE,
   customRoles,
   modelsLoader,
   oneModel,
@@ -85,9 +84,7 @@ export const DefaultRoles: Story = {
     await expect(
       canvas.getByRole('heading', { level: 1, name: 'Roles' }),
     ).toBeVisible();
-    await expect(
-      canvas.getByText('Rules from /home/dev/factorydeck/factorydeck.yml'),
-    ).toBeVisible();
+    await expect(canvas.getByText('Role rules of each project')).toBeVisible();
     await expect(
       canvas.getByRole('button', { name: 'All time', pressed: true }),
     ).toBeVisible();
@@ -133,7 +130,7 @@ export const DefaultRoles: Story = {
 
 export const CustomConfiguration: Story = {
   args: {
-    loadRoles: rolesLoader(customRoles, NO_CONFIG_FILE, CUSTOM_ORDER),
+    loadRoles: rolesLoader(customRoles, CUSTOM_ORDER),
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -152,11 +149,7 @@ export const CustomConfiguration: Story = {
     );
     const writer = within(roles).getByRole('row', { name: /^writer/ });
     await expect(within(writer).getAllByRole('cell')[2]).toHaveTextContent('—');
-    await expect(
-      canvas.getByText(
-        'No configuration file at /home/dev/factorydeck/factorydeck.yml: default roles of the factorydeck-skills workflows.',
-      ),
-    ).toBeVisible();
+    await expect(canvas.getByText('Role rules of each project')).toBeVisible();
   },
 };
 

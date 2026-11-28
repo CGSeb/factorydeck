@@ -113,14 +113,14 @@ describe('pnpm start', () => {
     const config = join(folder, 'factorydeck.yml');
     await writeFile(
       config,
-      'version: 1\nroles:\n  - name: main\n    description: "("\n',
+      'version: 1\nwork_items:\n  - from: body\n    pattern: "("\n',
     );
     const run = start({ DATABASE_URL, FACTORYDECK_CONFIG: config });
     expect(await run.exited).toBe(1);
     expect(run.output()).toContain(`Invalid configuration in ${config}:\n`);
-    expect(run.output()).toContain('  roles[0].name: ');
+    expect(run.output()).toContain('  work_items[0].from: ');
     expect(run.output()).toContain(
-      '  roles[0].description: not a valid regular expression',
+      '  work_items[0].pattern: not a valid regular expression',
     );
   });
 

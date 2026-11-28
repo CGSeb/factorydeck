@@ -29,6 +29,7 @@ import { ingest } from '../ingest/ingest.ts';
 import { overviewData } from '../overview/kinds.ts';
 import { type WorkflowConfig, loadWorkflowConfig } from '../roles/config.ts';
 import { deleteProject, factoryStatus } from '../projects/remove.ts';
+import { roleRuleStore, withProjectRoles } from '../roles/project-rules.ts';
 import { listRoles } from '../roles/query.ts';
 import { listSessions, sessionDetail } from '../sessions/query.ts';
 import { readyCounts } from '../sidebar/ready.ts';
@@ -115,7 +116,7 @@ function accountSources(
   return {
     team: teamSource(db),
     resets: resetLinks(db),
-    admin: { projects: projectStore(db) },
+    admin: { projects: projectStore(db), roleRules: roleRuleStore(db) },
     cli: {
       logins: pendingLogins(),
       connections: cliConnections(db),
@@ -124,18 +125,43 @@ function accountSources(
   };
 }
 
-function statsSource(db: Database, config: WorkflowConfig): StatsSource {
+function statsSource(
+  db: Database,
+  rules: () => Promise<WorkflowConfig>,
+): StatsSource {
   return {
     autonomy: (query) => autonomyStats(db, query, hasFactory),
     quality: (query) => qualityStats(db, query, hasFactory),
-    frictions: (query) => frictionStats(db, query, config),
-    occurrences: (query) => frictionOccurrences(db, query, config),
+    frictions: async (query) => frictionStats(db, query, await rules()),
+    occurrences: async (query) => frictionOccurrences(db, query, await rules()),
     output: (id) => frictionOutput(db, id),
-    report: (query) => frictionReport(db, query, config),
-    markReport: (query) => markFrictionReport(db, query, config),
-    flow: (query) => flowStats(db, query, config, hasFactory),
+    report: async (query) => frictionReport(db, query, await rules()),
+    markReport: async (query) => markFrictionReport(db, query, await rules()),
+    flow: async (query) => flowStats(db, query, await rules(), hasFactory),
     bugs: (query) => bugStats(db, query, hasFactory),
     waiting: (project, kind) => waitingIssues(db, project, hasFactory, kind),
+  };
+}
+
+function ruledSources(
+  db: Database,
+  rules: () => Promise<WorkflowConfig>,
+  state: { inactiveAfterMinutes: number },
+): Pick<AppOptions, 'sessions' | 'roles' | 'features'> {
+  return {
+    sessions: {
+      list: async (query) => listSessions(db, query, state, await rules()),
+      detail: async (id) => sessionDetail(db, id, state, await rules()),
+    },
+    roles: {
+      list: async (query) => listRoles(db, query, await rules()),
+    },
+    features: {
+      list: async (query) => listFeatures(db, query, await rules()),
+      detail: async (key, query) =>
+        versionDetailOf(db, key, query, { config: await rules(), state }),
+      bugs: async (query) => listBugs(db, query, await rules()),
+    },
   };
 }
 
@@ -151,6 +177,7 @@ async function main(): Promise<void> {
   const env = validateEnv(process.env);
   const config = loadWorkflowConfig(workflowConfigPath(env));
   const { db } = createDatabase(env.DATABASE_URL);
+  const rules = () => withProjectRoles(db, config);
   const folder = sessionsFolder(env);
   const stateOptions = {
     inactiveAfterMinutes: env.FACTORYDECK_INACTIVE_AFTER_MINUTES,
@@ -170,23 +197,10 @@ async function main(): Promise<void> {
       refreshSeconds: env.FACTORYDECK_INGEST_INTERVAL_SECONDS,
       updatedAt: ingestion.lastFinishedAt,
     },
-    sessions: {
-      list: (query) => listSessions(db, query, stateOptions, config),
-      detail: (id) => sessionDetail(db, id, stateOptions, config),
-    },
+    ...ruledSources(db, rules, stateOptions),
     skills: {
       list: (query) => listSkills(db, query),
       detail: (skill, query) => skillDetail(db, skill, query),
-    },
-    roles: {
-      list: (query) => listRoles(db, query, config),
-      config: { path: config.path, exists: config.exists },
-    },
-    features: {
-      list: (query) => listFeatures(db, query, config),
-      detail: (key, query) =>
-        versionDetailOf(db, key, query, { config, state: stateOptions }),
-      bugs: (query) => listBugs(db, query, config),
     },
     projects: {
       factoryStatus: () => factoryStatus(db, hasFactory),
@@ -196,7 +210,7 @@ async function main(): Promise<void> {
       status: () => collectionStatus(db, hasFactory),
       refresh: () => collectionLoop().refresh(),
     },
-    stats: statsSource(db, config),
+    stats: statsSource(db, rules),
     sidebar: { ready: (project) => readyCounts(db, project, hasFactory) },
     auth: { ...setup, ...signInSessions(db), signInLimit: signInLimit() },
     ...accountSources(db),

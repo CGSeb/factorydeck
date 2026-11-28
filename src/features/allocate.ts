@@ -111,7 +111,7 @@ export function groupOf(
   row: Row,
 ): CallGroup {
   const project = text(row['project']);
-  const rules = rulesFor(config, text(row['root']));
+  const rules = rulesFor(config, text(row['root']), project);
   const title = text(row['title']);
   const sessionId = text(row['session_id']);
   const subAgent = text(row['sub_agent']);

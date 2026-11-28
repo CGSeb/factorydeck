@@ -1,4 +1,7 @@
 import { type Context, Hono } from 'hono';
+import type { StoredRoleRule } from '../roles/default-roles.ts';
+import type { RoleRuleStore } from '../roles/project-rules.ts';
+import { roleRuleFields } from '../roles/rule-fields.ts';
 import { type ProjectsResponse, remoteTaken } from '../team/project-types.ts';
 import {
   type ProjectStore,
@@ -11,7 +14,12 @@ import type { AuthEnv } from './auth-routes.ts';
 
 export interface AdminSource {
   projects?: ProjectStore | undefined;
+  roleRules?: RoleRuleStore | undefined;
 }
+
+export type RoleRulesResponse =
+  | { status: 'ok'; refreshSeconds: number; rules: StoredRoleRule[] }
+  | { status: 'unreachable'; refreshSeconds: number };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -76,6 +84,41 @@ function projectRoutes(
   return routes;
 }
 
+function roleRuleRoutes(
+  store: RoleRuleStore,
+  { refreshSeconds, fromDatabase }: ApiContext,
+): Hono<AuthEnv> {
+  const routes = new Hono<AuthEnv>();
+  routes.get('/:id/rules/role', async (c) => {
+    const id = projectId(c.req.param('id'));
+    if (id === undefined) return c.json(NOT_FOUND, 404);
+    const rules = await fromDatabase(() => store.rules(id));
+    if (rules === undefined) return c.json(NOT_FOUND, 404);
+    if ('status' in rules) return c.json(rules, 503);
+    const body: RoleRulesResponse = { status: 'ok', refreshSeconds, rules };
+    return c.json(body, 200);
+  });
+  routes.put('/:id/rules/role', async (c) => {
+    const id = projectId(c.req.param('id'));
+    if (id === undefined) return c.json(NOT_FOUND, 404);
+    const fields = roleRuleFields(await jsonObject(c));
+    const rules = await fromDatabase(() =>
+      fields.ok ? store.replace(id, fields.rules) : store.rules(id),
+    );
+    if (rules === undefined) return c.json(NOT_FOUND, 404);
+    if ('status' in rules) return c.json(rules, 503);
+    if (!fields.ok) {
+      const { error, rule, field } = fields;
+      return c.json(
+        { error, ...(rule === undefined ? {} : { rule }), field },
+        400,
+      );
+    }
+    return c.json({ rules }, 200);
+  });
+  return routes;
+}
+
 export function adminRoutes(
   admin: AdminSource | undefined,
   context: ApiContext,
@@ -87,6 +130,9 @@ export function adminRoutes(
     }
     return next();
   });
+  if (admin?.roleRules !== undefined) {
+    routes.route('/projects', roleRuleRoutes(admin.roleRules, context));
+  }
   if (admin?.projects !== undefined) {
     routes.route('/projects', projectRoutes(admin.projects, context));
   }

@@ -21,6 +21,7 @@ import { teamCliConnections } from '../team/cli-connections.ts';
 import { changeStatus } from '../team/account-status.ts';
 import { changeRole } from '../team/change-role.ts';
 import { invitations } from '../team/invitations.ts';
+import { roleRuleStore } from '../roles/project-rules.ts';
 import { projectStore } from '../team/projects.ts';
 import { resetLinks } from '../team/reset-links.ts';
 import type { SessionSource } from '../server/session-routes.ts';
@@ -92,7 +93,10 @@ function accountSources(
       ),
     },
     resets: resetLinks(db, () => harness.clock),
-    admin: { projects: projectStore(db, () => harness.clock) },
+    admin: {
+      projects: projectStore(db, () => harness.clock),
+      roleRules: roleRuleStore(db),
+    },
     cli: {
       logins: harness.cliLogins,
       connections: cliConnections(db, () => harness.clock),

@@ -285,6 +285,7 @@ export {
 export {
   project,
   projectRoot,
+  projectRule,
   projectSession,
   rootRemote,
 } from './project-schema.ts';

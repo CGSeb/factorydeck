@@ -11,33 +11,9 @@
 # Required, and must be 1.
 version: 1
 
-# Roles of sub-agents, tried in order: the first rule that matches gives the role. A rule needs
-# `description`, `agent_type` or both (both must then match):
-#   name         the role shown on /roles. Several rules may share a name; a rule named like a
-#                sub-agent type (such as Explore) shares that type's row. `main` and `unassigned`
-#                are reserved.
-#   description  a pattern matched against the description the sub-agent was started with.
-#   agent_type   a pattern matched against the sub-agent type (Explore, general-purpose…).
-# A sub-agent no rule matches takes its type as role, or `unassigned` when it has none. A
-# session's main thread is always `main`.
-#
-# These are the default rules: they fit the build-feature and fix-bug workflows of factorydeck-skills.
-# Removing the key keeps them; `roles: []` groups sub-agents by type.
-roles:
-  - name: builder
-    description: '^(Build|Worker for) '
-  - name: reviewer
-    description: '^Review '
-  - name: shipper
-    description: '^(Ship|Merge|Push) '
-  - name: reworker
-    description: '^(Rework|Rebase|Update) '
-  - name: spec-checker
-    description: 'check-spec'
-  - name: debugger
-    description: '^Debug '
-  - name: bug-checker
-    description: 'check-bug'
+# Role rules are stored with each project in FactoryDeck, not in this file: `roles` keys here are
+# ignored. A new project starts with the roles of the build-feature and fix-bug workflows of
+# factorydeck-skills.
 
 # Work items (issue numbers) of threads, tried in order: the first rule whose pattern matches and
 # captures a positive whole number gives the work item.
@@ -64,13 +40,9 @@ work_items:
   #   pattern: '^[a-z]+/(\d+)-'
 
 # Optional overrides, keyed by project root path (absolute, or starting with ~). A project's
-# `roles` or `work_items`, when present, replace the global list for that project; they are not
-# merged.
+# `work_items`, when present, replace the global list for that project; they are not merged.
 # projects:
 #   ~/code/my-app:
-#     roles:
-#       - name: builder
-#         agent_type: '^general-purpose$'
 #     work_items:
 #       - from: branch
 #         pattern: '^[a-z]+/(\d+)-'

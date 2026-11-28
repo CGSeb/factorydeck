@@ -50,7 +50,6 @@ const roles: RoleSource = {
     queries.push(query);
     return Promise.resolve(list);
   },
-  config: { path: '/work/factorydeck.yml', exists: true },
 };
 
 function app(checkDatabase = up) {
@@ -70,7 +69,7 @@ function app(checkDatabase = up) {
 }
 
 describe('GET /api/roles', () => {
-  it('answers the roles of the period and project, with the configuration file', async () => {
+  it('answers the roles of the period and project, without a configuration file', async () => {
     const response = await app().request(
       '/api/roles?period=30d&tz=UTC&project=%2Fwork%2Fapp',
     );
@@ -80,7 +79,6 @@ describe('GET /api/roles', () => {
       updatedAt: '2026-01-05T09:00:00.000Z',
       refreshSeconds: 10,
       list,
-      config: { path: '/work/factorydeck.yml', exists: true },
     });
     expect(queries.at(-1)).toEqual({
       period: '30d',

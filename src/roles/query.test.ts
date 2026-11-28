@@ -9,6 +9,7 @@ import {
   type WorkflowConfig,
   parseWorkflowConfig,
 } from './config.ts';
+import { roleRule, withRoles } from '../test/role-rules.ts';
 import { listRoles } from './query.ts';
 import type { RoleUsage } from './types.ts';
 
@@ -17,26 +18,25 @@ const RECENT = new Date('2026-03-12T10:00:00Z');
 const OLD = new Date('2026-01-05T09:00:00Z');
 const state = { inactiveAfterMinutes: 30, now: NOW };
 
-const config: WorkflowConfig = parseWorkflowConfig(
+const config: WorkflowConfig = withRoles(
   [
-    'version: 1',
-    'roles:',
-    '  - name: builder',
-    "    description: '^Build '",
-    '  - name: checker',
-    "    description: 'review'",
-    "    agent_type: '^Explore$'",
-    '  - name: reviewer',
-    "    description: '^Review '",
-    '  - name: Explore',
-    "    description: '^Search '",
-    'projects:',
-    '  /work/lib/:',
-    '    work_items:',
-    '      - from: branch',
-    "        pattern: '^[a-z]+/(\\d+)-'",
-  ].join('\n'),
-  '/configs/factorydeck.yml',
+    roleRule('builder', '^Build '),
+    roleRule('checker', 'review', '^Explore$'),
+    roleRule('reviewer', '^Review '),
+    roleRule('Explore', '^Search '),
+  ],
+  {},
+  parseWorkflowConfig(
+    [
+      'version: 1',
+      'projects:',
+      '  /work/lib/:',
+      '    work_items:',
+      '      - from: branch',
+      "        pattern: '^[a-z]+/(\\d+)-'",
+    ].join('\n'),
+    '/configs/factorydeck.yml',
+  ),
 );
 
 let db: Database;
@@ -202,11 +202,11 @@ describe('listRoles', () => {
     });
   });
 
-  it('falls back to the sub-agent types with roles: []', async () => {
+  it('falls back to the sub-agent types with an empty list of role rules', async () => {
     const list = await listRoles(
       db,
       { period: 'all', timeZone: 'UTC', now: NOW },
-      parseWorkflowConfig('version: 1\nroles: []\n', '/f.yml'),
+      withRoles([]),
     );
     expect(byRole(list.roles)).toEqual({
       main: [3, 4],

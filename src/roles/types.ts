@@ -26,16 +26,10 @@ export interface RoleQuery {
   now?: Date;
 }
 
-export interface RoleSourceFile {
-  path: string;
-  exists: boolean;
-}
-
 export type RoleListResponse =
   | {
       status: 'ok';
       list: RoleList;
-      config: RoleSourceFile;
       updatedAt: string | null;
       refreshSeconds: number;
     }

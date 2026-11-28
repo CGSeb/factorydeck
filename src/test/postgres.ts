@@ -46,11 +46,13 @@ create trigger link_git_host_root after insert on git_host_project
 
 export interface ScratchOptions {
   linkRoots?: boolean;
+  migrate?: boolean;
 }
 
-/** A new, migrated database on the test server, dropped by `drop`. */
+/** A new database on the test server, migrated unless `migrate` is false, dropped by `drop`. */
 export async function createScratchDatabase({
   linkRoots = true,
+  migrate: migrated = true,
 }: ScratchOptions = {}): Promise<{
   url: string;
   drop: () => Promise<void>;
@@ -62,6 +64,14 @@ export async function createScratchDatabase({
   await admin.query(`create database ${name}`);
   const scratch = new URL(server);
   scratch.pathname = `/${name}`;
+  const created = {
+    url: scratch.toString(),
+    drop: async () => {
+      await admin.query(`drop database if exists ${name} with (force)`);
+      await admin.end();
+    },
+  };
+  if (!migrated) return created;
   const { db, close } = createDatabase(
     scratch.toString(),
     CONNECTION_TIMEOUT_MS,
@@ -77,13 +87,7 @@ export async function createScratchDatabase({
     await client.query(LINK_ROOTS);
     await client.end();
   }
-  return {
-    url: scratch.toString(),
-    drop: async () => {
-      await admin.query(`drop database if exists ${name} with (force)`);
-      await admin.end();
-    },
-  };
+  return created;
 }
 
 /** A connection to a new scratch database; `close` disconnects and drops it. */

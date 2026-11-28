@@ -5,7 +5,6 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_RULES,
   type WorkflowRules,
-  configuredRoles,
   loadWorkflowConfig,
   parseWorkflowConfig,
   rulesFor,
@@ -63,12 +62,7 @@ describe('loadWorkflowConfig', () => {
     );
     const config = loadWorkflowConfig(path);
     expect(config.exists).toBe(true);
-    expect(config.rules.roles.map((rule) => rule.name)).toEqual([
-      'builder',
-      'reviewer',
-    ]);
-    expect(config.rules.roles[0]?.agentType?.source).toBe('general-purpose');
-    expect(config.rules.roles[1]?.agentType).toBeUndefined();
+    expect(config.rules.roles).toEqual(DEFAULT_RULES.roles);
     expect(config.rules.workItems).toHaveLength(1);
     expect(config.rules.workItems[0]?.from).toBe('branch');
   });
@@ -82,41 +76,53 @@ describe('loadWorkflowConfig', () => {
 });
 
 describe('parseWorkflowConfig', () => {
-  it('replaces the global lists with a project override, list by list', () => {
+  it('replaces the global work items with a project override', () => {
     const text = [
       'version: 1',
-      'roles:',
-      '  - name: builder',
-      '    description: Build',
       'projects:',
       '  /work/app/:',
-      '    roles:',
-      '      - name: coder',
-      '        description: Build',
+      '    work_items: []',
       '  ~/code/lib:',
       '    work_items:',
       '      - from: title',
       "        pattern: 'issue (\\d+)'",
     ].join('\n');
-    const app = rulesOf(text, '/work/app');
-    expect(app.roles.map((rule) => rule.name)).toEqual(['coder']);
-    expect(app.workItems).toEqual(DEFAULT_RULES.workItems);
+    expect(rulesOf(text, '/work/app').workItems).toEqual([]);
     const lib = rulesOf(text, join(homedir(), 'code', 'lib'));
-    expect(lib.roles.map((rule) => rule.name)).toEqual(['builder']);
     expect(lib.workItems.map((rule) => rule.pattern.source)).toEqual([
       'issue (\\d+)',
     ]);
-    expect(rulesOf(text, '/elsewhere').roles[0]?.name).toBe('builder');
+    expect(rulesOf(text, '/elsewhere').workItems).toEqual(
+      DEFAULT_RULES.workItems,
+    );
+  });
+
+  it('ignores the roles keys, global and per project, even invalid ones', () => {
+    const text = [
+      'version: 1',
+      'roles:',
+      '  - name: main',
+      "    description: '('",
+      '    label: x',
+      'projects:',
+      '  /work/app:',
+      '    roles:',
+      '      - name: coder',
+      '        description: Build',
+    ].join('\n');
+    expect(rulesOf(text).roles).toEqual(DEFAULT_RULES.roles);
+    expect(rulesOf(text, '/work/app').roles).toEqual(DEFAULT_RULES.roles);
+    expect(rulesOf('version: 1\nroles:\n').roles).toEqual(DEFAULT_RULES.roles);
   });
 
   it('reports YAML that does not parse', () => {
-    const lines = errorLines('version: 1\nroles: [\n');
+    const lines = errorLines('version: 1\nwork_items: [\n');
     expect(lines.length).toBeGreaterThan(0);
     expect(lines[0]).toMatch(/^ {2}\(yaml\) .*line \d+, column \d+/);
   });
 
   it('reports a missing or wrong version', () => {
-    expect(errorLines('roles: []\n')).toEqual([
+    expect(errorLines('work_items: []\n')).toEqual([
       expect.stringMatching(/^ {2}version: /),
     ]);
     expect(errorLines('version: 2\n')).toEqual([
@@ -130,16 +136,16 @@ describe('parseWorkflowConfig', () => {
         [
           'version: 1',
           'colour: blue',
-          'roles:',
-          '  - name: builder',
-          '    description: Build',
+          'work_items:',
+          '  - from: title',
+          "    pattern: '#(\\d+)'",
           '    label: x',
         ].join('\n'),
       ),
     ).toEqual(
       expect.arrayContaining([
         '  colour: unknown key',
-        '  roles[0].label: unknown key',
+        '  work_items[0].label: unknown key',
       ]),
     );
   });
@@ -149,16 +155,14 @@ describe('parseWorkflowConfig', () => {
       errorLines(
         [
           'version: 1',
-          'roles:',
-          '  - name: a',
-          '    description: A',
-          '  - name: b',
-          '    description: B',
-          '  - name: c',
-          '    description: [1]',
+          'work_items:',
+          '  - from: title',
+          "    pattern: '#(\\d+)'",
+          '  - from: title',
+          '    pattern: [1]',
         ].join('\n'),
       ),
-    ).toEqual([expect.stringMatching(/^ {2}roles\[2\]\.description: /)]);
+    ).toEqual([expect.stringMatching(/^ {2}work_items\[1\]\.pattern: /)]);
     expect(
       errorLines(
         "version: 1\nwork_items:\n  - from: body\n    pattern: '#(\\d+)'\n",
@@ -168,10 +172,12 @@ describe('parseWorkflowConfig', () => {
 
   it('reports a regular expression that does not compile', () => {
     expect(
-      errorLines('version: 1\nroles:\n  - name: a\n    agent_type: "("\n'),
+      errorLines(
+        'version: 1\nwork_items:\n  - from: title\n    pattern: "("\n',
+      ),
     ).toEqual([
       expect.stringMatching(
-        /^ {2}roles\[0\]\.agent_type: not a valid regular expression: /,
+        /^ {2}work_items\[0\]\.pattern: not a valid regular expression: /,
       ),
     ]);
   });
@@ -194,29 +200,9 @@ describe('parseWorkflowConfig', () => {
     ]);
   });
 
-  it('reports a role named main or unassigned, and a rule with nothing to match', () => {
-    expect(
-      errorLines(
-        [
-          'version: 1',
-          'roles:',
-          '  - name: main',
-          '    description: x',
-          '  - name: unassigned',
-          '    description: x',
-          '  - name: lonely',
-        ].join('\n'),
-      ),
-    ).toEqual([
-      expect.stringMatching(/^ {2}roles\[0\]\.name: .*reserved/),
-      expect.stringMatching(/^ {2}roles\[1\]\.name: .*reserved/),
-      '  roles[2]: needs description, agent_type or both',
-    ]);
-  });
-
   it('reports a project key that is neither absolute nor under ~', () => {
     expect(
-      errorLines('version: 1\nprojects:\n  code/app:\n    roles: []\n'),
+      errorLines('version: 1\nprojects:\n  code/app:\n    work_items: []\n'),
     ).toEqual([
       expect.stringMatching(
         /^ {2}projects\["code\/app"\]: .*absolute path or start with ~/,
@@ -231,13 +217,13 @@ describe('parseWorkflowConfig', () => {
           'version: 1',
           'projects:',
           '  ~bob/x:',
-          '    roles: []',
+          '    work_items: []',
           '  ~factorydeck:',
-          '    roles: []',
+          '    work_items: []',
           '  ~/ok:',
-          '    roles: []',
+          '    work_items: []',
           "  '~':",
-          '    roles: []',
+          '    work_items: []',
         ].join('\n'),
       ),
     ).toEqual([
@@ -253,66 +239,18 @@ describe('parseWorkflowConfig', () => {
           'version: 1',
           'projects:',
           '  /a:',
-          '    roles: []',
+          '    work_items: []',
           '  /a/:',
-          '    roles: []',
+          '    work_items: []',
           `  ${homedir()}/code:`,
-          '    roles: []',
+          '    work_items: []',
           '  ~/code//:',
-          '    roles: []',
+          '    work_items: []',
         ].join('\n'),
       ),
     ).toEqual([
       '  projects["/a/"]: same project as "/a"',
       `  projects["~/code//"]: same project as ${JSON.stringify(`${homedir()}/code`)}`,
     ]);
-  });
-});
-
-describe('configuredRoles', () => {
-  const config = parseWorkflowConfig(
-    [
-      'version: 1',
-      'roles:',
-      '  - name: builder',
-      "    description: '^Build '",
-      '  - name: reviewer',
-      "    description: '^Review '",
-      'projects:',
-      '  /work/lib/:',
-      '    roles:',
-      '      - name: writer',
-      "        description: '^Write '",
-      '      - name: builder',
-      "        description: '^Make '",
-      '  /work/docs:',
-      '    work_items: []',
-    ].join('\n'),
-    PATH,
-  );
-
-  it('lists the roles in configuration order, then the project ones, once each', () => {
-    expect(configuredRoles(config)).toEqual(['builder', 'reviewer', 'writer']);
-  });
-
-  it('lists the roles that apply to one project', () => {
-    expect(configuredRoles(config, ['/work/lib'])).toEqual([
-      'writer',
-      'builder',
-    ]);
-    expect(configuredRoles(config, ['/work/docs'])).toEqual([
-      'builder',
-      'reviewer',
-    ]);
-    expect(configuredRoles(config, ['/work/other'])).toEqual([
-      'builder',
-      'reviewer',
-    ]);
-  });
-
-  it('lists the default roles without a configuration file', () => {
-    expect(
-      configuredRoles({ ...config, rules: DEFAULT_RULES, projects: new Map() }),
-    ).toEqual(DEFAULT_RULES.roles.map((rule) => rule.name));
   });
 });
