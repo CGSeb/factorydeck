@@ -126,7 +126,8 @@ Every route under `/api/` answers `401` with `{ "error": "Not signed in" }` with
 - `GET /api/auth/state` and `POST /api/auth/setup`;
 - `POST /api/auth/sign-in` and `POST /api/auth/sign-out`;
 - `POST /api/auth/invitation` and `POST /api/auth/invitation/accept` (see [Invitations](#invitations));
-- `POST /api/auth/reset` and `POST /api/auth/reset/save` (see [Reset links](#reset-links)).
+- `POST /api/auth/reset` and `POST /api/auth/reset/save` (see [Reset links](#reset-links));
+- the routes under `/api/cli/`, which take a CLI token instead of the cookie (see [The CLI](cli.md)).
 
 The built UI (its HTML, scripts and styles) is served without a session. When the API answers `401`, its pages open the [sign-in screen](#the-sign-in-screen). While the database is unreachable, a route that needs a session answers `503` with the usual unreachable body. No setting turns authentication off.
 

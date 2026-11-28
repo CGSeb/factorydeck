@@ -21,6 +21,7 @@ For installing and running FactoryDeck, see [Getting started](../getting-started
 | [Skills and roles](skills-and-roles.md)         | Skill launches and attribution, tokens by role and by model.                                 |
 | [Accounts](accounts.md)                         | Roles, the setup code of a new instance, the first manager and the session cookie.           |
 | [Projects](projects.md)                         | The projects a manager adds by their git remote, and the admin routes.                       |
+| [The CLI](cli.md)                               | Connecting the FactoryDeck CLI from the browser, its token and its routes.                   |
 | [Interface](interface.md)                       | Design tokens, components, charts, accessibility and layout rules every page follows.        |
 
 ## Glossary

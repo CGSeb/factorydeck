@@ -1,0 +1,52 @@
+.fd-cli-ask {
+  margin-bottom: var(--fd-space-4);
+  overflow-wrap: anywhere;
+}
+
+.fd-cli-code {
+  margin: 0 0 var(--fd-space-6);
+  padding: var(--fd-space-3);
+  font-family: var(--fd-font-mono);
+  font-size: var(--fd-title-lg);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-align: center;
+  color: var(--fd-ink);
+  background: var(--fd-surface-2);
+  border: 1px solid var(--fd-border);
+  border-radius: var(--fd-radius-sm);
+}
+
+.fd-cli-actions {
+  display: flex;
+  gap: var(--fd-space-3);
+}
+
+.fd-cli-actions .fd-setup-submit,
+.fd-cli-cancel {
+  flex: 1;
+  margin-top: 0;
+}
+
+.fd-cli-cancel {
+  height: 42px;
+  padding: 0 var(--fd-space-5);
+  font-size: var(--fd-text-md);
+  font-weight: 600;
+  color: var(--fd-ink);
+  background: var(--fd-surface);
+  border: 1px solid var(--fd-border);
+  border-radius: var(--fd-radius-pill);
+}
+
+.fd-cli-cancel:disabled {
+  opacity: 0.7;
+}
+
+.fd-cli-submit {
+  width: 100%;
+}
+
+.fd-cli-done {
+  margin-bottom: 0;
+}

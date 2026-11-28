@@ -20,6 +20,8 @@ import type { SessionGate } from './auth-gate.ts';
 import { signInThenRead, useAccountView, useAuthPhase } from './auth-phase.ts';
 import type { LoadBugs } from './bugs-api.ts';
 import { BugsPage } from './BugsPage.tsx';
+import type { DecideCliLogin, ReadCliLogin } from './cli-api.ts';
+import { cliRoute } from './CliPage.tsx';
 import type { DeleteProject, LoadFactory } from './factory-api.ts';
 import { FeaturePage } from './FeaturePage.tsx';
 import type { LoadFeature, LoadFeatures } from './features-api.ts';
@@ -111,6 +113,8 @@ export interface AppProps {
   saveReset?: SaveReset | undefined;
   loadProjects?: LoadProjects | undefined;
   addProject?: AddProject | undefined;
+  readCliLogin?: ReadCliLogin | undefined;
+  decideCliLogin?: DecideCliLogin | undefined;
 }
 
 function isManager(view: AccountView): boolean {
@@ -304,6 +308,7 @@ function DashboardRoutes(
         {teamRoute(props)}
         {projectsRoute(props)}
       </Route>
+      {cliRoute(props)}
       {SIGNED_IN_REDIRECTS}
     </Routes>
   );

@@ -15,6 +15,7 @@ import {
 } from './auth-api.ts';
 import { authGate } from './auth-gate.ts';
 import { bugsLoader } from './bugs-api.ts';
+import { cliLoginDecider, cliLoginReader } from './cli-api.ts';
 import { factoryLoader, projectDeleter } from './factory-api.ts';
 import { featureLoader, featuresLoader } from './features-api.ts';
 import {
@@ -89,6 +90,8 @@ const createResetLink = resetLinkCreator(gate.fetch);
 const readReset = resetReader();
 const saveReset = resetSaver();
 const signIn = signInSender();
+const readCliLogin = cliLoginReader(gate.fetch);
+const decideCliLogin = cliLoginDecider(gate.fetch);
 const loadReport = frictionReportLoader(gate.fetch);
 const markReport = frictionReportMarker(gate.fetch);
 const loadProjects = projectsLoader(gate.fetch);
@@ -139,6 +142,8 @@ if (root) {
         loadProjects={loadProjects}
         addProject={addProject}
         signIn={signIn}
+        readCliLogin={readCliLogin}
+        decideCliLogin={decideCliLogin}
         sessionGate={gate}
       />
     </BrowserRouter>,
