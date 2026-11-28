@@ -4,21 +4,31 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { ADD, ADD_PROJECT_TITLE } from './AddProjectDialog.tsx';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import {
+  PROJECTS_NOW,
   addedProject,
   addingAnswer,
   pendingProjects,
   projectsLoaderOf,
   projectsResponse,
+  someNoRemote,
+  somePendingRemotes,
   someProjects,
 } from './projects-list-fixtures.ts';
-import { NO_PROJECT, PROJECTS_REFUSED } from './projects-view.ts';
+import {
+  NO_PROJECT,
+  NO_REMOTE,
+  PROJECTS_REFUSED,
+  REMOTES_NOT_ADDED,
+} from './projects-view.ts';
 import { ProjectsPage } from './ProjectsPage.tsx';
+import { ADD_REMOTE } from './RemotesNotAdded.tsx';
 
 const meta = {
   component: ProjectsPage,
   args: {
     loadProjects: projectsLoaderOf(projectsResponse(someProjects)),
     addProject: fn(addingAnswer({ status: 'added', project: addedProject })),
+    now: PROJECTS_NOW,
   },
   decorators: [
     (Story) => (
@@ -51,6 +61,9 @@ export const Loading: Story = {
       canvasElement.querySelector('.fd-page-summary[aria-hidden="true"]'),
     ).not.toBeNull();
     await expect(canvas.queryByRole('button', { name: ADD })).toBeNull();
+    await expect(
+      canvas.queryByRole('heading', { name: REMOTES_NOT_ADDED }),
+    ).toBeNull();
   },
 };
 
@@ -162,5 +175,86 @@ export const Error: Story = {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText(UNREACHABLE_MESSAGE)).toBeVisible();
     await expect(canvas.queryByRole('button', { name: ADD })).toBeNull();
+  },
+};
+
+const withRemotes = projectsLoaderOf(
+  projectsResponse(someProjects, somePendingRemotes, someNoRemote),
+);
+
+function remoteLines(
+  canvasElement: HTMLElement,
+): (string | null | undefined)[] {
+  const table = canvasElement.querySelector(
+    `table[aria-label="${REMOTES_NOT_ADDED}"]`,
+  );
+  return [...(table?.querySelectorAll('tbody th') ?? [])].map(
+    (cell) => cell.firstChild?.textContent,
+  );
+}
+
+export const RemotesNotAddedYet: Story = {
+  name: 'Remotes not added yet: listed under the projects',
+  args: { loadProjects: withRemotes },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole('table', { name: REMOTES_NOT_ADDED });
+    await expect(
+      canvas.getByText('3 projects · 2 remotes not added'),
+    ).toBeVisible();
+    const tables = canvas.getAllByRole('table');
+    await expect(
+      tables.map((table) => table.getAttribute('aria-label')),
+    ).toEqual(['Projects', REMOTES_NOT_ADDED]);
+    await expect(remoteLines(canvasElement)).toEqual([
+      'github.com/example-org/factorydeck',
+      'gitlab.example.test/platform/tools/ledger',
+      NO_REMOTE,
+    ]);
+  },
+};
+
+export const OnlyNoRemote: Story = {
+  name: 'Remotes not added yet: No remote is not counted in the summary',
+  args: {
+    loadProjects: projectsLoaderOf(
+      projectsResponse(someProjects, [], someNoRemote),
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole('table', { name: REMOTES_NOT_ADDED });
+    await expect(canvas.getByText('3 projects')).toBeVisible();
+  },
+};
+
+export const AddRemote: Story = {
+  name: 'Add a remote: the form is filled, and the line goes once added',
+  args: { loadProjects: withRemotes },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      await canvas.findByRole('button', {
+        name: `${ADD_REMOTE} github.com/example-org/factorydeck`,
+      }),
+    );
+    const dialog = canvas.getByRole('dialog', { name: ADD_PROJECT_TITLE });
+    await expect(within(dialog).getByLabelText('Git remote')).toHaveValue(
+      'https://github.com/example-org/factorydeck',
+    );
+    await expect(within(dialog).getByLabelText('Name')).toHaveValue('');
+    await userEvent.click(within(dialog).getByRole('button', { name: ADD }));
+    await waitFor(() => expect(canvas.queryByRole('dialog')).toBeNull());
+    await expect(args.addProject).toHaveBeenCalledWith({
+      remote: 'https://github.com/example-org/factorydeck',
+      name: '',
+    });
+    await expect(
+      canvas.getByText('4 projects · 1 remote not added'),
+    ).toBeVisible();
+    await expect(remoteLines(canvasElement)).toEqual([
+      'gitlab.example.test/platform/tools/ledger',
+      NO_REMOTE,
+    ]);
   },
 };

@@ -11,6 +11,7 @@ import {
   type ProjectChanges,
   type ProjectFields,
   type RemoveProjectResult,
+  type RemotesNotAdded,
   type TeamProject,
   type UpdateProjectResult,
   NAME_LENGTH_ERROR,
@@ -19,6 +20,7 @@ import {
   NOT_A_REMOTE,
 } from './project-types.ts';
 import { insertDefaultRoleRules } from '../roles/project-rules.ts';
+import { remotesNotAdded } from './pending-remotes.ts';
 import { byProjectOrder } from './project-order.ts';
 import { freeSlug, parseRemote, slugBase } from './remote.ts';
 import { PROJECT_LOCK, removeProject } from './remove-project.ts';
@@ -27,6 +29,7 @@ export const MAX_NAME_LENGTH = 80;
 
 export interface ProjectStore {
   list: () => Promise<ListedProject[]>;
+  remotesNotAdded: () => Promise<RemotesNotAdded>;
   add: (fields: NewProject, by: number) => Promise<AddProjectResult>;
   update: (id: number, changes: ProjectChanges) => Promise<UpdateProjectResult>;
   remove: (id: number) => Promise<RemoveProjectResult>;
@@ -175,6 +178,7 @@ export function projectStore(
     update: (id, changes) =>
       db.transaction((tx) => updateProject(tx, id, changes)),
     remove: (id) => removeProject(db, id, now(), removeLockTimeoutMs),
+    remotesNotAdded: () => remotesNotAdded(db),
     add: (fields, by) =>
       db.transaction(async (tx) => {
         await tx.execute(sql`select pg_advisory_xact_lock(${PROJECT_LOCK})`);

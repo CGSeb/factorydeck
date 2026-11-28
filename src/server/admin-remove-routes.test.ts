@@ -42,6 +42,7 @@ function fakeApp(result: RemoveProjectResult): {
   const removed: number[] = [];
   const projects: ProjectStore = {
     list: () => Promise.reject(new Error('Not used')),
+    remotesNotAdded: () => Promise.reject(new Error('Not used')),
     add: () => Promise.reject(new Error('Not used')),
     update: () => Promise.reject(new Error('Not used')),
     remove: (id) => {

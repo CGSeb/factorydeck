@@ -11,23 +11,23 @@ import { useProjectRemoved } from './layout-outlet.ts';
 import type {
   AddProject,
   LoadProjects,
-  ProjectsView,
   SaveProject,
   RemoveProject,
-  TeamProject,
 } from './projects-api.ts';
 import {
   NO_PROJECT,
   PROJECTS_REFUSED,
   formatAddedDate,
   projectSettingsPath,
+  addRemoteValue,
   projectsSummary,
-  withAdded,
 } from './projects-view.ts';
 import { ProjectSettingsPage } from './ProjectSettingsPage.tsx';
 import { type ProjectRow, useRemoval } from './project-removal.ts';
 import { RemoveProjectDialog } from './RemoveProjectDialog.tsx';
-import { useRefreshing } from './skills-api.ts';
+import { RemotesNotAdded } from './RemotesNotAdded.tsx';
+import { type ListView, useProjects } from './use-projects.ts';
+import { useNow } from './use-now.ts';
 import './invitations.css';
 import './projects.css';
 
@@ -36,13 +36,10 @@ export interface ProjectsPageProps {
   addProject?: AddProject | undefined;
   removeProject?: RemoveProject | undefined;
   onRemoved?: ((slug: string) => void) | undefined;
+  now?: Date | undefined;
 }
 
 const LOADING = 'Loading…';
-
-type ListView =
-  | Exclude<ProjectsView, { status: 'ok' }>
-  | { status: 'ok'; projects: readonly ProjectRow[] };
 
 function RemoveCell({
   project,
@@ -143,39 +140,6 @@ function ProjectsContent({
   return <ProjectsTable projects={view.projects} onRemove={onRemove} />;
 }
 
-function useProjects(loadProjects: LoadProjects): {
-  view: ListView | undefined;
-  added: (project: TeamProject) => void;
-  removed: (project: TeamProject) => void;
-} {
-  const [version, setVersion] = useState(0);
-  const [local, setLocal] = useState<readonly TeamProject[]>([]);
-  const [gone, setGone] = useState<ReadonlySet<number>>(new Set());
-  const loaded = useRefreshing(
-    `projects:${String(version)}`,
-    loadProjects,
-    'projects',
-  );
-  const view: ListView | undefined =
-    loaded?.status === 'ok'
-      ? {
-          status: 'ok',
-          projects: withAdded<ProjectRow>(loaded.projects, local).filter(
-            ({ id }) => !gone.has(id),
-          ),
-        }
-      : loaded;
-  const added = useCallback((project: TeamProject) => {
-    setLocal((previous) => [...previous, project]);
-    setVersion((previous) => previous + 1);
-  }, []);
-  const removed = useCallback((project: TeamProject) => {
-    setGone((previous) => new Set([...previous, project.id]));
-    setVersion((previous) => previous + 1);
-  }, []);
-  return { view, added, removed };
-}
-
 function RemovalDialog({
   removal,
 }: {
@@ -194,53 +158,91 @@ function RemovalDialog({
   );
 }
 
+function ProjectsHeader({
+  view,
+  onAdd,
+}: {
+  view: ListView | undefined;
+  onAdd: (() => void) | undefined;
+}): ReactElement {
+  return (
+    <PageHeader
+      title="Projects"
+      {...(view?.status === 'ok'
+        ? {
+            summary: projectsSummary(view.projects, view.pendingRemotes.length),
+          }
+        : {})}
+      pending={view === undefined}
+      {...(onAdd !== undefined && view?.status === 'ok'
+        ? {
+            slot: (
+              <button
+                type="button"
+                className="fd-control fd-invite-button"
+                onClick={onAdd}
+              >
+                {ADD_PROJECT_TITLE}
+              </button>
+            ),
+          }
+        : {})}
+    />
+  );
+}
+
 export function ProjectsPage({
   loadProjects,
   addProject,
   removeProject,
   onRemoved,
+  now: fixedNow,
 }: ProjectsPageProps): ReactElement {
   const { view, added, removed } = useProjects(loadProjects);
   const removal = useRemoval(loadProjects, removeProject, (project) => {
     removed(project);
     onRemoved?.(project.slug);
   });
-  const [adding, setAdding] = useState(false);
+  const now = useNow(fixedNow);
+  const [adding, setAdding] = useState<string | undefined>(undefined);
   const close = useCallback(() => {
-    setAdding(false);
+    setAdding(undefined);
   }, []);
   return (
     <div className="fd-projects-page">
-      <PageHeader
-        title="Projects"
-        {...(view?.status === 'ok'
-          ? { summary: projectsSummary(view.projects) }
-          : {})}
-        pending={view === undefined}
-        {...(addProject !== undefined && view?.status === 'ok'
-          ? {
-              slot: (
-                <button
-                  type="button"
-                  className="fd-control fd-invite-button"
-                  onClick={() => {
-                    setAdding(true);
-                  }}
-                >
-                  {ADD_PROJECT_TITLE}
-                </button>
-              ),
-            }
-          : {})}
+      <ProjectsHeader
+        view={view}
+        onAdd={
+          addProject === undefined
+            ? undefined
+            : () => {
+                setAdding('');
+              }
+        }
       />
       <ProjectsContent view={view} onRemove={removal.open} />
+      {view?.status === 'ok' && (
+        <RemotesNotAdded
+          pendingRemotes={view.pendingRemotes}
+          noRemote={view.noRemote}
+          now={now}
+          onAdd={
+            addProject === undefined
+              ? undefined
+              : (remote) => {
+                  setAdding(addRemoteValue(remote));
+                }
+          }
+        />
+      )}
       <RemovalDialog removal={removal} />
-      {adding && addProject !== undefined && (
+      {adding !== undefined && addProject !== undefined && (
         <AddProjectDialog
           addProject={addProject}
+          initialRemote={adding}
           onAdded={(project) => {
             added(project);
-            setAdding(false);
+            setAdding(undefined);
           }}
           onClose={close}
         />

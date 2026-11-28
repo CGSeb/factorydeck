@@ -1,12 +1,14 @@
 import type {
   ListedProject,
+  NoRemote,
+  PendingRemote,
   ProjectsResponse,
   TeamProject,
 } from '../team/project-types.ts';
 import { DATABASE_UNREACHABLE, SERVER_UNREACHABLE } from './auth-api.ts';
 import { REFUSED_RETRY_SECONDS } from './team-api.ts';
 
-export type { ListedProject, TeamProject };
+export type { ListedProject, NoRemote, PendingRemote, TeamProject };
 
 export const PROJECTS_URL = '/api/admin/projects';
 
@@ -66,6 +68,49 @@ function isListed(value: unknown): value is ListedProject {
   );
 }
 
+function isTime(value: unknown): value is string | null {
+  return value === null || typeof value === 'string';
+}
+
+function isPendingRemote(value: unknown): value is PendingRemote {
+  return (
+    isRecord(value) &&
+    typeof value['remote'] === 'string' &&
+    typeof value['sessions'] === 'number' &&
+    isTime(value['firstAt']) &&
+    isTime(value['lastAt'])
+  );
+}
+
+function isNoRemote(value: unknown): value is NoRemote | null {
+  return (
+    value === null ||
+    (isRecord(value) &&
+      typeof value['sessions'] === 'number' &&
+      typeof value['folders'] === 'number')
+  );
+}
+
+function okView(
+  body: Record<string, unknown>,
+  refreshSeconds: number,
+): ProjectsView | undefined {
+  const projects: unknown = body['projects'];
+  const pendingRemotes: unknown = body['pendingRemotes'];
+  const noRemote: unknown = body['noRemote'];
+  if (
+    body['status'] !== 'ok' ||
+    !Array.isArray(projects) ||
+    !projects.every(isListed) ||
+    !Array.isArray(pendingRemotes) ||
+    !pendingRemotes.every(isPendingRemote) ||
+    !isNoRemote(noRemote)
+  ) {
+    return undefined;
+  }
+  return { status: 'ok', refreshSeconds, projects, pendingRemotes, noRemote };
+}
+
 function errorOf(body: unknown): string | undefined {
   if (!isRecord(body)) return undefined;
   const error = body['error'];
@@ -111,15 +156,7 @@ export function projectsLoader(
       if (body['status'] === 'unreachable') {
         return { status: 'unreachable', refreshSeconds };
       }
-      const projects: unknown = body['projects'];
-      if (
-        body['status'] !== 'ok' ||
-        !Array.isArray(projects) ||
-        !projects.every(isListed)
-      ) {
-        return undefined;
-      }
-      return { status: 'ok', refreshSeconds, projects };
+      return okView(body, refreshSeconds);
     } catch {
       return undefined;
     }

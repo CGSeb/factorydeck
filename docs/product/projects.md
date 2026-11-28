@@ -6,9 +6,10 @@ A manager adds each project of the team by its git remote, so FactoryDeck knows 
 
 A manager sees a `Projects` link in the sidebar, right after `Team`; it opens `/projects`. It shows and hides with `Team`, from the same read of the account (see [The Team page](accounts.md#the-team-page)). A dev sees no such link, and `/projects` shows them `Only managers can manage projects.`
 
-- **Header**: `Projects`, with the summary `<n> projects` (`1 project`). The page has no period pills; the project select stays in the sidebar and changes nothing here.
+- **Header**: `Projects`, with the summary `<n> projects` (`1 project`), followed by ` · <m> remotes not added` (`1 remote not added`) when [Remotes not added yet](#remotes-not-added-yet) lists at least one remote; the `No remote` line is not counted. The page has no period pills; the project select stays in the sidebar and changes nothing here.
 - **Table**: the columns `Name`, `Remote`, `Slug` and `Added`. Every project is listed, with no paging, sorted by name without letter case. Each name is a link to the project's [settings page](#project-settings). A last column holds a `Remove` button on each row (its accessible name is `Remove <name>`), separate from the link, which opens the [removal dialog](#removing-a-project). The remote shows in its normalised form (`github.com/owner/repo`), and `Added` is the date the project was added (`3 Feb 2026`), with the exact date and time in a tooltip. Long names and remotes wrap; a table wider than the page scrolls inside its box.
 - **No project**: in place of the table, `No project yet. Add the first one with its git remote.`
+- **Remotes not added yet**: a section under the projects, described [below](#remotes-not-added-yet).
 - **Add project**: a button in the header, shown once the list has loaded (not while it loads, on the refusal or while the database is unreachable), opens the [add dialog](#adding-a-project).
 
 The page loads like the others: the header keeps the place of its summary while the list loads, under it `Loading…`, and it reloads every `refreshSeconds`.
@@ -19,6 +20,15 @@ The page loads like the others: the header keeps the place of its summary while 
 | `403`                                      | `Only managers can manage projects.` in place of the table, the header with no summary. |
 | `503`                                      | `Database unreachable. Start it with pnpm db:up.`                                       |
 | `401`, a network error or any other answer | The last data (or `Loading…`), and it tries again every 10 s.                           |
+
+## Remotes not added yet
+
+Under the projects, the section `Remotes not added yet` lists the remotes the team has sessions of but no project for, so that no work goes unseen. It shows once the list has loaded, keeps its last data while the page reloads, and is hidden when it has no line.
+
+- **Remote of a session**: the recorded remote of its root, else the remote a CLI sent with it ([Project of a session](data.md#project-of-a-session)): the main log's, or a sub-agent's while the main log has none; a CLI remote that is not a git remote counts as none. Main sessions only are counted, whatever the period. Sessions deleted with a [removed project](#removing-a-project) never count, so a removed project's remote comes back only with later sessions.
+- **A line per remote**: the columns `Remote`, `Sessions`, `First session`, `Last session`, then an `Add` button. `Sessions` reads `<n> sessions` (`1 session`). `First session` and `Last session` are the earliest and latest session times of the remote, in the relative form of `Last sign-in` of the Team page (`20 min ago`, `3 d ago`), with the exact date and time in a tooltip, and `—` when no session has a time. Lines are sorted by last session, most recent first (a remote with no time last), then by remote. Every remote is listed, with no paging.
+- **No remote**: the sessions with no remote show as one last line `No remote <k> folders` (`1 folder`), with their sessions, empty time columns and no `Add` button. The folders are the distinct roots; sessions with no root (`unassigned`, which includes those a CLI sent) count in the sessions, not in the folders.
+- **Add**: opens the [add dialog](#adding-a-project) with `Git remote` filled with `https://<remote>` (which normalises back to the same remote) and `Name` empty, so the name defaults to the repository's last path segment in lower case. Once the API answers `201`, the line of the new project's remote goes at once and its sessions belong to the project; a remote edited in the dialog keeps its line until it has a project. Ignoring a remote without adding it is not possible.
 
 ## Adding a project
 
@@ -71,7 +81,7 @@ Removing frees the slug and the remote: adding the remote again makes a new proj
 
 Every route under `/api/admin/` checks, in order: a session (`401`, or `503` while the database is unreachable), the role (`403` with `{ "error": "Managers only" }` for a dev, on any path under `/api/admin/`, unknown ones included), the body (`400`), then conflicts (`409`). A manager gets `404` with `{ "error": "Not found" }` on an unknown path. The role is read from the session's account at each request.
 
-`GET /api/admin/projects` answers `200` with `{ "status": "ok", "refreshSeconds": <n>, "projects": [...] }`, in the order of the table. Each project has `id`, `name`, `slug`, `remote` (normalised), `createdAt` (ISO 8601) and `sessions`, the number of sessions stored for the project (every session whose root has its remote, whatever the period). While the database is unreachable, it answers `503` with `{ "status": "unreachable", "refreshSeconds": <n> }`.
+`GET /api/admin/projects` answers `200` with `{ "status": "ok", "refreshSeconds": <n>, "projects": [...], "pendingRemotes": [...], "noRemote": ... }`, in the order of the table. Each project has `id`, `name`, `slug`, `remote` (normalised), `createdAt` (ISO 8601) and `sessions`, the number of sessions stored for the project (every session whose root has its remote, whatever the period). `pendingRemotes` holds the lines of [Remotes not added yet](#remotes-not-added-yet) in their order, each with `remote`, `sessions`, `firstAt` and `lastAt` (ISO 8601, or `null`), and is `[]` when there is none. `noRemote` is `{ "sessions": <n>, "folders": <k> }`, or `null` when every session has a remote. While the database is unreachable, it answers `503` with `{ "status": "unreachable", "refreshSeconds": <n> }`.
 
 `POST /api/admin/projects` with `{ "remote": "<remote>", "name": "<name>" }` adds a project, with the [default role rules](roles-and-work-items.md#role-rules) in the same transaction, and answers `201` with it, in the shape of one project of the list. `name` may be missing, `null` or empty. Unknown fields are ignored, and a body that is not a JSON object is read as empty.
 
