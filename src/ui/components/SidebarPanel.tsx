@@ -289,7 +289,12 @@ export function SidebarPanel({
         </div>
         <Credit folded={folded} tipFor={tipFor} />
         {account !== undefined && (
-          <AccountMenu account={account} folded={folded} tip={tipFor} />
+          <AccountMenu
+            account={account}
+            folded={folded}
+            tip={tipFor}
+            renderLink={renderLink}
+          />
         )}
       </div>
     </aside>

@@ -11,6 +11,7 @@ import {
   signedIn,
   slotOf,
 } from './account-stories.ts';
+import type { RenderLink } from './link.ts';
 import { Sidebar } from './Sidebar.tsx';
 import {
   expectDrawerClosed,
@@ -94,6 +95,30 @@ export const Open: Story = {
         .getByRole('button', { name: 'Sign out' })
         .querySelector('[data-icon="sign-out"]'),
     ).not.toBeNull();
+  },
+};
+
+const stayOnPage: RenderLink = ({ onClick, ...props }) => (
+  <a
+    {...props}
+    onClick={(event) => {
+      event.preventDefault();
+      onClick?.();
+    }}
+  />
+);
+
+export const CliConnectionsLink: Story = {
+  args: { renderLink: stayOnPage },
+  play: async ({ canvasElement }) => {
+    const menu = await openMenu(canvasElement);
+    const link = within(menu).getByRole('link', { name: 'CLI connections' });
+    await expect(link).toHaveAttribute('href', '/account/cli');
+    await expect(link.querySelector('[data-icon="monitor"]')).not.toBeNull();
+    await expect(link.nextElementSibling).toHaveAccessibleName('Sign out');
+    await expect(menu.querySelector('hr')?.nextElementSibling).toBe(link);
+    await userEvent.click(link);
+    await expectMenuClosed(accountButton(canvasElement));
   },
 };
 

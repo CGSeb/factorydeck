@@ -60,6 +60,28 @@ Each approved login creates a **CLI connection**: the account, the machine name,
 - Each request with the token moves its last use, written at most once a minute.
 - [Deactivating an account](accounts.md#deactivating-an-account) deletes all its CLI connections, as it deletes its sign-in sessions. Their tokens stay refused after a reactivation: the developer runs `factorydeck login` again.
 
+## The CLI connections page
+
+`CLI connections` in the [account menu](navigation.md#sidebar) opens `/account/cli`, with the sidebar, for any signed-in account. It lists the connections of the signed-in account only: a manager sees their own here, not the team's.
+
+- **Header**: `CLI connections`, with the summary `<n> machines` (`1 machine`). The page has no period pills; the project select stays in the sidebar and changes nothing here.
+- **Table**: the columns `Machine`, `Connected` (the day the connection was made, `2 Mar 2026`) and `Last used` (`just now`, `3 min ago`, `2 h ago`, `5 d ago`), each with the exact date and time in a tooltip, and a `Disconnect` button at the end of each row. Rows are sorted by last use, most recent first. An expired connection is not listed.
+- **Empty**: `No machine connected. Run factorydeck login <this site's address> in a terminal.`, with the address of the page (`https://deck.example.test`).
+- **Disconnect** asks `Disconnect <machine>?` with `Its CLI stops sending until you log in again.`, and the buttons `Cancel` and `Disconnect` (in the danger colour). Confirming deletes the connection: the row goes away, the summary follows, and its token is refused from the next request. While it runs, the button reads `Disconnecting…` and the dialog cannot be closed. A connection that was already gone (disconnected from another tab, expired) counts as disconnected. When the database or the server does not answer, the dialog stays open with `Database unreachable. Start it with pnpm db:up.` or `Could not reach the server`, so the person can try again.
+
+The page loads like the others: the header keeps the place of its summary while the list loads, under it `Loading…`, and it reloads every `refreshSeconds`. A `503` shows the unreachable message.
+
+### Routes of the page
+
+Both need the session cookie: a CLI token counts for nothing there (`401` with `{ "error": "Not signed in" }`).
+
+| Route                                      | Answer                                                                                                                                                                                               |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/account/cli-connections`         | `200` `{ "status": "ok", "refreshSeconds": <n>, "connections": [{ "id", "machine", "createdAt", "lastUsedAt" }] }`: the account's connections that have not expired, by last use, most recent first. |
+| `DELETE /api/account/cli-connections/<id>` | `204` once the connection is deleted. A connection of another account, an unknown id or one already deleted answers `404` with `{ "error": "Connection not found" }`, and nothing is deleted.        |
+
+While the database is unreachable, both answer `503` with the usual unreachable body.
+
 ## Routes with a token
 
 The token is checked on the whole `/api/cli/` prefix, before any route, except `POST /api/cli/login` and `POST /api/cli/login/poll`. A request with `Authorization: Bearer <token>` of an active connection is signed in as its account on the routes under `/api/cli/`, and nowhere else: on every other route, the token counts for nothing and the session cookie is needed. On the routes under `/api/cli/`, the cookie counts for nothing. A missing, wrong, disconnected or expired token, or the token of a deactivated account, answers `401` with `{ "error": "Run factorydeck login" }`.
