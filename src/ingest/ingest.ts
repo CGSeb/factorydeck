@@ -10,7 +10,7 @@ import {
 } from './factory.ts';
 import { findCodexFiles } from './codex-files.ts';
 import { ingestCodexFile } from './codex.ts';
-import { type LogFile, findLogFiles, readRange } from './files.ts';
+import { type LogFile, findLogFiles, logFileKey, readRange } from './files.ts';
 import {
   readFrictionsAgainOnce,
   storeChunkFrictions,
@@ -161,11 +161,11 @@ function lockTaken(result: unknown): boolean {
 
 async function forgetFile(
   run: Run,
-  path: string,
+  file: LogFile,
   sessionRow: Parameters<typeof resetSession>[0],
   agentRow: { firstAt: Date | null; lastAt: Date | null } | undefined,
 ): Promise<void> {
-  await forgetFileRows(run, path);
+  await forgetFileRows(run, logFileKey(file), file.path);
   if (agentRow === undefined) {
     resetSession(sessionRow);
   } else {
@@ -201,13 +201,13 @@ async function ingestFile(
       ? undefined
       : await loadSubAgent(run, file.sessionId, file.subAgent.id);
   if (range.reset) {
-    await forgetFile(run, file.path, sessionRow, agentRow);
+    await forgetFile(run, file, sessionRow, agentRow);
   }
   const { records, skipped, consumed } = parseLines(chunk);
   const rows = readThread(
     records,
     {
-      sourcePath: file.path,
+      sourcePath: logFileKey(file),
       sessionId: file.sessionId,
       subAgentId: agentRow?.id ?? null,
       startOffset: range.start,

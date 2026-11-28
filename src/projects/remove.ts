@@ -1,4 +1,4 @@
-import { and, count, eq, inArray, isNotNull, sql } from 'drizzle-orm';
+import { and, count, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import {
   UNASSIGNED_PROJECT,
@@ -36,6 +36,7 @@ function readerSession(state: Record<string, unknown> | null): string {
 export async function forgetProjects(
   tx: Transaction,
   projects: readonly string[],
+  { keepSent = false }: { keepSent?: boolean } = {},
 ): Promise<number> {
   if (projects.length === 0) return 0;
   await forgetGitHostData(tx, [...projects]);
@@ -43,7 +44,12 @@ export async function forgetProjects(
     (
       await tx
         .delete(session)
-        .where(inArray(session.project, [...projects]))
+        .where(
+          and(
+            inArray(session.project, [...projects]),
+            keepSent ? isNull(session.sentByMachine) : undefined,
+          ),
+        )
         .returning({ id: session.id })
     ).map((row) => row.id),
   );
@@ -84,7 +90,7 @@ export async function forgetProjectsWithoutFactoryOnce(
       without.push(project);
     }
   }
-  await forgetProjects(tx, without);
+  await forgetProjects(tx, without, { keepSent: true });
   await tx
     .insert(ingestState)
     .values({ id: STATE_ID, factoryCleanupDone: true })

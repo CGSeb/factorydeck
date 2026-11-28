@@ -50,5 +50,5 @@ export const projectSession = pgView('project_session', {
   lastAt: timestamp('last_at', { withTimezone: true }),
   turnEnded: boolean('turn_ended').notNull(),
 }).as(
-  sql`select s.id, s.agent, p.slug as project, s.project as root, s.cwd, s.cwd_from_main, s.git_branch, s.git_branches, s.title, s.first_at, s.last_at, s.turn_ended from session s join root_remote r on r.root = s.project join project p on p.remote = r.remote`,
+  sql`select s.id, s.agent, p.slug as project, s.project as root, s.cwd, s.cwd_from_main, s.git_branch, s.git_branches, s.title, s.first_at, s.last_at, s.turn_ended from session s left join root_remote r on r.root = s.project join project p on p.remote = coalesce(r.remote, s.remote)`,
 );

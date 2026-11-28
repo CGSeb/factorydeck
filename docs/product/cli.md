@@ -182,5 +182,81 @@ The token is checked on the whole `/api/cli/` prefix, before any route, except `
 | ---------------------- | --------------------------------------------------------------------------------------- |
 | `GET /api/cli/me`      | `200` `{ "account": { "id", "email", "name", "role" }, "machine": "<machine name>" }`.  |
 | `POST /api/cli/logout` | Deletes the connection of the token and answers `204`; the token is refused afterwards. |
+| `POST /api/cli/ingest` | Stores a batch of session figures: see [Sending sessions](#sending-sessions).           |
 
 `POST /api/cli/login` and `POST /api/cli/login/poll` need no token. An unknown route under `/api/cli/` answers `401` with `{ "error": "Run factorydeck login" }` without a valid token, and `404` with one. While the database is unreachable, a route that reads the connections answers `503` with the usual unreachable body.
+
+## Sending sessions
+
+The CLI reads the session logs on the developer's machine and sends their figures with `POST /api/cli/ingest`; the logs themselves never leave the machine. A batch holds what the database stores for sessions, sub-agents and API calls, and nothing more: no prompt text, tool output or file content. The schema of the batch lives in `src/cli-ingest/batch-schema.ts`, which imports nothing from the server or the database, so the CLI imports it.
+
+### The batch
+
+```json
+{
+  "parserVersion": 1,
+  "threads": [
+    {
+      "fileKey": "claude-code/4f1c…/main",
+      "agent": "claude-code",
+      "sessionId": "4f1c…",
+      "subAgentId": null,
+      "remote": "git@github.com:acme/shop.git",
+      "from": 0,
+      "readTo": 18342,
+      "session": {
+        "cwd": "/home/dev/shop",
+        "gitBranch": "feat/12-cart",
+        "gitBranches": ["main", "feat/12-cart"],
+        "title": "Build the cart",
+        "firstAt": "2026-03-12T09:00:00.000Z",
+        "lastAt": "2026-03-12T09:30:00.000Z",
+        "turnEnded": true
+      },
+      "apiCalls": [
+        {
+          "requestKey": "req_011",
+          "at": "2026-03-12T09:01:00.000Z",
+          "model": "claude-sonnet-4-5",
+          "inputTokens": 100,
+          "cacheWriteTokens": 10,
+          "cacheReadTokens": 1000,
+          "outputTokens": 50
+        }
+      ]
+    }
+  ]
+}
+```
+
+- A **thread** is one session log (`subAgentId: null`, with its `session` fields) or one sub-agent log (`subAgentId` set, with its `subAgent` fields: `toolUseId`, `agentType`, `description`, `model`, `cwd`, `gitBranch`, `firstAt`, `lastAt`). `apiCalls` may be empty or left out.
+- `fileKey` is `<agent>/<session id>/<main | sub-agent id>`. It is the source of the thread's records, in place of a path on the machine, so the same session sent from two machines, or read by the [local ingestion](data.md#session-logs) and sent by a CLI, is one session and counts once.
+- `from` and `readTo` are the byte offsets of the log the thread starts at and reads up to. The instance keeps, per file key, the last `readTo` and `parserVersion` received; it does not check `from`.
+- A thread carries the fields of its thread up to `readTo`; they replace the stored ones, except `firstAt`, which keeps the earlier of the two. When a session's main log has no working directory, the session takes the one of its earliest sub-agent, as the [local ingestion](data.md#claude-code) does.
+- Unknown fields are ignored, so a newer CLI is accepted by an older instance.
+
+### Project and sender
+
+- `remote` is the `origin` remote of the thread's working directory, stored in the normalised form of [Remotes](projects.md#remotes). A remote that is not a git remote (a path, a `file://` URL) counts as `null`, never as an error.
+- A session belongs to the project of its main log's remote; a sub-agent's remote gives the project only while the main log has none. A session whose remote is no project's is stored and shows once a project with that remote is added; a session with no remote is stored with none.
+- Each session records the account and the machine (the CLI connection's name) that sent it first. A session sent later by another account keeps its first sender; the records of the second are added like any other. A session first read by the local ingestion gets the first CLI sender that sends it. `GET /api/sessions/<id>` gives it as `sentBy: { "name": "<the account's current name>", "machine": "<machine>" }`, or `null` for a session never sent by a CLI.
+- Sending the same batch twice stores nothing twice: a session, a sub-agent and an API call are known by their session id, sub-agent id and record key, never by the machine.
+- The instance never deletes a session or a record because a CLI stopped sending it.
+
+### Answers
+
+`200` with `{ "sessions": <n>, "threads": <n>, "apiCalls": <n> }`: the distinct sessions of the batch, the threads received, and the API calls this batch stored (a call already stored is not counted). `threads: []` answers zeros.
+
+The body is JSON, gzip-compressed or not (`Content-Encoding: gzip`). A batch is stored in one transaction, under the ingestion lock, or not at all. The checks run in this order:
+
+| Answer | When                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `401`  | The token is refused: `{ "error": "Run factorydeck login" }`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `415`  | The body is not `application/json` (`{ "error": "JSON body expected" }`), or its `Content-Encoding` is not `gzip`, `x-gzip` or `identity`, read without letter case (`{ "error": "Content-Encoding must be gzip" }`).                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `413`  | The body is above 5 MB as sent: `{ "error": "Batch too large", "limit": "body" }`. This route has its own limits in place of the 1 MB of the other routes.                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `413`  | The body is above 20 MB once decompressed: `limit` `decompressed`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `400`  | The body is not valid gzip or JSON (`{ "error": "Body is not valid gzip", "path": "" }`, `Body is not valid JSON`), or does not match the schema: `{ "error": "<message>", "path": "threads.3.apiCalls.12.at" }`, for the first problem only. So are a `fileKey` not derived from `agent`, `sessionId` and `subAgentId`, or sent twice; an id empty, over 200 characters or containing `/`; an `agent` other than `claude-code` or `codex`; a `parserVersion` that is not a whole number from 1 to 2,147,483,647; `readTo` below `from`; a negative or fractional offset or token count; a time that is not ISO 8601 with an offset. |
+| `413`  | More than 2000 threads (`limit` `threads`) or 20 000 API calls in all (`limit` `records`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `503`  | `{ "error": "Busy, try again" }` after waiting 30 seconds for the ingestion lock, held by the local ingestion, a git host collection, a project deletion or another batch. The local ingestion does not wait: it skips its run while a batch holds the lock.                                                                                                                                                                                                                                                                                                                                                                         |
+
+1 MB is 1,048,576 bytes; 5 MB and 20 MB the same way. 2000 threads and 20 000 API calls are accepted; one more is refused. While the database is unreachable, the route answers `503` with the usual unreachable body and stores nothing.

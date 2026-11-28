@@ -33,6 +33,12 @@ export const h: AuthHarness = {
   get cliLogins() {
     return harness().cliLogins;
   },
+  get lockWaitMs() {
+    return harness().lockWaitMs;
+  },
+  set lockWaitMs(value) {
+    harness().lockWaitMs = value;
+  },
   app: (up) => harness().app(up),
   addAccount: (email, options) => harness().addAccount(email, options),
   close: () => harness().close(),

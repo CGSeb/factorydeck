@@ -6,6 +6,7 @@ import { hashPassword } from '../auth/secrets.ts';
 import { signInSessions } from '../auth/sessions.ts';
 import { type SignInLimit, signInLimit } from '../auth/sign-in-limit.ts';
 import { firstManagerSetup } from '../auth/setup.ts';
+import { storeBatch } from '../cli-ingest/store-batch.ts';
 import { cliConnections } from '../cli-login/connections.ts';
 import { type PendingLogins, pendingLogins } from '../cli-login/pending.ts';
 import type { Database } from '../db/client.ts';
@@ -56,6 +57,7 @@ export interface AuthHarness {
   clock: Date;
   signInLimit: SignInLimit;
   cliLogins: PendingLogins;
+  lockWaitMs: number;
   app: (up?: boolean) => Server;
   addAccount: (
     email: string,
@@ -66,7 +68,10 @@ export interface AuthHarness {
 
 function accountSources(
   db: Database,
-  harness: Pick<AuthHarness, 'clock' | 'signInLimit' | 'cliLogins'>,
+  harness: Pick<
+    AuthHarness,
+    'clock' | 'signInLimit' | 'cliLogins' | 'lockWaitMs'
+  >,
 ): Pick<AppOptions, 'auth' | 'team' | 'resets' | 'admin' | 'cli'> {
   return {
     auth: {
@@ -91,6 +96,8 @@ function accountSources(
     cli: {
       logins: harness.cliLogins,
       connections: cliConnections(db, () => harness.clock),
+      ingest: (batch, sender) =>
+        storeBatch(db, batch, sender, { lockWaitMs: harness.lockWaitMs }),
     },
   };
 }
@@ -110,6 +117,7 @@ export async function authHarness(
     clock: START,
     signInLimit: signInLimit({ now: () => harness.clock }),
     cliLogins: pendingLogins({ now: () => harness.clock.getTime() }),
+    lockWaitMs: 30_000,
     close,
     app: (up = true) =>
       createApp({

@@ -1,0 +1,425 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "19fe1567-6014-4aee-b65c-23f7106cb2c0",
+  "prevIds": [
+    "274e4e87-6ba8-4309-850c-ca575c54d00c"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "ingest_file"
+      ],
+      "writes": [
+        "s|tbl|public.ingest_file",
+        "n|tbl|public.ingest_file",
+        "e|tbl|public.ingest_file",
+        "n|rel|public.ingest_file",
+        "n|type|public.ingest_file",
+        "n|rel|public.ingest_file_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_view",
+      "statementTarget": [
+        "view",
+        "public",
+        "project_session"
+      ],
+      "writes": [
+        "s|view|public.project_session",
+        "n|view|public.project_session",
+        "e|view|public.project_session",
+        "n|rel|public.project_session",
+        "n|type|public.project_session"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "session",
+        "remote"
+      ],
+      "writes": [
+        "s|col|public.session.remote",
+        "n|col|public.session.remote",
+        "e|col|public.session.remote"
+      ],
+      "reads": [
+        "n|tbl|public.session",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "session",
+        "sent_by_account_id"
+      ],
+      "writes": [
+        "s|col|public.session.sent_by_account_id",
+        "n|col|public.session.sent_by_account_id",
+        "e|col|public.session.sent_by_account_id"
+      ],
+      "reads": [
+        "n|tbl|public.session",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "session",
+        "sent_by_machine"
+      ],
+      "writes": [
+        "s|col|public.session.sent_by_machine",
+        "n|col|public.session.sent_by_machine",
+        "e|col|public.session.sent_by_machine"
+      ],
+      "reads": [
+        "n|tbl|public.session",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "ingest_file",
+        "ingest_file_session_id_index"
+      ],
+      "writes": [
+        "s|idx|public.ingest_file_session_id_index",
+        "n|idx|public.ingest_file_session_id_index",
+        "e|idx|public.ingest_file_session_id_index",
+        "n|rel|public.ingest_file_session_id_index"
+      ],
+      "reads": [
+        "n|tbl|public.ingest_file",
+        "n|sch|public",
+        "n|col|public.ingest_file.session_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "ingest_file"
+      ],
+      "writes": [
+        "s|fk|public.ingest_file.ingest_file_session_id_session_id_fkey",
+        "n|fk|public.ingest_file.ingest_file_session_id_session_id_fkey",
+        "e|fk|public.ingest_file.ingest_file_session_id_session_id_fkey",
+        "n|con|public.ingest_file.ingest_file_session_id_session_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.ingest_file",
+        "n|sch|public",
+        "n|tbl|public.session",
+        "n|sch|public",
+        "n|col|public.ingest_file.session_id",
+        "n|col|public.session.id",
+        "e|uniqueness|public.session.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "session"
+      ],
+      "writes": [
+        "s|fk|public.session.session_sent_by_account_id_account_id_fkey",
+        "n|fk|public.session.session_sent_by_account_id_account_id_fkey",
+        "e|fk|public.session.session_sent_by_account_id_account_id_fkey",
+        "n|con|public.session.session_sent_by_account_id_account_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.session",
+        "n|sch|public",
+        "n|tbl|public.account",
+        "n|sch|public",
+        "n|col|public.session.sent_by_account_id",
+        "n|col|public.account.id",
+        "e|uniqueness|public.account.id"
+      ]
+    },
+    {
+      "statementType": "create_view",
+      "statementTarget": [
+        "view",
+        "public",
+        "project_session"
+      ],
+      "writes": [
+        "s|view|public.project_session",
+        "n|view|public.project_session",
+        "e|view|public.project_session",
+        "n|rel|public.project_session",
+        "n|type|public.project_session"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "ingest_file",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ingest_file",
+        "name": "file_key",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ingest_file",
+        "name": "read_to",
+        "type": "bigint",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ingest_file",
+        "name": "parser_version",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ingest_file",
+        "name": "reader_state",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ingest_file",
+        "name": "session_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ingest_file",
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "session",
+        "name": "remote",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "session",
+        "name": "sent_by_account_id",
+        "type": "bigint",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "session",
+        "name": "sent_by_machine",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ingest_file",
+        "name": "ingest_file_session_id_index",
+        "nameExplicit": false,
+        "columns": [
+          {
+            "value": "session_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ingest_file",
+        "name": "ingest_file_session_id_session_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "session_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "session",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "session",
+        "name": "session_sent_by_account_id_account_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "sent_by_account_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "account",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ingest_file",
+        "name": "ingest_file_pkey",
+        "columns": [
+          "file_key"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "views\u0000[\"public\",\"project_session\"]",
+      "set": {
+        "definition": "select s.id, s.agent, p.slug as project, s.project as root, s.cwd, s.cwd_from_main, s.git_branch, s.git_branches, s.title, s.first_at, s.last_at, s.turn_ended from session s left join root_remote r on r.root = s.project join project p on p.remote = coalesce(r.remote, s.remote)"
+      }
+    }
+  ]
+}

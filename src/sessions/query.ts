@@ -21,6 +21,7 @@ import { sessionSkills } from '../skills/query.ts';
 import { subAgentRows, subAgentsOf } from './sub-agents.ts';
 import { USAGE_SUMS, type Usage, emptyUsage, usageBy } from './usage.ts';
 import {
+  type SentBy,
   type SessionDetail,
   type SessionList,
   type SessionListQuery,
@@ -211,12 +212,37 @@ export async function listSessions(
   };
 }
 
+async function sentByOf(db: Database, id: string): Promise<SentBy | null> {
+  const [row] = await select(
+    db,
+    sql`select s.sent_by_machine as machine, a.name from session s
+      left join account a on a.id = s.sent_by_account_id where s.id = ${id}`,
+  );
+  const machine = row?.['machine'];
+  if (typeof machine !== 'string') return null;
+  const name = row?.['name'];
+  return { name: typeof name === 'string' ? name : null, machine };
+}
+
 export async function sessionDetail(
   db: Database,
   id: string,
   options: StateOptions,
   config: WorkflowConfig = DEFAULT_CONFIG,
 ): Promise<SessionDetail | undefined> {
+  const [detail, sentBy] = await Promise.all([
+    storedSessionDetail(db, id, options, config),
+    sentByOf(db, id),
+  ]);
+  return detail === undefined ? undefined : { ...detail, sentBy };
+}
+
+async function storedSessionDetail(
+  db: Database,
+  id: string,
+  options: StateOptions,
+  config: WorkflowConfig,
+): Promise<Omit<SessionDetail, 'sentBy'> | undefined> {
   const [sessionRows, agentRows, usageRows, skills, names, markers, frictions] =
     await Promise.all([
       select(

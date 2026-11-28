@@ -81,11 +81,17 @@ export interface SubAgentSummary {
   costUsd: number | null;
 }
 
+export interface SentBy {
+  name: string | null;
+  machine: string;
+}
+
 export interface SessionDetail extends Omit<
   SessionSummary,
   'tokens' | 'tokenCounts'
 > {
   cwd: string | null;
+  sentBy: SentBy | null;
   tokens: TokenCounts;
   issueDetail: IssueDetail | null;
   subAgents: SubAgentSummary[];

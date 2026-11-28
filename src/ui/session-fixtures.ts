@@ -149,6 +149,7 @@ export const sessionWithSubAgents: SessionDetail = {
   projects: optionsOf(PROJECTS),
   frictions: 12,
   cwd: '/home/dev/example-app/packages/web',
+  sentBy: null,
   tokens: {
     input: 120_400,
     cacheWrite: 410_000,
@@ -240,6 +241,7 @@ export const sessionWithoutSubAgents: SessionDetail = {
   projects: optionsOf(PROJECTS),
   frictions: 0,
   cwd: null,
+  sentBy: null,
   tokens: { input: 2_400, cacheWrite: 30_000, cacheRead: 150_000, output: 0 },
   skills: [
     {

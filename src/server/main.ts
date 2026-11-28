@@ -8,6 +8,7 @@ import {
 } from '../config/env.ts';
 import { signInSessions } from '../auth/sessions.ts';
 import { signInLimit } from '../auth/sign-in-limit.ts';
+import { storeBatch } from '../cli-ingest/store-batch.ts';
 import { cliConnections } from '../cli-login/connections.ts';
 import { pendingLogins } from '../cli-login/pending.ts';
 import { type Setup, firstManagerSetup } from '../auth/setup.ts';
@@ -115,7 +116,11 @@ function accountSources(
     team: teamSource(db),
     resets: resetLinks(db),
     admin: { projects: projectStore(db) },
-    cli: { logins: pendingLogins(), connections: cliConnections(db) },
+    cli: {
+      logins: pendingLogins(),
+      connections: cliConnections(db),
+      ingest: (batch, sender) => storeBatch(db, batch, sender),
+    },
   };
 }
 

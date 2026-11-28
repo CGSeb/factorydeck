@@ -1,5 +1,6 @@
 import { open, readdir } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
+import { fileKeyOf } from '../cli-ingest/batch-schema.ts';
 import type { CodexFile } from './codex-files.ts';
 
 /** A session log: the main thread of a session, or one of its sub-agents. */
@@ -65,6 +66,12 @@ function describe(path: string): LogFile {
     };
   }
   return { path, sessionId: name.slice(0, -'.jsonl'.length) };
+}
+
+export function logFileKey(file: LogFile): string {
+  return file.codex === undefined
+    ? fileKeyOf('claude-code', file.sessionId, file.subAgent?.id ?? null)
+    : fileKeyOf('codex', file.sessionId, file.codex.subAgentId ?? null);
 }
 
 export function sessionIdOfPath(path: string): string {

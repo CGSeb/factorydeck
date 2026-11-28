@@ -38,6 +38,7 @@ const detail: SessionDetail = {
   project: '/work/app',
   projectName: 'app',
   cwd: '/work/app',
+  sentBy: null,
   gitBranches: ['main'],
   workItem: null,
   issue: null,
