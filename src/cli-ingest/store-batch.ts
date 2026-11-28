@@ -16,8 +16,8 @@ import type {
   BatchApiCall,
   BatchCounts,
   BatchThread,
-  OffsetMismatch,
 } from './batch-schema.ts';
+import type { OffsetMismatch } from './offsets-schema.ts';
 import { offsetMismatches } from './offsets.ts';
 import { storeFrictions } from './store-frictions.ts';
 import { storeThreadRecords } from './store-records.ts';

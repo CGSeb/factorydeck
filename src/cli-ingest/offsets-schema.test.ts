@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
-  MAX_OFFSET_KEYS,
   MAX_READER_STATE_BYTES,
   checkBatch,
-  checkOffsetsRequest,
   fileKeyOf,
   isFileKey,
 } from './batch-schema.ts';
+import { MAX_OFFSET_KEYS, checkOffsetsRequest } from './offsets-schema.ts';
 
 function thread(fields: Record<string, unknown> = {}) {
   return {

@@ -2,13 +2,12 @@ import { inArray } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import { ingestFile } from '../db/schema.ts';
 import type { Transaction } from '../ingest/store.ts';
-import {
-  type BatchThread,
-  type OffsetMismatch,
-  type OffsetsAnswer,
-  type StoredOffset,
-  isFileKey,
-} from './batch-schema.ts';
+import { type BatchThread, isFileKey } from './batch-schema.ts';
+import type {
+  OffsetMismatch,
+  OffsetsAnswer,
+  StoredOffset,
+} from './offsets-schema.ts';
 
 const KEY_CHUNK = 500;
 

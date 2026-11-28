@@ -350,7 +350,7 @@ The body is JSON, gzip-compressed or not (`Content-Encoding: gzip`). A batch is 
 
 ### Offsets
 
-The offsets live on the instance, not on the machine: a CLI with no local state (a new machine, a formatted disk) asks for them and sends only what is new. A log gone from the machine is simply not sent again; its data stays as it was.
+The offsets live on the instance, not on the machine: a CLI with no local state (a new machine, a formatted disk) asks for them and sends only what is new. A log gone from the machine is simply not sent again; its data stays as it was. The request and its answers are described in `src/cli-ingest/offsets-schema.ts`, which, like the batch schema, imports nothing from the server or the database.
 
 `POST /api/cli/ingest/offsets` takes `{ "fileKeys": ["claude-code/4f1c…/main", …] }` and answers `200` with each key as last stored, or `null` for a key never sent:
 

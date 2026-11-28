@@ -14,7 +14,6 @@ export const MAX_RECORDS = 20_000;
 export const MAX_ID_LENGTH = 200;
 export const MAX_PARSER_VERSION = 2_147_483_647;
 export const MAX_READER_STATE_BYTES = 16_384;
-export const MAX_OFFSET_KEYS = 500;
 
 export function fileKeyOf(
   agent: string,
@@ -272,7 +271,7 @@ export type BatchCheck =
   | { status: 'invalid'; error: string; path: string }
   | { status: 'too-large'; limit: BatchLimit };
 
-function firstIssue(
+export function firstIssue(
   error: z.ZodError,
   fallback: string,
 ): { status: 'invalid'; error: string; path: string } {
@@ -297,37 +296,4 @@ export function checkBatch(value: unknown): BatchCheck {
   );
   if (records > MAX_RECORDS) return { status: 'too-large', limit: 'records' };
   return { status: 'ok', batch: parsed.data };
-}
-
-export interface StoredOffset {
-  readTo: number;
-  parserVersion: number;
-  readerState: ReaderState;
-}
-
-export interface OffsetsAnswer {
-  offsets: Record<string, StoredOffset | null>;
-}
-
-export interface OffsetMismatch {
-  fileKey: string;
-  readTo: number;
-}
-
-export const OFFSET_MISMATCH = 'Offset mismatch';
-export const TOO_MANY_FILE_KEYS = 'Too many file keys';
-
-const offsetsRequestSchema = z.object({ fileKeys: z.array(z.string()) });
-
-export type OffsetsCheck =
-  | { status: 'ok'; fileKeys: string[] }
-  | { status: 'invalid'; error: string; path: string }
-  | { status: 'too-large' };
-
-export function checkOffsetsRequest(value: unknown): OffsetsCheck {
-  const parsed = offsetsRequestSchema.safeParse(value);
-  if (!parsed.success) return firstIssue(parsed.error, 'Invalid request');
-  const { fileKeys } = parsed.data;
-  if (fileKeys.length > MAX_OFFSET_KEYS) return { status: 'too-large' };
-  return { status: 'ok', fileKeys: [...new Set(fileKeys)] };
 }

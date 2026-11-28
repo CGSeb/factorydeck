@@ -6,12 +6,14 @@ import {
   type BatchLimit,
   MAX_BATCH_BYTES,
   MAX_DECOMPRESSED_BYTES,
+  checkBatch,
+} from '../cli-ingest/batch-schema.ts';
+import {
   OFFSET_MISMATCH,
   type OffsetsAnswer,
   TOO_MANY_FILE_KEYS,
-  checkBatch,
   checkOffsetsRequest,
-} from '../cli-ingest/batch-schema.ts';
+} from '../cli-ingest/offsets-schema.ts';
 import type { Sender, StoreResult } from '../cli-ingest/store-batch.ts';
 import type { ApiContext } from './api-context.ts';
 import type { CliEnv } from './cli-routes.ts';
