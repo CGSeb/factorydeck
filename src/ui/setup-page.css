@@ -135,3 +135,20 @@
 .fd-setup-submit[aria-disabled='true'] {
   opacity: 0.7;
 }
+
+.fd-reset-email {
+  margin-bottom: var(--fd-space-4);
+  color: var(--fd-muted);
+  overflow-wrap: anywhere;
+}
+
+.fd-reset-signed-in {
+  margin-bottom: var(--fd-space-4);
+}
+
+.fd-reset-gone {
+  margin: var(--fd-space-6) 0 0;
+  font-size: var(--fd-text-md);
+  line-height: 1.5;
+  color: var(--fd-ink);
+}

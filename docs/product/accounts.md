@@ -125,7 +125,8 @@ Every route under `/api/` answers `401` with `{ "error": "Not signed in" }` with
 - `GET /api/health`;
 - `GET /api/auth/state` and `POST /api/auth/setup`;
 - `POST /api/auth/sign-in` and `POST /api/auth/sign-out`;
-- `POST /api/auth/invitation` and `POST /api/auth/invitation/accept` (see [Invitations](#invitations)).
+- `POST /api/auth/invitation` and `POST /api/auth/invitation/accept` (see [Invitations](#invitations));
+- `POST /api/auth/reset` and `POST /api/auth/reset/save` (see [Reset links](#reset-links)).
 
 The built UI (its HTML, scripts and styles) is served without a session. When the API answers `401`, its pages open the [sign-in screen](#the-sign-in-screen). While the database is unreachable, a route that needs a session answers `503` with the usual unreachable body. No setting turns authentication off.
 
@@ -143,7 +144,7 @@ A manager sees a `Team` link in the sidebar, the last one, after `Roles`; it ope
 - **Header**: `Team`, with the summary `<n> accounts · <m> managers`. `<n>` counts every account and `<m>` every account with role `manager`, deactivated ones included; one reads `1 account` and `1 manager`. The page has no period pills; the project select stays in the sidebar and changes nothing here.
 - **Table**: the columns `Name`, `Email`, `Role` (`Manager` or `Dev`), `Status` (`Active` or `Deactivated`) and `Last sign-in`. Every account is listed, with no paging: active accounts first, then by name without letter case, then by email. The email shows as stored. The manager's own row carries a small muted `You` tag after the name. Deactivated rows are in muted text. Long names and emails wrap; a table wider than the page scrolls inside its box.
 - **Last sign-in** reads as elsewhere (`just now`, `3 min ago`, `2 h ago`, `5 d ago`), with the exact date (`22 Nov, 17:33`) in a tooltip; an account that never signed in reads `Never`.
-- **Actions**: each row of another account gets an actions menu (the `⋯` button at the end of the row); the manager's own row has none. An active dev's menu offers `Make manager`, an active manager's `Make dev` (see [Changing a role](#changing-a-role)), and the menu of an active account ends with `Deactivate`, in the danger colour. A deactivated account's menu offers only `Reactivate` (see [Deactivating an account](#deactivating-an-account)).
+- **Actions**: each row of another account gets an actions menu (the `⋯` button at the end of the row); the manager's own row has none. An active dev's menu offers `Make manager`, an active manager's `Make dev` (see [Changing a role](#changing-a-role)), then `Reset password link` (see [Reset links](#reset-links)), and the menu of an active account ends with `Deactivate`, in the danger colour. A deactivated account's menu offers only `Reactivate` (see [Deactivating an account](#deactivating-an-account)).
 - **Invite**: a button in the header, shown once the list has loaded (not while it loads, on the refusal or while the database is unreachable), opens the [invite dialog](#inviting-someone).
 - **Pending invitations**: under the accounts, a section with the columns `Email`, `Role`, `Invited by` and `Expires`, then `New link` and `Revoke` on each row. It is hidden when no invitation is pending. See [Invitations](#invitations).
 
@@ -168,7 +169,7 @@ The role is read from the session's account at each request, so a change of role
 
 `Make manager` and `Make dev` apply at once, with no confirmation. While the change runs, the menu closes and that row's actions button is disabled and busy; the other rows stay usable. Once the API answers, the row shows the new role and the summary `<m> managers` is recounted at once; list answers to requests sent before the change answered are ignored, so a refresh never brings the old role back. Success or failure, the focus goes back to the row's actions button.
 
-A failure keeps the old role and shows its message on one line under the row, spanning the table and announced politely without moving the focus: the API's message on a `409` (or a `400`), `Database unreachable. Start it with pnpm db:up.` on a `503`, and `Could not reach the server` on a `404`, a network error or any other answer without a message. The line stays across auto refreshes and clears when any action on the page starts or succeeds. A `403` replaces the table with the refusal, as a `403` on the list does; a `401` opens the [sign-in screen](#the-sign-in-screen).
+A failure keeps the old role and shows its message on one line under the row, spanning the table and announced politely without moving the focus: the API's message on a `409` (or a `400`), `Database unreachable. Start it with pnpm db:up.` on a `503`, and `Could not reach the server` on a `404`, a network error or any other answer without a message. The line stays across auto refreshes and clears when any action on the page starts, or when the last action started succeeds; with several actions running, it shows only the failure of the last action started. A `403` replaces the table with the refusal, as a `403` on the list does; a `401` opens the [sign-in screen](#the-sign-in-screen).
 
 The new role counts from the person's next request (the role is read at each one); their sessions stay open. A manager made dev loses the `Team` link at their next [read of the account](#the-team-page), and a dev made manager gains it.
 
@@ -236,7 +237,7 @@ A manager deactivates the account of someone who left, and reactivates it if the
 
 - **Deactivate**: choosing `Deactivate` in a row's menu opens the dialog `Deactivate <name>?` (a long name wraps in the title), with the text `They are signed out at once.` and the buttons `Cancel` and `Deactivate`. While the request runs, the dialog stays open (Escape and `Cancel` do nothing) and its button reads `Deactivating…` and is disabled. Once the API answers, the dialog closes.
 - **Reactivate**: choosing `Reactivate` sends the change at once, without a dialog. While it runs, the row's actions button keeps its size and place, is disabled, and reads `Reactivating…` (its accessible name and tooltip).
-- **After the answer**: on `200`, the row shows its new status (`Active` or `Deactivated`) at once, from the answer, and moves to its sorted place (active accounts first) at the next refresh; a list that was asked for before the answer does not bring the old status back. A refusal or a failure shows its message on the same line under the row as a role change, announced politely: the API's message on a `409` or a `400` (`You cannot deactivate yourself`, `The team needs at least one active manager`…), `Database unreachable. Start it with pnpm db:up.` on a `503`, and `Could not reach the server` on a `404`, a network error or any other answer without a message. Like the role-change line, it stays across auto refreshes and clears when any action on the page starts or succeeds. A `403` replaces the table with `Only managers can manage the team.`, as on the list; a `401` opens the [sign-in screen](#the-sign-in-screen).
+- **After the answer**: on `200`, the row shows its new status (`Active` or `Deactivated`) at once, from the answer, and moves to its sorted place (active accounts first) at the next refresh; a list that was asked for before the answer does not bring the old status back. A refusal or a failure shows its message on the same line under the row as a role change, announced politely: the API's message on a `409` or a `400` (`You cannot deactivate yourself`, `The team needs at least one active manager`…), `Database unreachable. Start it with pnpm db:up.` on a `503`, and `Could not reach the server` on a `404`, a network error or any other answer without a message. Like the role-change line, it stays across auto refreshes and clears when any action on the page starts, or when the last action started succeeds; with several actions running, it shows only the failure of the last action started. A `403` replaces the table with `Only managers can manage the team.`, as on the list; a `401` opens the [sign-in screen](#the-sign-in-screen).
 - **Focus**: when the menu or the dialog closes, the focus goes back to the row's actions button; it stays there after a reactivation.
 
 Deactivating an account, in one transaction:
@@ -265,6 +266,53 @@ curl -i -b cookies -X PATCH http://127.0.0.1:4317/api/team/accounts/4 \
 Unknown fields are ignored. When several answers apply, the first wins: the chain of the [team routes](#team-routes) (`413`, `415`, `401` or `503`, `403`), then `404`, then `400`, then `409` yourself, then `409` last active manager. Reactivating yourself changes nothing and answers `200`.
 
 Every change of an account's status runs in one transaction that locks the active managers, as a role change does, and reads the requester again: a requester deactivated meanwhile gets `401` `{ "error": "Not signed in" }`, one made dev meanwhile `403` `{ "error": "Managers only" }`. So two managers deactivating each other, or a demotion and a deactivation of the other manager at the same time, leave one active manager. Since the requester is an active manager and cannot deactivate themselves, the last-manager `409` stays as a guard inside that transaction.
+
+## Reset links
+
+A member who forgot their password gets a **reset link** from a manager: `<origin>/reset/<token>`, valid 24 hours, where `<origin>` is the origin the manager's browser uses. There is no email: the manager hands the link over.
+
+### Creating a link
+
+`Reset password link` in the actions menu of another active account's row creates one at once, with no confirmation: nothing changes for the account until the link is used. A manager cannot reset their own password from the Team page (another manager does it), and a deactivated row has no such action.
+
+While the request runs, the row's actions button is disabled and busy. The link then shows on a line under the row: the link in a read-only field (its text selected on focus), `Valid for 24 hours`, `Copy link` (with a copy icon, and the focus) and `Done`. `Copy link` reads `Copied` for 2 seconds, or `Could not copy` for 4 seconds with the link left selected so it can be copied by hand; both are announced. The line stays through the page's refreshes until `Done`, which gives the focus back to the row's actions button. It also closes when the row becomes deactivated, whether this manager deactivated it or a refresh shows it deactivated; a later reactivation does not bring it back. The link is shown once and cannot be shown again: a manager who lost it creates a new one, and **a new link replaces the previous one**, from the Team page or the command line alike.
+
+A failure answers as a [role change](#changing-a-role) does. It shows its message on the row's one message line, the same line as role and status changes: the API's message on a `409`, `Database unreachable. Start it with pnpm db:up.` on a `503`, and `Could not reach the server` on a `404`, a network error or any other answer without a message. The line is announced politely without moving the focus. It stays across auto refreshes, and it clears when any action on the page starts, or when the last action started succeeds; with several actions running, it shows only the failure of the last action started. A `403` replaces the table with `Only managers can manage the team.`, as a `403` on the list does. Success or failure, the focus goes back to the row's actions button, then moves to `Copy link` when the link line opens.
+
+`POST /api/team/accounts/<id>/reset-link`, with no body (any JSON body is ignored), answers `201` with `{ "token": "<token>", "expiresAt": "<ISO 8601>" }`; the browser builds the link from its own origin. When several answers apply, the first wins: the chain of the [team routes](#team-routes), then `404` `{ "error": "Not found" }` for an `<id>` that is not the decimal id of an existing account, then `409` `{ "error": "You cannot reset your own password here" }` for the requester's own id, then `409` `{ "error": "This account is deactivated" }`.
+
+### On the server
+
+`pnpm account:reset-link <email> --origin <url>` prints a reset link for that account on stdout, alone, as the Team page creates it, so a team whose only manager forgot their password gets back in. `--origin <url>` (or `--origin=<url>`) is required; only its origin is kept, so a trailing `/` or a path is dropped. The email is normalised as at sign-in (trimmed, lower case). Errors go to stderr and exit with code 1, checked in this order:
+
+1. A missing email or `--origin`, an extra argument, an unknown option, or an `--origin` that is not an `http:` or `https:` URL: `Usage: pnpm account:reset-link <email> --origin <url>`.
+2. A database that does not answer: `Database unreachable. Start it with pnpm db:up.`
+3. An unknown or deactivated email: `No active account with this email`.
+
+### The reset screen
+
+`/reset/<token>` opens without a session and without the sidebar, whether someone is signed in or not; it never opens the [sign-in screen](#the-sign-in-screen), and a `401` from `GET /api/auth/me` there is ignored. It reuses the card of the sign-in screen: the logo, the title `Choose a new password`, the account's email in muted text that cannot be edited, the field `New password` (filled by the browser as a new password, with the hint `At least 12 characters`) and the button `Save password`. Opened while signed in (any account), it also shows `You are signed in as <name>. Saving signs you out.`
+
+- Focus starts on `New password`; Enter submits. The password is sent as typed, with no check in the browser. While the request runs, the button reads `Saving…` and is disabled; a second Enter sends nothing.
+- Success replaces the password, closes every session of the account and the session the browser had (of any account), opens a new one for the account and opens `/`, replacing the reset screen in the history, so Back never shows the used link.
+- A `400` shows the API's message under the button, marks the field invalid and keeps the focus on it. A `503` shows `Database unreachable. Start it with pnpm db:up.`, a network error or any other answer `Could not reach the server`; both keep the password and move the focus to `Save password`. Each message is announced, and its place under the button is reserved (one line, two below 480 px wide).
+- A `410` on save replaces the form with the message below.
+- While the screen loads, a `503` or a network error shows the [unreachable screen](#the-unreachable-screen) with `Retry`.
+
+A link that is used, replaced, expired or of a deactivated account, and `/reset` without a token or with a malformed one (a token is 43 base64url characters, and a trailing `/` after it counts as malformed), show the card with the logo and `This link no longer works. Ask a manager for a new one.`, with no button.
+
+### Reset routes
+
+Both routes work without a session, read `{ "token" }` (and `"password"`) from a JSON object, and read any other body as empty; unknown fields are ignored.
+
+- `POST /api/auth/reset` with `{ "token" }` answers `200` with `{ "email" }` and uses nothing.
+- `POST /api/auth/reset/save` with `{ "token", "password" }` answers `200` with the account (`id`, `email`, `name`, `role`), sets the session cookie as a sign-in does, and records the account's last sign-in time.
+
+A token that is missing, not a string, unknown, used, replaced, expired, or of a deactivated account answers `410` with `{ "error": "This link no longer works. Ask a manager for a new one." }` on both routes, checked before the password. Then a password that breaks the [first manager's rules](#the-first-manager) answers `400` with `{ "error": "<message>", "field": "password" }` (`Password is required` when it is missing). The new password may equal the current one. A reset does not clear the [failed sign-in count](#failed-sign-ins). Of two saves at once with one token, one wins and the other answers `410`. While the database is unreachable, both answer `503`.
+
+### How a link is stored
+
+A reset link is a row of the account tokens, kind `reset`: the token is 32 random bytes, base64url in the link, and only its hex SHA-256 is stored. The row holds the account, `created_by` the manager (empty from the command line), the creation time and the expiry; its email and role stay empty. A token works once. It is expired once 24 hours or more have passed since its creation. Creating a link deletes the account's previous unused, unexpired reset token in the same transaction. Used and expired rows are kept, with their used time. [Deactivating an account](#deactivating-an-account) marks its unused reset tokens as used, so a link made before a deactivation never works again, even after a reactivation. A link outlives its creator being made dev or deactivated.
 
 ## The demo manager
 

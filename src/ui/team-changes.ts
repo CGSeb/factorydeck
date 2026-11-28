@@ -8,6 +8,8 @@ import {
   type TeamView,
 } from './team-api.ts';
 
+export type TeamChangeOutcome = AccountChangeOutcome | { status: 'done' };
+
 export interface RowMessage {
   accountId: number;
   text: string;
@@ -31,7 +33,7 @@ export interface TeamChanges {
   view: TeamView | undefined;
   busy: ReadonlySet<number>;
   message: RowMessage | undefined;
-  run: (accountId: number, send: () => Promise<AccountChangeOutcome>) => void;
+  run: (accountId: number, send: () => Promise<TeamChangeOutcome>) => void;
   reload: () => void;
 }
 
@@ -52,19 +54,23 @@ function without(busy: ReadonlySet<number>, id: number): Set<number> {
 export function settle(
   local: Local,
   accountId: number,
-  outcome: AccountChangeOutcome,
-  epoch: number,
+  outcome: TeamChangeOutcome,
+  { epoch, lastStarted }: { epoch: number; lastStarted: boolean },
 ): Local {
   const busy = without(local.busy, accountId);
+  const message = lastStarted ? undefined : local.message;
   if (outcome.status === 'failed') {
-    return { ...local, busy, message: { accountId, text: outcome.message } };
+    return lastStarted
+      ? { ...local, busy, message: { accountId, text: outcome.message } }
+      : { ...local, busy };
   }
+  if (outcome.status === 'done') return { ...local, busy, message };
   if (outcome.status === 'refused') {
     return { ...local, busy, epoch, refusedAt: epoch };
   }
   const rows = new Map(local.rows);
   rows.set(accountId, { account: outcome.account, epoch });
-  return { ...local, busy, epoch, rows, message: undefined };
+  return { ...local, busy, epoch, rows, message };
 }
 
 export function shownView(
@@ -90,6 +96,7 @@ export function shownView(
 
 export function useTeamChanges(loadTeam: LoadTeam): TeamChanges {
   const epoch = useRef(0);
+  const started = useRef(0);
   const load = useCallback(async (): Promise<Loaded | undefined> => {
     const sent = epoch.current;
     const view = await loadTeam();
@@ -109,16 +116,26 @@ export function useTeamChanges(loadTeam: LoadTeam): TeamChanges {
     setAccepted(loaded);
   }
   const run = useCallback(
-    (accountId: number, send: () => Promise<AccountChangeOutcome>) => {
+    (accountId: number, send: () => Promise<TeamChangeOutcome>) => {
+      started.current += 1;
+      const order = started.current;
       setLocal((current) => ({
         ...current,
         busy: new Set(current.busy).add(accountId),
         message: undefined,
       }));
       void send().then((outcome) => {
-        if (outcome.status !== 'failed') epoch.current += 1;
+        if (outcome.status === 'changed' || outcome.status === 'refused') {
+          epoch.current += 1;
+        }
         const settledAt = epoch.current;
-        setLocal((current) => settle(current, accountId, outcome, settledAt));
+        const last = order === started.current;
+        setLocal((current) =>
+          settle(current, accountId, outcome, {
+            epoch: settledAt,
+            lastStarted: last,
+          }),
+        );
       });
     },
     [],

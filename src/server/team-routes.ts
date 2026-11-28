@@ -22,12 +22,14 @@ import type { InvitationSource } from '../team/invitations.ts';
 import type { ApiContext } from './api-context.ts';
 import type { AuthEnv } from './auth-routes.ts';
 import { teamInvitationRoutes } from './invitation-routes.ts';
+import { type CreateResetLink, addResetLinkRoute } from './reset-link-route.ts';
 
 export interface TeamSource {
   accounts: () => Promise<TeamAccount[]>;
   changeRole?: (request: RoleChangeRequest) => Promise<RoleChangeOutcome>;
   invitations?: InvitationSource | undefined;
   changeStatus?: (request: StatusChangeRequest) => Promise<StatusChangeOutcome>;
+  resetLink?: CreateResetLink;
 }
 
 type ChangeOutcome = RoleChangeOutcome | StatusChangeOutcome;
@@ -141,6 +143,7 @@ export function teamRoutes(
       teamInvitationRoutes(team.invitations, { refreshSeconds, fromDatabase }),
     );
   }
+  addResetLinkRoute(routes, team?.resetLink, fromDatabase);
   routes.all('*', notFound);
   return routes;
 }

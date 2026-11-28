@@ -170,7 +170,7 @@ export const SIGNED_OUT_PATH = '/sign-in';
 
 const ROLES: readonly Role[] = ['manager', 'dev'];
 
-function isAccount(body: unknown): body is Account {
+export function isAccount(body: unknown): body is Account {
   return (
     typeof body === 'object' &&
     body !== null &&

@@ -43,6 +43,7 @@ import {
   invitationReader,
   invitationsLoader,
 } from './invitations-api.ts';
+import { resetLinkCreator, resetReader, resetSaver } from './reset-api.ts';
 import { teamLoader, withInvitations } from './team-api.ts';
 import { activeChanger } from './account-status-api.ts';
 
@@ -83,6 +84,9 @@ const manageInvitations = invitationActions(gate.fetch);
 const readInvitation = invitationReader();
 const acceptInvitation = invitationAccepter();
 const changeActive = activeChanger(gate.fetch);
+const createResetLink = resetLinkCreator(gate.fetch);
+const readReset = resetReader();
+const saveReset = resetSaver();
 const signIn = signInSender();
 const loadReport = frictionReportLoader(gate.fetch);
 const markReport = frictionReportMarker(gate.fetch);
@@ -124,6 +128,9 @@ if (root) {
         readInvitation={readInvitation}
         acceptInvitation={acceptInvitation}
         changeActive={changeActive}
+        createResetLink={createResetLink}
+        readReset={readReset}
+        saveReset={saveReset}
         loadReport={loadReport}
         markReport={markReport}
         signIn={signIn}

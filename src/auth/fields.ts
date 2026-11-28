@@ -34,7 +34,7 @@ function nameError(value: unknown): string | undefined {
   return undefined;
 }
 
-function passwordError(value: unknown): string | undefined {
+export function passwordError(value: unknown): string | undefined {
   if (typeof value !== 'string' || value === '') return 'Password is required';
   const size = length(value);
   if (size < MIN_PASSWORD) {
