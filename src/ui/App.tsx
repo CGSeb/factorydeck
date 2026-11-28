@@ -20,8 +20,7 @@ import type { SessionGate } from './auth-gate.ts';
 import { signInThenRead, useAccountView, useAuthPhase } from './auth-phase.ts';
 import type { LoadBugs } from './bugs-api.ts';
 import { BugsPage } from './BugsPage.tsx';
-import type { DecideCliLogin, ReadCliLogin } from './cli-api.ts';
-import { cliRoute } from './CliPage.tsx';
+import { type CliRouteSources, cliRoute } from './CliPage.tsx';
 import type { DeleteProject, LoadFactory } from './factory-api.ts';
 import { FeaturePage } from './FeaturePage.tsx';
 import type { LoadFeature, LoadFeatures } from './features-api.ts';
@@ -66,11 +65,11 @@ import { StatsPage } from './StatsPage.tsx';
 import type { ChangeRole } from './role-change-api.ts';
 import type { ChangeActive } from './account-status-api.ts';
 import type { LoadTeam } from './team-api.ts';
-import { TeamPage } from './TeamPage.tsx';
+import { teamRoute } from './TeamPage.tsx';
 import type { AddProject, LoadProjects } from './projects-api.ts';
 import { projectsRoute } from './ProjectsPage.tsx';
 
-export interface AppProps {
+export interface AppProps extends CliRouteSources {
   loadOverview: LoadOverview;
   loadSessions: LoadSessions;
   loadSession: LoadSession;
@@ -113,8 +112,6 @@ export interface AppProps {
   saveReset?: SaveReset | undefined;
   loadProjects?: LoadProjects | undefined;
   addProject?: AddProject | undefined;
-  readCliLogin?: ReadCliLogin | undefined;
-  decideCliLogin?: DecideCliLogin | undefined;
 }
 
 function isManager(view: AccountView): boolean {
@@ -245,14 +242,6 @@ const SIGNED_IN_REDIRECTS = (
     <Route path="sign-in" element={<SignedInRedirect />} />
   </>
 );
-
-function teamRoute(props: AppProps): ReactElement | undefined {
-  const { loadTeam } = props;
-  if (loadTeam === undefined) return undefined;
-  return (
-    <Route path="team" element={<TeamPage {...props} loadTeam={loadTeam} />} />
-  );
-}
 
 function DashboardRoutes(
   props: AppProps & { account: SidebarAccount | undefined; team: boolean },

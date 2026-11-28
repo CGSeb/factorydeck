@@ -1,4 +1,5 @@
 import type { ReactElement, RefObject } from 'react';
+import { Route } from 'react-router';
 import type { ChangeActive } from './account-status-api.ts';
 import type { TeamAccountRow } from '../team/types.ts';
 import { PageHeader } from './components/PageHeader.tsx';
@@ -208,5 +209,15 @@ export function TeamPage({
       )}
       {status.dialog}
     </div>
+  );
+}
+
+export function teamRoute(
+  props: Omit<TeamPageProps, 'loadTeam'> & { loadTeam?: LoadTeam | undefined },
+): ReactElement | undefined {
+  const { loadTeam } = props;
+  if (loadTeam === undefined) return undefined;
+  return (
+    <Route path="team" element={<TeamPage {...props} loadTeam={loadTeam} />} />
   );
 }
