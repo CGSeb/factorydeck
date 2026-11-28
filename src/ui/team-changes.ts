@@ -58,18 +58,19 @@ export function settle(
   { epoch, lastStarted }: { epoch: number; lastStarted: boolean },
 ): Local {
   const busy = without(local.busy, accountId);
+  const message = lastStarted ? undefined : local.message;
   if (outcome.status === 'failed') {
     return lastStarted
       ? { ...local, busy, message: { accountId, text: outcome.message } }
       : { ...local, busy };
   }
-  if (outcome.status === 'done') return { ...local, busy, message: undefined };
+  if (outcome.status === 'done') return { ...local, busy, message };
   if (outcome.status === 'refused') {
     return { ...local, busy, epoch, refusedAt: epoch };
   }
   const rows = new Map(local.rows);
   rows.set(accountId, { account: outcome.account, epoch });
-  return { ...local, busy, epoch, rows, message: undefined };
+  return { ...local, busy, epoch, rows, message };
 }
 
 export function shownView(

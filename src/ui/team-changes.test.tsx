@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { TeamAccountRow } from '../team/types.ts';
 import type { AccountChangeOutcome } from './role-change-api.ts';
 import type { TeamView } from './team-api.ts';
-import { useTeamChanges } from './team-changes.ts';
+import { type TeamChangeOutcome, useTeamChanges } from './team-changes.ts';
 import { someTeam } from './team-fixtures.ts';
 
 afterEach(cleanup);
@@ -186,4 +186,79 @@ describe('useTeamChanges', () => {
     expect(hook.result.current.busy.size).toBe(0);
     expect(hook.result.current.message).toBeUndefined();
   });
+
+  it.each([
+    ['the first succeeds, the second fails, first answering first', 'first'],
+    ['the first succeeds, the second fails, second answering first', 'second'],
+  ] as const)(
+    'keeps the failure of the last action started when %s',
+    async (_, answersFirst) => {
+      const { answerList, hook } = setUp();
+      await answerList(withBruno('dev'));
+      const answer = overlap(hook);
+      const outcomes = {
+        first: { status: 'done' } as const,
+        second: { status: 'failed', message: 'second failed' } as const,
+      };
+      for (const which of answersFirst === 'first'
+        ? (['first', 'second'] as const)
+        : (['second', 'first'] as const)) {
+        await act(async () => {
+          answer[which]?.(outcomes[which]);
+          await Promise.resolve();
+        });
+      }
+      expect(hook.result.current.message).toEqual({
+        accountId: 2,
+        text: 'second failed',
+      });
+    },
+  );
+
+  it.each([
+    ['first answering first', ['first', 'second']],
+    ['second answering first', ['second', 'first']],
+  ] as const)(
+    'shows no line when the first fails and the last started succeeds, %s',
+    async (_, order) => {
+      const { answerList, hook } = setUp();
+      await answerList(withBruno('dev'));
+      const answer = overlap(hook);
+      const outcomes = {
+        first: { status: 'failed', message: 'first failed' } as const,
+        second: MADE_MANAGER,
+      };
+      for (const which of order) {
+        await act(async () => {
+          answer[which]?.(outcomes[which]);
+          await Promise.resolve();
+        });
+      }
+      expect(hook.result.current.message).toBeUndefined();
+      expect(hook.result.current.busy.size).toBe(0);
+    },
+  );
 });
+
+function overlap(
+  hook: ReturnType<typeof setUp>['hook'],
+): Record<string, (outcome: TeamChangeOutcome) => void> {
+  const answer: Record<string, (outcome: TeamChangeOutcome) => void> = {};
+  act(() => {
+    hook.result.current.run(
+      4,
+      () =>
+        new Promise((resolve) => {
+          answer['first'] = resolve;
+        }),
+    );
+    hook.result.current.run(
+      2,
+      () =>
+        new Promise((resolve) => {
+          answer['second'] = resolve;
+        }),
+    );
+  });
+  return answer;
+}
