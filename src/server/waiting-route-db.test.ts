@@ -170,6 +170,7 @@ describe('GET /api/stats/waiting on the database', () => {
             kind: 'bug',
             reasons: ['blocked', 'spec-question', 'below-threshold'],
             since: '2026-03-04T00:00:00.000Z',
+            score: 70,
           },
           {
             project: APP,
@@ -182,6 +183,8 @@ describe('GET /api/stats/waiting on the database', () => {
         ],
       },
     });
+    const issues = (body as { waiting: { issues: object[] } }).waiting.issues;
+    expect(issues[1]).not.toHaveProperty('score');
   });
 
   it('leaves out projects without the factory with every project', async () => {

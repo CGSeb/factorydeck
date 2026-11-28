@@ -144,6 +144,7 @@ export interface WaitingIssue {
   kind: IssueKind;
   reasons: WaitReason[];
   since: string | null;
+  score?: number;
 }
 
 export interface WaitingList {

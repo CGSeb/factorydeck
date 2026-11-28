@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { APP, LIB } from './feature-fixtures.ts';
-import { needsPersonRows, waitText } from './needs-person.ts';
+import { needsPersonRows, reasonLabel, waitText } from './needs-person.ts';
 import { WAITING_NOW, someWaiting } from './waiting-fixtures.ts';
 
 describe('needsPersonRows', () => {
@@ -14,7 +14,7 @@ describe('needsPersonRows', () => {
       wait: '3 h 05 min',
     });
     expect(rows[0]?.wait).toBe('1 d 4 h');
-    expect(rows[0]?.reasons).toEqual(['Below threshold']);
+    expect(rows[0]?.reasons).toEqual(['Below threshold (48)']);
     expect(rows[2]?.reasons).toEqual(['Gates failed']);
     expect(rows[3]?.wait).toBe('—');
   });
@@ -49,6 +49,17 @@ describe('needsPersonRows', () => {
       WAITING_NOW,
     );
     expect(rows[0]?.label).toBe('#58');
+  });
+});
+
+describe('reasonLabel', () => {
+  it('adds the score to Below threshold only', () => {
+    expect(reasonLabel('below-threshold', 48)).toBe('Below threshold (48)');
+    expect(reasonLabel('below-threshold', 0)).toBe('Below threshold (0)');
+    expect(reasonLabel('below-threshold', undefined)).toBe('Below threshold');
+    expect(reasonLabel('gates-failed', undefined)).toBe('Gates failed');
+    expect(reasonLabel('blocked', undefined)).toBe('Blocked');
+    expect(reasonLabel('spec-question', undefined)).toBe('Spec question');
   });
 });
 

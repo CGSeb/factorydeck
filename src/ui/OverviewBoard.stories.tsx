@@ -3,7 +3,11 @@ import { MemoryRouter } from 'react-router';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { featureList } from './feature-fixtures.ts';
 import { OverviewBoard } from './OverviewBoard.tsx';
-import { bugBoardFeatures, fullBoardFeatures } from './overview-fixtures.ts';
+import {
+  bugBoardFeatures,
+  fullBoardFeatures,
+  inReviewFeatures,
+} from './overview-fixtures.ts';
 
 const meta = {
   component: OverviewBoard,
@@ -78,6 +82,40 @@ export const WithoutBugTickets: Story = {
     await expect(
       canvas.getByRole('link', { name: '+ 2 more' }),
     ).toHaveAttribute('href', '/features?period=7d&stage=merged');
+  },
+};
+
+function badgesOf(canvasElement: HTMLElement, name: string): string[] {
+  const card = within(canvasElement)
+    .getByRole('link', { name: new RegExp(name) })
+    .closest('article');
+  if (card === null) throw new Error(`No card ${name}`);
+  return Array.from(card.querySelectorAll('[data-tone]'), (badge) =>
+    (badge.textContent ?? '').trim(),
+  );
+}
+
+export const InReviewScores: Story = {
+  name: 'In review scores',
+  args: { features: featureList(inReviewFeatures, null) },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByText('serenity 48 · below threshold'),
+    ).toHaveAttribute('data-tone', 'warning');
+    await expect(canvas.getByText('round 3')).toBeVisible();
+    await expect(badgesOf(canvasElement, 'Retry failed exports')).toEqual([
+      'serenity 48 · below threshold',
+      'round 3',
+    ]);
+    await expect(canvas.getByText('serenity 80')).toHaveAttribute(
+      'data-tone',
+      'success',
+    );
+    await expect(badgesOf(canvasElement, 'Webhook signatures')).toEqual([
+      'serenity 80',
+    ]);
+    await expect(badgesOf(canvasElement, 'Bulk tag edit')).toEqual([]);
   },
 };
 

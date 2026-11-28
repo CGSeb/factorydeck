@@ -26,12 +26,12 @@ Every open issue of the project selection where the factory waits for a person n
 
 Each row shows `#<n> <title>` linked to its issue page with the period, its project with `All projects` only, its reasons and how long it has waited:
 
-| Reason            | When                                                                                             |
-| ----------------- | ------------------------------------------------------------------------------------------------ |
-| `Blocked`         | The issue is at stage `Blocked`.                                                                 |
-| `Spec question`   | A needs-spec episode has no removal, or the issue is at stage `Needs spec`.                      |
-| `Below threshold` | A refusing report has no later report, merge or close, and its score is below its threshold.     |
-| `Gates failed`    | A refusing report has no later report, merge or close, and its score is not below its threshold. |
+| Reason                      | When                                                                                                                                                                                                                        |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Blocked`                   | The issue is at stage `Blocked`.                                                                                                                                                                                            |
+| `Spec question`             | A needs-spec episode has no removal, or the issue is at stage `Needs spec`.                                                                                                                                                 |
+| `Below threshold (<score>)` | A refusing report has no later report, merge or close, and its score is below its threshold. `<score>` is the score of that report, as stored (`Below threshold (48)`); with several such reports, the latest one gives it. |
+| `Gates failed`              | A refusing report has no later report, merge or close, and its score is not below its threshold.                                                                                                                            |
 
 An issue with several reasons shows each one. The wait runs from the start of its oldest open stop (`3 h 05 min`, `1 d 4 h`); an issue with no open stop (a `Blocked` issue, or a `Needs spec` issue whose label history is incomplete) shows `—`. Rows sort by longest wait first, then those without a wait, then by highest issue number. The panel shows 10 rows, then `Show more`. With no such issue, the panel is left out.
 
@@ -40,7 +40,7 @@ An issue with several reasons shows each one. The wait runs from the start of it
 Four columns side by side (at least 250 px each, wrapping below): `Ready`, `Working`, `In review`, `Merged`, the [board groups](outcomes.md#stages) of the issues of `/features` for the same period and project, that is the issues with a call in the period. So the `Merged` column can hold an issue merged before the period, and miss one merged in it with no call. Issues closed without merge, not found or not collected are not on the board.
 
 - Each column shows its number of issues, and its 5 issues with the latest activity, most recent first; with more, `+ <k> more` links to `/features?stage=<group>` with the project, the period and the kind.
-- A card shows its project only with `All projects`, and its badges: a bug first shows `Bug` in the danger tone (a feature shows no kind badge); then in `Ready`, its stage when it is not `Ready`; in `In review`, its review rounds when its report has some; in `Merged`, its serenity score, plus `by a person` or `after a person` for those stages. A card links to its issue page with the period.
+- A card shows its project only with `All projects`, and its badges: a bug first shows `Bug` in the danger tone (a feature shows no kind badge); then in `Ready`, its stage when it is not `Ready`; in `In review`, when it has a report, its serenity score as in `Merged`, then its review rounds when the report has some (`round 3`); in `Merged`, its serenity score (`serenity <score>` in the success tone at or above the threshold, `serenity <score> · below threshold` in the warning tone below it, `serenity <first> → <score>` when the report has a first score), plus `by a person` or `after a person` for those stages. A card links to its issue page with the period.
 - A card shows the time of the issue's last activity, its latest call in the period (orchestration left out, as the `Last activity` sort of `/features`): `just now` under 1 minute, `<m> min ago` under 1 hour, `Today, 14:05` the same local day, `22 Nov, 17:33` before. A card with no call in the period shows no time. A relative time updates without a reload, at least once a minute.
 
 ### Kind filter

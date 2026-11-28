@@ -181,20 +181,6 @@ describe('cardBadge', () => {
     expect(cardBadge(row(1, 'working', at))).toBeUndefined();
   });
 
-  it('shows the review round in review when the report has rounds', () => {
-    expect(
-      cardBadge(
-        row(1, 'in-review', at, { outcome: outcome('in-review', 70, 2) }),
-      ),
-    ).toEqual({ kind: 'rounds', rounds: 2, inReview: true });
-    expect(cardBadge(row(1, 'in-review', at))).toBeUndefined();
-    expect(
-      cardBadge(
-        row(1, 'in-review', at, { outcome: outcome('in-review', 70, null) }),
-      ),
-    ).toBeUndefined();
-  });
-
   it('shows the serenity of a merge, and adds by a person for a merge by a person', () => {
     expect(
       cardBadge(row(1, 'merged', at, { outcome: outcome('merged', 86, 1) })),

@@ -40,6 +40,27 @@ export const afterPersonFeatures: FeatureRow[] = fullBoardFeatures.map((row) =>
     : row,
 );
 
+function inReviewRow(
+  number: number,
+  title: string,
+  score: number | null,
+  rounds: number | null,
+): FeatureRow {
+  const [base] = boardFeatures;
+  if (base === undefined) throw new Error('No board feature');
+  return {
+    ...base,
+    ...found(APP, number, title),
+    outcome: outcome('in-review', score, rounds),
+  };
+}
+
+export const inReviewFeatures: FeatureRow[] = [
+  inReviewRow(70, 'Retry failed exports', 48, 3),
+  inReviewRow(71, 'Webhook signatures', 80, null),
+  inReviewRow(72, 'Bulk tag edit', null, null),
+];
+
 export const unmergedFeatures: FeatureRow[] = boardFeatures.filter(
   (row) =>
     row.outcome?.stage !== 'merged' &&

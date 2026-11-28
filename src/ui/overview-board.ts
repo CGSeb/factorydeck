@@ -10,7 +10,10 @@ import type {
   StageColumnCard,
   StageColumnProps,
 } from './components/StageColumn.tsx';
-import { serenityScore } from './components/SerenityBadge.tsx';
+import {
+  type SerenityScore,
+  serenityScore,
+} from './components/SerenityBadge.tsx';
 import { STAGE_GROUPS, type StageGroup } from './components/StageDot.tsx';
 import { totalTokens } from './components/token-amount.ts';
 import { projectColors } from './design/palette.ts';
@@ -38,6 +41,12 @@ const PERSON_BADGES: Partial<Record<IssueStage, string>> = {
   'merged-after-person': 'after a person',
 };
 
+function serenityBadges(report: SerenityScore | null): IssueCardBadge[] {
+  return report === null
+    ? []
+    : [{ kind: 'serenity', report: serenityScore(report) }];
+}
+
 const BADGES: Record<
   StageGroup,
   (row: FeatureRow) => IssueCardBadge | IssueCardBadge[] | undefined
@@ -50,18 +59,14 @@ const BADGES: Record<
   },
   working: () => undefined,
   'in-review': (row) => {
-    const rounds = row.outcome?.report?.rounds ?? 0;
-    return rounds > 0 ? { kind: 'rounds', rounds, inReview: true } : undefined;
+    const report = row.outcome?.report ?? null;
+    const badges = serenityBadges(report);
+    const rounds = report?.rounds ?? 0;
+    if (rounds > 0) badges.push({ kind: 'rounds', rounds, inReview: true });
+    return badges.length === 0 ? undefined : badges;
   },
   merged: (row) => {
-    const report = row.outcome?.report ?? null;
-    const badges: IssueCardBadge[] = [];
-    if (report !== null) {
-      badges.push({
-        kind: 'serenity',
-        report: serenityScore(report),
-      });
-    }
+    const badges = serenityBadges(row.outcome?.report ?? null);
     const stage = row.outcome?.stage;
     const person = stage === undefined ? undefined : PERSON_BADGES[stage];
     if (person !== undefined) badges.push({ kind: 'text', text: person });

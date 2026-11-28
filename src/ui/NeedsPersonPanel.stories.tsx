@@ -39,7 +39,9 @@ export const EachReason: Story = {
       canvas.getByRole('heading', { level: 2, name: 'Needs a person' }),
     ).toBeVisible();
     const below = rowOf(canvasElement, '#58 Retry failed exports');
-    await expect(below).toHaveTextContent('Below threshold');
+    await expect(within(below).getByRole('listitem')).toHaveTextContent(
+      /^Below threshold \(48\)$/,
+    );
     await expect(below).toHaveTextContent('1 d 4 h');
     await expect(below).toHaveTextContent('Example App');
     await expect(
