@@ -6,6 +6,7 @@ import { hashPassword } from '../auth/secrets.ts';
 import { signInSessions } from '../auth/sessions.ts';
 import { type SignInLimit, signInLimit } from '../auth/sign-in-limit.ts';
 import { firstManagerSetup } from '../auth/setup.ts';
+import { readOffsets } from '../cli-ingest/offsets.ts';
 import { storeBatch } from '../cli-ingest/store-batch.ts';
 import { cliConnections } from '../cli-login/connections.ts';
 import { type PendingLogins, pendingLogins } from '../cli-login/pending.ts';
@@ -117,6 +118,7 @@ function accountSources(
       connections: cliConnections(db, () => harness.clock),
       ingest: (batch, sender) =>
         storeBatch(db, batch, sender, { lockWaitMs: harness.lockWaitMs }),
+      offsets: (fileKeys) => readOffsets(db, fileKeys),
     },
   };
 }

@@ -12,6 +12,7 @@ import {
   timestamp,
   unique,
 } from 'drizzle-orm/pg-core';
+import type { ReaderState } from '../cli-ingest/batch-schema.ts';
 import { UNASSIGNED_PROJECT } from '../projects/label.ts';
 import { account } from './auth-schema.ts';
 
@@ -65,7 +66,7 @@ export const ingestFile = pgTable(
     fileKey: text('file_key').primaryKey(),
     readTo: bigint('read_to', { mode: 'number' }).notNull(),
     parserVersion: integer('parser_version').notNull(),
-    readerState: jsonb('reader_state').$type<Record<string, unknown>>(),
+    readerState: jsonb('reader_state').$type<ReaderState>(),
     sessionId: text('session_id')
       .notNull()
       .references(() => session.id, { onDelete: 'cascade' }),

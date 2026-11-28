@@ -6,13 +6,18 @@ import {
   type BatchLimit,
   MAX_BATCH_BYTES,
   MAX_DECOMPRESSED_BYTES,
+  OFFSET_MISMATCH,
+  type OffsetsAnswer,
+  TOO_MANY_FILE_KEYS,
   checkBatch,
+  checkOffsetsRequest,
 } from '../cli-ingest/batch-schema.ts';
 import type { Sender, StoreResult } from '../cli-ingest/store-batch.ts';
 import type { ApiContext } from './api-context.ts';
 import type { CliEnv } from './cli-routes.ts';
 
 export type StoreBatch = (batch: Batch, sender: Sender) => Promise<StoreResult>;
+export type ReadOffsets = (fileKeys: string[]) => Promise<OffsetsAnswer>;
 
 export const INGEST_PATH = '/api/cli/ingest';
 export const BUSY = 'Busy, try again';
@@ -130,7 +135,36 @@ export function ingestRoute(
     );
     if (result.status === 'unreachable') return c.json(result, 503);
     if (result.status === 'busy') return c.json({ error: BUSY }, 503);
+    if (result.status === 'mismatch') {
+      return c.json(
+        { error: OFFSET_MISMATCH, mismatches: result.mismatches },
+        409,
+      );
+    }
     const { status: _stored, ...counts } = result;
     return c.json(counts, 200);
+  });
+}
+
+export function offsetsRoute(
+  routes: Hono<CliEnv>,
+  read: ReadOffsets,
+  { fromDatabase }: ApiContext,
+): void {
+  routes.post('/ingest/offsets', async (c) => {
+    const json: unknown = await c.req.json().catch(() => undefined);
+    if (json === undefined) {
+      return c.json({ error: 'Body is not valid JSON', path: '' }, 400);
+    }
+    const checked = checkOffsetsRequest(json);
+    if (checked.status === 'invalid') {
+      return c.json({ error: checked.error, path: checked.path }, 400);
+    }
+    if (checked.status === 'too-large') {
+      return c.json({ error: TOO_MANY_FILE_KEYS, limit: 'fileKeys' }, 413);
+    }
+    const answer = await fromDatabase(() => read(checked.fileKeys));
+    if ('status' in answer) return c.json(answer, 503);
+    return c.json(answer, 200);
   });
 }

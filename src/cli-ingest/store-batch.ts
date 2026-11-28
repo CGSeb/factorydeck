@@ -16,7 +16,9 @@ import type {
   BatchApiCall,
   BatchCounts,
   BatchThread,
+  OffsetMismatch,
 } from './batch-schema.ts';
+import { offsetMismatches } from './offsets.ts';
 import { storeFrictions } from './store-frictions.ts';
 import { storeThreadRecords } from './store-records.ts';
 
@@ -32,9 +34,8 @@ export interface StoreOptions {
 
 export type StoreResult =
   | ({ status: 'stored' } & BatchCounts)
-  | {
-      status: 'busy';
-    };
+  | { status: 'busy' }
+  | { status: 'mismatch'; mismatches: OffsetMismatch[] };
 
 export const LOCK_WAIT_MS = 30_000;
 const LOCK_NOT_AVAILABLE = '55P03';
@@ -222,6 +223,7 @@ async function storeOffset(
   const values = {
     readTo: thread.readTo,
     parserVersion,
+    readerState: thread.readerState,
     sessionId: thread.sessionId,
     updatedAt: now,
   };
@@ -285,6 +287,8 @@ export async function storeBatch(
       const threads = batch.threads.filter(
         (thread) => !removed.has(thread.sessionId),
       );
+      const mismatches = await offsetMismatches(tx, threads);
+      if (mismatches.length > 0) return { status: 'mismatch', mismatches };
       for (const thread of threads) {
         sessionIds.add(thread.sessionId);
         await storeSession(tx, thread, sender);
