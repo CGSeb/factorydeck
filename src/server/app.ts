@@ -13,6 +13,8 @@ import { type ApiContext, apiContext, isTimeZone } from './api-context.ts';
 import { bodySizeGuard, jsonBodyGuard, sessionGuard } from './auth-guard.ts';
 import { type AuthEnv, type AuthSource, authRoutes } from './auth-routes.ts';
 import { bugRoutes } from './bug-routes.ts';
+import { cliApprovalRoutes } from './cli-approval-routes.ts';
+import { type CliSource, cliRoutes } from './cli-routes.ts';
 import { type FeatureSource, featureRoutes } from './feature-routes.ts';
 import { frictionRoutes } from './friction-routes.ts';
 import { invitationAuthRoutes } from './invitation-routes.ts';
@@ -51,6 +53,30 @@ export interface AppOptions {
   team?: TeamSource | undefined;
   resets?: ResetSource | undefined;
   admin?: AdminSource | undefined;
+  cli?: CliSource | undefined;
+}
+
+function mountAccounts(
+  app: Hono<AuthEnv>,
+  options: AppOptions,
+  context: ApiContext,
+): void {
+  if (options.team?.invitations !== undefined) {
+    app.route(
+      '/api/auth/invitation',
+      invitationAuthRoutes(options.team.invitations, context),
+    );
+  }
+  if (options.resets !== undefined) {
+    app.route('/api/auth/reset', resetRoutes(options.resets, context));
+  }
+  if (options.cli !== undefined) {
+    app.route('/api/auth/cli', cliApprovalRoutes(options.cli.logins));
+    app.route('/api/cli', cliRoutes(options.cli, context));
+  }
+  app.route('/api/auth', authRoutes(options.auth, context));
+  app.route('/api/team', teamRoutes(options.team, context));
+  app.route('/api/admin', adminRoutes(options.admin, context));
 }
 
 function mountSections(
@@ -70,18 +96,7 @@ function mountSections(
   if (options.sidebar !== undefined) {
     app.route('/api/sidebar', sidebarRoutes(options.sidebar, context));
   }
-  if (options.team?.invitations !== undefined) {
-    app.route(
-      '/api/auth/invitation',
-      invitationAuthRoutes(options.team.invitations, context),
-    );
-  }
-  if (options.resets !== undefined) {
-    app.route('/api/auth/reset', resetRoutes(options.resets, context));
-  }
-  app.route('/api/auth', authRoutes(options.auth, context));
-  app.route('/api/team', teamRoutes(options.team, context));
-  app.route('/api/admin', adminRoutes(options.admin, context));
+  mountAccounts(app, options, context);
 }
 
 /** The FactoryDeck HTTP app: the JSON API under `/api/`, the UI everywhere else. */

@@ -6,9 +6,15 @@ import { hashPassword } from '../auth/secrets.ts';
 import { signInSessions } from '../auth/sessions.ts';
 import { type SignInLimit, signInLimit } from '../auth/sign-in-limit.ts';
 import { firstManagerSetup } from '../auth/setup.ts';
+import { cliConnections } from '../cli-login/connections.ts';
+import { type PendingLogins, pendingLogins } from '../cli-login/pending.ts';
 import type { Database } from '../db/client.ts';
 import { account } from '../db/schema.ts';
-import { type OverviewSource, createApp } from '../server/app.ts';
+import {
+  type AppOptions,
+  type OverviewSource,
+  createApp,
+} from '../server/app.ts';
 import { teamAccounts } from '../team/accounts.ts';
 import { changeStatus } from '../team/account-status.ts';
 import { changeRole } from '../team/change-role.ts';
@@ -48,12 +54,39 @@ export interface AuthHarness {
   db: Database;
   clock: Date;
   signInLimit: SignInLimit;
+  cliLogins: PendingLogins;
   app: (up?: boolean) => Server;
   addAccount: (
     email: string,
     options?: { active?: boolean; role?: 'manager' | 'dev'; name?: string },
   ) => Promise<number>;
   close: () => Promise<void>;
+}
+
+function accountSources(
+  db: Database,
+  harness: Pick<AuthHarness, 'clock' | 'signInLimit' | 'cliLogins'>,
+): Pick<AppOptions, 'auth' | 'team' | 'resets' | 'admin' | 'cli'> {
+  return {
+    auth: {
+      ...firstManagerSetup(db, { log: () => undefined }),
+      ...signInSessions(db, { now: () => harness.clock }),
+      signInLimit: harness.signInLimit,
+    },
+    team: {
+      accounts: () => teamAccounts(db),
+      changeRole: (request) => changeRole(db, request),
+      invitations: invitations(db, { now: () => harness.clock }),
+      changeStatus: (request) => changeStatus(db, request),
+      resetLink: resetLinks(db, () => harness.clock).create,
+    },
+    resets: resetLinks(db, () => harness.clock),
+    admin: { projects: projectStore(db, () => harness.clock) },
+    cli: {
+      logins: harness.cliLogins,
+      connections: cliConnections(db, () => harness.clock),
+    },
+  };
 }
 
 export async function authHarness(): Promise<AuthHarness> {
@@ -68,6 +101,7 @@ export async function authHarness(): Promise<AuthHarness> {
     db,
     clock: START,
     signInLimit: signInLimit({ now: () => harness.clock }),
+    cliLogins: pendingLogins({ now: () => harness.clock.getTime() }),
     close,
     app: (up = true) =>
       createApp({
@@ -81,20 +115,7 @@ export async function authHarness(): Promise<AuthHarness> {
         projects: unusedProjects,
         gitHost: unusedGitHost,
         stats: unusedStats,
-        auth: {
-          ...firstManagerSetup(db, { log: () => undefined }),
-          ...signInSessions(db, { now: () => harness.clock }),
-          signInLimit: harness.signInLimit,
-        },
-        team: {
-          accounts: () => teamAccounts(db),
-          changeRole: (request) => changeRole(db, request),
-          invitations: invitations(db, { now: () => harness.clock }),
-          changeStatus: (request) => changeStatus(db, request),
-          resetLink: resetLinks(db, () => harness.clock).create,
-        },
-        resets: resetLinks(db, () => harness.clock),
-        admin: { projects: projectStore(db, () => harness.clock) },
+        ...accountSources(db, harness),
       }),
     addAccount: async (email, options = {}) => {
       const [row] = await db

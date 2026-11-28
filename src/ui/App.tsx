@@ -20,6 +20,7 @@ import type { SessionGate } from './auth-gate.ts';
 import { signInThenRead, useAccountView, useAuthPhase } from './auth-phase.ts';
 import type { LoadBugs } from './bugs-api.ts';
 import { BugsPage } from './BugsPage.tsx';
+import { type CliRouteSources, cliRoute } from './CliPage.tsx';
 import type { DeleteProject, LoadFactory } from './factory-api.ts';
 import { FeaturePage } from './FeaturePage.tsx';
 import type { LoadFeature, LoadFeatures } from './features-api.ts';
@@ -64,11 +65,11 @@ import { StatsPage } from './StatsPage.tsx';
 import type { ChangeRole } from './role-change-api.ts';
 import type { ChangeActive } from './account-status-api.ts';
 import type { LoadTeam } from './team-api.ts';
-import { TeamPage } from './TeamPage.tsx';
+import { teamRoute } from './TeamPage.tsx';
 import type { AddProject, LoadProjects } from './projects-api.ts';
 import { projectsRoute } from './ProjectsPage.tsx';
 
-export interface AppProps {
+export interface AppProps extends CliRouteSources {
   loadOverview: LoadOverview;
   loadSessions: LoadSessions;
   loadSession: LoadSession;
@@ -242,14 +243,6 @@ const SIGNED_IN_REDIRECTS = (
   </>
 );
 
-function teamRoute(props: AppProps): ReactElement | undefined {
-  const { loadTeam } = props;
-  if (loadTeam === undefined) return undefined;
-  return (
-    <Route path="team" element={<TeamPage {...props} loadTeam={loadTeam} />} />
-  );
-}
-
 function DashboardRoutes(
   props: AppProps & { account: SidebarAccount | undefined; team: boolean },
 ): ReactElement {
@@ -304,6 +297,7 @@ function DashboardRoutes(
         {teamRoute(props)}
         {projectsRoute(props)}
       </Route>
+      {cliRoute(props)}
       {SIGNED_IN_REDIRECTS}
     </Routes>
   );

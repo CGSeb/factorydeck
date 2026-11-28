@@ -42,7 +42,12 @@ describe('routes that need a session', () => {
       }))
       .filter(({ method, path }) => {
         const key = `${method} ${path}`;
-        if (!path.startsWith('/api/') || OPEN.includes(key) || seen.has(key)) {
+        if (
+          !path.startsWith('/api/') ||
+          path.startsWith('/api/cli/') ||
+          OPEN.includes(key) ||
+          seen.has(key)
+        ) {
           return false;
         }
         seen.add(key);
