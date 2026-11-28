@@ -1,4 +1,4 @@
-import { eq, like, or, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type { FieldError } from '../auth/types.ts';
 import type { Database } from '../db/client.ts';
 import { project } from '../db/schema.ts';
@@ -87,15 +87,7 @@ export function projectStore(
         if (existing !== undefined) {
           return { status: 'exists', name: existing.name } as const;
         }
-        const taken = await tx
-          .select({ slug: project.slug })
-          .from(project)
-          .where(
-            or(
-              eq(project.slug, fields.slug),
-              like(project.slug, `${fields.slug}-%`),
-            ),
-          );
+        const taken = await tx.select({ slug: project.slug }).from(project);
         const [row] = await tx
           .insert(project)
           .values({

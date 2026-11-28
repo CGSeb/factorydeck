@@ -100,6 +100,21 @@ describe('POST /api/admin/projects', () => {
     expect(slugs).toEqual(['my-repo', 'my-repo-2', 'my-repo-3']);
   });
 
+  it('keeps a numbered slug at most 40 characters', async () => {
+    const cookie = await manager();
+    const repository = 'r'.repeat(45);
+    const slugs: unknown[] = [];
+    for (const owner of ['one', 'two']) {
+      const response = await post(
+        '/api/admin/projects',
+        { remote: `git@github.com:${owner}/${repository}.git` },
+        cookie,
+      );
+      slugs.push(((await response.json()) as { slug: string }).slug);
+    }
+    expect(slugs).toEqual(['r'.repeat(40), `${'r'.repeat(38)}-2`]);
+  });
+
   it('refuses a remote already added in another form with 409', async () => {
     const cookie = await manager();
     await post(

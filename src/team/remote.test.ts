@@ -74,6 +74,20 @@ describe('slugBase', () => {
 });
 
 describe('freeSlug', () => {
+  it('cuts the base so a numbered slug stays at most 40 characters', () => {
+    const base = 'a'.repeat(40);
+    expect(freeSlug(base, new Set([base]))).toBe(`${'a'.repeat(38)}-2`);
+    const nine = new Set([
+      base,
+      ...[2, 3, 4, 5, 6, 7, 8, 9].map((n) => `${'a'.repeat(38)}-${String(n)}`),
+    ]);
+    expect(freeSlug(base, nine)).toBe(`${'a'.repeat(37)}-10`);
+    const short = 'b'.repeat(38);
+    expect(freeSlug(short, new Set([short]))).toBe(`${short}-2`);
+    const hyphen = `${'c'.repeat(37)}-dd`;
+    expect(freeSlug(hyphen, new Set([hyphen]))).toBe(`${'c'.repeat(37)}-2`);
+  });
+
   it('keeps a free slug and numbers a taken one from 2', () => {
     expect(freeSlug('my-repo', new Set())).toBe('my-repo');
     expect(freeSlug('my-repo', new Set(['my-repo']))).toBe('my-repo-2');

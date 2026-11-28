@@ -38,8 +38,8 @@ Its normalised form is `<host>/<path>`: the host in lower case without user or p
 
 ### Name and slug
 
-- **Name**: trimmed, 1 to 80 characters. Left empty, it is the repository's last path segment as written (`FactoryDeck` for `git@github.com:owner/FactoryDeck.git`), cut to 80 characters. Two projects may share a name.
-- **Slug**: made once, when the project is added, from the path's last segment: lower case, every run of characters outside `a-z0-9` turned into one `-`, trimmed of `-`, at most 40 characters (`My.Repo` gives `my-repo`); a segment with no letter or digit gives `project`. When the slug is taken, `-2`, `-3`… is added (`my-repo-2`). It never changes afterwards.
+- **Name**: trimmed, 1 to 80 characters, counted in UTF-16 code units (an emoji counts as two). Left empty, it is the repository's last path segment as written (`FactoryDeck` for `git@github.com:owner/FactoryDeck.git`), cut to 80 characters. Two projects may share a name.
+- **Slug**: made once, when the project is added, from the path's last segment: lower case, every run of characters outside `a-z0-9` turned into one `-`, trimmed of `-`, at most 40 characters (`My.Repo` gives `my-repo`); a segment with no letter or digit gives `project`. When the slug is taken, `-2`, `-3`… is added (`my-repo-2`), and the slug is first cut so that it stays at most 40 characters with its suffix (a 40-character `aaa…a` becomes 38 `a` then `-2`), dropping a `-` left at the cut. It never changes afterwards.
 
 ## Admin routes
 

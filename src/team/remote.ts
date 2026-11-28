@@ -63,9 +63,15 @@ export function slugBase(repository: string): string {
   return slug === '' ? FALLBACK_SLUG : slug;
 }
 
+function numbered(base: string, number: number): string {
+  const suffix = `-${String(number)}`;
+  const cut = base.slice(0, MAX_SLUG_LENGTH - suffix.length).replace(/-+$/, '');
+  return `${cut}${suffix}`;
+}
+
 export function freeSlug(base: string, taken: ReadonlySet<string>): string {
   if (!taken.has(base)) return base;
-  let suffix = 2;
-  while (taken.has(`${base}-${String(suffix)}`)) suffix += 1;
-  return `${base}-${String(suffix)}`;
+  let number = 2;
+  while (taken.has(numbered(base, number))) number += 1;
+  return numbered(base, number);
 }
