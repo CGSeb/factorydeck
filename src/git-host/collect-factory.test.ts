@@ -18,6 +18,7 @@ import {
   fakeCollection,
 } from '../demo/fake-git-host-token.ts';
 import { hasFactory } from '../ingest/factory.ts';
+import { hostCliRunner } from '../team/host-cli.ts';
 import { encryptToken, secretKey } from '../team/token-cipher.ts';
 import { addProject, calls, hostCalls } from '../test/git-host.ts';
 import { githubData, labelled, outcomeContext } from '../test/outcome.ts';
@@ -55,7 +56,10 @@ async function app(working = 'wip') {
 describe('factory settings read through the git host', () => {
   it('takes the labels from factory.yml on the default branch, not from the disk, and follows a change at the next run', async () => {
     const { root, data } = await app();
-    expect((await run()).failures).toEqual([]);
+    const { hostCli } = await fakeCollection();
+    expect(
+      (await run({ runHostCli: hostCliRunner(hostCli) })).failures,
+    ).toEqual([]);
     expect(await outcomeOf(root, 1)).toMatchObject({ stage: 'working' });
     expect(await outcomeOf(root, 2)).toMatchObject({ stage: 'open' });
     const host = await hostCalls(root);

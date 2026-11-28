@@ -38,6 +38,7 @@ export interface CollectOptions {
   hasFactory: FactoryCheck;
   secretKey: SecretKey;
   hostCli?: HostCliOptions;
+  runHostCli?: RunHostCli;
   timeoutMs?: number;
   now?: () => Date;
 }
@@ -213,6 +214,7 @@ export async function collect(
     hasFactory,
     secretKey,
     hostCli = {},
+    runHostCli = hostCliRunner(hostCli),
     timeoutMs = CLI_TIMEOUT_MS,
     now = () => new Date(),
   }: CollectOptions,
@@ -226,7 +228,7 @@ export async function collect(
   const run: Run = {
     db,
     secretKey,
-    runHostCli: hostCliRunner(hostCli),
+    runHostCli,
     hostCli,
     timeoutMs,
     factories: new Map(),

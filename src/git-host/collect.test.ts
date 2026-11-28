@@ -36,6 +36,7 @@ import {
   collect,
   collectSummary,
 } from './collect.ts';
+import { hostCliRunner } from '../team/host-cli.ts';
 import { collectionStatus, issueDetail } from './query.ts';
 import { lookupIssues } from './work-items.ts';
 
@@ -236,8 +237,10 @@ describe('collect', () => {
 
   it('reports a missing CLI and a CLI that does not answer', async () => {
     await project('app', github());
+    const commands = { github: join(work, 'no-such-gh') };
     const missing = await collectAll({
-      hostCli: { commands: { github: join(work, 'no-such-gh') } },
+      hostCli: { commands },
+      runHostCli: hostCliRunner({ commands }),
     });
     expect(collectSummary(missing).slice(1)).toEqual([
       'Could not read GitHub for app: gh not found on the server.',

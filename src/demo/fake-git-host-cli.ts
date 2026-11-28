@@ -1,10 +1,12 @@
 import { appendFileSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { FakeGitHostSchema, fakeGitHostToken } from './fake-git-host.ts';
+import { dirname } from 'node:path';
+import {
+  FakeGitHostSchema,
+  fakeFactoryAnswer,
+  fakeGitHostToken,
+} from './fake-git-host.ts';
 
 type Row = Record<string, unknown>;
-
-const FACTORY_PATH = 'docs/agents/factory.yml';
 
 function fail(message: string): never {
   process.stderr.write(`${message}\nmore detail on a second line\n`);
@@ -241,40 +243,11 @@ function gitlab(): void {
   );
 }
 
-function factoryText(): string {
-  if (data.remoteFactory !== undefined) return data.remoteFactory;
-  try {
-    return readFileSync(join(root, FACTORY_PATH), 'utf8');
-  } catch {
-    return httpFail(404, 'Not Found');
-  }
-}
-
-function branchOf(endpoint: URL): void {
-  if (endpoint.searchParams.get('ref') !== (data.defaultBranch ?? 'main')) {
-    httpFail(404, 'Not Found');
-  }
-}
-
 function factoryEndpoint(): boolean {
-  if (args[0] !== 'api') return false;
-  const endpoint = new URL(args.at(-1) ?? '', 'https://host.invalid/');
-  const path = decodeURIComponent(endpoint.pathname).toLowerCase();
-  const repository =
-    data.host === 'github'
-      ? `/repos/${data.repository.toLowerCase()}`
-      : `/projects/${data.repository.toLowerCase()}`;
-  if (path === repository) {
-    print({ default_branch: data.defaultBranch ?? 'main' });
-    return true;
-  }
-  const file =
-    data.host === 'github'
-      ? `${repository}/contents/${FACTORY_PATH}`
-      : `${repository}/repository/files/${FACTORY_PATH}/raw`;
-  if (path !== file) return false;
-  branchOf(endpoint);
-  process.stdout.write(factoryText());
+  const answer = fakeFactoryAnswer(data, root, args);
+  if (answer === undefined) return false;
+  if (answer.status !== 200) httpFail(answer.status, 'Not Found');
+  process.stdout.write(answer.text);
   return true;
 }
 

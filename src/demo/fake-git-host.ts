@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { chmod, mkdir, rename, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -89,7 +90,16 @@ async function writeExecutable(path: string, text: string): Promise<void> {
   await rename(temporary, path);
 }
 
-export async function fakeGitHostCommands(): Promise<
+let commands: Promise<Record<FakeGitHostData['host'], string>> | undefined;
+
+export function fakeGitHostCommands(): Promise<
+  Record<FakeGitHostData['host'], string>
+> {
+  commands ??= writeFakeGitHostCommands();
+  return commands;
+}
+
+async function writeFakeGitHostCommands(): Promise<
   Record<FakeGitHostData['host'], string>
 > {
   const hash = createHash('sha256')
@@ -117,4 +127,50 @@ export async function installFakeGitHost(
     join(agents, 'factory.yml'),
     `version: 2\nrepository:\n  git_host: ${data.host}\n${data.factory ?? FACTORY_WORKFLOW}`,
   );
+}
+
+const FACTORY_PATH = 'docs/agents/factory.yml';
+
+export type FakeFactoryAnswer = { status: 200; text: string } | { status: 404 };
+
+function factoryText(data: FakeGitHostData, root: string): FakeFactoryAnswer {
+  if (data.remoteFactory !== undefined) {
+    return { status: 200, text: data.remoteFactory };
+  }
+  try {
+    return {
+      status: 200,
+      text: readFileSync(join(root, FACTORY_PATH), 'utf8'),
+    };
+  } catch {
+    return { status: 404 };
+  }
+}
+
+export function fakeFactoryAnswer(
+  data: FakeGitHostData,
+  root: string,
+  args: readonly string[],
+): FakeFactoryAnswer | undefined {
+  const plain = args.filter(
+    (arg, index) => arg !== '--hostname' && args[index - 1] !== '--hostname',
+  );
+  if (plain[0] !== 'api') return undefined;
+  const endpoint = new URL(plain.at(-1) ?? '', 'https://host.invalid/');
+  const path = decodeURIComponent(endpoint.pathname).toLowerCase();
+  const branch = data.defaultBranch ?? 'main';
+  const repository =
+    data.host === 'github'
+      ? `/repos/${data.repository.toLowerCase()}`
+      : `/projects/${data.repository.toLowerCase()}`;
+  if (path === repository) {
+    return { status: 200, text: JSON.stringify({ default_branch: branch }) };
+  }
+  const file =
+    data.host === 'github'
+      ? `${repository}/contents/${FACTORY_PATH}`
+      : `${repository}/repository/files/${FACTORY_PATH}/raw`;
+  if (path !== file) return undefined;
+  if (endpoint.searchParams.get('ref') !== branch) return { status: 404 };
+  return factoryText(data, root);
 }
