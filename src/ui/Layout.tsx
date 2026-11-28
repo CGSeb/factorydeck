@@ -29,7 +29,7 @@ import type { DeleteProject, LoadFactory } from './factory-api.ts';
 import { FactoryBanner } from './FactoryBanner.tsx';
 import type { LoadCollection, RefreshCollection } from './git-host-api.ts';
 import { projectOf, projectTarget } from './project-param.ts';
-import { hasBugTickets, sectionLinks, teamLink } from './section-links.ts';
+import { hasBugTickets, managerLinks, sectionLinks } from './section-links.ts';
 import { projectLabel } from './ProjectSelect.tsx';
 import { type LoadSidebar, useReadyCounts } from './sidebar-api.ts';
 import { WelcomePanel } from './WelcomePanel.tsx';
@@ -262,7 +262,7 @@ export function Layout({
             hasBugTickets(bugTickets, project),
             ready,
           ),
-          ...(team ? [teamLink(pathname, project)] : []),
+          ...managerLinks(team, pathname, project),
         ]}
         renderLink={renderRouterLink}
         project={welcome ? undefined : projectSlot(project, projects, choose)}

@@ -45,6 +45,7 @@ import {
 } from './invitations-api.ts';
 import { resetLinkCreator, resetReader, resetSaver } from './reset-api.ts';
 import { teamLoader, withInvitations } from './team-api.ts';
+import { projectAdder, projectsLoader } from './projects-api.ts';
 import { activeChanger } from './account-status-api.ts';
 
 const gate = authGate();
@@ -90,6 +91,8 @@ const saveReset = resetSaver();
 const signIn = signInSender();
 const loadReport = frictionReportLoader(gate.fetch);
 const markReport = frictionReportMarker(gate.fetch);
+const loadProjects = projectsLoader(gate.fetch);
+const addProject = projectAdder(gate.fetch);
 const root = document.querySelector('#root');
 if (root) {
   createRoot(root).render(
@@ -133,6 +136,8 @@ if (root) {
         saveReset={saveReset}
         loadReport={loadReport}
         markReport={markReport}
+        loadProjects={loadProjects}
+        addProject={addProject}
         signIn={signIn}
         sessionGate={gate}
       />

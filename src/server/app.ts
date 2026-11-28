@@ -8,6 +8,7 @@ import {
   type OverviewResponse,
   isPeriod,
 } from '../overview/types.ts';
+import { type AdminSource, adminRoutes } from './admin-routes.ts';
 import { type ApiContext, apiContext, isTimeZone } from './api-context.ts';
 import { bodySizeGuard, jsonBodyGuard, sessionGuard } from './auth-guard.ts';
 import { type AuthEnv, type AuthSource, authRoutes } from './auth-routes.ts';
@@ -49,6 +50,7 @@ export interface AppOptions {
   auth: AuthSource;
   team?: TeamSource | undefined;
   resets?: ResetSource | undefined;
+  admin?: AdminSource | undefined;
 }
 
 function mountSections(
@@ -79,6 +81,7 @@ function mountSections(
   }
   app.route('/api/auth', authRoutes(options.auth, context));
   app.route('/api/team', teamRoutes(options.team, context));
+  app.route('/api/admin', adminRoutes(options.admin, context));
 }
 
 /** The FactoryDeck HTTP app: the JSON API under `/api/`, the UI everywhere else. */

@@ -65,6 +65,8 @@ import type { ChangeRole } from './role-change-api.ts';
 import type { ChangeActive } from './account-status-api.ts';
 import type { LoadTeam } from './team-api.ts';
 import { TeamPage } from './TeamPage.tsx';
+import type { AddProject, LoadProjects } from './projects-api.ts';
+import { projectsRoute } from './ProjectsPage.tsx';
 
 export interface AppProps {
   loadOverview: LoadOverview;
@@ -107,6 +109,8 @@ export interface AppProps {
   createResetLink?: CreateResetLink | undefined;
   readReset?: ReadReset | undefined;
   saveReset?: SaveReset | undefined;
+  loadProjects?: LoadProjects | undefined;
+  addProject?: AddProject | undefined;
 }
 
 function isManager(view: AccountView): boolean {
@@ -298,6 +302,7 @@ function DashboardRoutes(
           }
         />
         {teamRoute(props)}
+        {projectsRoute(props)}
       </Route>
       {SIGNED_IN_REDIRECTS}
     </Routes>

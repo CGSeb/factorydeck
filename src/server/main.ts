@@ -39,8 +39,9 @@ import { teamAccounts } from '../team/accounts.ts';
 import { changeStatus } from '../team/account-status.ts';
 import { changeRole } from '../team/change-role.ts';
 import { invitations } from '../team/invitations.ts';
+import { projectStore } from '../team/projects.ts';
 import { resetLinks } from '../team/reset-links.ts';
-import { createApp } from './app.ts';
+import { type AppOptions, createApp } from './app.ts';
 import type { TeamSource } from './team-routes.ts';
 import { type CollectLoop, startCollectLoop } from './collect-loop.ts';
 import { databaseCheck } from './health.ts';
@@ -100,6 +101,16 @@ function teamSource(db: Database): TeamSource {
     invitations: invitations(db),
     changeStatus: (request) => changeStatus(db, request),
     resetLink: resetLinks(db).create,
+  };
+}
+
+function accountSources(
+  db: Database,
+): Pick<AppOptions, 'team' | 'resets' | 'admin'> {
+  return {
+    team: teamSource(db),
+    resets: resetLinks(db),
+    admin: { projects: projectStore(db) },
   };
 }
 
@@ -178,8 +189,7 @@ async function main(): Promise<void> {
     stats: statsSource(db, config),
     sidebar: { ready: (project) => readyCounts(db, project, hasFactory) },
     auth: { ...setup, ...signInSessions(db), signInLimit: signInLimit() },
-    team: teamSource(db),
-    resets: resetLinks(db),
+    ...accountSources(db),
   });
   await listen(app, env.FACTORYDECK_PORT);
   await startSetup(setup);

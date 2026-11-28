@@ -139,7 +139,7 @@ A request with no body passes both. Only then does a missing session answer `401
 
 ## The Team page
 
-A manager sees a `Team` link in the sidebar, the last one, after `Roles`; it opens `/team`, the list of every account of the instance. A dev sees no such link.
+A manager sees a `Team` link in the sidebar, after `Roles` and followed only by [`Projects`](projects.md); it opens `/team`, the list of every account of the instance. A dev sees no such link.
 
 - **Header**: `Team`, with the summary `<n> accounts · <m> managers`. `<n>` counts every account and `<m>` every account with role `manager`, deactivated ones included; one reads `1 account` and `1 manager`. The page has no period pills; the project select stays in the sidebar and changes nothing here.
 - **Table**: the columns `Name`, `Email`, `Role` (`Manager` or `Dev`), `Status` (`Active` or `Deactivated`) and `Last sign-in`. Every account is listed, with no paging: active accounts first, then by name without letter case, then by email. The email shows as stored. The manager's own row carries a small muted `You` tag after the name. Deactivated rows are in muted text. Long names and emails wrap; a table wider than the page scrolls inside its box.

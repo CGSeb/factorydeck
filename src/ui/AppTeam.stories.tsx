@@ -5,12 +5,19 @@ import { App } from './App.tsx';
 import { loaders } from './app-fixtures.ts';
 import type { LoadMe, MeResult } from './auth-api.ts';
 import { aloneManager, teamLoaderOf, teamResponse } from './team-fixtures.ts';
+import {
+  projectsLoaderOf,
+  projectsResponse,
+  someProjects,
+} from './projects-list-fixtures.ts';
+import { PROJECTS_REFUSED } from './projects-view.ts';
 
 const meta = {
   component: App,
   args: {
     ...loaders,
     loadTeam: teamLoaderOf(teamResponse(aloneManager)),
+    loadProjects: projectsLoaderOf(projectsResponse(someProjects)),
   },
   decorators: [
     (Story, { parameters }) => (
@@ -51,7 +58,7 @@ function linkNames(canvasElement: HTMLElement): string[] {
 }
 
 export const ManagerSeesTheTeamLink: Story = {
-  name: 'Manager: Team is the last link and opens /team',
+  name: 'Manager: Team follows Roles and opens /team',
   args: { loadMe: meAs('manager') },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -106,5 +113,67 @@ export const TeamPageForAManager: Story = {
         'page',
       ),
     );
+  },
+};
+
+export const ManagerSeesTheProjectsLink: Story = {
+  name: 'Manager: Projects follows Team and opens /projects',
+  args: { loadMe: meAs('manager') },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const link = await canvas.findByRole('link', { name: 'Projects' });
+    await expect(link).toHaveAttribute('href', '/projects');
+    await expect(linkNames(canvasElement).slice(-3)).toEqual([
+      'Roles',
+      'Team',
+      'Projects',
+    ]);
+  },
+};
+
+export const NoProjectsLinkForADev: Story = {
+  args: { loadMe: meAs('dev') },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole('link', { name: 'Roles' });
+    await new Promise((done) => setTimeout(done, 0));
+    await expect(canvas.queryByRole('link', { name: 'Projects' })).toBeNull();
+  },
+};
+
+export const NoProjectsLinkWhileMeLoads: Story = {
+  args: { loadMe: never },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole('link', { name: 'Roles' });
+    await expect(canvas.queryByRole('link', { name: 'Projects' })).toBeNull();
+  },
+};
+
+export const ProjectsPageForAManager: Story = {
+  parameters: { path: '/projects' },
+  args: { loadMe: meAs('manager') },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole('table', { name: 'Projects' });
+    await waitFor(() =>
+      expect(canvas.getByRole('link', { name: 'Projects' })).toHaveAttribute(
+        'aria-current',
+        'page',
+      ),
+    );
+  },
+};
+
+export const ProjectsPageForADev: Story = {
+  parameters: { path: '/projects' },
+  args: {
+    loadMe: meAs('dev'),
+    loadProjects: projectsLoaderOf({ status: 'refused', refreshSeconds: 10 }),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText(PROJECTS_REFUSED)).toBeVisible();
+    await expect(canvas.queryByRole('link', { name: 'Projects' })).toBeNull();
   },
 };
