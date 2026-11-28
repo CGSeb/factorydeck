@@ -23,6 +23,10 @@ export const someProjects: ListedProject[] = [
     remote: 'gitlab.example.test/platform/tools/atlas',
     createdAt: '2026-02-03T09:00:00Z',
     sessions: 1,
+    gitHost: null,
+    tokenSet: false,
+    tokenSetAt: null,
+    tokenSetBy: null,
   },
   {
     id: 1,
@@ -31,6 +35,10 @@ export const someProjects: ListedProject[] = [
     remote: 'github.com/example-org/billing-service',
     createdAt: '2026-01-15T14:20:00Z',
     sessions: 1284,
+    gitHost: 'github',
+    tokenSet: true,
+    tokenSetAt: '2026-03-01T10:00:00Z',
+    tokenSetBy: { name: 'Ada' },
   },
   {
     id: 3,
@@ -39,6 +47,10 @@ export const someProjects: ListedProject[] = [
     remote: 'github.com/example-org/website',
     createdAt: '2026-03-10T08:45:00Z',
     sessions: 0,
+    gitHost: 'github',
+    tokenSet: false,
+    tokenSetAt: null,
+    tokenSetBy: null,
   },
 ];
 
@@ -75,6 +87,7 @@ export function projectsResponse(
   return {
     status: 'ok',
     refreshSeconds: 3600,
+    secretKey: true,
     projects,
     pendingRemotes,
     noRemote,

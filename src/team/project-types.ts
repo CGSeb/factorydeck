@@ -1,4 +1,5 @@
 import type { FieldError } from '../auth/types.ts';
+import type { GitHostKind } from './host-cli.ts';
 
 export interface TeamProject {
   id: number;
@@ -10,6 +11,10 @@ export interface TeamProject {
 
 export interface ListedProject extends TeamProject {
   sessions: number;
+  gitHost: GitHostKind | null;
+  tokenSet: boolean;
+  tokenSetAt: string | null;
+  tokenSetBy: { name: string } | null;
 }
 
 export interface PendingRemote {
@@ -33,6 +38,7 @@ export type ProjectsResponse =
   | ({
       status: 'ok';
       refreshSeconds: number;
+      secretKey: boolean;
       projects: ListedProject[];
     } & RemotesNotAdded)
   | { status: 'unreachable'; refreshSeconds: number };

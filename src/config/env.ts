@@ -31,6 +31,11 @@ const EnvSchema = z.object({
       typeof value === 'string' && value.trim() === '' ? undefined : value,
     z.string().trim().min(1).optional(),
   ),
+  FACTORYDECK_SECRET_KEY: z.preprocess(
+    (value) =>
+      typeof value === 'string' && value.trim() === '' ? undefined : value,
+    z.string().optional(),
+  ),
   FACTORYDECK_CONFIG: z.preprocess(
     (value) =>
       typeof value === 'string' && value.trim() === '' ? undefined : value,

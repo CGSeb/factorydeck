@@ -64,6 +64,7 @@ function slowServer(): {
         {
           status: 'ok',
           refreshSeconds: 0.02,
+          secretKey: true,
           projects: [stored],
           pendingRemotes: [],
           noRemote: null,
@@ -107,6 +108,7 @@ function changingLoader(): LoadProjects {
     return Promise.resolve({
       status: 'ok',
       refreshSeconds: 0.05,
+      secretKey: true,
       projects: [project],
       pendingRemotes: [],
       noRemote: null,

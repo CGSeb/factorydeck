@@ -12,13 +12,32 @@ import {
   projectChanges,
   projectFields,
 } from '../team/projects.ts';
+import {
+  type GitHostTokenStore,
+  type SaveTokenResult,
+  NO_SECRET_KEY,
+  REMOTE_CHANGED,
+  hostOf,
+  repositoryPathOf,
+  tokenFields,
+} from '../team/git-host-token.ts';
+import type { RunHostCli } from '../team/host-cli.ts';
+import { checkToken } from '../team/token-check.ts';
+import { type SecretKey, encryptToken } from '../team/token-cipher.ts';
 import { MANAGERS_ONLY } from '../team/types.ts';
-import type { ApiContext } from './api-context.ts';
+import type { ApiContext, Unreachable } from './api-context.ts';
 import type { AuthEnv } from './auth-routes.ts';
+
+export interface GitHostTokenSource {
+  secretKey: SecretKey;
+  store: GitHostTokenStore;
+  run: RunHostCli;
+}
 
 export interface AdminSource {
   projects?: ProjectStore | undefined;
   roleRules?: RoleRuleStore | undefined;
+  gitHostTokens?: GitHostTokenSource | undefined;
 }
 
 export type RoleRulesResponse =
@@ -45,12 +64,14 @@ async function jsonObject(c: Context): Promise<Record<string, unknown>> {
 function projectRoutes(
   store: ProjectStore,
   { refreshSeconds, fromDatabase }: ApiContext,
+  secretKey: boolean,
 ): Hono<AuthEnv> {
   const routes = new Hono<AuthEnv>();
   routes.get('/', async (c) => {
     const body: ProjectsResponse = await fromDatabase(async () => ({
       status: 'ok',
       refreshSeconds,
+      secretKey,
       projects: await store.list(),
       ...(await store.remotesNotAdded()),
     }));
@@ -133,6 +154,72 @@ function roleRuleRoutes(
   return routes;
 }
 
+function savedAnswer(
+  c: Context<AuthEnv>,
+  result: SaveTokenResult | Unreachable,
+  defaultBranch: string,
+): Response {
+  if (result.status === 'unreachable') return c.json(result, 503);
+  if (result.status === 'missing') return c.json(NOT_FOUND, 404);
+  if (result.status === 'remote-changed') {
+    return c.json({ error: REMOTE_CHANGED }, 409);
+  }
+  return c.json({ ...result.token, defaultBranch }, 200);
+}
+
+function gitHostTokenRoutes(
+  { secretKey, store, run }: GitHostTokenSource,
+  { fromDatabase }: ApiContext,
+): Hono<AuthEnv> {
+  const routes = new Hono<AuthEnv>();
+  routes.put('/:id/git-host', async (c) => {
+    const id = projectId(c.req.param('id'));
+    if (id === undefined) return c.json(NOT_FOUND, 404);
+    const target = await fromDatabase(() => store.project(id));
+    if (target === undefined) return c.json(NOT_FOUND, 404);
+    if ('status' in target) return c.json(target, 503);
+    const fields = tokenFields(await jsonObject(c), target.remote);
+    if (!fields.ok) {
+      return c.json({ error: fields.error, field: fields.field }, 400);
+    }
+    if (secretKey.status !== 'ok') return c.json({ error: NO_SECRET_KEY }, 503);
+    const check = await checkToken(
+      run,
+      {
+        gitHost: fields.gitHost,
+        host: hostOf(target.remote),
+        path: repositoryPathOf(target.remote),
+      },
+      fields.token,
+    );
+    if (check.status === 'cli-missing') {
+      return c.json({ error: check.error }, 503);
+    }
+    if (check.status === 'refused') {
+      return c.json({ error: check.error, field: 'token' }, 422);
+    }
+    const ciphertext = encryptToken(secretKey.key, id, fields.token);
+    const result = await fromDatabase(() =>
+      store.save(id, {
+        remote: target.remote,
+        storedGitHost: fields.storedGitHost,
+        ciphertext,
+        by: c.get('account').id,
+      }),
+    );
+    return savedAnswer(c, result, check.defaultBranch);
+  });
+  routes.delete('/:id/git-host/token', async (c) => {
+    const id = projectId(c.req.param('id'));
+    if (id === undefined) return c.json(NOT_FOUND, 404);
+    const forgotten = await fromDatabase(() => store.forget(id));
+    if (forgotten === false) return c.json(NOT_FOUND, 404);
+    if (forgotten !== true) return c.json(forgotten, 503);
+    return c.body(null, 204);
+  });
+  return routes;
+}
+
 export function adminRoutes(
   admin: AdminSource | undefined,
   context: ApiContext,
@@ -147,8 +234,15 @@ export function adminRoutes(
   if (admin?.roleRules !== undefined) {
     routes.route('/projects', roleRuleRoutes(admin.roleRules, context));
   }
+  if (admin?.gitHostTokens !== undefined) {
+    routes.route('/projects', gitHostTokenRoutes(admin.gitHostTokens, context));
+  }
   if (admin?.projects !== undefined) {
-    routes.route('/projects', projectRoutes(admin.projects, context));
+    const secretKey = admin.gitHostTokens?.secretKey.status === 'ok';
+    routes.route(
+      '/projects',
+      projectRoutes(admin.projects, context, secretKey),
+    );
   }
   routes.all('*', (c) => c.json({ error: 'Not found' }, 404));
   return routes;

@@ -65,7 +65,7 @@ The page reloads the list every `refreshSeconds`: the header follows it, a field
 
 ### What changing the remote does
 
-The slug never changes. Sessions are linked to a project by their remote when they are read ([Data](data.md#project-of-a-session)), so no stored session changes: once the remote is saved, the sessions of the new remote belong to the project, and those of the old one leave it at once and wait under remotes not added yet. Git host data and friction reports follow the remote, so they stay with the old remote, whose [git host collection](data.md#git-host) stops. Rules stay with the project.
+The slug never changes. Sessions are linked to a project by their remote when they are read ([Data](data.md#project-of-a-session)), so no stored session changes: once the remote is saved, the sessions of the new remote belong to the project, and those of the old one leave it at once and wait under remotes not added yet. Git host data and friction reports follow the remote, so they stay with the old remote, whose [git host collection](data.md#git-host) stops. Rules stay with the project. A new remote on another host (the part before the first `/` of the normalised remote) forgets the project's [git host token](#git-host-token) and its chosen git host; on the same host they stay.
 
 ## Removing a project
 
@@ -77,11 +77,50 @@ The slug never changes. Sessions are linked to a project by their remote when th
 
 Removing frees the slug and the remote: adding the remote again makes a new project, with a new id and the slug made again from the remote, and with only the sessions that come after the removal. What is deleted and what stays is described in [Data](data.md#removing-a-project).
 
+## Git host token
+
+A manager can give each project a token of its git host, so the server reads the project's issues and pull or merge requests itself, without any developer's machine. The token is checked before it is stored, stored encrypted, and never shown again: the API only says whether a token is set, when and by whom.
+
+### Git host of a project
+
+The git host of a project is `github` for a remote on `github.com`, `gitlab` for one on `gitlab.com`, and otherwise the one a manager chose when saving a token (`github` for GitHub Enterprise Server, `gitlab` for a self-hosted GitLab). With none chosen, it is unknown (`null`). Only `https` hosts are supported; a private certificate authority comes from the server's `SSL_CERT_FILE`. A remote with a port or an SSH alias (`github.com-work`) is read by its host name alone, so the check fails with `Could not reach <host>`: set the real remote in the project's settings.
+
+### The secret key
+
+Tokens are encrypted with `FACTORYDECK_SECRET_KEY`, 32 random bytes in base64 set in the root `.env` (`openssl rand -base64 32`, see [Getting started](../getting-started.md#configuration)). The key is trimmed and must be standard base64 decoding to exactly 32 bytes. An empty value counts as unset. A missing or invalid key does not stop the server: saving a token answers `503` until it is set, and `GET /api/admin/projects` says `"secretKey": false`.
+
+Each token is encrypted with AES-256-GCM and a random 12-byte IV, bound to its project's id, and stored as `v1:<iv>:<tag>:<ciphertext>` in base64url without padding: a ciphertext copied to another project does not decrypt. A key changed later makes stored tokens unreadable, and the collection then reports `Token cannot be decrypted: set it again`. Rotating the key is not supported.
+
+### Rights the token needs
+
+- GitHub: a classic token with `repo`, or a fine-grained token with read access to Metadata, Contents, Issues and Pull requests.
+- GitLab: a token with `read_api`.
+
+### The check
+
+Before storing a token, the server reads, with that token, the repository of the project's remote and its `docs/agents/factory.yml` on its default branch, the one the git host answers:
+
+- GitHub: `gh api --hostname <host> repos/<owner>/<repo>` reads `default_branch`, then `gh api --hostname <host> "repos/<owner>/<repo>/contents/docs/agents/factory.yml?ref=<branch>"`.
+- GitLab: `glab api --hostname <host> projects/<url-encoded path>`, then `glab api --hostname <host> "projects/<path>/repository/files/docs%2Fagents%2Ffactory.yml?ref=<branch>"`.
+
+The file must exist and be a file. Each `gh` or `glab` call gets the token for that call only: `GH_TOKEN` and `GH_ENTERPRISE_TOKEN` (and `GH_HOST` for a host other than `github.com`), or `GITLAB_TOKEN` and `GITLAB_HOST`, plus `GH_PROMPT_DISABLED=1`. It gets only `PATH`, the proxy variables (`HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY`, `ALL_PROXY`, also in lower case) and the certificate variables (`SSL_CERT_FILE`, `SSL_CERT_DIR`, `NODE_EXTRA_CA_CERTS`) from the server's environment, an empty temporary `GH_CONFIG_DIR` or `GLAB_CONFIG_DIR`, and an empty temporary working folder: it never uses a token or a login of the server's own environment. Each call has 30 seconds. Nothing is written to `.env` or to the server's environment, and the token is never logged or written in an error.
+
+A failed check answers a fixed message, never the git host's output:
+
+| The git host answers                               | Message                                               |
+| -------------------------------------------------- | ----------------------------------------------------- |
+| `401`                                              | `Bad token`                                           |
+| `403` or `429` (missing scope, SSO, rate limit)    | `Token cannot read this repository`                   |
+| `404` on the repository                            | `Repository not found or not visible with this token` |
+| An empty GitLab project (no default branch)        | `Repository is empty`                                 |
+| `404` on the file, or a folder at its path         | `No docs/agents/factory.yml on <branch>`              |
+| A timeout, a DNS or connection failure, or a `5xx` | `Could not reach <host>`                              |
+
 ## Admin routes
 
 Every route under `/api/admin/` checks, in order: a session (`401`, or `503` while the database is unreachable), the role (`403` with `{ "error": "Managers only" }` for a dev, on any path under `/api/admin/`, unknown ones included), the body (`400`), then conflicts (`409`). A manager gets `404` with `{ "error": "Not found" }` on an unknown path. The role is read from the session's account at each request.
 
-`GET /api/admin/projects` answers `200` with `{ "status": "ok", "refreshSeconds": <n>, "projects": [...], "pendingRemotes": [...], "noRemote": ... }`, in the order of the table. Each project has `id`, `name`, `slug`, `remote` (normalised), `createdAt` (ISO 8601) and `sessions`, the number of sessions stored for the project (every session whose root has its remote, whatever the period). `pendingRemotes` holds the lines of [Remotes not added yet](#remotes-not-added-yet) in their order, each with `remote`, `sessions`, `firstAt` and `lastAt` (ISO 8601, or `null`), and is `[]` when there is none. `noRemote` is `{ "sessions": <n>, "folders": <k> }`, or `null` when every session has a remote. While the database is unreachable, it answers `503` with `{ "status": "unreachable", "refreshSeconds": <n> }`.
+`GET /api/admin/projects` answers `200` with `{ "status": "ok", "refreshSeconds": <n>, "secretKey": <boolean>, "projects": [...], "pendingRemotes": [...], "noRemote": ... }`, in the order of the table. `secretKey` is `true` when [`FACTORYDECK_SECRET_KEY`](#the-secret-key) is set and valid. Each project has `id`, `name`, `slug`, `remote` (normalised), `createdAt` (ISO 8601), `sessions`, the number of sessions stored for the project (every session whose root has its remote, whatever the period), `gitHost` (`github`, `gitlab`, or `null` when [unknown](#git-host-of-a-project)), `tokenSet` (whether a token is stored), `tokenSetAt` (ISO 8601) and `tokenSetBy` (`{ "name": "<name>" }` of the manager who saved it, or `null` once that account is deleted); both are `null` without a token. The token, its ciphertext and its length are never returned. `pendingRemotes` holds the lines of [Remotes not added yet](#remotes-not-added-yet) in their order, each with `remote`, `sessions`, `firstAt` and `lastAt` (ISO 8601, or `null`), and is `[]` when there is none. `noRemote` is `{ "sessions": <n>, "folders": <k> }`, or `null` when every session has a remote. While the database is unreachable, it answers `503` with `{ "status": "unreachable", "refreshSeconds": <n> }`.
 
 `POST /api/admin/projects` with `{ "remote": "<remote>", "name": "<name>" }` adds a project, with the [default role rules](roles-and-work-items.md#role-rules) in the same transaction, and answers `201` with it, in the shape of one project of the list. `name` may be missing, `null` or empty. Unknown fields are ignored, and a body that is not a JSON object is read as empty.
 
@@ -111,6 +150,22 @@ The role rules of a project have their own routes, `GET` and `PUT /api/admin/pro
 | `404`  | `{ "error": "Not found" }`: `<id>` is not a positive integer written without a leading zero, or no project has it.                                                                   |
 | `503`  | `{ "status": "unreachable", "refreshSeconds": <n> }` while the database is unreachable, or `{ "error": "Busy, try again" }` after 30 s of waiting for the locks. Nothing is removed. |
 
+`PUT /api/admin/projects/<id>/git-host` with `{ "gitHost"?: "github" | "gitlab", "token": "<token>" }` [checks](#the-check) the token, then stores it encrypted, replacing any token stored before, and answers `200` with `{ "gitHost": "github", "tokenSet": true, "tokenSetAt": "<ISO 8601>", "tokenSetBy": { "name": "<name>" }, "defaultBranch": "<branch>" }`. The token is trimmed. `gitHost` is required, on every `PUT`, for a remote on another host than `github.com` and `gitlab.com`, and refused for those two. The token is stored under the same lock as adding a project, only if the project's remote is still the one checked. When two managers save at once, the last save wins. Nothing is stored on a refusal; after the shared checks and `403`, in this order:
+
+| Answer | When                                                                                                                                                                       |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `404`  | `{ "error": "Not found" }`: `<id>` is not a positive integer, or no project has it (also one removed during the check).                                                    |
+| `503`  | `{ "status": "unreachable", "refreshSeconds": <n> }`: the database is unreachable.                                                                                         |
+| `400`  | `{ "error": "Token is required", "field": "token" }` for a token missing, empty, blank or not text, or `At most 1000 characters` on `"token"`. Checked before `gitHost`.   |
+| `400`  | `{ "error": "Choose GitHub or GitLab", "field": "gitHost" }` for another host, when `gitHost` is missing or not `github` or `gitlab`.                                      |
+| `400`  | `{ "error": "GitHub.com is always GitHub", "field": "gitHost" }` (or `GitLab.com is always GitLab`) when `gitHost` is sent for a remote on `github.com` (or `gitlab.com`). |
+| `503`  | `{ "error": "No secret key: set FACTORYDECK_SECRET_KEY" }`: the key is missing or invalid.                                                                                 |
+| `503`  | `{ "error": "gh not found on the server" }` (or `glab`): the git host's CLI is not installed on the server.                                                                |
+| `422`  | `{ "error": "<message>", "field": "token" }`: the [check](#the-check) failed.                                                                                              |
+| `409`  | `{ "error": "The remote changed during the check: try again" }`: the project's remote changed while the token was being checked.                                           |
+
+`DELETE /api/admin/projects/<id>/git-host/token` forgets the project's token and answers `204`, also when no token was set; the chosen `gitHost` stays. It works without the secret key. After the shared checks and `403`, it answers `404` with `{ "error": "Not found" }` for an unknown project, then `503` while the database is unreachable.
+
 ## How a project is stored
 
-The table `project` holds, for each project, its `id`, `name`, `slug` (unique), normalised `remote` (unique), `created_at` and `created_by`, the account of the manager who added it (emptied if that account is ever deleted). The table `removed_session` lists every session deleted with a project: its session id, the project's name and the time of the removal.
+The table `project` holds, for each project, its `id`, `name`, `slug` (unique), normalised `remote` (unique), `created_at` and `created_by`, the account of the manager who added it (emptied if that account is ever deleted). It also holds `git_host` (`github` or `gitlab`, stored only for a remote on another host than `github.com` and `gitlab.com`), `token_ciphertext`, `token_set_at` and `token_set_by`, the account that saved the token (emptied if that account is ever deleted). Removing a project deletes them with its row. The table `removed_session` lists every session deleted with a project: its session id, the project's name and the time of the removal.

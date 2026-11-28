@@ -1,7 +1,7 @@
 import { and, count, eq, ne, sql } from 'drizzle-orm';
 import type { FieldError } from '../auth/types.ts';
 import type { Database } from '../db/client.ts';
-import { project, projectSession } from '../db/schema.ts';
+import { account, project, projectSession } from '../db/schema.ts';
 import type { Transaction } from '../ingest/store.ts';
 import {
   type AddProjectResult,
@@ -20,6 +20,7 @@ import {
   NOT_A_REMOTE,
 } from './project-types.ts';
 import { insertDefaultRoleRules } from '../roles/project-rules.ts';
+import { gitHostOf, hostOf } from './git-host-token.ts';
 import { remotesNotAdded } from './pending-remotes.ts';
 import { byProjectOrder } from './project-order.ts';
 import { freeSlug, parseRemote, slugBase } from './remote.ts';
@@ -123,11 +124,44 @@ async function sessionCounts(
   return new Map(rows.map((row) => [row.project, row.sessions]));
 }
 
+interface ProjectRow {
+  row: typeof project.$inferSelect;
+  setBy: string | null;
+}
+
 function listedOf(
-  row: typeof project.$inferSelect,
+  { row, setBy }: ProjectRow,
   counts: Map<string, number>,
 ): ListedProject {
-  return { ...rowOf(row), sessions: counts.get(row.slug) ?? 0 };
+  const tokenSet = row.tokenCiphertext !== null;
+  return {
+    ...rowOf(row),
+    sessions: counts.get(row.slug) ?? 0,
+    gitHost: gitHostOf(row.remote, row.gitHost),
+    tokenSet,
+    tokenSetAt: tokenSet ? (row.tokenSetAt?.toISOString() ?? null) : null,
+    tokenSetBy: tokenSet && setBy !== null ? { name: setBy } : null,
+  };
+}
+
+function projectRows(db: Database | Transaction) {
+  return db
+    .select({ row: project, setBy: account.name })
+    .from(project)
+    .leftJoin(account, eq(account.id, project.tokenSetBy));
+}
+
+function hostChanges(
+  current: string,
+  remote: string | undefined,
+): Partial<typeof project.$inferInsert> {
+  if (remote === undefined || hostOf(remote) === hostOf(current)) return {};
+  return {
+    gitHost: null,
+    tokenCiphertext: null,
+    tokenSetAt: null,
+    tokenSetBy: null,
+  };
 }
 
 async function updateProject(
@@ -137,7 +171,7 @@ async function updateProject(
 ): Promise<UpdateProjectResult> {
   await tx.execute(sql`select pg_advisory_xact_lock(${PROJECT_LOCK})`);
   const [current] = await tx
-    .select({ id: project.id })
+    .select({ id: project.id, remote: project.remote })
     .from(project)
     .where(eq(project.id, id))
     .limit(1);
@@ -150,14 +184,13 @@ async function updateProject(
       .limit(1);
     if (other !== undefined) return { status: 'exists', name: other.name };
   }
-  const [row] =
-    changes.name === undefined && changes.remote === undefined
-      ? await tx.select().from(project).where(eq(project.id, id))
-      : await tx
-          .update(project)
-          .set(changes)
-          .where(eq(project.id, id))
-          .returning();
+  if (changes.name !== undefined || changes.remote !== undefined) {
+    await tx
+      .update(project)
+      .set({ ...changes, ...hostChanges(current.remote, changes.remote) })
+      .where(eq(project.id, id));
+  }
+  const [row] = await projectRows(tx).where(eq(project.id, id));
   if (row === undefined) return { status: 'missing' };
   return { status: 'updated', project: listedOf(row, await sessionCounts(tx)) };
 }
@@ -170,7 +203,7 @@ export function projectStore(
   return {
     list: async () => {
       const [rows, counts] = await Promise.all([
-        db.select().from(project),
+        projectRows(db),
         sessionCounts(db),
       ]);
       return rows.map((row) => listedOf(row, counts)).sort(byProjectOrder);

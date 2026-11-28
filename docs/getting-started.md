@@ -46,6 +46,9 @@ Everything goes in the root `.env`; [`.env.example`](../.env.example) documents 
 | `FACTORYDECK_COLLECT_INTERVAL_MINUTES` | `5`                  | How often to collect from the git host.       |
 | `FACTORYDECK_INACTIVE_AFTER_MINUTES`   | `30`                 | When a quiet session shows as inactive.       |
 | `FACTORYDECK_CONFIG`                   | `factorydeck.yml`    | The file of work item rules.                  |
+| `FACTORYDECK_SECRET_KEY`               |                      | The key that encrypts git host tokens.        |
+
+`FACTORYDECK_SECRET_KEY` encrypts the [git host token](product/projects.md#git-host-token) of each project. Make one with `openssl rand -base64 32` and keep it: a key changed later makes the stored tokens unreadable, and each token must then be set again. Without it the server still starts, but no token can be saved.
 
 ## Your workflow, your vocabulary
 

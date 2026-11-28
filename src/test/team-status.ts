@@ -39,6 +39,18 @@ export const h: AuthHarness = {
   set lockWaitMs(value) {
     harness().lockWaitMs = value;
   },
+  get secretKey() {
+    return harness().secretKey;
+  },
+  set secretKey(value) {
+    harness().secretKey = value;
+  },
+  get hostCli() {
+    return harness().hostCli;
+  },
+  set hostCli(value) {
+    harness().hostCli = value;
+  },
   app: (up) => harness().app(up),
   addAccount: (email, options) => harness().addAccount(email, options),
   close: () => harness().close(),
