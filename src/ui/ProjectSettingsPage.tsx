@@ -139,7 +139,12 @@ function SettingsContent({
 }
 
 function useSettings(loadProjects: LoadProjects, slug: string) {
-  const view = useRefreshing('project-settings', loadProjects, 'projects');
+  const [version, setVersion] = useState(0);
+  const view = useRefreshing(
+    `project-settings:${String(version)}`,
+    loadProjects,
+    'projects',
+  );
   const [saved, setSaved] = useState<{
     from: ProjectsView;
     project: ListedProject;
@@ -153,7 +158,9 @@ function useSettings(loadProjects: LoadProjects, slug: string) {
       ? saved.project
       : found;
   const onSaved = (next: ListedProject): void => {
-    if (view !== undefined) setSaved({ from: view, project: next });
+    if (view === undefined) return;
+    setSaved({ from: view, project: next });
+    setVersion((previous) => previous + 1);
   };
   return { view, project, onSaved };
 }

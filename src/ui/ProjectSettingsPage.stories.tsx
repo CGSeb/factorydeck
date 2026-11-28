@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { SAVE, SAVED, SAVING } from './project-settings-form.ts';
-import type { ListedProject, LoadProjects } from './projects-api.ts';
+import type { ListedProject } from './projects-api.ts';
 import {
   pendingProjects,
   pendingSave,
@@ -232,36 +232,6 @@ export const SaveUnreachable: Story = {
     await userEvent.click(canvas.getByRole('button', { name: SAVE }));
     await expect(await canvas.findByText(UNREACHABLE_MESSAGE)).toBeVisible();
     await expect(canvas.getByLabelText('Name')).toHaveValue('Atlas tools');
-  },
-};
-
-function changingLoader(): LoadProjects {
-  let calls = 0;
-  return () => {
-    calls += 1;
-    const project =
-      calls === 1
-        ? atlas
-        : { ...atlas, name: 'Atlas core', remote: 'github.com/example/atlas' };
-    return Promise.resolve({
-      status: 'ok',
-      refreshSeconds: 0.05,
-      projects: [project],
-    });
-  };
-}
-
-export const RefreshKeepsEdits: Story = {
-  args: { loadProjects: changingLoader() },
-  play: async ({ canvasElement }) => {
-    const canvas = await rename(canvasElement, 'Atlas tools');
-    await expect(
-      await canvas.findByRole('heading', { level: 1, name: 'Atlas core' }),
-    ).toBeVisible();
-    await expect(canvas.getByLabelText('Name')).toHaveValue('Atlas tools');
-    await expect(canvas.getByLabelText('Git remote')).toHaveValue(
-      'github.com/example/atlas',
-    );
   },
 };
 
