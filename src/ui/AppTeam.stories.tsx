@@ -8,6 +8,7 @@ import { aloneManager, teamLoaderOf, teamResponse } from './team-fixtures.ts';
 import {
   projectsLoaderOf,
   projectsResponse,
+  savingAnswer,
   someProjects,
 } from './projects-list-fixtures.ts';
 import { PROJECTS_REFUSED } from './projects-view.ts';
@@ -128,6 +129,25 @@ export const ManagerSeesTheProjectsLink: Story = {
       'Team',
       'Projects',
     ]);
+  },
+};
+
+export const ProjectSettingsForAManager: Story = {
+  name: 'Manager: Projects stays current on a project settings page',
+  parameters: { path: '/projects/atlas' },
+  args: {
+    loadMe: meAs('manager'),
+    saveProject: savingAnswer({ status: 'missing' }),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole('heading', { level: 2, name: 'General' });
+    await waitFor(() =>
+      expect(canvas.getByRole('link', { name: 'Projects' })).toHaveAttribute(
+        'aria-current',
+        'page',
+      ),
+    );
   },
 };
 

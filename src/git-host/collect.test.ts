@@ -4,7 +4,12 @@ import { join } from 'node:path';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Database } from '../db/client.ts';
-import { gitHostIssue, gitHostRequest, session } from '../db/schema.ts';
+import {
+  gitHostIssue,
+  gitHostRequest,
+  project as projectTable,
+  session,
+} from '../db/schema.ts';
 import {
   type FakeGitHostData,
   installFakeGitHost,
@@ -253,6 +258,16 @@ describe('collect', () => {
       failures: [],
     });
     expect((await collectionStatus(db, hasFactory)).collectedAt).not.toBeNull();
+  });
+
+  it('stops collecting a root once its remote belongs to no project', async () => {
+    await project('app', github());
+    await db
+      .update(projectTable)
+      .set({ remote: 'github.com/example-org/elsewhere' });
+
+    expect(await collect(db, { hasFactory })).toMatchObject({ projects: 0 });
+    expect(await db.select().from(gitHostIssue)).toEqual([]);
   });
 
   it('starts over when the repository changes', async () => {

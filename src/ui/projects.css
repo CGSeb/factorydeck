@@ -19,3 +19,38 @@
   white-space: normal;
   overflow-wrap: anywhere;
 }
+
+.fd-projects-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.fd-projects-link:hover {
+  text-decoration: underline;
+}
+
+.fd-project-settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fd-space-1);
+  max-width: 560px;
+}
+
+.fd-project-settings-form > .fd-setup-error {
+  margin: 0;
+}
+
+.fd-project-settings-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--fd-space-3);
+}
+
+.fd-project-settings-saved {
+  font-size: var(--fd-text-sm);
+  color: var(--fd-muted);
+}
+
+.fd-project-settings-form > .fd-project-settings-missing {
+  margin-top: var(--fd-space-2);
+}

@@ -51,7 +51,7 @@ import {
 import { resetLinkCreator, resetReader, resetSaver } from './reset-api.ts';
 import { teamLoader, withInvitations } from './team-api.ts';
 import { teamCliActions } from './team-cli-api.ts';
-import { projectAdder, projectsLoader } from './projects-api.ts';
+import { projectAdder, projectSaver, projectsLoader } from './projects-api.ts';
 import { activeChanger } from './account-status-api.ts';
 
 const gate = authGate();
@@ -102,6 +102,7 @@ const loadReport = frictionReportLoader(gate.fetch);
 const markReport = frictionReportMarker(gate.fetch);
 const loadProjects = projectsLoader(gate.fetch);
 const addProject = projectAdder(gate.fetch);
+const saveProject = projectSaver(gate.fetch);
 const loadCliConnections = cliConnectionsLoader(gate.fetch);
 const disconnectCliConnection = cliConnectionDisconnecter(gate.fetch);
 const root = document.querySelector('#root');
@@ -150,6 +151,7 @@ if (root) {
         markReport={markReport}
         loadProjects={loadProjects}
         addProject={addProject}
+        saveProject={saveProject}
         loadCliConnections={loadCliConnections}
         disconnectCliConnection={disconnectCliConnection}
         signIn={signIn}

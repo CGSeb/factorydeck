@@ -79,7 +79,7 @@ Every `rollout-*.jsonl`, at any depth, under `CODEX_SESSIONS_DIR` (default `~/.c
 
 ## Git host
 
-For each factory project, FactoryDeck reads `repository.git_host` (`github` or `gitlab`) and `repository.git_host_commands` from its `docs/agents/factory.yml`, then in that file the CLI (`- CLI: \`<command>\``, default `gh`or`glab`) and the repository (`- Repository: \`<owner>/<name>\``or`- Project: \`<group>/<project>\``). It also reads `issues.labels`and`build.auto_merge` for the [outcomes](outcomes.md). These are read at every run, so a change applies at the next one.
+FactoryDeck collects the roots with sessions whose remote belongs to a project of [Projects](projects.md); a root whose remote no project has is not collected, so changing a project's remote stops the collection of the old one. For each factory project, FactoryDeck reads `repository.git_host` (`github` or `gitlab`) and `repository.git_host_commands` from its `docs/agents/factory.yml`, then in that file the CLI (`- CLI: \`<command>\``, default `gh`or`glab`) and the repository (`- Repository: \`<owner>/<name>\``or`- Project: \`<group>/<project>\``). It also reads `issues.labels`and`build.auto_merge` for the [outcomes](outcomes.md). These are read at every run, so a change applies at the next one.
 
 The collection also reads the optional `bugs.label` of `docs/agents/factory.yml` at every run, with the outcome settings, for the [kind of each issue](outcomes.md#kinds). A missing, empty or reserved bug label is not a collection error.
 

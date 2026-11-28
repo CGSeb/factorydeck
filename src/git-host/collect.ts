@@ -1,5 +1,5 @@
 import type { Database } from '../db/client.ts';
-import { UNASSIGNED_PROJECT, session } from '../db/schema.ts';
+import { UNASSIGNED_PROJECT, projectSession } from '../db/schema.ts';
 import type { FactoryCheck } from '../ingest/factory.ts';
 import { folderName } from '../projects/label.ts';
 import { CLI_TIMEOUT_MS, cliRunner, firstLine } from './command.ts';
@@ -55,8 +55,8 @@ async function factoryProjects(
   hasFactory: FactoryCheck,
 ): Promise<string[]> {
   const rows = await db
-    .selectDistinct({ project: session.project })
-    .from(session);
+    .selectDistinct({ project: projectSession.root })
+    .from(projectSession);
   const projects: string[] = [];
   for (const { project } of rows) {
     if (project !== UNASSIGNED_PROJECT && (await hasFactory(project))) {

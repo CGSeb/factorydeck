@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DATABASE_UNREACHABLE, SERVER_UNREACHABLE } from './auth-api.ts';
-import { projectAdder, projectsLoader } from './projects-api.ts';
+import { projectAdder, projectSaver, projectsLoader } from './projects-api.ts';
 import { addedProject, someProjects } from './projects-list-fixtures.ts';
 
 function answering(status: number, body: unknown): typeof fetch {
@@ -34,6 +34,15 @@ describe('projectsLoader', () => {
     await expect(
       projectsLoader(
         answering(200, { status: 'ok', refreshSeconds: 10, projects: [{}] }),
+      )(),
+    ).resolves.toBeUndefined();
+    await expect(
+      projectsLoader(
+        answering(200, {
+          status: 'ok',
+          refreshSeconds: 10,
+          projects: [addedProject],
+        }),
       )(),
     ).resolves.toBeUndefined();
     await expect(
@@ -90,6 +99,70 @@ describe('projectAdder', () => {
     ).resolves.toEqual({ status: 'failed', message: 'Managers only' });
     await expect(
       projectAdder(() => Promise.reject(new Error('offline')))(input),
+    ).resolves.toEqual({ status: 'failed', message: SERVER_UNREACHABLE });
+  });
+});
+
+describe('projectSaver', () => {
+  const shop = someProjects[0];
+  if (shop === undefined) throw new Error('No project fixture');
+
+  it('sends the changes and answers the saved project', async () => {
+    const calls: [string, RequestInit | undefined][] = [];
+    const saved = projectSaver((url, init) => {
+      calls.push([url instanceof Request ? url.url : url.toString(), init]);
+      return answering(200, shop)('');
+    });
+
+    await expect(saved(shop.id, { name: 'Atlas' })).resolves.toEqual({
+      status: 'saved',
+      project: shop,
+    });
+    expect(calls).toEqual([
+      [
+        `/api/admin/projects/${String(shop.id)}`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: '{"name":"Atlas"}',
+        },
+      ],
+    ]);
+  });
+
+  it('puts a refusal under its field and a 404 apart', async () => {
+    await expect(
+      projectSaver(
+        answering(400, { error: 'Name is required', field: 'name' }),
+      )(1, { name: '' }),
+    ).resolves.toEqual({
+      status: 'invalid',
+      field: 'name',
+      message: 'Name is required',
+    });
+    await expect(
+      projectSaver(
+        answering(409, { error: 'This remote is already the project Repo' }),
+      )(1, { remote: 'x' }),
+    ).resolves.toEqual({
+      status: 'invalid',
+      field: 'remote',
+      message: 'This remote is already the project Repo',
+    });
+    await expect(
+      projectSaver(answering(404, { error: 'Not found' }))(1, { name: 'x' }),
+    ).resolves.toEqual({ status: 'missing' });
+  });
+
+  it('answers a form failure otherwise', async () => {
+    await expect(
+      projectSaver(answering(503, { status: 'unreachable' }))(1, {}),
+    ).resolves.toEqual({ status: 'failed', message: DATABASE_UNREACHABLE });
+    await expect(
+      projectSaver(answering(200, { id: 1 }))(1, {}),
+    ).resolves.toEqual({ status: 'failed', message: SERVER_UNREACHABLE });
+    await expect(
+      projectSaver(() => Promise.reject(new Error('offline')))(1, {}),
     ).resolves.toEqual({ status: 'failed', message: SERVER_UNREACHABLE });
   });
 });

@@ -23,7 +23,7 @@ import { invitations } from '../team/invitations.ts';
 import { projectStore } from '../team/projects.ts';
 import { resetLinks } from '../team/reset-links.ts';
 import type { SessionSource } from '../server/session-routes.ts';
-import { createTestDatabase } from './postgres.ts';
+import { type ScratchOptions, createTestDatabase } from './postgres.ts';
 import {
   unusedFeatures,
   unusedGitHost,
@@ -95,8 +95,10 @@ function accountSources(
   };
 }
 
-export async function authHarness(): Promise<AuthHarness> {
-  const { db, close } = await createTestDatabase();
+export async function authHarness(
+  options: ScratchOptions = {},
+): Promise<AuthHarness> {
+  const { db, close } = await createTestDatabase(options);
   const uiDir = await mkdtemp(join(tmpdir(), 'factorydeck-ui-'));
   await writeFile(
     join(uiDir, 'index.html'),

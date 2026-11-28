@@ -230,6 +230,7 @@ describe('GET /api/admin/projects', () => {
           slug: 'alpha-2',
           remote: 'gitlab.example.test/group/sub/alpha',
           createdAt: new Date(START.getTime() + 3 * DAY_MS).toISOString(),
+          sessions: 0,
         },
         {
           id: body.projects[1]?.id,
@@ -237,6 +238,7 @@ describe('GET /api/admin/projects', () => {
           slug: 'alpha',
           remote: 'github.com/owner/alpha',
           createdAt: new Date(START.getTime() + 2 * DAY_MS).toISOString(),
+          sessions: 0,
         },
         {
           id: body.projects[2]?.id,
@@ -244,6 +246,7 @@ describe('GET /api/admin/projects', () => {
           slug: 'zeta',
           remote: 'github.com/owner/zeta',
           createdAt: new Date(START.getTime() + DAY_MS).toISOString(),
+          sessions: 0,
         },
       ],
     });
@@ -278,6 +281,7 @@ describe('every route under /api/admin/', () => {
     ['POST', '/api/admin/projects'],
     ['GET', '/api/admin/anything'],
     ['DELETE', '/api/admin/projects/1'],
+    ['PATCH', '/api/admin/projects/1'],
     ['GET', '/api/admin'],
   ];
 
@@ -289,7 +293,7 @@ describe('every route under /api/admin/', () => {
       h.app().request(path, {
         method,
         headers: { cookie, 'content-type': 'application/json' },
-        ...(method === 'POST'
+        ...(method === 'POST' || method === 'PATCH'
           ? { body: JSON.stringify({ remote: 'foo' }) }
           : {}),
       }),
