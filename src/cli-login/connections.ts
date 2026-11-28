@@ -47,21 +47,24 @@ async function connect(
   machine: string,
   at: Date,
 ): Promise<Connected | undefined> {
-  const [found] = await db
-    .select({ ...accountColumns, active: account.active })
-    .from(account)
-    .where(eq(account.id, accountId));
-  if (found === undefined || !found.active) return undefined;
-  const token = newCliToken();
-  await db.insert(cliConnection).values({
-    accountId,
-    machine,
-    tokenHash: hashToken(token),
-    createdAt: at,
-    lastUsedAt: at,
+  return db.transaction(async (tx): Promise<Connected | undefined> => {
+    const [found] = await tx
+      .select({ ...accountColumns, active: account.active })
+      .from(account)
+      .where(eq(account.id, accountId))
+      .for('update');
+    if (found === undefined || !found.active) return undefined;
+    const token = newCliToken();
+    await tx.insert(cliConnection).values({
+      accountId,
+      machine,
+      tokenHash: hashToken(token),
+      createdAt: at,
+      lastUsedAt: at,
+    });
+    const { id, email, name, role } = found;
+    return { token, account: { id, email, name, role } };
   });
-  const { id, email, name, role } = found;
-  return { token, account: { id, email, name, role } };
 }
 
 async function touch(db: Database, connectionId: number, at: Date) {
