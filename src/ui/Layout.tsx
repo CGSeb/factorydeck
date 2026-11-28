@@ -86,8 +86,6 @@ function useFactoryStatus(loadFactory: LoadFactory): {
         ? {
             ...current,
             missing: current.missing.filter((row) => row.project !== project),
-            projects: current.projects.filter((row) => row.project !== project),
-            bugTickets: current.bugTickets.filter((root) => root !== project),
           }
         : current,
     );
@@ -182,12 +180,7 @@ function useProjectChoice(forget: (project: string) => void): {
   return {
     project,
     choose: (next) => void navigate(projectTarget(location, next)),
-    onDeleted: (deleted) => {
-      forget(deleted);
-      if (deleted === project) {
-        void navigate(projectTarget(location, undefined), { replace: true });
-      }
-    },
+    onDeleted: forget,
   };
 }
 

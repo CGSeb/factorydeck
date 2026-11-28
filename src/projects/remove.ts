@@ -2,7 +2,7 @@ import { and, count, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import {
   UNASSIGNED_PROJECT,
-  gitHostProject,
+  projectGitHost,
   ingestState,
   session,
   skippedFile,
@@ -13,7 +13,7 @@ import { type FactoryCheck, factoryFile } from '../ingest/factory.ts';
 import { sessionIdOfPath } from '../ingest/files.ts';
 import { LOCK_KEY } from '../ingest/lock.ts';
 import type { Transaction } from '../ingest/store.ts';
-import { forgetProjectNames, projectNames } from './names.ts';
+import { projectNames } from './names.ts';
 import type { DeleteResult, FactoryStatus, MissingFactory } from './types.ts';
 
 const CHUNK = 1000;
@@ -39,7 +39,6 @@ export async function forgetProjects(
 ): Promise<number> {
   if (projects.length === 0) return 0;
   await forgetGitHostData(tx, [...projects]);
-  await forgetProjectNames(tx, [...projects]);
   const ids = new Set(
     (
       await tx
@@ -106,22 +105,22 @@ export async function factoryStatus(
       .groupBy(session.project),
     projectNames(db),
     db
-      .select({ project: gitHostProject.project })
-      .from(gitHostProject)
+      .select({ project: projectGitHost.project })
+      .from(projectGitHost)
       .where(
         and(
-          isNotNull(gitHostProject.bugLabel),
-          isNotNull(gitHostProject.syncedFrom),
+          isNotNull(projectGitHost.bugLabel),
+          isNotNull(projectGitHost.syncedFrom),
         ),
       )
-      .orderBy(gitHostProject.project),
+      .orderBy(projectGitHost.project),
   ]);
   const missing: MissingFactory[] = [];
   for (const { project, sessions } of rows) {
     if (project === UNASSIGNED_PROJECT || (await hasFactory(project))) continue;
     missing.push({
       project,
-      name: names.label(project),
+      name: names.rootLabel(project),
       factoryFile: factoryFile(project),
       sessions,
     });

@@ -1,9 +1,10 @@
-import { desc, eq } from 'drizzle-orm';
+import { type SQL, desc, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import {
   type ReportFilters,
   type ReportedGroup,
   markedReport,
+  projectRoot,
 } from '../db/schema.ts';
 import type { Period } from '../overview/types.ts';
 import type { ReportGroup } from './report-groups.ts';
@@ -38,6 +39,10 @@ export interface NewReport {
   groups: ReportedGroup[];
 }
 
+function ofProject(project: string): SQL {
+  return sql`(${markedReport.project} = ${project} or ${markedReport.project} in (select ${projectRoot.root} from ${projectRoot} where ${projectRoot.project} = ${project}))`;
+}
+
 export async function earlierReports(
   db: Database,
   project: string,
@@ -49,7 +54,7 @@ export async function earlierReports(
       groups: markedReport.groups,
     })
     .from(markedReport)
-    .where(eq(markedReport.project, project));
+    .where(ofProject(project));
 }
 
 export async function lastReportAt(
@@ -60,7 +65,7 @@ export async function lastReportAt(
   const [latest] = await db
     .select({ reportedAt: markedReport.reportedAt })
     .from(markedReport)
-    .where(eq(markedReport.project, project))
+    .where(ofProject(project))
     .orderBy(desc(markedReport.reportedAt), desc(markedReport.id))
     .limit(1);
   return latest === undefined ? null : latest.reportedAt.toISOString();

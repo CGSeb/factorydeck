@@ -1,6 +1,6 @@
 import { and, eq, inArray, isNotNull } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
-import { gitHostIssue, gitHostProject, gitHostRequest } from '../db/schema.ts';
+import { projectIssue, projectGitHost, projectRequest } from '../db/schema.ts';
 import type { Period } from '../overview/types.ts';
 import type { IssueKind } from '../git-host/kind.ts';
 import { needsSpecEpisodes } from '../git-host/milestones.ts';
@@ -224,7 +224,7 @@ export function summarize(
 }
 
 export type FactoryProject = Pick<
-  typeof gitHostProject.$inferSelect,
+  typeof projectGitHost.$inferSelect,
   'project' | 'stageLabels' | 'autoMerge' | 'bugLabel'
 >;
 
@@ -235,21 +235,22 @@ export async function factoryProjects(
 ): Promise<FactoryProject[]> {
   const rows = await db
     .select({
-      project: gitHostProject.project,
-      stageLabels: gitHostProject.stageLabels,
-      autoMerge: gitHostProject.autoMerge,
-      bugLabel: gitHostProject.bugLabel,
+      project: projectGitHost.project,
+      root: projectGitHost.root,
+      stageLabels: projectGitHost.stageLabels,
+      autoMerge: projectGitHost.autoMerge,
+      bugLabel: projectGitHost.bugLabel,
     })
-    .from(gitHostProject)
+    .from(projectGitHost)
     .where(
       and(
-        isNotNull(gitHostProject.syncedFrom),
-        project === undefined ? undefined : eq(gitHostProject.project, project),
+        isNotNull(projectGitHost.syncedFrom),
+        project === undefined ? undefined : eq(projectGitHost.project, project),
       ),
     );
   const kept: FactoryProject[] = [];
   for (const row of rows) {
-    if (await hasFactory(row.project)) kept.push(row);
+    if (await hasFactory(row.root)) kept.push(row);
   }
   return kept;
 }
@@ -268,12 +269,12 @@ export async function loadIssues<T>(
   if (projects.length === 0) return [];
   const names = projects.map((row) => row.project);
   const [issues, requests] = await Promise.all([
-    db.select().from(gitHostIssue).where(inArray(gitHostIssue.project, names)),
+    db.select().from(projectIssue).where(inArray(projectIssue.project, names)),
     db
       .select()
-      .from(gitHostRequest)
-      .where(inArray(gitHostRequest.project, names))
-      .orderBy(gitHostRequest.project, gitHostRequest.number),
+      .from(projectRequest)
+      .where(inArray(projectRequest.project, names))
+      .orderBy(projectRequest.project, projectRequest.number),
   ]);
   const stateOf = new Map(projects.map((row) => [row.project, row]));
   const requestsOf = new Map<string, RequestRow[]>();

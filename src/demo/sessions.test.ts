@@ -36,6 +36,7 @@ import {
   CODEX_DEMO_CALLS,
   writeDemoCodexSessions,
 } from './codex-sessions.ts';
+import { addDemoProjects, recordDemoRemotes } from './projects.ts';
 
 const NOW = new Date('2026-03-12T15:30:00Z');
 const STATE = { inactiveAfterMinutes: 30, now: NOW };
@@ -45,7 +46,7 @@ let close: () => Promise<void>;
 let projects: string;
 
 async function openDemo(): Promise<void> {
-  ({ db, close } = await createTestDatabase());
+  ({ db, close } = await createTestDatabase({ linkRoots: false }));
   const folder = await sessionsFolder();
   const codexFolder = await sessionsFolder();
   projects = await sessionsFolder();
@@ -55,6 +56,8 @@ async function openDemo(): Promise<void> {
     NOW,
     demoProjectRoot(projects, EXAMPLE_APP),
   );
+  await recordDemoRemotes(db, projects);
+  await addDemoProjects(db, NOW);
   await ingest(db, folder, { codexFolder, wsl: false });
 }
 
@@ -74,16 +77,16 @@ describe('demo sessions read from the logs', () => {
         now: NOW,
       });
       expect(all.projects.map((row) => row.project).sort()).toEqual([
-        demoProjectRoot(projects, EXAMPLE_API),
-        demoProjectRoot(projects, EXAMPLE_APP),
+        EXAMPLE_API,
+        EXAMPLE_APP,
       ]);
       expect(
         Object.fromEntries(
           all.projects.map((row) => [row.project, row.projectName]),
         ),
       ).toEqual({
-        [demoProjectRoot(projects, EXAMPLE_API)]: EXAMPLE_API,
-        [demoProjectRoot(projects, EXAMPLE_APP)]: EXAMPLE_APP_NAME,
+        [EXAMPLE_API]: EXAMPLE_API,
+        [EXAMPLE_APP]: EXAMPLE_APP_NAME,
       });
       expect(all.totals.unknownPriceCalls).toBe(4 + CODEX_DEMO_CALLS);
       expect(all.models.map((row) => row.model)).toEqual(
@@ -276,7 +279,7 @@ describe('demo sessions with the git host collected', () => {
     const path = join(await sessionsFolder(), 'factorydeck.yml');
     await writeDemoConfig(path, projects);
     const config = loadWorkflowConfig(path);
-    const app = demoProjectRoot(projects, EXAMPLE_APP);
+    const app = EXAMPLE_APP;
     const query = { period: 'all' as const, timeZone: 'UTC', now: NOW };
     const list = await listFeatures(db, query, config);
     const shared = list.rows

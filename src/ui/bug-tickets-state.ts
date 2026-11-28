@@ -3,13 +3,17 @@ import type { FactoryResponse } from '../projects/types.ts';
 
 export const BUG_TICKETS_KEY = 'factorydeck.bugTickets';
 
+const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
 export function storedBugTickets(): string[] {
   try {
     const value: unknown = JSON.parse(
       window.localStorage.getItem(BUG_TICKETS_KEY) ?? '[]',
     );
     return Array.isArray(value)
-      ? value.filter((item): item is string => typeof item === 'string')
+      ? value.filter(
+          (item): item is string => typeof item === 'string' && SLUG.test(item),
+        )
       : [];
   } catch {
     return [];

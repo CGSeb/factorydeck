@@ -34,7 +34,7 @@ The header `Frictions` says `<n> frictions · <r> per 100 API calls` (one decima
 
 - `Kind`: `All`, `Tool errors`, `Stop blocked`, each with its count. URL parameter `kind` (`tool-error`, `stop-blocked`); another value means `All`.
 - `Role`: `All`, then one pill per role with a thread that has a call in the period, with its frictions, sorted by frictions then name, `unassigned` last. URL parameter `role`, matched exactly. With a role, every figure counts only that role's threads, calls and frictions, and `By role` is left out.
-- `session=<id>`, or `issue=<n>` with `project=<root>`, opened from the [session page](sessions.md#session-page) or the [issue page](features.md#summary): a chip `Session: <title>` or `Issue: #<n> <title>` with a remove button (`Remove filter`). Every figure then counts that session's or issue's frictions, calls and threads only; `session` wins over `issue`; `issue` without `project` or not a positive whole number is ignored. An unknown session or issue shows its chip with the raw value and `No activity in this period.`
+- `session=<id>`, or `issue=<n>` with `project=<slug>`, opened from the [session page](sessions.md#session-page) or the [issue page](features.md#summary): a chip `Session: <title>` or `Issue: #<n> <title>` with a remove button (`Remove filter`). Every figure then counts that session's or issue's frictions, calls and threads only; `session` wins over `issue`; `issue` without `project` or not a positive whole number is ignored. An unknown session or issue shows its chip with the raw value and `No activity in this period.`
 
 All filters combine. Changing one closes every open row.
 

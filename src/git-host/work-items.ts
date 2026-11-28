@@ -1,6 +1,6 @@
 import { and, inArray, isNotNull, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
-import { gitHostIssue, gitHostProject } from '../db/schema.ts';
+import { projectIssue, projectGitHost } from '../db/schema.ts';
 import { type IssueKind, kindOf } from './kind.ts';
 import type { WorkItemIssue } from './types.ts';
 
@@ -30,27 +30,27 @@ async function lookupWorkItems(
   const [collected, issues] = await Promise.all([
     db
       .select({
-        project: gitHostProject.project,
-        bugLabel: gitHostProject.bugLabel,
+        project: projectGitHost.project,
+        bugLabel: projectGitHost.bugLabel,
       })
-      .from(gitHostProject)
+      .from(projectGitHost)
       .where(
         and(
-          inArray(gitHostProject.project, projects),
-          isNotNull(gitHostProject.syncedFrom),
+          inArray(projectGitHost.project, projects),
+          isNotNull(projectGitHost.syncedFrom),
         ),
       ),
     db
       .select({
-        project: gitHostIssue.project,
-        number: gitHostIssue.number,
-        title: gitHostIssue.title,
-        url: gitHostIssue.url,
-        labels: gitHostIssue.labels,
+        project: projectIssue.project,
+        number: projectIssue.number,
+        title: projectIssue.title,
+        url: projectIssue.url,
+        labels: projectIssue.labels,
       })
-      .from(gitHostIssue)
+      .from(projectIssue)
       .where(
-        sql`(${gitHostIssue.project}, ${gitHostIssue.number}) in (${sql.join(
+        sql`(${projectIssue.project}, ${projectIssue.number}) in (${sql.join(
           wanted.map((key) => sql`(${key.project}, ${key.number})`),
           sql`, `,
         )})`,

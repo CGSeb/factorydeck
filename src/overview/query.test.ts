@@ -105,7 +105,7 @@ describe('usageOverview', () => {
     });
   });
 
-  it('lists projects by cost, unassigned included and sub-agent calls in their parent project', async () => {
+  it('lists projects by cost, sub-agent calls in their parent project', async () => {
     const week = await usageOverview(db, {
       period: '7d',
       timeZone: PARIS,
@@ -114,7 +114,7 @@ describe('usageOverview', () => {
     expect(week.projects.map((row) => row.project)).toEqual([
       '/work/app',
       '/work/lib',
-      'unassigned',
+      '/work/loose',
     ]);
     const [app, lib, loose] = week.projects;
     expect(app).toMatchObject({ sessions: 2, apiCalls: 3, tokens: 1_200_000 });

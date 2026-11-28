@@ -1,6 +1,6 @@
 # Projects
 
-A manager adds each project of the team by its git remote, so FactoryDeck knows which repositories it follows. A project added here is a record of the instance: linking sessions to it, the project select and editing or removing a project come in later stories.
+A manager adds each project of the team by its git remote, so FactoryDeck knows which repositories it follows. Every session whose root has that remote belongs to the project, whatever folder it was cloned in ([Data](data.md#project-of-a-session)), and the project select lists the projects of this page under their names. Editing or removing a project comes in later stories.
 
 ## The Projects page
 

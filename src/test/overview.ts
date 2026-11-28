@@ -34,15 +34,13 @@ async function insertCalls(target: Database, calls: Call[]): Promise<void> {
 }
 
 export async function seedOverview(target: Database): Promise<void> {
-  await target
-    .insert(session)
-    .values([
-      { id: 's-app-1', project: '/work/app' },
-      { id: 's-app-2', project: '/work/app' },
-      { id: 's-lib', project: '/work/lib' },
-      { id: 's-loose' },
-      { id: 's-idle', project: '/work/idle' },
-    ]);
+  await target.insert(session).values([
+    { id: 's-app-1', project: '/work/app' },
+    { id: 's-app-2', project: '/work/app' },
+    { id: 's-lib', project: '/work/lib' },
+    { id: 's-loose', project: '/work/loose' },
+    { id: 's-idle', project: '/work/idle' },
+  ]);
   await target
     .insert(subAgent)
     .values({ sessionId: 's-lib', id: 'agent-1', model: 'claude-haiku-9' });

@@ -1,0 +1,280 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "274e4e87-6ba8-4309-850c-ca575c54d00c",
+  "prevIds": [
+    "33e39318-8841-4f73-981d-d4887e4b9968"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "root_remote"
+      ],
+      "writes": [
+        "s|tbl|public.root_remote",
+        "n|tbl|public.root_remote",
+        "e|tbl|public.root_remote",
+        "n|rel|public.root_remote",
+        "n|type|public.root_remote",
+        "n|rel|public.root_remote_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_name"
+      ],
+      "writes": [
+        "s|tbl|public.project_name",
+        "n|tbl|public.project_name",
+        "e|tbl|public.project_name",
+        "n|rel|public.project_name",
+        "n|type|public.project_name"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_view",
+      "statementTarget": [
+        "view",
+        "public",
+        "project_git_host"
+      ],
+      "writes": [
+        "s|view|public.project_git_host",
+        "n|view|public.project_git_host",
+        "e|view|public.project_git_host",
+        "n|rel|public.project_git_host",
+        "n|type|public.project_git_host"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_view",
+      "statementTarget": [
+        "view",
+        "public",
+        "project_issue"
+      ],
+      "writes": [
+        "s|view|public.project_issue",
+        "n|view|public.project_issue",
+        "e|view|public.project_issue",
+        "n|rel|public.project_issue",
+        "n|type|public.project_issue"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_view",
+      "statementTarget": [
+        "view",
+        "public",
+        "project_request"
+      ],
+      "writes": [
+        "s|view|public.project_request",
+        "n|view|public.project_request",
+        "e|view|public.project_request",
+        "n|rel|public.project_request",
+        "n|type|public.project_request"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_view",
+      "statementTarget": [
+        "view",
+        "public",
+        "project_root"
+      ],
+      "writes": [
+        "s|view|public.project_root",
+        "n|view|public.project_root",
+        "e|view|public.project_root",
+        "n|rel|public.project_root",
+        "n|type|public.project_root"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_view",
+      "statementTarget": [
+        "view",
+        "public",
+        "project_session"
+      ],
+      "writes": [
+        "s|view|public.project_session",
+        "n|view|public.project_session",
+        "e|view|public.project_session",
+        "n|rel|public.project_session",
+        "n|type|public.project_session"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "root_remote",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "root_remote",
+        "name": "root",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "root_remote",
+        "name": "remote",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "root_remote",
+        "name": "root_remote_pkey",
+        "columns": [
+          "root"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_git_host",
+        "definition": "select h.project, h.root, g.git_host, g.repository, g.synced_from, g.error, g.error_git_host, g.stage_labels, g.auto_merge, g.bug_label, g.history_read, g.fix_read, g.state_events_read, g.body_closes_read from git_host_project g join (select distinct on (p.slug) p.slug as project, g.project as root from git_host_project g join root_remote r on r.root = g.project join project p on p.remote = r.remote order by p.slug, g.synced_from desc nulls last, g.project) h on h.root = g.project",
+        "with": null,
+        "withNoData": null,
+        "using": null,
+        "tablespace": null,
+        "materialized": false,
+        "entityType": "views"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_issue",
+        "definition": "select h.project, i.number, i.title, i.state, i.labels, i.url, i.created_at, i.closed_at, i.updated_at, i.reopened, i.state_events, i.needs_spec from git_host_issue i join (select distinct on (p.slug) p.slug as project, g.project as root from git_host_project g join root_remote r on r.root = g.project join project p on p.remote = r.remote order by p.slug, g.synced_from desc nulls last, g.project) h on h.root = i.project",
+        "with": null,
+        "withNoData": null,
+        "using": null,
+        "tablespace": null,
+        "materialized": false,
+        "entityType": "views"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_request",
+        "definition": "select h.project, q.number, q.title, q.state, q.draft, q.head_branch, q.url, q.created_at, q.merged_at, q.closed_at, q.updated_at, q.closes, q.checks, q.report, q.reports from git_host_request q join (select distinct on (p.slug) p.slug as project, g.project as root from git_host_project g join root_remote r on r.root = g.project join project p on p.remote = r.remote order by p.slug, g.synced_from desc nulls last, g.project) h on h.root = q.project",
+        "with": null,
+        "withNoData": null,
+        "using": null,
+        "tablespace": null,
+        "materialized": false,
+        "entityType": "views"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_root",
+        "definition": "select r.root, p.slug as project from root_remote r join project p on p.remote = r.remote",
+        "with": null,
+        "withNoData": null,
+        "using": null,
+        "tablespace": null,
+        "materialized": false,
+        "entityType": "views"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_session",
+        "definition": "select s.id, s.agent, p.slug as project, s.project as root, s.cwd, s.cwd_from_main, s.git_branch, s.git_branches, s.title, s.first_at, s.last_at, s.turn_ended from session s join root_remote r on r.root = s.project join project p on p.remote = r.remote",
+        "with": null,
+        "withNoData": null,
+        "using": null,
+        "tablespace": null,
+        "materialized": false,
+        "entityType": "views"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"project_name\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"project_name\",\"project\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"project_name\",\"name\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"project_name\",\"project_name_pkey\"]"
+    }
+  ]
+}

@@ -77,14 +77,14 @@ async function windowFrictions(db: Database, scope: Scope): Promise<Row[]> {
   return select(
     db,
     sql`select f.at, f.kind, f.session_id, coalesce(f.sub_agent_id, '') as sub_agent,
-        s.project, s.title, s.git_branch as session_branch,
+        s.project, s.root, s.title, s.git_branch as session_branch,
         sa.agent_type, sa.description, sa.git_branch as agent_branch,
         coalesce(sa.first_at, fc.first_call_at) as agent_first_at,
         f.tool, f.category, f.program, f.exit_code, f.command_hash,
         f.hook_command, f.trigger, f.pre_tokens,
         f.id, f.agent, f.source_path, f.record_uuid, f.position
       from friction f
-      join session s on s.id = f.session_id
+      join project_session s on s.id = f.session_id
       left join sub_agent sa on sa.session_id = f.session_id and sa.id = f.sub_agent_id
       ${FIRST_CALLS}
       where ${inScope(scope)}
@@ -110,7 +110,7 @@ async function windowCalls(
   const { startAt, previousStart } = window;
   return select(
     db,
-    sql`select a.session_id, coalesce(a.sub_agent_id, '') as sub_agent, s.project,
+    sql`select a.session_id, coalesce(a.sub_agent_id, '') as sub_agent, s.project, s.root,
         s.title, s.agent, s.git_branch as session_branch,
         sa.agent_type, sa.description, sa.git_branch as agent_branch,
         coalesce(sa.first_at, fc.first_call_at) as agent_first_at, marker.idx as marker,
@@ -122,13 +122,13 @@ async function windowCalls(
         count(*) as calls,
         max(a.input_tokens + a.cache_write_tokens + a.cache_read_tokens) as peak
       from api_call a
-      join session s on s.id = a.session_id
+      join project_session s on s.id = a.session_id
       left join sub_agent sa on sa.session_id = a.session_id and sa.id = a.sub_agent_id
       ${FIRST_CALLS}
       ${markerSegments(markers)}
       where ${inScope(scope)}
         and (${scope.windowStart}::timestamptz is null or a.at >= ${scope.windowStart}::timestamptz)
-      group by a.session_id, a.sub_agent_id, s.project, s.title, s.agent, s.git_branch,
+      group by a.session_id, a.sub_agent_id, s.project, s.root, s.title, s.agent, s.git_branch,
         sa.agent_type, sa.description, sa.git_branch, sa.first_at, fc.first_call_at,
         marker.idx, in_period, in_previous, slot`,
   );

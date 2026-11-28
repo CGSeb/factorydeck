@@ -108,6 +108,7 @@ describe('deleting a project', () => {
 
     expect(await deleteProject(db, gone, hasFactory)).toBe('deleted');
     expect((await factoryStatus(db, hasFactory)).projects).toEqual([
+      { project: gone, name: 'gone-app' },
       { project: kept, name: 'kept-app' },
     ]);
     expect(await counts()).toEqual({

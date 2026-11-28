@@ -1,6 +1,6 @@
 import { and, eq, isNotNull } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
-import { gitHostProject } from '../db/schema.ts';
+import { projectGitHost } from '../db/schema.ts';
 import { lookupOutcomes } from '../git-host/query.ts';
 import { byCostDescending } from '../overview/query.ts';
 import { withTokenCounts } from '../overview/tokens.ts';
@@ -116,12 +116,12 @@ async function hasBugTickets(
   project: string | undefined,
 ): Promise<boolean> {
   const rows = await db
-    .select({ project: gitHostProject.project })
-    .from(gitHostProject)
+    .select({ project: projectGitHost.project })
+    .from(projectGitHost)
     .where(
       and(
-        isNotNull(gitHostProject.bugLabel),
-        project === undefined ? undefined : eq(gitHostProject.project, project),
+        isNotNull(projectGitHost.bugLabel),
+        project === undefined ? undefined : eq(projectGitHost.project, project),
       ),
     )
     .limit(1);

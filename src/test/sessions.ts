@@ -67,6 +67,7 @@ const SESSIONS: (typeof session.$inferInsert)[] = [
   },
   {
     id: 'agent-busy',
+    project: '/work/busy',
     firstAt: ago(90),
     lastAt: ago(80),
     turnEnded: false,

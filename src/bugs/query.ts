@@ -1,6 +1,6 @@
 import { and, eq, inArray, isNotNull } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
-import { gitHostIssue, gitHostProject, gitHostRequest } from '../db/schema.ts';
+import { projectIssue, projectGitHost, projectRequest } from '../db/schema.ts';
 import type { IssueAccumulator } from '../features/allocate.ts';
 import type { FeatureQuery } from '../features/types.ts';
 import { type UsageWindow, usageInWindows } from '../features/usage.ts';
@@ -21,17 +21,17 @@ async function bugProjects(
 ): Promise<Omit<BugProject, 'name'>[]> {
   const rows = await db
     .select({
-      project: gitHostProject.project,
-      stageLabels: gitHostProject.stageLabels,
-      autoMerge: gitHostProject.autoMerge,
-      bugLabel: gitHostProject.bugLabel,
+      project: projectGitHost.project,
+      stageLabels: projectGitHost.stageLabels,
+      autoMerge: projectGitHost.autoMerge,
+      bugLabel: projectGitHost.bugLabel,
     })
-    .from(gitHostProject)
+    .from(projectGitHost)
     .where(
       and(
-        isNotNull(gitHostProject.bugLabel),
-        isNotNull(gitHostProject.syncedFrom),
-        project === undefined ? undefined : eq(gitHostProject.project, project),
+        isNotNull(projectGitHost.bugLabel),
+        isNotNull(projectGitHost.syncedFrom),
+        project === undefined ? undefined : eq(projectGitHost.project, project),
       ),
     );
   return rows.flatMap(({ bugLabel, ...row }) =>
@@ -43,11 +43,11 @@ const NO_COUNTS: BugCounts = { open: 0, fixed: 0, closed: 0 };
 
 function bugSources(db: Database, roots: string[]) {
   return Promise.all([
-    db.select().from(gitHostIssue).where(inArray(gitHostIssue.project, roots)),
+    db.select().from(projectIssue).where(inArray(projectIssue.project, roots)),
     db
       .select()
-      .from(gitHostRequest)
-      .where(inArray(gitHostRequest.project, roots)),
+      .from(projectRequest)
+      .where(inArray(projectRequest.project, roots)),
   ]);
 }
 

@@ -273,15 +273,17 @@ export function rulesFor(
 
 export function configuredRoles(
   config: WorkflowConfig,
-  project?: string,
+  roots?: readonly string[],
 ): string[] {
   const lists =
-    project === undefined
+    roots === undefined
       ? [
           config.rules.roles,
           ...[...config.projects.values()].map((rules) => rules.roles ?? []),
         ]
-      : [rulesFor(config, project).roles];
+      : roots.length === 0
+        ? [config.rules.roles]
+        : roots.map((root) => rulesFor(config, root).roles);
   return [...new Set(lists.flat().map((rule) => rule.name))];
 }
 

@@ -9,7 +9,6 @@ import { type ProjectNames, projectNames } from '../projects/names.ts';
 import {
   DEFAULT_CONFIG,
   type WorkflowConfig,
-  roleOf,
   rulesFor,
   workItemOf,
 } from '../roles/config.ts';
@@ -17,9 +16,9 @@ import {
   type SessionMarkers,
   lastMarker,
   loadMarkers,
-  markerAt,
 } from '../roles/markers.ts';
 import { sessionSkills } from '../skills/query.ts';
+import { subAgentRows, subAgentsOf } from './sub-agents.ts';
 import { USAGE_SUMS, type Usage, emptyUsage, usageBy } from './usage.ts';
 import {
   type SessionDetail,
@@ -28,7 +27,6 @@ import {
   type SessionState,
   type SessionSummary,
   type StateCounts,
-  type SubAgentSummary,
   isSessionState,
 } from './types.ts';
 
@@ -64,7 +62,7 @@ export function statedSessions({
   now = new Date(),
 }: StateOptions): SQL {
   return sql`(
-    select s.id, s.agent, s.title, s.project, s.cwd, s.git_branch, s.git_branches,
+    select s.id, s.agent, s.title, s.project, s.root, s.cwd, s.git_branch, s.git_branches,
       least(s.first_at, sa.first_at) as first_at,
       greatest(s.last_at, sa.last_at) as last_at,
       case
@@ -73,7 +71,7 @@ export function statedSessions({
         then case when s.turn_ended then 'waiting' else 'working' end
         else 'inactive'
       end as state
-    from session s
+    from project_session s
     left join (
       select session_id, min(first_at) as first_at, max(last_at) as last_at
       from sub_agent group by session_id
@@ -107,7 +105,7 @@ function summaryOf(
     gitBranches: texts(row['git_branches']),
     workItem:
       lastMarker(markers, id)?.workItem ??
-      workItemOf(rulesFor(config, project), {
+      workItemOf(rulesFor(config, text(row['root'])), {
         branch: gitBranch,
         title,
       }),
@@ -213,43 +211,6 @@ export async function listSessions(
   };
 }
 
-function subAgentsOf(
-  agentRows: Row[],
-  usageRows: Row[],
-  { config, markers }: Rules,
-  summary: Pick<SessionSummary, 'id' | 'project' | 'title' | 'workItem'>,
-): Omit<SubAgentSummary, 'issue' | 'kind'>[] {
-  const byAgent = usageBy(usageRows, 'sub_agent');
-  const rules = rulesFor(config, summary.project);
-  const sessionMarkers = markers.get(summary.id);
-  return agentRows.map((agent) => {
-    const agentUsage = byAgent.get(text(agent['id'])) ?? emptyUsage(0);
-    const agentType = text(agent['agent_type']);
-    const description = text(agent['description']);
-    return {
-      id: text(agent['id']),
-      agentType,
-      role: roleOf(rules, { agentType, description }),
-      workItem:
-        workItemOf(rules, {
-          description,
-          branch: text(agent['git_branch']),
-          title: sessionMarkers === undefined ? summary.title : undefined,
-        }) ??
-        markerAt(sessionMarkers, agent['first_at'] ?? agent['first_call_at'])
-          ?.workItem ??
-        summary.workItem,
-      description,
-      model: text(agent['model']),
-      firstAt: timestamp(agent['first_at']),
-      lastAt: timestamp(agent['last_at']),
-      tokens: totalTokens(agentUsage.tokens),
-      tokenCounts: agentUsage.tokens,
-      costUsd: agentUsage.costUsd,
-    };
-  });
-}
-
 export async function sessionDetail(
   db: Database,
   id: string,
@@ -262,15 +223,7 @@ export async function sessionDetail(
         db,
         sql`select * from ${statedSessions(options)} t where t.id = ${id}`,
       ),
-      select(
-        db,
-        sql`select sa.id, sa.agent_type, sa.description, sa.model, sa.git_branch,
-          sa.first_at, sa.last_at,
-          (select min(a.at) from api_call a
-            where a.session_id = sa.session_id and a.sub_agent_id = sa.id) as first_call_at
-        from sub_agent sa where sa.session_id = ${id}
-        order by first_at asc nulls last, id`,
-      ),
+      subAgentRows(db, id),
       select(
         db,
         sql`select coalesce(a.sub_agent_id, '') as sub_agent, ${USAGE_SUMS}
@@ -289,9 +242,16 @@ export async function sessionDetail(
       usageRows.map((usage) => ({ ...usage, sub_agent: '' })),
       'sub_agent',
     ).get('') ?? emptyUsage(0);
-  const rules = { config, markers };
-  const { usage, ...summary } = summaryOf(row, total, rules, names);
-  const agents = subAgentsOf(agentRows, usageRows, rules, summary);
+  const { usage, ...summary } = summaryOf(
+    row,
+    total,
+    { config, markers },
+    names,
+  );
+  const agents = subAgentsOf(agentRows, usageRows, summary, {
+    rules: rulesFor(config, text(row['root'])),
+    markers,
+  });
   const { project, workItem } = summary;
   const [[main], subAgents, detail] = await Promise.all([
     withIssues(db, [summary], () => project),

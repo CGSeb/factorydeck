@@ -4,19 +4,30 @@ FactoryDeck builds everything it shows from two sources on the person's machine:
 
 ## Factory projects only
 
-A project has the factory installed when `docs/agents/factory.yml` exists at its root. Only the presence of the file counts; FactoryDeck reads three things from it (the project name, the git host and the outcome settings) and validates nothing else. A folder that cannot be read counts as no factory.
+A project has the factory installed when `docs/agents/factory.yml` exists at its root. Only the presence of the file counts; FactoryDeck reads two things from it (the git host and the outcome settings) and validates nothing else. A folder that cannot be read counts as no factory.
 
-- **Project of a session**: the main git repository of its working directory, resolved with git (`git rev-parse --path-format=absolute --git-common-dir`, its parent), so a worktree counts for its main checkout. When the folder no longer exists, a session inside the root of a known project belongs to it; otherwise the working directory itself is the project.
+- **Root of a session**: the main git repository of its working directory, resolved with git (`git rev-parse --path-format=absolute --git-common-dir`, its parent), so a worktree counts for its main checkout. When the folder no longer exists, a session inside a known root belongs to it; otherwise the working directory itself is the root. The factory rules below apply to roots.
 - When a session's main log has no working directory, it takes the one of its earliest sub-agent that has one (ties: smallest agent id), with that sub-agent's branch; a working directory found later in the main log replaces it.
 - Sessions of a project without the factory, of no working directory, or of a folder gone and inside no known project, are **not stored**. Their logs are skipped, and not read again while the file has not grown and the project still has no factory.
 - When a project gains `docs/agents/factory.yml`, its skipped logs are read in full at the next ingestion: nothing from before the installation is lost.
-- When a project already ingested loses the file (removed, or folder gone), its data stays in every view and its new sessions are no longer read. Every page then shows a [warning banner](navigation.md#banners) with a `Delete project` button.
+- When a root already ingested loses the file (removed, or folder gone), its data stays in every view and its new sessions are no longer read. Every page then shows a [warning banner](navigation.md#banners) with a `Delete project` button.
+
+### Project of a session
+
+A session belongs to the [project](projects.md) whose remote is the remote of its root.
+
+- **Remote of a root**: at every ingestion run, even with no new session, FactoryDeck reads `git remote get-url origin` in each root it has sessions of, and records it in the normalised form of [Remotes](projects.md#remotes). A root with no `origin`, whose `origin` is not a remote of those forms, or whose folder is gone keeps the last remote recorded for it, or none. Only `origin` is read.
+- **The link is computed when reading**: adding a project shows the sessions of its remote at once, without re-ingesting, and removing one hides them; the sessions themselves never change. When a root's `origin` changes, all its sessions, past ones included, follow the new remote at the next run.
+- Two roots with the same remote (two clones, two developers) are one project: every figure counts their sessions together.
+- **Sessions of no project**: sessions whose root has no remote, or a remote that is no project's, are kept but shown nowhere: not under `All projects`, not in any total, not on their session page. They show once a project with their remote is added.
+- The [git host data](#git-host) and the [friction reports](frictions.md) of a project are its roots' as its sessions are. When two roots of a project are both collected, the project reads the issues, requests and settings of the one whose last successful collection started last.
+- The per-project overrides of [roles and work items](roles-and-work-items.md) stay keyed by root: a session uses the override of its own root.
 
 ### Deleting a project
 
-Only a project whose factory configuration is no longer found can be deleted, from its banner line. The confirmation dialog `Delete <project name>?` says how many sessions go (counted when the dialog opens) and that the logs on disk are not touched. `Cancel` has the focus; `Escape`, `Cancel` or a click outside closes it.
+Only a root whose factory configuration is no longer found can be deleted, from its banner line. It deletes that root's stored data, not the project of [Projects](projects.md), which stays in the project select. The confirmation dialog `Delete <project name>?` says how many sessions go (counted when the dialog opens) and that the logs on disk are not touched. `Cancel` has the focus; `Escape`, `Cancel` or a click outside closes it.
 
-Confirming deletes, in one transaction and under the ingestion lock, every stored row of the project (sessions, sub-agents, API calls, skill launches, prompts, frictions, closing lines, issues, pull requests, reports, label history, its name) and the read offsets of its logs. If the factory is installed again later, its logs are read again from their first line.
+Confirming deletes, in one transaction and under the ingestion lock, every stored row of the root (sessions, sub-agents, API calls, skill launches, prompts, frictions, closing lines, issues, pull requests, reports, label history) and the read offsets of its logs; its recorded remote stays. If the factory is installed again later, its logs are read again from their first line.
 
 - While it runs, the button reads `Deleting…`. On success the banner line goes and every page refreshes; with no session left, the welcome screen shows.
 - On failure, nothing is deleted and the dialog shows `Could not delete <project name>. Try again.`
@@ -24,13 +35,11 @@ Confirming deletes, in one transaction and under the ingestion lock, every store
 
 ### Project names
 
-A project shows under the `project.name` of its `docs/agents/factory.yml`, else under its folder name (the last segment of its root). The name is read at every ingestion run, even with no new session, so a rename shows within seconds without re-ingesting.
+A project shows under its name of [Projects](projects.md); `project.name` of `docs/agents/factory.yml` is not read.
 
-- A name that is missing, empty, not a string, under a `project` that is not a map, or in a file that is not valid YAML (a duplicated key included) counts as no name: the project keeps the last name read, or its folder name.
-- A name is cleaned: line breaks, tabs and runs of spaces become one space; leading and trailing spaces go. Past 60 characters it shows its first 60 and `…`, with the full name and the root in its tooltip.
-- Two projects with the same name (case-insensitive) both show as `<name> (<root>)`.
-- The root path is the tooltip of a name everywhere. `unassigned`, the project of sessions stored before the factory-only rule, keeps its name and has no tooltip.
-- The name is only a label: filters, URLs and groupings use the project root, and two projects with the same name are never merged.
+- Two projects with the same name (case-insensitive) both show as `<name> (<slug>)`. Past 60 characters a name shows its first 60 and `…`, with the full name and the slug in its tooltip.
+- The slug is the tooltip of a name everywhere. Filters, URLs and groupings use the slug, and two projects with the same name are never merged.
+- A banner line names a root by the name of its project, or by its folder name (the last segment of the root) when its remote is no project's.
 
 ## Session logs
 
