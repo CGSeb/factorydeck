@@ -45,6 +45,7 @@ export interface WorkflowConfig {
   exists: boolean;
   rules: WorkflowRules;
   projects: Map<string, Partial<WorkflowRules>>;
+  projectRoles?: Map<string, RoleRule[]> | undefined;
 }
 
 export const DEFAULT_RULES: WorkflowRules = {
@@ -85,33 +86,6 @@ const Pattern = z.string().transform((value, ctx) => {
   }
 });
 
-const RoleName = z
-  .string()
-  .min(1)
-  .refine((name) => name !== MAIN_ROLE && name !== UNASSIGNED_ROLE, {
-    message: `"${MAIN_ROLE}" and "${UNASSIGNED_ROLE}" are reserved role names`,
-  });
-
-const RoleRuleSchema = z
-  .strictObject({
-    name: RoleName,
-    description: Pattern.optional(),
-    agent_type: Pattern.optional(),
-  })
-  .superRefine((rule, ctx) => {
-    if (rule.description === undefined && rule.agent_type === undefined) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'needs description, agent_type or both',
-      });
-    }
-  })
-  .transform((rule): RoleRule => ({
-    name: rule.name,
-    description: rule.description,
-    agentType: rule.agent_type,
-  }));
-
 const WorkItemRuleSchema = z
   .strictObject({ from: z.enum(WORK_ITEM_SOURCES), pattern: Pattern })
   .superRefine((rule, ctx) => {
@@ -130,7 +104,7 @@ const WorkItemRuleSchema = z
   );
 
 const RulesSchema = {
-  roles: z.array(RoleRuleSchema).optional(),
+  roles: z.unknown().optional(),
   work_items: z.array(WorkItemRuleSchema).optional(),
 };
 
@@ -232,18 +206,13 @@ export function parseWorkflowConfig(
     path,
     exists: true,
     rules: {
-      roles: file.roles ?? DEFAULT_RULES.roles,
+      roles: DEFAULT_RULES.roles,
       workItems: file.work_items ?? DEFAULT_RULES.workItems,
     },
     projects: new Map(
       Object.entries(file.projects ?? {}).map(([key, rules]) => [
         projectKey(key),
-        {
-          ...(rules.roles === undefined ? {} : { roles: rules.roles }),
-          ...(rules.work_items === undefined
-            ? {}
-            : { workItems: rules.work_items }),
-        },
+        rules.work_items === undefined ? {} : { workItems: rules.work_items },
       ]),
     ),
   };
@@ -262,29 +231,16 @@ export function loadWorkflowConfig(path: string): WorkflowConfig {
 
 export function rulesFor(
   config: WorkflowConfig,
-  project: string,
+  root: string,
+  project?: string,
 ): WorkflowRules {
-  const override = config.projects.get(project);
+  const override = config.projects.get(root);
+  const projectRoles =
+    project === undefined ? undefined : config.projectRoles?.get(project);
   return {
-    roles: override?.roles ?? config.rules.roles,
+    roles: projectRoles ?? override?.roles ?? config.rules.roles,
     workItems: override?.workItems ?? config.rules.workItems,
   };
-}
-
-export function configuredRoles(
-  config: WorkflowConfig,
-  roots?: readonly string[],
-): string[] {
-  const lists =
-    roots === undefined
-      ? [
-          config.rules.roles,
-          ...[...config.projects.values()].map((rules) => rules.roles ?? []),
-        ]
-      : roots.length === 0
-        ? [config.rules.roles]
-        : roots.map((root) => rulesFor(config, root).roles);
-  return [...new Set(lists.flat().map((rule) => rule.name))];
 }
 
 export function roleOf(

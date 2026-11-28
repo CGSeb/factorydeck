@@ -1,5 +1,6 @@
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { roleRule } from '../test/role-rules.ts';
 import { summarizeRoles } from './query.ts';
 import {
   DEFAULT_CONFIG,
@@ -17,21 +18,15 @@ function rulesOf(text: string): WorkflowRules {
 }
 
 describe('roleOf', () => {
-  const rules = rulesOf(
-    [
-      'version: 1',
-      'roles:',
-      '  - name: builder',
-      "    description: '^build '",
-      '  - name: checker',
-      "    description: 'check'",
-      "    agent_type: '^general-purpose$'",
-      '  - name: reviewer',
-      "    description: '^Review '",
-      '  - name: builder',
-      "    description: '^Worker for '",
-    ].join('\n'),
-  );
+  const rules: WorkflowRules = {
+    ...DEFAULT_RULES,
+    roles: [
+      roleRule('builder', '^build '),
+      roleRule('checker', 'check', '^general-purpose$'),
+      roleRule('reviewer', '^Review '),
+      roleRule('builder', '^Worker for '),
+    ],
+  };
 
   it('takes the first matching rule, case-insensitively', () => {
     expect(roleOf(rules, { agentType: 'x', description: 'Build #3 now' })).toBe(

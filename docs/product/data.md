@@ -21,7 +21,7 @@ A session belongs to the [project](projects.md) whose remote is the remote of it
 - Two roots with the same remote (two clones, two developers) are one project: every figure counts their sessions together.
 - **Sessions of no project**: sessions whose root has no remote, or a remote that is no project's, are kept but shown nowhere: not under `All projects`, not in any total, not on their session page. They show once a project with their remote is added.
 - The [git host data](#git-host) and the [friction reports](frictions.md) of a project are its roots' as its sessions are. When two roots of a project are both collected, the project reads the issues, requests and settings of the one whose last successful collection started last.
-- The per-project overrides of [roles and work items](roles-and-work-items.md) stay keyed by root: a session uses the override of its own root.
+- The per-project overrides of [work items](roles-and-work-items.md) stay keyed by root: a session uses the override of its own root. Its [role rules](roles-and-work-items.md#role-rules) are those of the project the session belongs to.
 
 ### Deleting a project
 

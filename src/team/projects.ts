@@ -17,6 +17,7 @@ import {
   NAME_TYPE_ERROR,
   NOT_A_REMOTE,
 } from './project-types.ts';
+import { insertDefaultRoleRules } from '../roles/project-rules.ts';
 import { byProjectOrder } from './project-order.ts';
 import { freeSlug, parseRemote, slugBase } from './remote.ts';
 
@@ -189,6 +190,7 @@ export function projectStore(
           })
           .returning();
         if (row === undefined) throw new Error('Project not added');
+        await insertDefaultRoleRules(tx, row.id);
         return { status: 'added', project: rowOf(row) } as const;
       }),
   };

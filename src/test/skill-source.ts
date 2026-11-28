@@ -13,7 +13,6 @@ export const unusedSkills: SkillSource = {
 
 export const unusedRoles: RoleSource = {
   list: () => Promise.reject(new Error('Not used')),
-  config: { path: '/configs/factorydeck.yml', exists: false },
 };
 
 export const unusedProjects: ProjectSource = {

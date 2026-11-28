@@ -49,51 +49,23 @@ describe('default role rules', () => {
     expect(rulesFor(config, '/p')).toEqual(DEFAULT_RULES);
   });
 
-  it('has no role rule with roles: [], and keeps the default work items', () => {
-    const rules = rulesOf('version: 1\nroles: []\n');
-    expect(rules.roles).toEqual([]);
-    expect(rules.workItems).toEqual(DEFAULT_RULES.workItems);
-  });
-
   it('has no work item rule with work_items: [], and keeps the default roles', () => {
     const rules = rulesOf('version: 1\nwork_items: []\n');
     expect(rules.workItems).toEqual([]);
     expect(rules.roles).toEqual(DEFAULT_RULES.roles);
   });
 
-  it("uses a file's own roles alone, without merging the defaults", () => {
-    const rules = rulesOf(
-      [
-        'version: 1',
-        'roles:',
-        '  - name: coder',
-        "    description: '^Code '",
-      ].join('\n'),
-    );
-    expect(rules.roles.map((rule) => rule.name)).toEqual(['coder']);
-  });
-
-  it('lets a project override replace the default roles for that project only', () => {
+  it('ignores roles: [] and project roles of the file', () => {
     const text = [
       'version: 1',
+      'roles: []',
       'projects:',
       '  /work/app:',
       '    roles:',
       '      - name: coder',
       "        description: '^Code '",
-      '  /work/plain:',
-      '    roles: []',
     ].join('\n');
-    expect(rulesOf(text, '/work/app').roles.map((rule) => rule.name)).toEqual([
-      'coder',
-    ]);
-    expect(rulesOf(text, '/work/plain').roles).toEqual([]);
-    expect(rulesOf(text, '/elsewhere').roles).toEqual(DEFAULT_RULES.roles);
-  });
-
-  it('reports a roles key with no value', () => {
-    expect(() => parseWorkflowConfig('version: 1\nroles:\n', PATH)).toThrow(
-      new RegExp(`^Invalid configuration in ${PATH}:\\n {2}roles: [^\\n]+$`),
-    );
+    expect(rulesOf(text).roles).toEqual(DEFAULT_RULES.roles);
+    expect(rulesOf(text, '/work/app').roles).toEqual(DEFAULT_RULES.roles);
   });
 });

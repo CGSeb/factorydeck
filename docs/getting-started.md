@@ -45,7 +45,7 @@ Everything goes in the root `.env`; [`.env.example`](../.env.example) documents 
 | `FACTORYDECK_INGEST_INTERVAL_SECONDS`  | `10`                 | How often to read new session logs.           |
 | `FACTORYDECK_COLLECT_INTERVAL_MINUTES` | `5`                  | How often to collect from the git host.       |
 | `FACTORYDECK_INACTIVE_AFTER_MINUTES`   | `30`                 | When a quiet session shows as inactive.       |
-| `FACTORYDECK_CONFIG`                   | `factorydeck.yml`    | The file of role and work item rules.         |
+| `FACTORYDECK_CONFIG`                   | `factorydeck.yml`    | The file of work item rules.                  |
 
 ## Your workflow, your vocabulary
 
@@ -55,6 +55,6 @@ Every team splits agent work differently. FactoryDeck reads your workflow from c
 - **Work items**: how to find the issue or pull request a session works on, for example `#52` in a sub-agent description, or a branch name.
 - **Outcomes**: which labels, checks or comments mean "merged", "needs rework" or a quality score.
 
-Without a file, the roles of the `build-feature` and `fix-bug` workflows of factorydeck-skills apply (builder, reviewer, shipper, reworker, spec-checker, debugger, bug-checker), and work items are read from `#<number>` in sub-agent descriptions and session titles. To change them, copy [`factorydeck.example.yml`](../factorydeck.example.yml) to `factorydeck.yml`: it documents every key and holds the default rules. Then restart FactoryDeck.
+Each project added starts with the roles of the `build-feature` and `fix-bug` workflows of factorydeck-skills (builder, reviewer, shipper, reworker, spec-checker, debugger, bug-checker); its role rules are stored with the project ([Roles and work items](product/roles-and-work-items.md#role-rules)). Without a file, work items are read from `#<number>` in sub-agent descriptions and session titles. To change them, copy [`factorydeck.example.yml`](../factorydeck.example.yml) to `factorydeck.yml`: it documents every key and holds the default rules. Then restart FactoryDeck.
 
 To see how sessions, issues and outcomes are linked, read [How FactoryDeck works](how-it-works.md).

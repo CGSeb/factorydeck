@@ -275,7 +275,7 @@ async function storedSessionDetail(
     names,
   );
   const agents = subAgentsOf(agentRows, usageRows, summary, {
-    rules: rulesFor(config, text(row['root'])),
+    rules: rulesFor(config, text(row['root']), text(row['project'])),
     markers,
   });
   const { project, workItem } = summary;

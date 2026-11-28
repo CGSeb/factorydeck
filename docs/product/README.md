@@ -6,23 +6,23 @@ For installing and running FactoryDeck, see [Getting started](../getting-started
 
 ## Pages
 
-| Page                                            | What it covers                                                                               |
-| ----------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| [Data and collection](data.md)                  | Session logs (Claude Code, Codex), factory projects, the git host, what is stored and when.  |
-| [Roles and work items](roles-and-work-items.md) | How each thread gets a role and an issue, the configuration file and its defaults.           |
-| [Outcomes](outcomes.md)                         | Stages, serenity reports, help from a person, stops and rework.                              |
-| [Navigation and conventions](navigation.md)     | Sidebar, project select, periods, refresh, theme, banners, number formats, empty states.     |
-| [Overview](overview.md)                         | The home page: factory health, issues waiting for a person, the board by stage.              |
-| [Features and issues](features.md)              | The list of issues and the story of one issue.                                               |
-| [Bugs](bugs.md)                                 | The bugs still open, being fixed and fixed in the period, with how each fix was reproduced.  |
-| [Stats](stats.md)                               | Autonomy, quality, flow and cost figures, their trends and their definitions.                |
-| [Frictions](frictions.md)                       | Tool errors and blocked stops, by category, tool, command, role and issue, with occurrences. |
-| [Sessions](sessions.md)                         | Session states, the session list and the session page.                                       |
-| [Skills and roles](skills-and-roles.md)         | Skill launches and attribution, tokens by role and by model.                                 |
-| [Accounts](accounts.md)                         | Roles, the setup code of a new instance, the first manager and the session cookie.           |
-| [Projects](projects.md)                         | The projects a manager adds by their git remote, and the admin routes.                       |
-| [The CLI](cli.md)                               | The `factorydeck` command, its login from the browser, its token, routes and connections.    |
-| [Interface](interface.md)                       | Design tokens, components, charts, accessibility and layout rules every page follows.        |
+| Page                                            | What it covers                                                                                                     |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| [Data and collection](data.md)                  | Session logs (Claude Code, Codex), factory projects, the git host, what is stored and when.                        |
+| [Roles and work items](roles-and-work-items.md) | How each thread gets a role and an issue, the role rules of each project, the configuration file and its defaults. |
+| [Outcomes](outcomes.md)                         | Stages, serenity reports, help from a person, stops and rework.                                                    |
+| [Navigation and conventions](navigation.md)     | Sidebar, project select, periods, refresh, theme, banners, number formats, empty states.                           |
+| [Overview](overview.md)                         | The home page: factory health, issues waiting for a person, the board by stage.                                    |
+| [Features and issues](features.md)              | The list of issues and the story of one issue.                                                                     |
+| [Bugs](bugs.md)                                 | The bugs still open, being fixed and fixed in the period, with how each fix was reproduced.                        |
+| [Stats](stats.md)                               | Autonomy, quality, flow and cost figures, their trends and their definitions.                                      |
+| [Frictions](frictions.md)                       | Tool errors and blocked stops, by category, tool, command, role and issue, with occurrences.                       |
+| [Sessions](sessions.md)                         | Session states, the session list and the session page.                                                             |
+| [Skills and roles](skills-and-roles.md)         | Skill launches and attribution, tokens by role and by model.                                                       |
+| [Accounts](accounts.md)                         | Roles, the setup code of a new instance, the first manager and the session cookie.                                 |
+| [Projects](projects.md)                         | The projects a manager adds by their git remote, and the admin routes.                                             |
+| [The CLI](cli.md)                               | The `factorydeck` command, its login from the browser, its token, routes and connections.                          |
+| [Interface](interface.md)                       | Design tokens, components, charts, accessibility and layout rules every page follows.                              |
 
 ## Glossary
 

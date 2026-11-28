@@ -15,6 +15,7 @@ import { hasFactory } from '../ingest/factory.ts';
 import { ingest } from '../ingest/ingest.ts';
 import { usageOverview } from '../overview/query.ts';
 import { loadWorkflowConfig } from '../roles/config.ts';
+import { withProjectRoles } from '../roles/project-rules.ts';
 import { listRoles } from '../roles/query.ts';
 import { sessionDetail } from '../sessions/query.ts';
 import { listSkills, skillDetail } from '../skills/query.ts';
@@ -113,12 +114,9 @@ describe('demo sessions read from the logs', () => {
     it('cover roles, work items, a project override and a branch rule with the demo configuration', async () => {
       const path = join(await sessionsFolder(), 'factorydeck.yml');
       await writeDemoConfig(path, projects);
-      const config = loadWorkflowConfig(path);
-      const list = await listRoles(
-        db,
-        { period: 'all', timeZone: 'UTC', now: NOW },
-        config,
-      );
+      const config = await withProjectRoles(db, loadWorkflowConfig(path));
+      const all = { period: 'all' as const, timeZone: 'UTC', now: NOW };
+      const list = await listRoles(db, all, config);
       expect(list.roles.map((row) => row.role).sort()).toEqual([
         'Explore',
         'api-builder',

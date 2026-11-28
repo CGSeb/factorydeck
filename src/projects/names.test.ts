@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Database } from '../db/client.ts';
 import { gitHostProject, project, rootRemote, session } from '../db/schema.ts';
 import { createTestDatabase } from '../test/postgres.ts';
-import { projectNames, rootsOfProject } from './names.ts';
+import { projectNames } from './names.ts';
 import { factoryStatus } from './remove.ts';
 
 const NOW = new Date('2026-03-12T15:30:00Z');
@@ -65,11 +65,6 @@ describe('project names', () => {
     expect(names.label('nope')).toBe('nope');
     expect(names.rootLabel('/home/dev/shop')).toBe('Shop');
     expect(names.rootLabel('/work/stray')).toBe('stray');
-    expect(await rootsOfProject(db, 'shop')).toEqual([
-      '/home/dev/shop',
-      '/work/web',
-    ]);
-    expect(await rootsOfProject(db, 'nope')).toEqual([]);
   });
 });
 

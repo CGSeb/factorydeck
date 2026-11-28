@@ -1,9 +1,4 @@
-import type {
-  RoleList,
-  RoleListResponse,
-  RoleSourceFile,
-  RoleUsage,
-} from '../roles/types.ts';
+import type { RoleList, RoleListResponse, RoleUsage } from '../roles/types.ts';
 import type { ModelUsage, OverviewResponse } from '../overview/types.ts';
 import { okResponse, weekOverview } from './fixtures.ts';
 import type { LoadOverview } from './overview-api.ts';
@@ -12,13 +7,6 @@ import { optionsOf } from './project-fixtures.ts';
 import { splitTokens } from './token-fixtures.ts';
 
 const PROJECTS = ['/home/dev/example-app', '/home/dev/example-lib'];
-
-export const CONFIG_FILE: RoleSourceFile = {
-  path: '/home/dev/factorydeck/factorydeck.yml',
-  exists: true,
-};
-
-export const NO_CONFIG_FILE: RoleSourceFile = { ...CONFIG_FILE, exists: false };
 
 export const someRoles: RoleUsage[] = [
   {
@@ -119,7 +107,6 @@ export function roleList(
 
 export function rolesResponse(
   roles: RoleUsage[],
-  config: RoleSourceFile = CONFIG_FILE,
   order: string[] = DEFAULT_ORDER,
 ): RoleListResponse {
   return {
@@ -127,13 +114,11 @@ export function rolesResponse(
     updatedAt: '2026-01-07T09:41:05.000Z',
     refreshSeconds: 3600,
     list: roleList(roles, order),
-    config,
   };
 }
 
 export function rolesLoader(
   roles: RoleUsage[],
-  config: RoleSourceFile = CONFIG_FILE,
   order: string[] = DEFAULT_ORDER,
 ): LoadRoles {
   return (filters) =>
@@ -144,7 +129,6 @@ export function rolesLoader(
           : filters.project === undefined
             ? roles
             : [],
-        config,
         order,
       ),
     );

@@ -56,7 +56,7 @@ function threadInfo(
   marker: Marker | undefined,
 ): ThreadInfo {
   const project = text(source['project']);
-  const rules = rulesFor(config, text(source['root']));
+  const rules = rulesFor(config, text(source['root']), project);
   if (text(source['sub_agent']) !== '') {
     return {
       project,

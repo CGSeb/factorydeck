@@ -63,7 +63,7 @@ Every route under `/api/admin/` checks, in order: a session (`401`, or `503` whi
 
 `GET /api/admin/projects` answers `200` with `{ "status": "ok", "refreshSeconds": <n>, "projects": [...] }`, in the order of the table. Each project has `id`, `name`, `slug`, `remote` (normalised), `createdAt` (ISO 8601) and `sessions`, the number of sessions stored for the project (every session whose root has its remote, whatever the period). While the database is unreachable, it answers `503` with `{ "status": "unreachable", "refreshSeconds": <n> }`.
 
-`POST /api/admin/projects` with `{ "remote": "<remote>", "name": "<name>" }` adds a project and answers `201` with it, in the shape of one project of the list. `name` may be missing, `null` or empty. Unknown fields are ignored, and a body that is not a JSON object is read as empty.
+`POST /api/admin/projects` with `{ "remote": "<remote>", "name": "<name>" }` adds a project, with the [default role rules](roles-and-work-items.md#role-rules) in the same transaction, and answers `201` with it, in the shape of one project of the list. `name` may be missing, `null` or empty. Unknown fields are ignored, and a body that is not a JSON object is read as empty.
 
 | Answer | When                                                                                                                          |
 | ------ | ----------------------------------------------------------------------------------------------------------------------------- |
@@ -81,6 +81,8 @@ Every route under `/api/admin/` checks, in order: a session (`401`, or `503` whi
 | `400`  | `{ "error": "Name is required", "field": "name" }` for an empty or blank name, `Name must be text`, or `Name must be at most 80 characters`, on `"name"`. |
 | `409`  | `{ "error": "This remote is already the project <name>" }`: another project has the same normalised remote. Nothing is changed.                           |
 | `503`  | `{ "status": "unreachable", "refreshSeconds": <n> }`: the database is unreachable; nothing is changed.                                                    |
+
+The role rules of a project have their own routes, `GET` and `PUT /api/admin/projects/<id>/rules/role`: see [Roles and work items](roles-and-work-items.md#role-rules).
 
 ## How a project is stored
 

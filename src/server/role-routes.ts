@@ -1,16 +1,10 @@
 import { Hono } from 'hono';
-import type {
-  RoleList,
-  RoleListResponse,
-  RoleQuery,
-  RoleSourceFile,
-} from '../roles/types.ts';
+import type { RoleList, RoleListResponse, RoleQuery } from '../roles/types.ts';
 import type { ApiContext } from './api-context.ts';
 import { INVALID_QUERY, skillQuery } from './skill-routes.ts';
 
 export interface RoleSource {
   list: (query: RoleQuery) => Promise<RoleList>;
-  config: RoleSourceFile;
 }
 
 export function roleRoutes(
@@ -28,7 +22,6 @@ export function roleRoutes(
         updatedAt: updatedAt(),
         refreshSeconds,
         list,
-        config: roles.config,
       };
     });
     return c.json(body, body.status === 'ok' ? 200 : 503);

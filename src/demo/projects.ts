@@ -1,6 +1,11 @@
 import { sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import { project, rootRemote } from '../db/schema.ts';
+import type { StoredRoleRule } from '../roles/default-roles.ts';
+import {
+  insertDefaultRoleRules,
+  roleRuleStore,
+} from '../roles/project-rules.ts';
 import {
   EXAMPLE_API,
   EXAMPLE_APP,
@@ -41,8 +46,12 @@ export async function recordDemoRemotes(
     });
 }
 
+const API_ROLE_RULES: StoredRoleRule[] = [
+  { name: 'api-builder', description: '^Add ', agentType: null },
+];
+
 export async function addDemoProjects(db: Database, now: Date): Promise<void> {
-  await db
+  const added = await db
     .insert(project)
     .values(
       DEMO_PROJECTS.map(({ name, slug, remote }) => ({
@@ -52,5 +61,11 @@ export async function addDemoProjects(db: Database, now: Date): Promise<void> {
         createdAt: now,
       })),
     )
-    .onConflictDoNothing();
+    .onConflictDoNothing()
+    .returning({ id: project.id, slug: project.slug });
+  for (const { id, slug } of added) {
+    if (slug === EXAMPLE_API) {
+      await roleRuleStore(db).replace(id, API_ROLE_RULES);
+    } else await insertDefaultRoleRules(db, id);
+  }
 }
