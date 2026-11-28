@@ -39,20 +39,13 @@ function readOnce(
   return result.status === 'read' ? result : undefined;
 }
 
-async function readAgain(
-  run: Run,
+async function readWhole(
   log: LocalLog,
   reader: LocalReader,
   size: number,
 ): Promise<ThreadRead | undefined> {
   const whole = await readRange(log.path, 0, size).catch(() => undefined);
   const read = whole && readOnce(reader, 0, whole, null);
-  if (read === undefined) return undefined;
-  await forgetStaleCalls(
-    run.tx,
-    log.fileKey,
-    read.thread.apiCalls.map((call) => call.requestKey),
-  );
   return read;
 }
 
@@ -85,8 +78,24 @@ export async function readLocalLog(
   const read =
     result.status === 'read'
       ? result
-      : await readAgain(run, log, reader, range.size);
-  return read && { read, size: range.size };
+      : await readWhole(log, reader, range.size);
+  if (read === undefined) return undefined;
+  if (stored !== undefined && read.thread.from === 0) {
+    await forgetStaleCallsOf(run, log, read);
+  }
+  return { read, size: range.size };
+}
+
+async function forgetStaleCallsOf(
+  run: Run,
+  log: LocalLog,
+  read: ThreadRead,
+): Promise<void> {
+  await forgetStaleCalls(
+    run.tx,
+    log.fileKey,
+    read.thread.apiCalls.map((call) => call.requestKey),
+  );
 }
 
 export function localLogOf(file: LogFile): LocalLog {
