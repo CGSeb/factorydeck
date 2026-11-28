@@ -43,13 +43,14 @@ async function deleteFirstProject(canvasElement: HTMLElement): Promise<void> {
   await userEvent.click(dialog.getByRole('button', { name: 'Delete project' }));
 }
 
-function onceThenPending(response: FactoryResponse): LoadFactory {
+function thenWithout(
+  first: FactoryResponse,
+  next: FactoryResponse,
+): LoadFactory {
   let calls = 0;
   return () => {
     calls += 1;
-    return calls === 1
-      ? Promise.resolve(response)
-      : new Promise<undefined>(() => undefined);
+    return Promise.resolve(calls === 1 ? first : next);
   };
 }
 
@@ -57,8 +58,9 @@ function BugTicketsDeletion(): ReactElement {
   const [store] = useState(() => {
     storeBugTickets([]);
     return {
-      loadFactory: onceThenPending(
-        factoryResponse([oldApp], true, [], [oldApp.project]),
+      loadFactory: thenWithout(
+        factoryResponse([oldApp], true, [], ['old-app']),
+        factoryResponse([], true, [], []),
       ),
       deleteProject: deleterOf('deleted'),
       loadCollection: collectionLoaderOf(collectionResponse(null)),
@@ -83,7 +85,7 @@ export const DeletingAProjectWithBugTickets: Story = {
     await canvas.findByRole('link', { name: 'Bugs' });
     await waitFor(() =>
       expect(window.localStorage.getItem(BUG_TICKETS_KEY)).toBe(
-        JSON.stringify([oldApp.project]),
+        JSON.stringify(['old-app']),
       ),
     );
     await deleteFirstProject(canvasElement);

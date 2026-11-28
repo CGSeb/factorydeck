@@ -1,6 +1,6 @@
 import { and, eq, isNotNull, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
-import { gitHostIssue, gitHostProject, gitHostRequest } from '../db/schema.ts';
+import { projectIssue, projectGitHost, projectRequest } from '../db/schema.ts';
 import type { StageLabels } from '../git-host/outcome.ts';
 import {
   type IssueRow,
@@ -69,29 +69,29 @@ export async function bugVersion(
   const [[state], [issue], requests] = await Promise.all([
     db
       .select({
-        stageLabels: gitHostProject.stageLabels,
-        autoMerge: gitHostProject.autoMerge,
+        stageLabels: projectGitHost.stageLabels,
+        autoMerge: projectGitHost.autoMerge,
       })
-      .from(gitHostProject)
+      .from(projectGitHost)
       .where(
         and(
-          eq(gitHostProject.project, project),
-          isNotNull(gitHostProject.syncedFrom),
+          eq(projectGitHost.project, project),
+          isNotNull(projectGitHost.syncedFrom),
         ),
       ),
     db
       .select()
-      .from(gitHostIssue)
+      .from(projectIssue)
       .where(
-        and(eq(gitHostIssue.project, project), eq(gitHostIssue.number, number)),
+        and(eq(projectIssue.project, project), eq(projectIssue.number, number)),
       ),
     db
       .select()
-      .from(gitHostRequest)
+      .from(projectRequest)
       .where(
         and(
-          eq(gitHostRequest.project, project),
-          sql`${gitHostRequest.closes} @> ${JSON.stringify([number])}::jsonb`,
+          eq(projectRequest.project, project),
+          sql`${projectRequest.closes} @> ${JSON.stringify([number])}::jsonb`,
         ),
       ),
   ]);

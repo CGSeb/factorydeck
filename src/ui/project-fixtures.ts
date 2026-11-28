@@ -3,6 +3,8 @@ import { type ProjectOption, folderName } from '../projects/label.ts';
 const NAMES: Readonly<Record<string, string>> = {
   '/home/dev/example-app': 'Example App',
   '/home/dev/old-app': 'Old App',
+  'example-app': 'Example App',
+  'old-app': 'Old App',
 };
 
 export function nameOf(project: string): string {

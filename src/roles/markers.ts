@@ -62,7 +62,7 @@ export function markersOf(
     const sessionId = String(row['session_id']);
     const at = time(row['at']);
     const match = markerOf(
-      rulesFor(config, String(row['project'])),
+      rulesFor(config, String(row['root'])),
       String(row['line']),
     );
     if (at === null || match === null) continue;
@@ -89,9 +89,9 @@ export async function loadMarkers(
         )})`;
   const rows = await select(
     db,
-    sql`select c.session_id, s.project, c.at, c.line
+    sql`select c.session_id, s.project, s.root, c.at, c.line
       from closing_line c
-      join session s on s.id = c.session_id
+      join project_session s on s.id = c.session_id
       where c.line ~ '[0-9]'
         and (${project ?? null}::text is null or s.project = ${project ?? null}::text)
         and ${sessions}

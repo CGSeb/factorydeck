@@ -296,12 +296,15 @@ describe('configuredRoles', () => {
   });
 
   it('lists the roles that apply to one project', () => {
-    expect(configuredRoles(config, '/work/lib')).toEqual(['writer', 'builder']);
-    expect(configuredRoles(config, '/work/docs')).toEqual([
+    expect(configuredRoles(config, ['/work/lib'])).toEqual([
+      'writer',
+      'builder',
+    ]);
+    expect(configuredRoles(config, ['/work/docs'])).toEqual([
       'builder',
       'reviewer',
     ]);
-    expect(configuredRoles(config, '/work/other')).toEqual([
+    expect(configuredRoles(config, ['/work/other'])).toEqual([
       'builder',
       'reviewer',
     ]);

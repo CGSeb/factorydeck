@@ -1,6 +1,11 @@
 import { and, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
-import { gitHostIssue, gitHostProject, gitHostRequest } from '../db/schema.ts';
+import {
+  gitHostProject,
+  projectGitHost,
+  projectIssue,
+  projectRequest,
+} from '../db/schema.ts';
 import type { FactoryCheck } from '../ingest/factory.ts';
 import { projectNames } from '../projects/names.ts';
 import { type IssueKind, kindOf } from './kind.ts';
@@ -45,7 +50,7 @@ function compareText(a: string, b: string): number {
 
 export type { RequestRow };
 
-export type IssueRow = typeof gitHostIssue.$inferSelect;
+export type IssueRow = typeof projectIssue.$inferSelect;
 
 export function outcomeOf(
   issue: IssueRow,
@@ -105,31 +110,31 @@ export async function lookupOutcomes(
   const [states, issues, requests] = await Promise.all([
     db
       .select({
-        project: gitHostProject.project,
-        stageLabels: gitHostProject.stageLabels,
-        autoMerge: gitHostProject.autoMerge,
-        bugLabel: gitHostProject.bugLabel,
+        project: projectGitHost.project,
+        stageLabels: projectGitHost.stageLabels,
+        autoMerge: projectGitHost.autoMerge,
+        bugLabel: projectGitHost.bugLabel,
       })
-      .from(gitHostProject)
+      .from(projectGitHost)
       .where(
         and(
-          inArray(gitHostProject.project, projects),
-          isNotNull(gitHostProject.syncedFrom),
+          inArray(projectGitHost.project, projects),
+          isNotNull(projectGitHost.syncedFrom),
         ),
       ),
     db
       .select()
-      .from(gitHostIssue)
+      .from(projectIssue)
       .where(
-        sql`(${gitHostIssue.project}, ${gitHostIssue.number}) in (${sql.join(
+        sql`(${projectIssue.project}, ${projectIssue.number}) in (${sql.join(
           keys.map((key) => sql`(${key.project}, ${key.number})`),
           sql`, `,
         )})`,
       ),
     db
       .select()
-      .from(gitHostRequest)
-      .where(inArray(gitHostRequest.project, projects)),
+      .from(projectRequest)
+      .where(inArray(projectRequest.project, projects)),
   ]);
   const stateOf = new Map(states.map((row) => [row.project, row]));
   const issueOf = new Map(
@@ -160,33 +165,33 @@ export async function issueDetail(
   const [[state], [issue], requests] = await Promise.all([
     db
       .select({
-        gitHost: gitHostProject.gitHost,
-        stageLabels: gitHostProject.stageLabels,
-        autoMerge: gitHostProject.autoMerge,
+        gitHost: projectGitHost.gitHost,
+        stageLabels: projectGitHost.stageLabels,
+        autoMerge: projectGitHost.autoMerge,
       })
-      .from(gitHostProject)
+      .from(projectGitHost)
       .where(
         and(
-          eq(gitHostProject.project, project),
-          isNotNull(gitHostProject.syncedFrom),
+          eq(projectGitHost.project, project),
+          isNotNull(projectGitHost.syncedFrom),
         ),
       ),
     db
       .select()
-      .from(gitHostIssue)
+      .from(projectIssue)
       .where(
-        and(eq(gitHostIssue.project, project), eq(gitHostIssue.number, number)),
+        and(eq(projectIssue.project, project), eq(projectIssue.number, number)),
       ),
     db
       .select()
-      .from(gitHostRequest)
+      .from(projectRequest)
       .where(
         and(
-          eq(gitHostRequest.project, project),
-          sql`${gitHostRequest.closes} @> ${JSON.stringify([number])}::jsonb`,
+          eq(projectRequest.project, project),
+          sql`${projectRequest.closes} @> ${JSON.stringify([number])}::jsonb`,
         ),
       )
-      .orderBy(desc(gitHostRequest.createdAt), desc(gitHostRequest.number)),
+      .orderBy(desc(projectRequest.createdAt), desc(projectRequest.number)),
   ]);
   const gitHost = gitHostOf(state?.gitHost ?? null);
   if (state === undefined || gitHost === null || issue === undefined) {
@@ -223,7 +228,7 @@ export async function collectionStatus(
     if (row.error === null || !(await hasFactory(row.project))) continue;
     failures.push({
       project: row.project,
-      name: names.label(row.project),
+      name: names.rootLabel(row.project),
       gitHost: gitHostOf(row.errorGitHost) ?? gitHostOf(row.gitHost),
       reason: row.error,
     });

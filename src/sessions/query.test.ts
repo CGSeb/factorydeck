@@ -67,7 +67,7 @@ describe('listSessions', () => {
       costUsd: 4,
     });
     expect(byId.get('agent-busy')).toMatchObject({
-      project: 'unassigned',
+      project: '/work/busy',
       gitBranches: [],
       tokens: 1_100_010,
     });
@@ -107,8 +107,8 @@ describe('listSessions', () => {
     ]);
     expect(week.projects).toEqual([
       { project: '/work/app', name: 'app' },
+      { project: '/work/busy', name: 'busy' },
       { project: '/work/lib', name: 'lib' },
-      { project: 'unassigned', name: 'unassigned' },
     ]);
     const none = await listSessions(
       db,
@@ -119,7 +119,7 @@ describe('listSessions', () => {
   });
 
   it('adds up to the overview of the same project over all time', async () => {
-    for (const project of ['/work/app', '/work/lib', 'unassigned']) {
+    for (const project of ['/work/app', '/work/lib', '/work/busy']) {
       const query = { ...all, project, now: NOW };
       const [{ sessions }, overview] = await Promise.all([
         listSessions(db, query, options),

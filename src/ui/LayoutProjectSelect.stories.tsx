@@ -25,8 +25,8 @@ import { Layout } from './Layout.tsx';
 import { optionsOf } from './project-fixtures.ts';
 import { SECTION_PATHS } from './components/sidebar-stories.ts';
 
-const APP = '/home/dev/example-app';
-const LIB = '/home/dev/example-lib';
+const APP = 'example-app';
+const LIB = 'example-lib';
 const ENCODED_APP = encodeURIComponent(APP);
 const ENCODED_LIB = encodeURIComponent(LIB);
 const twoProjects = optionsOf([APP, LIB]);
@@ -76,11 +76,7 @@ function deletingStore(): {
   return {
     loadFactory: () =>
       Promise.resolve(
-        factoryResponse(
-          missing,
-          true,
-          optionsOf(missing.map((row) => row.project)),
-        ),
+        factoryResponse(missing, true, optionsOf(['old-app', 'archived-lib'])),
       ),
     deleteProject: (project) => {
       missing = missing.filter((row) => row.project !== project);
@@ -92,9 +88,7 @@ function deletingStore(): {
 function DeletionHarness(): ReactElement {
   const [store] = useState(deletingStore);
   return (
-    <MemoryRouter
-      initialEntries={[`/?project=${encodeURIComponent(oldApp.project)}`]}
-    >
+    <MemoryRouter initialEntries={['/?project=old-app']}>
       <Routes>
         <Route
           element={
@@ -204,7 +198,7 @@ export const ProjectSelectUnknownProject: Story = {
       'All projects',
       'Example App',
       'example-lib',
-      'example-app',
+      'example-app/',
     ]);
     await expect(sectionHrefs(canvasElement)[0]).toBe(
       `/?project=${encodeURIComponent(`${APP}/`)}`,
@@ -228,24 +222,19 @@ export const ProjectSelectSameNames: Story = {
   args: {
     loadFactory: factoryLoaderOf(
       factoryResponse([], true, [
-        { project: '/home/dev/api', name: 'Shop (/home/dev/api)' },
-        { project: '/home/dev/web', name: 'Shop (/home/dev/web)' },
+        { project: 'api', name: 'Shop (api)' },
+        { project: 'web', name: 'Shop (web)' },
       ]),
     ),
   },
   decorators: [at('/')],
   play: async ({ canvasElement }) => {
-    await waitForOption(
-      () => projectSelect(canvasElement),
-      'Shop (/home/dev/web)',
-    );
-    await chooseOption(projectSelect(canvasElement), 'Shop (/home/dev/web)');
-    await expect(address(canvasElement)).toHaveTextContent(
-      '/?project=%2Fhome%2Fdev%2Fweb',
-    );
+    await waitForOption(() => projectSelect(canvasElement), 'Shop (web)');
+    await chooseOption(projectSelect(canvasElement), 'Shop (web)');
+    await expect(address(canvasElement)).toHaveTextContent('/?project=web');
     await expect(projectSelect(canvasElement)).toHaveAttribute(
       'title',
-      'Shop (/home/dev/web)\n/home/dev/web',
+      'Shop (web)\nweb',
     );
   },
 };
@@ -284,12 +273,12 @@ export const ProjectSelectOnIssuePage: Story = {
   },
 };
 
-export const DeletingTheSelectedProject: Story = {
+export const DeletingARootKeepsTheProject: Story = {
   render: () => <DeletionHarness />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await waitForOption(() => projectSelect(canvasElement), 'Old App');
-    await expectValue(projectSelect(canvasElement), oldApp.project);
+    await expectValue(projectSelect(canvasElement), 'old-app');
     const [, oldAppLine] = await canvas.findAllByRole('button', {
       name: 'Delete project',
     });
@@ -300,13 +289,16 @@ export const DeletingTheSelectedProject: Story = {
       dialog.getByRole('button', { name: 'Delete project' }),
     );
     await waitFor(() =>
-      expect(projectSelect(canvasElement)).toHaveAttribute('data-value', ''),
+      expect(
+        canvas.getAllByRole('button', { name: 'Delete project' }),
+      ).toHaveLength(1),
     );
-    await expectValue(projectSelect(canvasElement), '');
-    await expect(address(canvasElement)).toHaveTextContent(/^\/$/);
+    await expectValue(projectSelect(canvasElement), 'old-app');
+    await expect(address(canvasElement)).toHaveTextContent('/?project=old-app');
     await expect(await optionTexts(projectSelect(canvasElement))).toEqual([
       'All projects',
       'archived-lib',
+      'Old App',
     ]);
   },
 };

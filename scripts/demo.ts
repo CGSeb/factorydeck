@@ -8,6 +8,7 @@ import pg from 'pg';
 import { loadRootEnvFile, validateEnv } from '../src/config/env.ts';
 import { createDatabase } from '../src/db/client.ts';
 import { createDemoManager, demoSignInLine } from '../src/demo/account.ts';
+import { addDemoProjects, recordDemoRemotes } from '../src/demo/projects.ts';
 import { writeDemoCodexSessions } from '../src/demo/codex-sessions.ts';
 import {
   EXAMPLE_API,
@@ -27,6 +28,7 @@ const { values } = parseArgs({
     port: { type: 'string', default: '4318' },
     'no-factory': { type: 'boolean', default: false },
     'lost-factory': { type: 'boolean', default: false },
+    'no-projects': { type: 'boolean', default: false },
   },
 });
 
@@ -72,6 +74,8 @@ try {
   await migrate(db, { migrationsFolder: join(ROOT, 'drizzle') });
   await createDemoManager(db, now);
   console.log(demoSignInLine());
+  await recordDemoRemotes(db, projects);
+  if (!values['no-projects']) await addDemoProjects(db, now);
   console.log(summaryLine(await ingest(db, folder, { codexFolder })));
   console.log(collectSummary(await collect(db, { hasFactory })).join('\n'));
   if (values['lost-factory']) {

@@ -97,7 +97,7 @@ beforeAll(async () => {
     },
     {
       id: 'none-1',
-      project: 'unassigned',
+      project: '/work/notes',
       title: 'Explain',
       gitBranch: '',
       firstAt: RECENT,
@@ -182,7 +182,7 @@ describe('listRoles', () => {
     expect(list.projects).toEqual([
       { project: '/work/app', name: 'app' },
       { project: '/work/lib', name: 'lib' },
-      { project: 'unassigned', name: 'unassigned' },
+      { project: '/work/notes', name: 'notes' },
     ]);
   });
 

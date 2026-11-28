@@ -24,8 +24,34 @@ export function postgresUrl(): string {
   return url;
 }
 
+const LINK_ROOTS = `
+create function link_test_root() returns trigger language plpgsql as $$
+declare
+  remote text := 'test.invalid/' || new.project;
+begin
+  if new.project <> 'unassigned' then
+    insert into project (name, slug, remote, created_at)
+      values (coalesce(substring(new.project from '([^/\\\\]+)[/\\\\]*$'), new.project), new.project, remote, now())
+      on conflict do nothing;
+    insert into root_remote (root, remote) values (new.project, remote)
+      on conflict do nothing;
+  end if;
+  return new;
+end $$;
+create trigger link_session_root after insert or update of project on session
+  for each row execute function link_test_root();
+create trigger link_git_host_root after insert on git_host_project
+  for each row execute function link_test_root();
+`;
+
+export interface ScratchOptions {
+  linkRoots?: boolean;
+}
+
 /** A new, migrated database on the test server, dropped by `drop`. */
-export async function createScratchDatabase(): Promise<{
+export async function createScratchDatabase({
+  linkRoots = true,
+}: ScratchOptions = {}): Promise<{
   url: string;
   drop: () => Promise<void>;
 }> {
@@ -45,6 +71,12 @@ export async function createScratchDatabase(): Promise<{
     migrationsFolder: join(import.meta.dirname, '..', '..', 'drizzle'),
   });
   await close();
+  if (linkRoots) {
+    const client = new pg.Client({ connectionString: scratch.toString() });
+    await client.connect();
+    await client.query(LINK_ROOTS);
+    await client.end();
+  }
   return {
     url: scratch.toString(),
     drop: async () => {
@@ -55,11 +87,13 @@ export async function createScratchDatabase(): Promise<{
 }
 
 /** A connection to a new scratch database; `close` disconnects and drops it. */
-export async function createTestDatabase(): Promise<{
+export async function createTestDatabase(
+  options: ScratchOptions = {},
+): Promise<{
   db: Database;
   close: () => Promise<void>;
 }> {
-  const scratch = await createScratchDatabase();
+  const scratch = await createScratchDatabase(options);
   const { db, close } = createDatabase(
     scratch.url,
     CONNECTION_TIMEOUT_MS,

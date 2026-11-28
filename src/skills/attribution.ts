@@ -66,7 +66,7 @@ function subAgentThreads(): SQL {
 
 export function attributedCalls(sessions: SQL): SQL {
   return sql`(
-    with scoped as (select s.id from session s where ${sessions}),
+    with scoped as (select s.id from project_session s where ${sessions}),
     ${mainThread()},
     ${subAgentThreads()}
     select call_id, current_skill as skill from main_current

@@ -125,7 +125,7 @@ function inWindow({ startAt, project }: Window): SQL {
     and (${project}::text is null or s.project = ${project}::text)`;
 }
 
-const CALLS = sql`api_call a join session s on s.id = a.session_id`;
+const CALLS = sql`api_call a join project_session s on s.id = a.session_id`;
 
 function bucketsQuery(window: Window): SQL {
   const { unit, format, timeZone, nowAt, startAt } = window;

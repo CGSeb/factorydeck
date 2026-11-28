@@ -103,12 +103,12 @@ export const OneProjectSelected: Story = {
 };
 
 export const UnknownProjectInUrl: Story = {
-  args: { value: '/home/dev/gone' },
+  args: { value: 'gone/app' },
   play: async ({ canvasElement }) => {
     const select = within(canvasElement).getByRole('combobox', {
       name: 'Project',
     });
-    await expect(select).toHaveAttribute('data-value', '/home/dev/gone');
-    await expect(await projectOptions(canvasElement)).toContain('gone');
+    await expect(select).toHaveAttribute('data-value', 'gone/app');
+    await expect(await projectOptions(canvasElement)).toContain('gone/app');
   },
 };

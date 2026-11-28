@@ -1,10 +1,6 @@
 import type { ReactElement } from 'react';
 import { Select } from './components/Select.tsx';
-import {
-  type ProjectOption,
-  folderName,
-  projectText,
-} from '../projects/label.ts';
+import { type ProjectOption, projectText } from '../projects/label.ts';
 
 export const ALL_PROJECTS = 'All projects';
 
@@ -24,7 +20,7 @@ function projectOptions(
   return value === undefined ||
     projects.some((option) => option.project === value)
     ? projects
-    : [...projects, { project: value, name: folderName(value) }];
+    : [...projects, { project: value, name: value }];
 }
 
 function tooltipOf(

@@ -1,6 +1,6 @@
 # Features and issues
 
-`/features` lists every issue the factory worked on in the period; `/features/<n>?project=<root>` tells how one issue got where it is. An issue is identified by its project and number. A bug has its issue page at `/bugs/<n>` instead ([Page of a bug](bugs.md#page-of-a-bug)), and every link to a bug's issue page goes there.
+`/features` lists every issue the factory worked on in the period; `/features/<n>?project=<slug>` tells how one issue got where it is. An issue is identified by its project and number. A bug has its issue page at `/bugs/<n>` instead ([Page of a bug](bugs.md#page-of-a-bug)), and every link to a bug's issue page goes there.
 
 ## What an issue counts
 
@@ -61,11 +61,11 @@ Every step, thread and milestone of the period shows, with no limit. With no thr
 
 ### Summary
 
-Beside the timeline: the issue's tokens, its orchestration share, its split by role, its serenity score (with `from <first>` under it when the [score path](outcomes.md#serenity-reports) changed), review rounds, pull request, checks, labels (each in its git host colour, text black or white for contrast), reworked, and `Frictions`: the issue's frictions in the period, linking to `/frictions?project=<root>&issue=<n>&period=<period>`, or `None`.
+Beside the timeline: the issue's tokens, its orchestration share, its split by role, its serenity score (with `from <first>` under it when the [score path](outcomes.md#serenity-reports) changed), review rounds, pull request, checks, labels (each in its git host colour, text black or white for contrast), reworked, and `Frictions`: the issue's frictions in the period, linking to `/frictions?project=<slug>&issue=<n>&period=<period>`, or `None`.
 
 The issue's tokens equal its row on `/features` for the same period and project.
 
 ## API
 
 - `GET /api/features`: with `kind=feature` or `kind=bug`, only the issues of that kind, with `merged` computed on them (another value answers `400`). Per issue its `kind` (`feature`, `bug`, or `null` for an issue not found or not collected, see [Kinds](outcomes.md#kinds)), stage, score, rounds, sessions, tokens with their four kinds, cost, orchestration share, `roles` (by tokens, orchestration last) and `lastAt`; the `noWorkItem` row and the totals, which have no `kind`; `merged` (count, without a person, `tokensPerIssue`); `bugTickets`, `true` when a project of the selection has a bug label; and `kinds` (`{ "feature": <n>, "bug": <n> }`), counted on every issue of the list before the kind filter.
-- `GET /api/features/<n>?project=<root>`: the issue, its `kind` (same values), its `threads` (`sessionId`, `sessionTitle`, `threadId`, `role`, `description` or `null` for a main thread, `firstAt`, `lastAt`, tokens, cost), its `fix` (the [fix of a bug](bugs.md#fix-block), `null` for a feature, an issue of no kind or a bug with no fix), its `version` (`null` for a feature or an issue of no kind; see [the API of the bugs page](bugs.md#api)), its orchestration row, its milestones and its friction count. The threads plus the orchestration share add up to the issue's tokens on the list. With `version=<k>`, a bug's page of that [version](bugs.md#versions-of-the-page); a bug's page always follows one version, never the period.
+- `GET /api/features/<n>?project=<slug>`: the issue, its `kind` (same values), its `threads` (`sessionId`, `sessionTitle`, `threadId`, `role`, `description` or `null` for a main thread, `firstAt`, `lastAt`, tokens, cost), its `fix` (the [fix of a bug](bugs.md#fix-block), `null` for a feature, an issue of no kind or a bug with no fix), its `version` (`null` for a feature or an issue of no kind; see [the API of the bugs page](bugs.md#api)), its orchestration row, its milestones and its friction count. The threads plus the orchestration share add up to the issue's tokens on the list. With `version=<k>`, a bug's page of that [version](bugs.md#versions-of-the-page); a bug's page always follows one version, never the period.

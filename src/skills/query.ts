@@ -147,7 +147,7 @@ export async function listSkills(
     select(
       db,
       sql`select l.skill, count(*) as launches, count(distinct l.session_id) as sessions
-        from skill_launch l join session s on s.id = l.session_id
+        from skill_launch l join project_session s on s.id = l.session_id
         where (${scope.project}::text is null or s.project = ${scope.project}::text)
           and ${callInScope(scope, sql`l.at`)}
         group by l.skill`,
@@ -191,7 +191,7 @@ function seriesQuery(
   const format = unit === 'hour' ? 'YYYY-MM-DD"T"HH24:00' : 'YYYY-MM-DD';
   return sql`with launches as (
       select date_trunc(${unit}, l.at at time zone ${timeZone}) as day
-      from skill_launch l join session s on s.id = l.session_id
+      from skill_launch l join project_session s on s.id = l.session_id
       where l.skill = ${skill}
         and (${scope.project}::text is null or s.project = ${scope.project}::text)
         and ${callInScope(scope, sql`l.at`)}
@@ -200,7 +200,7 @@ function seriesQuery(
       select
         date_trunc(${unit}, coalesce(${scope.startAt}::timestamptz, min(l.at)) at time zone ${timeZone}) as first,
         date_trunc(${unit}, greatest(${now.toISOString()}::timestamptz, max(l.at)) at time zone ${timeZone}) as last
-      from skill_launch l join session s on s.id = l.session_id
+      from skill_launch l join project_session s on s.id = l.session_id
       where l.skill = ${skill}
         and (${scope.project}::text is null or s.project = ${scope.project}::text)
         and ${callInScope(scope, sql`l.at`)}
@@ -229,7 +229,7 @@ export async function skillDetail(
     select(
       db,
       sql`select s.id, s.title, s.project, count(*) as launches
-        from skill_launch l join session s on s.id = l.session_id
+        from skill_launch l join project_session s on s.id = l.session_id
         where l.skill = ${skill}
           and (${scope.project}::text is null or s.project = ${scope.project}::text)
           and ${callInScope(scope, sql`l.at`)}

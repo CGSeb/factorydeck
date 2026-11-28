@@ -44,6 +44,6 @@ FactoryDeck only reads the sessions of projects where the factory is installed, 
 > [!TIP]
 > FactoryDeck is the dashboard of [**factorydeck-skills**](https://github.com/CGSeb/factorydeck-skills), the factory itself: a plugin of agent skills that write specs, build features from issues, review them and merge them. Follow its [install steps](https://github.com/CGSeb/factorydeck-skills#install), then run `/setup-factory` in your project: its earlier sessions are read at the next ingestion.
 
-A project shows under the `project.name` of its `docs/agents/factory.yml`, or under its folder name when it has none. The project select of the sidebar shows one project, or all of them, on every page; the choice lives in the `project` URL parameter, so a link or a reload keeps it.
+A manager adds each project by its git remote on the Projects page, under the name it shows. A session belongs to the project of its repository's `origin` remote, whatever folder it was cloned in; sessions of a remote no project has stay hidden until it is added. The project select of the sidebar shows one project, or all of them, on every page; the choice lives in the `project` URL parameter, the project's slug, so a link or a reload keeps it.
 
 To install and configure FactoryDeck, see [Getting started](getting-started.md).

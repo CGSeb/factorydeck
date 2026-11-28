@@ -1,0 +1,11 @@
+CREATE TABLE "root_remote" (
+	"root" text PRIMARY KEY,
+	"remote" text NOT NULL
+);
+--> statement-breakpoint
+DROP TABLE "project_name";--> statement-breakpoint
+CREATE VIEW "project_git_host" AS (select h.project, h.root, g.git_host, g.repository, g.synced_from, g.error, g.error_git_host, g.stage_labels, g.auto_merge, g.bug_label, g.history_read, g.fix_read, g.state_events_read, g.body_closes_read from git_host_project g join (select distinct on (p.slug) p.slug as project, g.project as root from git_host_project g join root_remote r on r.root = g.project join project p on p.remote = r.remote order by p.slug, g.synced_from desc nulls last, g.project) h on h.root = g.project);--> statement-breakpoint
+CREATE VIEW "project_issue" AS (select h.project, i.number, i.title, i.state, i.labels, i.url, i.created_at, i.closed_at, i.updated_at, i.reopened, i.state_events, i.needs_spec from git_host_issue i join (select distinct on (p.slug) p.slug as project, g.project as root from git_host_project g join root_remote r on r.root = g.project join project p on p.remote = r.remote order by p.slug, g.synced_from desc nulls last, g.project) h on h.root = i.project);--> statement-breakpoint
+CREATE VIEW "project_request" AS (select h.project, q.number, q.title, q.state, q.draft, q.head_branch, q.url, q.created_at, q.merged_at, q.closed_at, q.updated_at, q.closes, q.checks, q.report, q.reports from git_host_request q join (select distinct on (p.slug) p.slug as project, g.project as root from git_host_project g join root_remote r on r.root = g.project join project p on p.remote = r.remote order by p.slug, g.synced_from desc nulls last, g.project) h on h.root = q.project);--> statement-breakpoint
+CREATE VIEW "project_root" AS (select r.root, p.slug as project from root_remote r join project p on p.remote = r.remote);--> statement-breakpoint
+CREATE VIEW "project_session" AS (select s.id, s.agent, p.slug as project, s.project as root, s.cwd, s.cwd_from_main, s.git_branch, s.git_branches, s.title, s.first_at, s.last_at, s.turn_ended from session s join root_remote r on r.root = s.project join project p on p.remote = r.remote);

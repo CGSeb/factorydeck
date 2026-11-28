@@ -13,12 +13,6 @@ import {
   unique,
 } from 'drizzle-orm/pg-core';
 import { UNASSIGNED_PROJECT } from '../projects/label.ts';
-import type { StageLabels } from '../git-host/outcome.ts';
-import type {
-  LabelChange,
-  SerenityReport,
-  StateEvent,
-} from '../git-host/types.ts';
 
 /** A session log already read, so the next ingestion resumes where it stopped. */
 export const sourceFile = pgTable('source_file', {
@@ -227,76 +221,6 @@ export const ingestState = pgTable('ingest_state', {
   frictionsReadDone: boolean('frictions_read_done').notNull().default(false),
 });
 
-export const gitHostIssue = pgTable(
-  'git_host_issue',
-  {
-    project: text().notNull(),
-    number: integer().notNull(),
-    title: text().notNull(),
-    state: text().notNull(),
-    labels: jsonb().$type<{ name: string; color: string | null }[]>().notNull(),
-    url: text().notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
-    closedAt: timestamp('closed_at', { withTimezone: true }),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
-    reopened: boolean().notNull().default(false),
-    stateEvents: jsonb('state_events')
-      .$type<StateEvent[]>()
-      .notNull()
-      .default([]),
-    needsSpec: jsonb('needs_spec').$type<LabelChange[]>().notNull().default([]),
-  },
-  (table) => [primaryKey({ columns: [table.project, table.number] })],
-);
-
-export const gitHostRequest = pgTable(
-  'git_host_request',
-  {
-    project: text().notNull(),
-    number: integer().notNull(),
-    title: text().notNull(),
-    state: text().notNull(),
-    draft: boolean().notNull(),
-    headBranch: text('head_branch').notNull(),
-    url: text().notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
-    mergedAt: timestamp('merged_at', { withTimezone: true }),
-    closedAt: timestamp('closed_at', { withTimezone: true }),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
-    closes: jsonb().$type<number[]>().notNull(),
-    checks: text().notNull(),
-    report: jsonb().$type<SerenityReport>(),
-    reports: jsonb().$type<SerenityReport[]>().notNull().default([]),
-  },
-  (table) => [primaryKey({ columns: [table.project, table.number] })],
-);
-
-export const gitHostProject = pgTable('git_host_project', {
-  project: text().primaryKey(),
-  gitHost: text('git_host'),
-  repository: text(),
-  syncedFrom: timestamp('synced_from', { withTimezone: true }),
-  error: text(),
-  errorGitHost: text('error_git_host'),
-  stageLabels: jsonb('stage_labels').$type<StageLabels>(),
-  autoMerge: boolean('auto_merge'),
-  bugLabel: text('bug_label'),
-  historyRead: boolean('history_read').notNull().default(false),
-  fixRead: boolean('fix_read').notNull().default(false),
-  stateEventsRead: boolean('state_events_read').notNull().default(false),
-  bodyClosesRead: boolean('body_closes_read').notNull().default(false),
-});
-
-export const gitHostRun = pgTable('git_host_run', {
-  id: text().primaryKey(),
-  finishedAt: timestamp('finished_at', { withTimezone: true }).notNull(),
-});
-
-export const projectName = pgTable('project_name', {
-  project: text().primaryKey(),
-  name: text().notNull(),
-});
-
 export interface ReportFilters {
   kind: string | null;
   role: string | null;
@@ -328,4 +252,18 @@ export {
   cliConnection,
   signInSession,
 } from './auth-schema.ts';
-export { project } from './project-schema.ts';
+export {
+  gitHostIssue,
+  gitHostProject,
+  gitHostRequest,
+  gitHostRun,
+  projectGitHost,
+  projectIssue,
+  projectRequest,
+} from './git-host-schema.ts';
+export {
+  project,
+  projectRoot,
+  projectSession,
+  rootRemote,
+} from './project-schema.ts';

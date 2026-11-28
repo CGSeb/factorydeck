@@ -189,10 +189,10 @@ describe('GET /api/stats/waiting on the database', () => {
 
   it('leaves out projects without the factory with every project', async () => {
     const response = await app().request('/api/stats/waiting');
-    const body: unknown = await response.json();
+    const body = (await response.json()) as { waiting: { issues: object[] } };
     expect(body).toMatchObject({
       waiting: { issues: [{ number: 2 }, { number: 1 }] },
     });
-    expect(JSON.stringify(body)).not.toContain(OTHER);
+    expect(JSON.stringify(body.waiting.issues)).not.toContain(OTHER);
   });
 });

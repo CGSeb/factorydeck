@@ -2,7 +2,6 @@ import { readFile, stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
-import { storeProjectNames } from '../projects/names.ts';
 import { forgetProjectsWithoutFactoryOnce } from '../projects/remove.ts';
 import {
   type FactoryCheck,
@@ -17,6 +16,11 @@ import {
   storeChunkFrictions,
 } from './ingest-frictions.ts';
 import { LOCK_KEY } from './lock.ts';
+import {
+  type RemoteReader,
+  readOriginRemote,
+  storeRootRemotes,
+} from './remote.ts';
 import { isObject, parseLines } from './records.ts';
 import {
   type Run,
@@ -43,6 +47,7 @@ export interface IngestOptions {
   home?: string;
   codexFolder?: string;
   wsl?: boolean;
+  readRemote?: RemoteReader;
 }
 
 export type IngestResult =
@@ -110,7 +115,7 @@ export async function ingest(
     }
     await saveSubAgents(run);
     await saveSessions(run);
-    await storeProjectNames(tx);
+    await storeRootRemotes(tx, options.readRemote ?? readOriginRemote);
     return {
       status: 'done',
       ...counts,

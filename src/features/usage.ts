@@ -83,7 +83,7 @@ export async function windowRows(
   const split = splitOf(splits);
   return select(
     db,
-    sql`select a.session_id, s.project, s.title, s.agent, s.git_branch as session_branch,
+    sql`select a.session_id, s.project, s.root, s.title, s.agent, s.git_branch as session_branch,
         coalesce(a.sub_agent_id, '') as sub_agent,
         sa.agent_type, sa.description, sa.git_branch as agent_branch,
         coalesce(sa.first_at, fc.first_call_at) as agent_first_at, marker.idx as marker, a.model,
@@ -96,7 +96,7 @@ export async function windowRows(
         sum(a.output_tokens) as output,
         ${split} as split
       from api_call a
-      join session s on s.id = a.session_id
+      join project_session s on s.id = a.session_id
       left join sub_agent sa on sa.session_id = a.session_id and sa.id = a.sub_agent_id
       left join (
         select session_id, sub_agent_id, min(at) as first_call_at from api_call
@@ -106,7 +106,7 @@ export async function windowRows(
       where (${project}::text is null or s.project = ${project}::text)
         and (${startAt}::timestamptz is null or a.at >= ${startAt}::timestamptz)
         and (${endAt}::timestamptz is null or a.at < ${endAt}::timestamptz)
-      group by a.session_id, s.project, s.title, s.agent, s.git_branch, a.sub_agent_id,
+      group by a.session_id, s.project, s.root, s.title, s.agent, s.git_branch, a.sub_agent_id,
         sa.agent_type, sa.description, sa.git_branch, sa.first_at, fc.first_call_at, marker.idx, a.model, split`,
   );
 }

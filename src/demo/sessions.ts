@@ -204,7 +204,7 @@ export async function writeDemoSessions(
     );
     await appendFile(
       factoryFile(demoProjectRoot(projects, EXAMPLE_APP)),
-      `project:\n  name: ${EXAMPLE_APP_NAME}\nbugs:\n  label: bug\n`,
+      'bugs:\n  label: bug\n',
     );
   }
   for (const session of DEMO_SESSIONS) {
