@@ -17,6 +17,7 @@ import type {
   BatchCounts,
   BatchThread,
 } from './batch-schema.ts';
+import { storeThreadRecords } from './store-records.ts';
 
 export interface Sender {
   accountId: number;
@@ -288,6 +289,7 @@ export async function storeBatch(
         await storeSession(tx, thread, sender);
         await storeSubAgent(tx, thread);
         apiCalls += await storeCalls(tx, thread);
+        await storeThreadRecords(tx, thread);
         await storeOffset(tx, thread, batch.parserVersion, at);
       }
       await useSubAgentCwds(tx, [...sessionIds]);
