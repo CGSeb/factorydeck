@@ -1,4 +1,4 @@
-import { type ReactElement, useEffect, useId, useRef } from 'react';
+import { type ReactElement, useId, useRef } from 'react';
 import { Dialog } from './components/Dialog.tsx';
 import { Panel } from './components/Panel.tsx';
 import { formatDateTime } from './format.ts';
@@ -23,6 +23,7 @@ import {
   tokenSetBy,
 } from './git-host-view.ts';
 import { errorProps } from './invite-dialog-state.ts';
+import { useReportChanged } from './leave-guard.ts';
 import type { ListedProject } from './projects-api.ts';
 import { formatAddedDate } from './projects-view.ts';
 import './invitations.css';
@@ -211,11 +212,7 @@ export function GitHostSection({
     onSaved,
     inputs: { token, gitHost },
   });
-  const { changed } = form;
-  useEffect(() => {
-    onChanged?.(changed);
-  }, [onChanged, changed]);
-  useEffect(() => () => onChanged?.(false), [onChanged]);
+  useReportChanged(form.changed, onChanged);
   return (
     <Panel heading={GIT_HOST}>
       <form

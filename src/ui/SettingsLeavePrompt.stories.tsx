@@ -52,3 +52,17 @@ export const UnsavedToken: Story = {
     await expect(dialog.getByRole('button', { name: 'Leave' })).toBeVisible();
   },
 };
+
+export const UnsavedRules: Story = {
+  name: 'Unsaved rules, with or without a token: Leave without saving the rules?',
+  args: { unsaved: { rules: true, gitHost: true } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('link', { name: 'Projects' }));
+    await expect(
+      await canvas.findByRole('dialog', {
+        name: 'Leave without saving the rules?',
+      }),
+    ).toBeVisible();
+  },
+};

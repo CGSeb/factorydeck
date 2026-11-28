@@ -1,5 +1,4 @@
 import { type ReactElement, useId } from 'react';
-import { Dialog } from './components/Dialog.tsx';
 import { Panel } from './components/Panel.tsx';
 import { StatusLine } from './components/StatusLine.tsx';
 import { errorProps } from './invite-dialog-state.ts';
@@ -13,7 +12,6 @@ import type {
   SaveRoleRules,
 } from './role-rules-api.ts';
 import {
-  LEAVE_QUESTION,
   NO_RULE,
   type RoleRulesForm,
   type RowErrors,
@@ -21,7 +19,8 @@ import {
   SAVE_RULES,
   useRoleRulesForm,
 } from './role-rules-form.ts';
-import { useFocusTarget, useLeaveGuard } from './role-rules-dom.ts';
+import { useReportChanged } from './leave-guard.ts';
+import { useFocusTarget } from './role-rules-dom.ts';
 import './components/controls.css';
 import './setup-page.css';
 import './projects.css';
@@ -30,6 +29,7 @@ export interface RoleRulesSectionProps {
   project: ListedProject;
   loadRoleRules: LoadRoleRules;
   saveRoleRules: SaveRoleRules;
+  onChanged?: ((changed: boolean) => void) | undefined;
 }
 
 const LOADING = 'Loading…';
@@ -49,22 +49,6 @@ const MOVES: readonly {
   { by: -1, control: 'up', label: 'up', glyph: '↑' },
   { by: 1, control: 'down', label: 'down', glyph: '↓' },
 ];
-
-function LeavePrompt({ changed }: { changed: boolean }): ReactElement | null {
-  const blocker = useLeaveGuard(changed);
-  if (blocker.state !== 'blocked') return null;
-  return (
-    <Dialog
-      title={LEAVE_QUESTION}
-      text="Your changes to the role rules are lost."
-      cancelLabel="Stay"
-      onCancel={() => {
-        blocker.reset?.();
-      }}
-      danger={{ label: 'Leave', onClick: () => blocker.proceed?.() }}
-    />
-  );
-}
 
 function PatternCell({
   id,
@@ -300,12 +284,13 @@ export function RoleRulesSection({
   project,
   loadRoleRules,
   saveRoleRules,
+  onChanged,
 }: RoleRulesSectionProps): ReactElement {
   const form = useRoleRulesForm(project, loadRoleRules, saveRoleRules);
+  useReportChanged(form.changed, onChanged);
   return (
     <Panel heading="Role rules">
       <SectionBody project={project} form={form} />
-      <LeavePrompt changed={form.changed} />
     </Panel>
   );
 }

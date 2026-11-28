@@ -84,7 +84,7 @@ Without the secret key (`secretKey` is `false`, or `Save token` answers the `503
 
 `Remove token` asks `Remove the git host token of <name>?`, `Its issues and pull requests stop updating.`, with `Cancel`, which has the focus, and `Remove token`, in the danger colour; `Escape`, `Cancel` or a click outside closes it. The dialog sends [`DELETE /api/admin/projects/<id>/git-host/token`](#admin-routes): the button reads `Removing…` and is disabled while it runs. On success the dialog closes, the section shows `No token`, and the focus goes to `Token`. A failure stays in the dialog: `<name> is no longer in FactoryDeck.` on a `404`, `Database unreachable. Start it with pnpm db:up.` on a `503`, `Could not reach the server` otherwise.
 
-The page's refresh never empties a typed token nor resets a changed select. A typed token or a changed select counts as an unsaved change: leaving the page then asks `Leave without saving the token?` (an in-app link, and the browser's own prompt on closing or reloading the tab).
+The page's refresh never empties a typed token nor resets a changed select. A typed token or a changed select counts as an unsaved change: leaving the page then asks `Leave without saving the token?` (an in-app link, and the browser's own prompt on closing or reloading the tab), with `Stay` and `Leave`. The page asks once: when the [role rules](roles-and-work-items.md#role-rules-section) have unsaved changes too, it asks `Leave without saving the rules?` instead.
 
 ## Removing a project
 

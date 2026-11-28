@@ -29,7 +29,11 @@ import {
 } from './projects-view.ts';
 import type { LoadRoleRules, SaveRoleRules } from './role-rules-api.ts';
 import { RoleRulesSection } from './RoleRulesSection.tsx';
-import { SettingsLeavePrompt, type Unsaved } from './SettingsLeavePrompt.tsx';
+import {
+  SettingsLeavePrompt,
+  type Unsaved,
+  type UnsavedSection,
+} from './SettingsLeavePrompt.tsx';
 import { useRefreshing } from './skills-api.ts';
 import './invitations.css';
 import './projects.css';
@@ -174,26 +178,85 @@ function useSettings(loadProjects: LoadProjects, slug: string) {
   return { view, project, onSaved };
 }
 
+function useUnsaved(): {
+  unsaved: Unsaved;
+  onRulesChanged: (changed: boolean) => void;
+  onGitHostChanged: (changed: boolean) => void;
+} {
+  const [unsaved, setUnsaved] = useState<Unsaved>({});
+  const report = useCallback((section: UnsavedSection, changed: boolean) => {
+    setUnsaved((previous) =>
+      previous[section] === changed
+        ? previous
+        : { ...previous, [section]: changed },
+    );
+  }, []);
+  const onRulesChanged = useCallback(
+    (changed: boolean) => {
+      report('rules', changed);
+    },
+    [report],
+  );
+  const onGitHostChanged = useCallback(
+    (changed: boolean) => {
+      report('gitHost', changed);
+    },
+    [report],
+  );
+  return { unsaved, onRulesChanged, onGitHostChanged };
+}
+
+function LaterSections({
+  project,
+  secretKey,
+  sources: { loadRoleRules, saveRoleRules, saveToken, removeToken },
+  onSaved,
+  onRulesChanged,
+  onGitHostChanged,
+}: {
+  project: ListedProject;
+  secretKey: boolean;
+  sources: Omit<ProjectSettingsPageProps, 'loadProjects' | 'saveProject'>;
+  onSaved: (project: ListedProject) => void;
+  onRulesChanged: (changed: boolean) => void;
+  onGitHostChanged: (changed: boolean) => void;
+}): ReactElement {
+  return (
+    <>
+      {loadRoleRules !== undefined && saveRoleRules !== undefined && (
+        <RoleRulesSection
+          key={`rules-${String(project.id)}`}
+          project={project}
+          loadRoleRules={loadRoleRules}
+          saveRoleRules={saveRoleRules}
+          onChanged={onRulesChanged}
+        />
+      )}
+      {saveToken !== undefined && removeToken !== undefined && (
+        <GitHostSection
+          key={`git-host-${String(project.id)}`}
+          project={project}
+          secretKey={secretKey}
+          saveToken={saveToken}
+          removeToken={removeToken}
+          onSaved={onSaved}
+          onChanged={onGitHostChanged}
+        />
+      )}
+    </>
+  );
+}
+
 export function ProjectSettingsPage({
   loadProjects,
   saveProject,
-  loadRoleRules,
-  saveRoleRules,
-  saveToken,
-  removeToken,
+  ...sources
 }: ProjectSettingsPageProps): ReactElement {
   const { slug = '' } = useParams();
   const selected = useProject();
   const { view, project, onSaved } = useSettings(loadProjects, slug);
   const secretKey = view?.status === 'ok' && view.secretKey;
-  const [unsaved, setUnsaved] = useState<Unsaved>({});
-  const onGitHostChanged = useCallback((changed: boolean) => {
-    setUnsaved((previous) =>
-      previous.gitHost === changed
-        ? previous
-        : { ...previous, gitHost: changed },
-    );
-  }, []);
+  const { unsaved, ...changes } = useUnsaved();
   return (
     <div className="fd-projects-page">
       <PageHeader
@@ -215,25 +278,14 @@ export function ProjectSettingsPage({
               saveProject={saveProject}
               onSaved={onSaved}
             />
-            {loadRoleRules !== undefined && saveRoleRules !== undefined && (
-              <RoleRulesSection
-                key={`rules-${String(shown.id)}`}
-                project={shown}
-                loadRoleRules={loadRoleRules}
-                saveRoleRules={saveRoleRules}
-              />
-            )}
-            {saveToken !== undefined && removeToken !== undefined && (
-              <GitHostSection
-                key={`git-host-${String(shown.id)}`}
-                project={shown}
-                secretKey={secretKey}
-                saveToken={saveToken}
-                removeToken={removeToken}
-                onSaved={onSaved}
-                onChanged={onGitHostChanged}
-              />
-            )}
+            <LaterSections
+              key={`later-${String(shown.id)}`}
+              project={shown}
+              secretKey={secretKey}
+              sources={sources}
+              onSaved={onSaved}
+              {...changes}
+            />
           </>
         )}
       />

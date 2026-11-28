@@ -2,8 +2,9 @@ import type { ReactElement } from 'react';
 import { Dialog } from './components/Dialog.tsx';
 import { LEAVE_TOKEN } from './git-host-view.ts';
 import { useLeaveGuard } from './leave-guard.ts';
+import { LEAVE_QUESTION } from './role-rules-rows.ts';
 
-export type UnsavedSection = 'gitHost';
+export type UnsavedSection = 'rules' | 'gitHost';
 
 export type Unsaved = Partial<Record<UnsavedSection, boolean>>;
 
@@ -14,6 +15,11 @@ interface LeaveWording {
 }
 
 const WORDINGS: readonly LeaveWording[] = [
+  {
+    section: 'rules',
+    question: LEAVE_QUESTION,
+    text: 'Your changes to the role rules are lost.',
+  },
   {
     section: 'gitHost',
     question: LEAVE_TOKEN,

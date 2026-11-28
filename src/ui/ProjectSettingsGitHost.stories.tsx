@@ -11,6 +11,12 @@ import type { SaveToken } from './git-host-token-api.ts';
 import type { ListedProject, LoadProjects } from './projects-api.ts';
 import { pendingSave } from './projects-list-fixtures.ts';
 import { ProjectSettingsPage } from './ProjectSettingsPage.tsx';
+import {
+  customRules,
+  pendingRulesSave,
+  rulesLoaderOf,
+  rulesView,
+} from './role-rules-fixtures.ts';
 import { memoryDataRouter } from './story-router.ts';
 
 function refreshing(
@@ -182,5 +188,71 @@ export const LeaveWithoutChanges: Story = {
     await userEvent.click(canvas.getByRole('link', { name: '← Projects' }));
     await expect(await canvas.findByText('Project list')).toBeVisible();
     await expect(canvas.queryByRole('dialog')).toBeNull();
+  },
+};
+
+const withRules = {
+  loadProjects: refreshing(githubWithToken, true, 3600),
+  loadRoleRules: rulesLoaderOf(rulesView(customRules, 3600)),
+  saveRoleRules: pendingRulesSave(),
+};
+
+async function renameFirstRule(canvasElement: HTMLElement): Promise<void> {
+  const canvas = within(canvasElement);
+  const rules = await canvas.findByRole('table');
+  const field = within(rules).getAllByLabelText(/^Name of rule \d+$/)[0];
+  if (field === undefined) throw new Error('No rule');
+  await userEvent.type(field, 'x');
+}
+
+async function leaveQuestion(canvasElement: HTMLElement): Promise<string> {
+  const canvas = within(canvasElement);
+  await userEvent.click(canvas.getByRole('link', { name: '← Projects' }));
+  const dialog = await canvas.findByRole('dialog');
+  return within(dialog).getByRole('heading').textContent;
+}
+
+export const LeaveTokenWithRules: Story = {
+  name: 'Leave prompt with both sections: only the token changed asks about the token',
+  args: withRules,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole('table');
+    await expect(
+      canvas.getAllByRole('heading', { level: 2 }).map((h) => h.textContent),
+    ).toEqual(['General', 'Role rules', 'Git host']);
+    await userEvent.type(canvas.getByLabelText('Token'), 'ghp_example');
+    await expect(await leaveQuestion(canvasElement)).toBe(
+      'Leave without saving the token?',
+    );
+  },
+};
+
+export const LeaveRulesOnly: Story = {
+  name: 'Leave prompt with both sections: only the rules changed asks about the rules',
+  args: withRules,
+  play: async ({ canvasElement }) => {
+    await renameFirstRule(canvasElement);
+    await expect(await leaveQuestion(canvasElement)).toBe(
+      'Leave without saving the rules?',
+    );
+  },
+};
+
+export const LeaveRulesAndToken: Story = {
+  name: 'Leave prompt with both sections: both changed asks about the rules',
+  args: withRules,
+  play: async ({ canvasElement }) => {
+    await renameFirstRule(canvasElement);
+    await userEvent.type(
+      within(canvasElement).getByLabelText('Token'),
+      'ghp_example',
+    );
+    await expect(await leaveQuestion(canvasElement)).toBe(
+      'Leave without saving the rules?',
+    );
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('button', { name: 'Leave' }));
+    await expect(await canvas.findByText('Project list')).toBeVisible();
   },
 };

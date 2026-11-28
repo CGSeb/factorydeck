@@ -277,10 +277,7 @@ export function projectsRoute({
   addProject,
   saveProject,
   removeProject,
-  loadRoleRules,
-  saveRoleRules,
-  saveToken,
-  removeToken,
+  ...sections
 }: ProjectsSources): ReactElement | undefined {
   if (loadProjects === undefined) return undefined;
   return (
@@ -302,10 +299,7 @@ export function projectsRoute({
             <ProjectSettingsPage
               loadProjects={loadProjects}
               saveProject={saveProject}
-              loadRoleRules={loadRoleRules}
-              saveRoleRules={saveRoleRules}
-              saveToken={saveToken}
-              removeToken={removeToken}
+              {...sections}
             />
           }
         />

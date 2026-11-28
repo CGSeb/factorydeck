@@ -18,3 +18,13 @@ export function useLeaveGuard(changed: boolean): Blocker {
   }, [changed]);
   return blocker;
 }
+
+export function useReportChanged(
+  changed: boolean,
+  onChanged: ((changed: boolean) => void) | undefined,
+): void {
+  useEffect(() => {
+    onChanged?.(changed);
+  }, [onChanged, changed]);
+  useEffect(() => () => onChanged?.(false), [onChanged]);
+}
