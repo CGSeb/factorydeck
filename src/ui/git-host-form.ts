@@ -88,30 +88,39 @@ function useFocusRequest(
   };
 }
 
+function useLatest<T>(value: T): RefObject<T> {
+  const latest = useRef(value);
+  useEffect(() => {
+    latest.current = value;
+  }, [value]);
+  return latest;
+}
+
 function useRemoval(
-  project: ListedProject,
+  latest: RefObject<ListedProject>,
   removeToken: RemoveToken,
   onSaved: (project: ListedProject) => void,
-  focusToken: () => void,
+  onRemoved: () => void,
 ) {
   const [removal, setRemoval] = useState<TokenRemoval>();
   async function confirmRemoval(): Promise<void> {
     if (removal?.state === 'removing') return;
     setRemoval({ state: 'removing' });
-    const outcome = await removeToken(project.id);
+    const outcome = await removeToken(latest.current.id);
     if (outcome.status === 'removed') {
       setRemoval(undefined);
-      onSaved(withoutToken(project));
-      focusToken();
+      onSaved(withoutToken(latest.current));
+      onRemoved();
       return;
     }
-    setRemoval({
+    const failed: TokenRemoval = {
       state: 'failed',
       message:
         outcome.status === 'missing'
-          ? noLongerThere(project.name)
+          ? noLongerThere(latest.current.name)
           : outcome.message,
-    });
+    };
+    setRemoval((current) => (current === undefined ? undefined : failed));
   }
   return {
     removal,
@@ -185,6 +194,7 @@ function tokenInput(edits: TokenEdits): TokenInput {
 function useTokenSave(
   { project, sources, onSaved, inputs }: GitHostFormOptions,
   edits: TokenEdits,
+  latest: RefObject<ListedProject>,
 ) {
   const [errors, setErrors] = useState<GitHostErrors>({});
   const [checking, setChecking] = useState(false);
@@ -193,7 +203,7 @@ function useTokenSave(
   function settle(outcome: SaveTokenOutcome, sent: TokenEdits): void {
     if (outcome.status === 'saved') {
       edits.clearSent(sent);
-      onSaved({ ...project, ...outcome.token });
+      onSaved({ ...latest.current, ...outcome.token });
       edits.setChecked(checkedMessage(outcome.defaultBranch));
       return;
     }
@@ -220,16 +230,27 @@ function useTokenSave(
     setChecking(false);
     settle(outcome, edits);
   }
-  return { errors, checking, noKeyFor, busy, send };
+  return {
+    errors,
+    checking,
+    noKeyFor,
+    busy,
+    send,
+    clearErrors: () => {
+      setErrors({});
+    },
+  };
 }
 
 export function useGitHostForm(options: GitHostFormOptions): GitHostForm {
   const { project, secretKey, sources, onSaved, inputs } = options;
+  const latest = useLatest(project);
   const edits = useTokenEdits(project);
-  const saving = useTokenSave(options, edits);
+  const saving = useTokenSave(options, edits, latest);
   const focusToken = useFocusRequest(inputs.token);
-  const removal = useRemoval(project, sources.removeToken, onSaved, () => {
+  const removal = useRemoval(latest, sources.removeToken, onSaved, () => {
     edits.setChecked(undefined);
+    saving.clearErrors();
     focusToken();
   });
   const keyMissing = !secretKey || saving.noKeyFor === project;

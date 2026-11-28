@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { DATABASE_UNREACHABLE, SERVER_UNREACHABLE } from './auth-api.ts';
 import { GitHostSection } from './GitHostSection.tsx';
+import type { RemoveToken, RemoveTokenOutcome } from './git-host-token-api.ts';
 import {
   githubWithToken,
   pendingTokenRemove,
@@ -259,5 +260,44 @@ export const RemoveWithoutKey: Story = {
     await expect(
       await within(canvasElement).findByText('No token'),
     ).toBeVisible();
+  },
+};
+
+export const ClosedWhileRemoving: Story = {
+  name: 'Remove dialog: closed while it runs, a failure does not reopen it',
+  args: {
+    removeToken: fn<RemoveToken>(
+      () =>
+        new Promise<RemoveTokenOutcome>((resolve) =>
+          setTimeout(() => {
+            resolve({ status: 'failed', message: DATABASE_UNREACHABLE });
+          }, 50),
+        ),
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const dialog = await openRemoval(canvasElement);
+    await userEvent.click(dialog.getByRole('button', { name: 'Remove token' }));
+    await userEvent.click(dialog.getByRole('button', { name: 'Cancel' }));
+    await new Promise((done) => setTimeout(done, 150));
+    await expect(within(canvasElement).queryByRole('dialog')).toBeNull();
+  },
+};
+
+export const RemovedClearsErrors: Story = {
+  name: 'Removed: a refusal shown before is cleared',
+  args: {
+    saveToken: fn(
+      tokenSaverOf({ status: 'invalid', field: 'token', message: 'Bad token' }),
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    await saveTyped(canvasElement);
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText('Bad token')).toBeVisible();
+    const dialog = await openRemoval(canvasElement);
+    await userEvent.click(dialog.getByRole('button', { name: 'Remove token' }));
+    await expect(await canvas.findByText('No token')).toBeVisible();
+    await expect(canvas.queryByText('Bad token')).toBeNull();
   },
 };
