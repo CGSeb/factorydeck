@@ -152,7 +152,7 @@ async function subjectOf(
   if (filter.session !== undefined) {
     const [row] = await select(
       db,
-      sql`select title, agent from session where id = ${filter.session}`,
+      sql`select title, agent from project_session where id = ${filter.session}`,
     );
     return {
       kind: 'session',

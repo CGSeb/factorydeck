@@ -10,6 +10,7 @@ import {
   session,
 } from '../db/schema.ts';
 import { listFeatures } from '../features/query.ts';
+import { frictionStats } from '../frictions/query.ts';
 import { usageOverview } from '../overview/query.ts';
 import { DEFAULT_CONFIG } from '../roles/config.ts';
 import { listRoles } from '../roles/query.ts';
@@ -204,6 +205,26 @@ describe('sessions of a project by its remote', () => {
     expect(await sessionDetail(db, 's1', state)).toBeUndefined();
     expect(await sessionDetail(db, 'u1', state)).toBeUndefined();
     expect((await sessionDetail(db, 'w2', state))?.project).toBe('shop');
+  });
+
+  it('names no session of no project in the friction filter', async () => {
+    const stray = await frictionStats(
+      db,
+      { ...all, filter: { session: 's1' } },
+      DEFAULT_CONFIG,
+    );
+    expect(stray.subject).toEqual({
+      kind: 'session',
+      id: 's1',
+      title: null,
+      agent: '',
+    });
+    const shop = await frictionStats(
+      db,
+      { ...all, filter: { session: 'w1' } },
+      DEFAULT_CONFIG,
+    );
+    expect(shop.subject).toMatchObject({ title: 'Fix #7 export' });
   });
 
   it('gives one work item of a project to both its clones', async () => {
