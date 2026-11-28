@@ -17,6 +17,10 @@ export const storyProject: ListedProject = {
   remote: 'gitlab.example.test/platform/tools/atlas',
   createdAt: '2026-02-03T09:00:00Z',
   sessions: 1,
+  gitHost: null,
+  tokenSet: false,
+  tokenSetAt: null,
+  tokenSetBy: null,
 };
 
 export const rulesFrame: Decorator = (Story) =>

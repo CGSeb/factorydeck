@@ -137,6 +137,7 @@ function refreshingProjects(): LoadProjects {
     Promise.resolve({
       status: 'ok',
       refreshSeconds: 0.05,
+      secretKey: true,
       projects: [atlas],
       pendingRemotes: [],
       noRemote: null,
