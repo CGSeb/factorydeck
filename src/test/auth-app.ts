@@ -13,6 +13,7 @@ import { teamAccounts } from '../team/accounts.ts';
 import { changeStatus } from '../team/account-status.ts';
 import { changeRole } from '../team/change-role.ts';
 import { invitations } from '../team/invitations.ts';
+import { projectStore } from '../team/projects.ts';
 import { resetLinks } from '../team/reset-links.ts';
 import type { SessionSource } from '../server/session-routes.ts';
 import { createTestDatabase } from './postgres.ts';
@@ -93,6 +94,7 @@ export async function authHarness(): Promise<AuthHarness> {
           resetLink: resetLinks(db, () => harness.clock).create,
         },
         resets: resetLinks(db, () => harness.clock),
+        admin: { projects: projectStore(db, () => harness.clock) },
       }),
     addAccount: async (email, options = {}) => {
       const [row] = await db

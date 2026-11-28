@@ -7,6 +7,7 @@ import { withProject } from './project-param.ts';
 const BUGS_PATH = '/bugs';
 const FEATURES_PATH = '/features';
 const TEAM_PATH = '/team';
+const PROJECTS_PATH = '/projects';
 
 const SECTIONS: readonly { path: string; label: string; icon: IconName }[] = [
   { path: '/', label: 'Overview', icon: 'overview' },
@@ -66,4 +67,27 @@ export function teamLink(
     current: matchPath({ path: TEAM_PATH, end: false }, pathname) !== null,
     badge: undefined,
   };
+}
+
+export function projectsLink(
+  pathname: string,
+  project: string | undefined,
+): SidebarLink {
+  return {
+    label: 'Projects',
+    icon: 'project',
+    href: withProject(PROJECTS_PATH, project),
+    current: matchPath({ path: PROJECTS_PATH, end: false }, pathname) !== null,
+    badge: undefined,
+  };
+}
+
+export function managerLinks(
+  manager: boolean,
+  pathname: string,
+  project: string | undefined,
+): SidebarLink[] {
+  return manager
+    ? [teamLink(pathname, project), projectsLink(pathname, project)]
+    : [];
 }

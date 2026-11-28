@@ -1,0 +1,21 @@
+.fd-projects-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fd-space-6);
+}
+
+.fd-projects-table tbody th {
+  font-weight: 600;
+}
+
+.fd-projects-table th,
+.fd-projects-table td {
+  white-space: nowrap;
+}
+
+.fd-projects-table tbody th,
+.fd-projects-table .fd-projects-remote {
+  min-width: 10rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

@@ -323,3 +323,4 @@ export const markedReport = pgTable(
 );
 
 export { account, accountToken, signInSession } from './auth-schema.ts';
+export { project } from './project-schema.ts';
