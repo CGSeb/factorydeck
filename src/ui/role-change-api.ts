@@ -25,6 +25,17 @@ function hasIdentity(body: object): boolean {
   );
 }
 
+function hasState(body: object): boolean {
+  return (
+    'active' in body &&
+    typeof body.active === 'boolean' &&
+    'lastSignInAt' in body &&
+    (body.lastSignInAt === null || typeof body.lastSignInAt === 'string') &&
+    'cliConnections' in body &&
+    typeof body.cliConnections === 'number'
+  );
+}
+
 function isTeamRow(body: unknown): body is TeamAccountRow {
   return (
     typeof body === 'object' &&
@@ -32,10 +43,7 @@ function isTeamRow(body: unknown): body is TeamAccountRow {
     hasIdentity(body) &&
     'role' in body &&
     ROLES.includes(body.role) &&
-    'active' in body &&
-    typeof body.active === 'boolean' &&
-    'lastSignInAt' in body &&
-    (body.lastSignInAt === null || typeof body.lastSignInAt === 'string') &&
+    hasState(body) &&
     'you' in body &&
     typeof body.you === 'boolean'
   );

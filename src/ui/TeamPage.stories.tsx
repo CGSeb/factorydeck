@@ -58,7 +58,7 @@ export const OneManagerAlone: Story = {
     await canvas.findByRole('table', { name: 'Team' });
     await expect(canvas.getByText('1 account · 1 manager')).toBeVisible();
     await expect(rowTexts(canvasElement)).toEqual([
-      ['AdaYou', 'ada@example.test', 'Manager', 'Active', 'just now'],
+      ['AdaYou', 'ada@example.test', 'Manager', 'Active', 'just now', '1'],
     ]);
     await expect(canvas.queryByRole('button', { name: /^Actions/ })).toBeNull();
   },
@@ -73,13 +73,13 @@ export const TeamWithDeactivatedAccounts: Story = {
       within(canvas.getByRole('table'))
         .getAllByRole('columnheader')
         .map((cell) => cell.textContent),
-    ).toEqual(['Name', 'Email', 'Role', 'Status', 'Last sign-in']);
+    ).toEqual(['Name', 'Email', 'Role', 'Status', 'Last sign-in', 'CLI']);
     await expect(rowTexts(canvasElement).map((row) => row.slice(2))).toEqual([
-      ['Manager', 'Active', 'just now'],
-      ['Dev', 'Active', '3 min ago'],
-      ['Manager', 'Active', '5 d ago'],
-      ['Dev', 'Active', 'Never'],
-      ['Dev', 'Deactivated', '2 h ago'],
+      ['Manager', 'Active', 'just now', '1'],
+      ['Dev', 'Active', '3 min ago', '2'],
+      ['Manager', 'Active', '5 d ago', '—'],
+      ['Dev', 'Active', 'Never', '—'],
+      ['Dev', 'Deactivated', '2 h ago', '—'],
     ]);
     await expect(canvas.getAllByText('You')).toHaveLength(1);
     const deactivated = canvasElement.querySelectorAll('tr[data-deactivated]');

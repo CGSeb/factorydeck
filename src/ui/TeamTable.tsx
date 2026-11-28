@@ -8,7 +8,7 @@ import {
   useState,
 } from 'react';
 import type { TeamAccountRow } from '../team/types.ts';
-import { DataTable } from './components/DataTable.tsx';
+import { DataTable, NUMERIC_CELL } from './components/DataTable.tsx';
 import { Icon } from './components/Icon.tsx';
 import { formatAgo, formatDateTime } from './format.ts';
 import type { RowMessage } from './team-changes.ts';
@@ -20,13 +20,20 @@ import {
 } from './team-row-focus.ts';
 
 export { menuTarget } from './team-row-focus.ts';
-import { NEVER, busyLabelOf, roleLabel, statusLabel } from './team-view.ts';
+import {
+  NEVER,
+  busyLabelOf,
+  cliCountLabel,
+  roleLabel,
+  statusLabel,
+} from './team-view.ts';
 import './team.css';
 
 export interface TeamAction {
   label: string;
   onSelect: (account: TeamAccountRow) => void;
   danger?: boolean;
+  forYou?: boolean;
 }
 
 export type TeamActionsFor = (account: TeamAccountRow) => readonly TeamAction[];
@@ -42,7 +49,7 @@ export interface TeamTableProps {
 
 const NO_ACTIONS: TeamActionsFor = () => [];
 const NONE_BUSY: ReadonlySet<number> = new Set();
-const COLUMNS = 5;
+const COLUMNS = 6;
 
 function LastSignIn({
   at,
@@ -210,6 +217,9 @@ function TeamRow({
         <td>
           <LastSignIn at={account.lastSignInAt} now={now} />
         </td>
+        <td className={NUMERIC_CELL}>
+          {cliCountLabel(account.cliConnections)}
+        </td>
         {withActions && (
           <td className="fd-team-actions-cell">
             {actions.length > 0 && (
@@ -244,7 +254,9 @@ export function TeamTable({
 }: TeamTableProps): ReactElement {
   const rows = accounts.map((account) => ({
     account,
-    actions: account.you ? [] : actionsFor(account),
+    actions: actionsFor(account).filter(
+      ({ forYou }) => !account.you || forYou === true,
+    ),
   }));
   const withActions = rows.some(({ actions }) => actions.length > 0);
   return (
@@ -258,6 +270,9 @@ export function TeamTable({
               <th scope="col">Role</th>
               <th scope="col">Status</th>
               <th scope="col">Last sign-in</th>
+              <th scope="col" className={NUMERIC_CELL}>
+                CLI
+              </th>
               {withActions && (
                 <th scope="col">
                   <span className="fd-visually-hidden">Actions</span>

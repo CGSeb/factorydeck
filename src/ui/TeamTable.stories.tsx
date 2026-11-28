@@ -15,7 +15,7 @@ type Story = StoryObj<typeof meta>;
 export const WithoutActions: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getAllByRole('columnheader')).toHaveLength(5);
+    await expect(canvas.getAllByRole('columnheader')).toHaveLength(6);
     await expect(canvas.queryByRole('button')).toBeNull();
   },
 };
@@ -80,5 +80,27 @@ export const MenuKeyboard: Story = {
     await userEvent.keyboard('{Tab}');
     await expect(canvas.queryByRole('menu')).toBeNull();
     await expect(chen).toHaveAttribute('aria-expanded', 'false');
+  },
+};
+
+export const OwnRowAction: Story = {
+  name: 'An action for every row, the own row included',
+  args: {
+    actionsFor: () => [
+      { label: 'Other rows only', onSelect: fn() },
+      { label: 'Every row', onSelect: fn(), forYou: true },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getAllByRole('button', { name: /^Actions for / }),
+    ).toHaveLength(someTeam.length);
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Actions for Ada' }),
+    );
+    await expect(
+      canvas.getAllByRole('menuitem').map((item) => item.textContent),
+    ).toEqual(['Every row']);
   },
 };

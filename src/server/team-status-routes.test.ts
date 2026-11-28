@@ -32,6 +32,7 @@ describe('PATCH /api/team/accounts/<id> with active', () => {
       role: 'dev',
       active: false,
       lastSignInAt: START.toISOString(),
+      cliConnections: 0,
       you: false,
     });
     expect(await sessionsOf(dev)).toBe(0);

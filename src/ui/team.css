@@ -176,3 +176,13 @@
   min-width: 9.5rem;
   justify-content: center;
 }
+
+.fd-cli-table .fd-cli-machine {
+  min-width: 8rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.fd-dialog:has(.fd-cli-table) {
+  max-width: 600px;
+}

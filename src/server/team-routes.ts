@@ -18,11 +18,13 @@ import {
   type TeamAccount,
   type TeamResponse,
 } from '../team/types.ts';
+import type { TeamCliConnections } from '../team/cli-connections.ts';
 import type { InvitationSource } from '../team/invitations.ts';
 import type { ApiContext } from './api-context.ts';
 import type { AuthEnv } from './auth-routes.ts';
 import { teamInvitationRoutes } from './invitation-routes.ts';
 import { type CreateResetLink, addResetLinkRoute } from './reset-link-route.ts';
+import { addTeamCliRoutes } from './team-cli-routes.ts';
 
 export interface TeamSource {
   accounts: () => Promise<TeamAccount[]>;
@@ -30,6 +32,7 @@ export interface TeamSource {
   invitations?: InvitationSource | undefined;
   changeStatus?: (request: StatusChangeRequest) => Promise<StatusChangeOutcome>;
   resetLink?: CreateResetLink;
+  cliConnections?: TeamCliConnections | undefined;
 }
 
 type ChangeOutcome = RoleChangeOutcome | StatusChangeOutcome;
@@ -144,6 +147,10 @@ export function teamRoutes(
     );
   }
   addResetLinkRoute(routes, team?.resetLink, fromDatabase);
+  addTeamCliRoutes(routes, team?.cliConnections, {
+    refreshSeconds,
+    fromDatabase,
+  });
   routes.all('*', notFound);
   return routes;
 }

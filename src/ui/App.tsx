@@ -66,14 +66,12 @@ import type {
   LoadWaiting,
 } from './stats-api.ts';
 import { StatsPage } from './StatsPage.tsx';
-import type { ChangeRole } from './role-change-api.ts';
-import type { ChangeActive } from './account-status-api.ts';
-import type { LoadTeam } from './team-api.ts';
-import { teamRoute } from './TeamPage.tsx';
+import { type TeamSources, teamRoute } from './TeamPage.tsx';
 import type { AddProject, LoadProjects } from './projects-api.ts';
 import { projectsRoute } from './ProjectsPage.tsx';
 
-export interface AppProps extends CliRouteSources, CliConnectionsSources {
+export interface AppProps
+  extends CliRouteSources, CliConnectionsSources, TeamSources {
   loadOverview: LoadOverview;
   loadSessions: LoadSessions;
   loadSession: LoadSession;
@@ -105,12 +103,9 @@ export interface AppProps extends CliRouteSources, CliConnectionsSources {
   sessionGate?: SessionGate | undefined;
   signOut?: SignOut | undefined;
   leavePage?: ((path: string) => void) | undefined;
-  loadTeam?: LoadTeam | undefined;
-  changeRole?: ChangeRole | undefined;
   invitationActions?: InvitationActions | undefined;
   readInvitation?: ReadInvitation | undefined;
   acceptInvitation?: AcceptInvitation | undefined;
-  changeActive?: ChangeActive | undefined;
   createResetLink?: CreateResetLink | undefined;
   readReset?: ReadReset | undefined;
   saveReset?: SaveReset | undefined;

@@ -73,6 +73,7 @@ describe('GET /api/team/accounts', () => {
           role: 'manager',
           active: true,
           lastSignInAt: h.clock.toISOString(),
+          cliConnections: 0,
           you: true,
         },
         {
@@ -82,6 +83,7 @@ describe('GET /api/team/accounts', () => {
           role: 'manager',
           active: true,
           lastSignInAt: null,
+          cliConnections: 0,
           you: false,
         },
         {
@@ -91,6 +93,7 @@ describe('GET /api/team/accounts', () => {
           role: 'dev',
           active: true,
           lastSignInAt: null,
+          cliConnections: 0,
           you: false,
         },
         {
@@ -100,6 +103,7 @@ describe('GET /api/team/accounts', () => {
           role: 'dev',
           active: true,
           lastSignInAt: new Date(START.getTime() - DAY_MS).toISOString(),
+          cliConnections: 0,
           you: false,
         },
         {
@@ -109,6 +113,7 @@ describe('GET /api/team/accounts', () => {
           role: 'dev',
           active: false,
           lastSignInAt: null,
+          cliConnections: 0,
           you: false,
         },
       ],

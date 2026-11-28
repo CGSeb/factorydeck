@@ -12,6 +12,8 @@ import type { CreateResetLink } from './reset-api.ts';
 import { useTeamResetRows } from './ResetLinkPanel.tsx';
 import type { ChangeRole } from './role-change-api.ts';
 import type { LoadTeam, TeamView } from './team-api.ts';
+import type { TeamCliActions } from './team-cli-api.ts';
+import { useCliConnections } from './team-cli-actions.ts';
 import { type RowMessage, useTeamChanges } from './team-changes.ts';
 import { REFUSED_MESSAGE, roleActionLabel, teamSummary } from './team-view.ts';
 import {
@@ -22,9 +24,20 @@ import {
 } from './TeamTable.tsx';
 import { PendingInvitations } from './PendingInvitations.tsx';
 import { type InvitationControls, useInvitations } from './use-invitations.ts';
-import { type RunChange, useStatusActions } from './team-status-actions.ts';
+import {
+  type RunChange,
+  type StatusActions,
+  useStatusActions,
+} from './team-status-actions.ts';
 import { useNow } from './use-now.ts';
 import './team.css';
+
+export interface TeamSources {
+  loadTeam?: LoadTeam | undefined;
+  changeRole?: ChangeRole | undefined;
+  changeActive?: ChangeActive | undefined;
+  cliActions?: TeamCliActions | undefined;
+}
 
 export interface TeamPageProps {
   loadTeam: LoadTeam;
@@ -32,6 +45,7 @@ export interface TeamPageProps {
   changeRole?: ChangeRole | undefined;
   changeActive?: ChangeActive | undefined;
   createResetLink?: CreateResetLink | undefined;
+  cliActions?: TeamCliActions | undefined;
   now?: Date | undefined;
   invitationActions?: InvitationActions | undefined;
   origin?: string | undefined;
@@ -151,12 +165,58 @@ function roleActions(
   ];
 }
 
+interface RowActionSources {
+  status: StatusActions;
+  changeRole: ChangeRole | undefined;
+  run: RunChange;
+  resets: readonly TeamAction[];
+  extra: readonly TeamAction[];
+  cli: TeamAction | undefined;
+}
+
+function rowActionsOf(
+  account: TeamAccountRow,
+  { status, changeRole, run, resets, extra, cli }: RowActionSources,
+): readonly TeamAction[] {
+  const actions = status.actionsFor(account, [
+    ...roleActions(account, changeRole, run),
+    ...resets,
+    ...extra,
+    ...(cli === undefined ? [] : [cli]),
+  ]);
+  return cli === undefined || actions.includes(cli)
+    ? actions
+    : [...actions, cli];
+}
+
+function TeamHeader({
+  view,
+  actions,
+  invites,
+}: {
+  view: TeamView | undefined;
+  actions: InvitationActions | undefined;
+  invites: InvitationControls;
+}): ReactElement {
+  return (
+    <PageHeader
+      title="Team"
+      {...(view?.status === 'ok'
+        ? { summary: teamSummary(view.accounts) }
+        : {})}
+      pending={view === undefined}
+      {...inviteSlot(actions, view, invites.open, invites.button)}
+    />
+  );
+}
+
 export function TeamPage({
   loadTeam,
   actionsFor,
   changeRole,
   changeActive,
   createResetLink,
+  cliActions,
   now: fixedNow,
   invitationActions,
   origin = window.location.origin,
@@ -173,23 +233,19 @@ export function TeamPage({
   const status = useStatusActions(changeActive, run);
   const now = useNow(fixedNow);
   const invites = useInvitations(invitationActions, reload);
-  function rowActions(account: TeamAccountRow): readonly TeamAction[] {
-    return status.actionsFor(account, [
-      ...roleActions(account, changeRole, run),
-      ...resets.actionsOf(account),
-      ...(actionsFor?.(account) ?? []),
-    ]);
-  }
+  const cli = useCliConnections(cliActions, reload, now);
+  const rowActions = (account: TeamAccountRow): readonly TeamAction[] =>
+    rowActionsOf(account, {
+      status,
+      changeRole,
+      run,
+      resets: resets.actionsOf(account),
+      extra: actionsFor?.(account) ?? [],
+      cli: cli.action,
+    });
   return (
     <div className="fd-team-page">
-      <PageHeader
-        title="Team"
-        {...(view?.status === 'ok'
-          ? { summary: teamSummary(view.accounts) }
-          : {})}
-        pending={view === undefined}
-        {...inviteSlot(invitationActions, view, invites.open, invites.button)}
-      />
+      <TeamHeader view={view} actions={invitationActions} invites={invites} />
       <TeamContent
         view={view}
         now={now}
@@ -208,6 +264,7 @@ export function TeamPage({
         />
       )}
       {status.dialog}
+      {cli.dialog}
     </div>
   );
 }

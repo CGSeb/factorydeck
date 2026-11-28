@@ -1,5 +1,5 @@
 import type { TeamAccountRow } from '../team/types.ts';
-import { formatCount } from './format.ts';
+import { MISSING, formatCount } from './format.ts';
 
 export const REFUSED_MESSAGE = 'Only managers can manage the team.';
 export const NEVER = 'Never';
@@ -32,4 +32,8 @@ export function busyLabelOf(
   busy: boolean,
 ): string | undefined {
   return busy && !account.active ? REACTIVATING : undefined;
+}
+
+export function cliCountLabel(count: number): string {
+  return count === 0 ? MISSING : formatCount(count);
 }
