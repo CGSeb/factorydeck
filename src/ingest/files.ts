@@ -1,6 +1,6 @@
 import { open, readdir } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
-import { fileKeyOf } from '../cli-ingest/batch-schema.ts';
+import { fileKeyOf } from '../cli-ingest/batch.ts';
 import type { CodexFile } from './codex-files.ts';
 
 /** A session log: the main thread of a session, or one of its sub-agents. */

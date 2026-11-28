@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import packageJson from '../package.json' with { type: 'json' };
-import { PARSER_VERSION } from '../../src/cli-ingest/parser-version.ts';
+import { PARSER_VERSION } from '../../src/cli-ingest/batch.ts';
 import { COMMAND_HELP, MAIN_HELP } from './help.ts';
 import {
   type FakeContext,

@@ -28,6 +28,14 @@ export interface ToolCall {
   command: string | undefined;
 }
 
+export interface CallSummary {
+  name: string;
+  program: string | null;
+  commandHash: string | null;
+}
+
+export type KnownCall = ToolCall | CallSummary;
+
 export interface ToolErrorFields {
   kind: 'tool-error';
   tool: string;
@@ -100,6 +108,16 @@ export function resultText(content: unknown): string {
     .join('\n');
 }
 
+export function toolResultIdsOf(record: LogRecord): string[] {
+  if (record.type !== 'user') return [];
+  return contentBlocks(record).flatMap((block) => {
+    const id = block['tool_use_id'];
+    return block['type'] === 'tool_result' && typeof id === 'string'
+      ? [id]
+      : [];
+  });
+}
+
 export function toolErrorsOf(record: LogRecord): ToolErrorRef[] {
   if (record.type !== 'user') return [];
   return contentBlocks(record).flatMap((block, position) => {
@@ -170,20 +188,37 @@ export function commandHash(command: string): string {
   return createHash('sha256').update(command.trim()).digest('hex');
 }
 
+export function callSummary(
+  call: KnownCall,
+  shellTools?: ReadonlySet<string>,
+): CallSummary {
+  if (!('command' in call)) return call;
+  const command =
+    shellTools === undefined || shellTools.has(call.name)
+      ? call.command
+      : undefined;
+  return {
+    name: call.name,
+    program: command === undefined ? null : programOf(command),
+    commandHash: command === undefined ? null : commandHash(command),
+  };
+}
+
 export function toolErrorFields(
   text: string,
-  call: ToolCall | undefined,
+  call: KnownCall | undefined,
 ): ToolErrorFields {
-  const tool = call?.name ?? UNKNOWN_TOOL;
+  const summary =
+    call === undefined ? undefined : callSummary(call, SHELL_TOOLS);
+  const tool = summary?.name ?? UNKNOWN_TOOL;
   const isShell = SHELL_TOOLS.has(tool);
-  const shell = isShell ? call?.command : undefined;
   return {
     kind: 'tool-error',
     tool,
     category: categoryOf(text, tool),
-    program: shell === undefined ? null : programOf(shell),
+    program: isShell ? (summary?.program ?? null) : null,
     exitCode: isShell ? exitCodeOf(text) : null,
-    commandHash: shell === undefined ? null : commandHash(shell),
+    commandHash: isShell ? (summary?.commandHash ?? null) : null,
   };
 }
 

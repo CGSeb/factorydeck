@@ -1,74 +1,11 @@
 import { stat } from 'node:fs/promises';
 import { eq } from 'drizzle-orm';
-import { friction, ingestState } from '../db/schema.ts';
+import { ingestState } from '../db/schema.ts';
 import { STATE_ID } from '../projects/remove.ts';
 import { type LogFile, readRange } from './files.ts';
-import {
-  type FrictionRow,
-  type FrictionSource,
-  frictionRows,
-  readFrictions,
-  toolCallsOfRecords,
-  unresolvedToolCalls,
-} from './friction-rows.ts';
-import { type LogRecord, parseLines } from './records.ts';
-import { type Run, type Transaction, insertChunks } from './store.ts';
-
-type Records = readonly { record: LogRecord; offset: number }[];
-
-export interface FrictionThread {
-  file: LogFile;
-  subAgentId: string | null;
-  home: string;
-}
-
-function frictionSource({
-  file,
-  subAgentId,
-  home,
-}: FrictionThread): FrictionSource {
-  return { sourcePath: file.path, sessionId: file.sessionId, subAgentId, home };
-}
-
-async function insertFrictions(run: Run, rows: FrictionRow[]): Promise<number> {
-  return insertChunks(rows, (chunk) =>
-    run.tx
-      .insert(friction)
-      .values(chunk)
-      .onConflictDoNothing()
-      .returning({ id: friction.id }),
-  );
-}
-
-async function frictionsOfChunk(
-  records: Records,
-  source: FrictionSource,
-  start: number,
-): Promise<{ rows: FrictionRow[]; untimed: number }> {
-  const collector = readFrictions(records, source, start);
-  const earlier =
-    start > 0 && unresolvedToolCalls(collector)
-      ? await readRange(source.sourcePath, 0, start).then(
-          (prefix) => toolCallsOfRecords(parseLines(prefix).records),
-          () => undefined,
-        )
-      : undefined;
-  return { rows: frictionRows(collector, earlier), untimed: collector.untimed };
-}
-
-export async function storeChunkFrictions(
-  run: Run,
-  thread: FrictionThread,
-  records: Records,
-  start: number,
-): Promise<{ stored: number; untimed: number }> {
-  const { rows, untimed } = await frictionsOfChunk(
-    records,
-    frictionSource(thread),
-    start,
-  );
-  return { stored: await insertFrictions(run, rows), untimed };
-}
+import { storeFrictions } from './local-store.ts';
+import { readClaudeCodeLog } from './readers/claude-code.ts';
+import type { Run, Transaction } from './store.ts';
 
 async function frictionsReadDone(tx: Transaction): Promise<boolean> {
   const [state] = await tx
@@ -104,10 +41,16 @@ export async function readFrictionsAgainOnce(
     if (end === 0 || size === undefined || size < end) continue;
     const chunk = await readRange(file.path, 0, end).catch(() => undefined);
     if (chunk === undefined) continue;
-    const thread = { file, subAgentId: file.subAgent?.id ?? null, home };
-    stored += (
-      await storeChunkFrictions(run, thread, parseLines(chunk).records, 0)
-    ).stored;
+    const read = readClaudeCodeLog({
+      bytes: chunk,
+      from: 0,
+      readerState: null,
+      home,
+      log: { sessionId: file.sessionId, subAgentId: file.subAgent?.id ?? null },
+    });
+    if (read.status === 'read') {
+      stored += await storeFrictions(run, file.path, read);
+    }
   }
   await markFrictionsRead(run.tx);
   return stored;

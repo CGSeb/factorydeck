@@ -1,11 +1,30 @@
 import { z } from 'zod';
 import { CLOSING_LINE_MAX_LENGTH } from '../ingest/records.ts';
+import {
+  AGENTS,
+  type Batch,
+  type BatchThread,
+  MAX_READER_STATE_BYTES,
+  type ReaderState,
+  fileKeyOf,
+} from './batch.ts';
 import { frictionSchema } from './friction-schema.ts';
 
-export const AGENTS = ['claude-code', 'codex'] as const;
-export type Agent = (typeof AGENTS)[number];
+export {
+  AGENTS,
+  type Agent,
+  type Batch,
+  type BatchApiCall,
+  type BatchCounts,
+  type BatchFriction,
+  type BatchThread,
+  MAIN_THREAD,
+  MAX_READER_STATE_BYTES,
+  PARSER_VERSION,
+  type ReaderState,
+  fileKeyOf,
+} from './batch.ts';
 
-export const MAIN_THREAD = 'main';
 export const MB = 1024 * 1024;
 export const MAX_BATCH_BYTES = 5 * MB;
 export const MAX_DECOMPRESSED_BYTES = 20 * MB;
@@ -13,15 +32,6 @@ export const MAX_THREADS = 2000;
 export const MAX_RECORDS = 20_000;
 export const MAX_ID_LENGTH = 200;
 export const MAX_PARSER_VERSION = 2_147_483_647;
-export const MAX_READER_STATE_BYTES = 16_384;
-
-export function fileKeyOf(
-  agent: string,
-  sessionId: string,
-  subAgentId: string | null,
-): string {
-  return `${agent}/${sessionId}/${subAgentId ?? MAIN_THREAD}`;
-}
 
 const id = z
   .string()
@@ -38,14 +48,6 @@ export function isFileKey(value: string): boolean {
     id.safeParse(thread).success
   );
 }
-
-export type ReaderState =
-  | string
-  | number
-  | boolean
-  | null
-  | ReaderState[]
-  | { [key: string]: ReaderState };
 
 function serialised(value: unknown): string | undefined {
   try {
@@ -243,10 +245,12 @@ export const batchSchema = z
     });
   });
 
-export type Batch = z.infer<typeof batchSchema>;
 export type BatchInput = z.input<typeof batchSchema>;
-export type BatchThread = Batch['threads'][number];
-export type BatchApiCall = BatchThread['apiCalls'][number];
+
+type Assignable<T extends U, U> = T;
+type ParsedBatch = z.infer<typeof batchSchema>;
+export type _ParsedIsPlain = Assignable<ParsedBatch, Batch>;
+export type _PlainIsParsed = Assignable<Batch, ParsedBatch>;
 
 function recordsOf(thread: BatchThread): number {
   return (
@@ -256,12 +260,6 @@ function recordsOf(thread: BatchThread): number {
     thread.closingLines.length +
     thread.frictions.length
   );
-}
-
-export interface BatchCounts {
-  sessions: number;
-  threads: number;
-  apiCalls: number;
 }
 
 export type BatchLimit = 'body' | 'decompressed' | 'threads' | 'records';

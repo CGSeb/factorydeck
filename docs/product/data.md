@@ -76,6 +76,7 @@ Every `rollout-*.jsonl`, at any depth, under `CODEX_SESSIONS_DIR` (default `~/.c
 - Two runs never overlap: the second one waits or exits with `Ingestion already running.` (exit code 0).
 - The summary line: `Ingested <n> files: <s> sessions, <a> sub-agents, <c> API calls, <k> skill launches, <f> frictions, <x> lines skipped, <s> sessions skipped (no factory).`
 - A change that needs older logs read again (a new kind of row) reads every file once more for that row only, then records that it is done.
+- Each read offset is stored with the **reader state** the log reader needs to continue the log in the middle: the turn state, the working directory, branches and title so far, the tool calls still waiting for their result and the slash command still waiting for its skill. A log whose stored state comes from an older reader is read once more from the start. A Codex rollout that switches to usage records after its stored offset is read again from the start, and its token-count calls are replaced.
 - The API calls, skill launches, prompts and closing lines of a log are stored under its file key, `<agent>/<session id>/<main | sub-agent id>`, as a [CLI sends them](cli.md#sending-sessions), so a session read here and sent by a CLI counts once. The read offsets and the frictions stay keyed by the path of the log on this computer, which the [occurrences](frictions.md#occurrences) read.
 
 ## Git host

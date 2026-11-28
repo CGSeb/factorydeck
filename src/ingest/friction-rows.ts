@@ -1,7 +1,7 @@
-import type { friction } from '../db/schema.ts';
 import {
   CLAUDE_CODE,
   type FrictionFields,
+  type KnownCall,
   type ToolCall,
   compactionOf,
   stopBlockedOf,
@@ -11,7 +11,25 @@ import {
 } from './frictions.ts';
 import { type LogRecord, stringOf, timestampOf } from './records.ts';
 
-export type FrictionRow = typeof friction.$inferInsert;
+export interface FrictionRow {
+  sourcePath: string;
+  recordUuid: string;
+  position: number;
+  sessionId: string;
+  subAgentId: string | null;
+  at: Date;
+  agent: string;
+  kind: string;
+  tool: string | null;
+  category: string | null;
+  program: string | null;
+  exitCode: number | null;
+  commandHash: string | null;
+  hookCommand: string | null;
+  trigger: string | null;
+  preTokens: number | null;
+  postTokens: number | null;
+}
 
 export interface FrictionSource {
   sourcePath: string;
@@ -105,15 +123,9 @@ export function collectFrictions(
   }
 }
 
-export function unresolvedToolCalls(collector: FrictionCollector): boolean {
-  return collector.toolErrors.some(
-    (error) => !collector.toolCalls.has(error.toolUseId),
-  );
-}
-
 export function frictionRows(
   collector: FrictionCollector,
-  earlierCalls: ReadonlyMap<string, ToolCall> = new Map(),
+  earlierCalls: ReadonlyMap<string, KnownCall> = new Map(),
 ): FrictionRow[] {
   return [
     ...collector.frictions,
@@ -127,12 +139,6 @@ export function frictionRows(
       ),
     ),
   ];
-}
-
-export function toolCallsOfRecords(
-  records: readonly { record: LogRecord }[],
-): Map<string, ToolCall> {
-  return new Map(records.flatMap(({ record }) => toolCallsOf(record)));
 }
 
 export function readFrictions(

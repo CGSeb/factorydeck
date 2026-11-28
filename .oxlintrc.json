@@ -123,6 +123,44 @@
         "max-statements": "off",
         "max-nested-callbacks": "off"
       }
+    },
+    {
+      "files": ["src/ingest/readers/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "drizzle-orm",
+                "message": "Readers never touch the database."
+              },
+              {
+                "name": "node:fs",
+                "message": "Readers take the bytes of a log, not a path."
+              },
+              {
+                "name": "node:fs/promises",
+                "message": "Readers take the bytes of a log, not a path."
+              },
+              {
+                "name": "fs",
+                "message": "Readers take the bytes of a log, not a path."
+              },
+              {
+                "name": "fs/promises",
+                "message": "Readers take the bytes of a log, not a path."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["drizzle-orm/*", "**/db/*", "**/server/*"],
+                "message": "Readers import nothing from the database or the server."
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }

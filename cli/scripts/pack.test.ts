@@ -5,7 +5,7 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import { build } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { PARSER_VERSION } from '../../src/cli-ingest/parser-version.ts';
+import { PARSER_VERSION } from '../../src/cli-ingest/batch.ts';
 import packageJson from '../package.json' with { type: 'json' };
 import { CLI_DIST_DIR, CLI_ROOT, cliBuildConfig } from './build-config.ts';
 
