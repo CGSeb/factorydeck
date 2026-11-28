@@ -10,6 +10,7 @@ import {
   outcomeContext,
   serenity,
 } from '../test/outcome.ts';
+import { fakeCollection } from '../demo/fake-git-host-token.ts';
 import { collect } from './collect.ts';
 
 const ctx = outcomeContext();
@@ -51,7 +52,11 @@ describe('reading the closing keywords of requests already stored', () => {
         fixRead: true,
         stateEventsRead: true,
       });
-    await collect(ctx.db(), { hasFactory, now: () => new Date(T2) });
+    await collect(ctx.db(), {
+      ...(await fakeCollection()),
+      hasFactory,
+      now: () => new Date(T2),
+    });
     const [first] = await calls(root);
     expect(first?.args.join(' ')).not.toContain('updated:');
     expect(await ctx.outcomeOf(root, 1)).toMatchObject({
@@ -64,7 +69,11 @@ describe('reading the closing keywords of requests already stored', () => {
       .from(gitHostProject);
     expect(state?.read).toBe(true);
 
-    await collect(ctx.db(), { hasFactory, now: () => new Date(T2) });
+    await collect(ctx.db(), {
+      ...(await fakeCollection()),
+      hasFactory,
+      now: () => new Date(T2),
+    });
     expect((await calls(root)).at(-1)?.args.join(' ')).toContain('updated:');
   });
 });

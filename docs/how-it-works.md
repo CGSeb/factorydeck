@@ -20,7 +20,7 @@ flowchart LR
 ```
 
 1. **Ingest** reads the Claude Code and Codex session logs, sub-agents included, into a local PostgreSQL database. A second run only reads what is new.
-2. **Collect** reads issues, pull or merge requests, labels and checks from each project's git host, through the `gh` or `glab` CLI. FactoryDeck only reads the git host, it never writes to it.
+2. **Collect** reads the factory settings, issues, pull or merge requests, labels and checks from the git host of each project that has a token, through the `gh` or `glab` CLI. FactoryDeck only reads the git host, it never writes to it.
 3. **Link** matches each session to a role and a work item, then each work item to its outcome, so every run, error and intervention lands on the issue it belongs to:
 
 ```mermaid

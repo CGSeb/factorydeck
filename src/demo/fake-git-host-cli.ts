@@ -1,20 +1,47 @@
 import { appendFileSync, readFileSync } from 'node:fs';
-import { FakeGitHostSchema } from './fake-git-host.ts';
+import { dirname, join } from 'node:path';
+import { FakeGitHostSchema, fakeGitHostToken } from './fake-git-host.ts';
 
 type Row = Record<string, unknown>;
 
-const [dataPath = '', ...args] = process.argv.slice(2);
-const data = FakeGitHostSchema.parse(
-  JSON.parse(readFileSync(dataPath, 'utf8')),
-);
-
-if (data.log !== undefined) {
-  appendFileSync(data.log, `${JSON.stringify({ args, cwd: process.cwd() })}\n`);
-}
+const FACTORY_PATH = 'docs/agents/factory.yml';
 
 function fail(message: string): never {
   process.stderr.write(`${message}\nmore detail on a second line\n`);
   process.exit(1);
+}
+
+function httpFail(status: number, reason: string): never {
+  process.stderr.write(`${reason} (HTTP ${String(status)})\n`);
+  process.exit(1);
+}
+
+const given = process.argv.slice(2);
+const hostname = given.indexOf('--hostname');
+const tokenMode = hostname !== -1;
+const args = tokenMode
+  ? given.filter((_, index) => index !== hostname && index !== hostname + 1)
+  : given;
+const token = process.env['GH_TOKEN'] ?? process.env['GITLAB_TOKEN'] ?? '';
+const dataPath = tokenMode ? token : fakeGitHostToken(process.cwd());
+
+function readData(): string {
+  try {
+    return readFileSync(dataPath, 'utf8');
+  } catch {
+    if (tokenMode) httpFail(401, 'Bad credentials');
+    return fail(`no fake git host data in ${process.cwd()}`);
+  }
+}
+
+const data = FakeGitHostSchema.parse(JSON.parse(readData()));
+const root = dirname(dirname(dataPath));
+
+if (data.log !== undefined) {
+  appendFileSync(
+    data.log,
+    `${JSON.stringify({ args: given, cwd: process.cwd() })}\n`,
+  );
 }
 
 function option(name: string): string | undefined {
@@ -214,11 +241,53 @@ function gitlab(): void {
   );
 }
 
-if (data.fail !== undefined) fail(data.fail);
-if (data.hang === true) {
-  setTimeout(() => undefined, 600_000);
-} else if (data.host === 'github') {
-  github();
-} else {
-  gitlab();
+function factoryText(): string {
+  if (data.remoteFactory !== undefined) return data.remoteFactory;
+  try {
+    return readFileSync(join(root, FACTORY_PATH), 'utf8');
+  } catch {
+    return httpFail(404, 'Not Found');
+  }
 }
+
+function branchOf(endpoint: URL): void {
+  if (endpoint.searchParams.get('ref') !== (data.defaultBranch ?? 'main')) {
+    httpFail(404, 'Not Found');
+  }
+}
+
+function factoryEndpoint(): boolean {
+  if (args[0] !== 'api') return false;
+  const endpoint = new URL(args.at(-1) ?? '', 'https://host.invalid/');
+  const path = decodeURIComponent(endpoint.pathname).toLowerCase();
+  const repository =
+    data.host === 'github'
+      ? `/repos/${data.repository.toLowerCase()}`
+      : `/projects/${data.repository.toLowerCase()}`;
+  if (path === repository) {
+    print({ default_branch: data.defaultBranch ?? 'main' });
+    return true;
+  }
+  const file =
+    data.host === 'github'
+      ? `${repository}/contents/${FACTORY_PATH}`
+      : `${repository}/repository/files/${FACTORY_PATH}/raw`;
+  if (path !== file) return false;
+  branchOf(endpoint);
+  process.stdout.write(factoryText());
+  return true;
+}
+
+function answer(): void {
+  if (tokenMode && factoryEndpoint()) return;
+  if (!tokenMode && data.fail !== undefined) fail(data.fail);
+  if (!tokenMode && data.hang === true) {
+    setTimeout(() => undefined, 600_000);
+  } else if (data.host === 'github') {
+    github();
+  } else {
+    gitlab();
+  }
+}
+
+answer();

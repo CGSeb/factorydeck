@@ -1,4 +1,6 @@
-import { chmod, mkdir, writeFile } from 'node:fs/promises';
+import { createHash, randomUUID } from 'node:crypto';
+import { chmod, mkdir, rename, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { z } from 'zod';
 
@@ -22,6 +24,8 @@ export const FakeGitHostSchema = z.object({
     .optional(),
   labelEvents: z.record(z.string(), z.array(RowSchema)).optional(),
   factory: z.string().optional(),
+  defaultBranch: z.string().optional(),
+  remoteFactory: z.string().optional(),
   fail: z.string().optional(),
   hang: z.boolean().optional(),
   log: z.string().optional(),
@@ -74,29 +78,43 @@ export async function writeFakeGitHostData(
   );
 }
 
+export function fakeGitHostToken(root: string): string {
+  return join(fakeGitHostFolder(root), 'data.json');
+}
+
+async function writeExecutable(path: string, text: string): Promise<void> {
+  const temporary = `${path}.${randomUUID()}`;
+  await writeFile(temporary, text);
+  await chmod(temporary, 0o755);
+  await rename(temporary, path);
+}
+
+export async function fakeGitHostCommands(): Promise<
+  Record<FakeGitHostData['host'], string>
+> {
+  const hash = createHash('sha256')
+    .update(`${process.execPath}\n${FAKE_CLI}`)
+    .digest('hex')
+    .slice(0, 16);
+  const folder = join(tmpdir(), `factorydeck-fake-git-host-${hash}`);
+  await mkdir(folder, { recursive: true });
+  const script = `#!/bin/sh\nexec "${process.execPath}" "${FAKE_CLI}" "$@"\n`;
+  const commands = { github: join(folder, 'gh'), gitlab: join(folder, 'glab') };
+  await writeExecutable(commands.github, script);
+  await writeExecutable(commands.gitlab, script);
+  return commands;
+}
+
 export async function installFakeGitHost(
   root: string,
   data: FakeGitHostData,
-): Promise<string> {
-  const folder = fakeGitHostFolder(root);
-  await mkdir(folder, { recursive: true });
-  const cli = join(folder, 'cli');
-  await writeFile(
-    cli,
-    `#!/bin/sh\nexec "${process.execPath}" "${FAKE_CLI}" "${join(folder, 'data.json')}" "$@"\n`,
-  );
-  await chmod(cli, 0o755);
+): Promise<void> {
+  await mkdir(fakeGitHostFolder(root), { recursive: true });
   await writeFakeGitHostData(root, data);
   const agents = join(root, 'docs', 'agents');
   await mkdir(agents, { recursive: true });
   await writeFile(
     join(agents, 'factory.yml'),
-    `version: 2\nrepository:\n  git_host: ${data.host}\n  git_host_commands: docs/agents/git-host.md\n${data.factory ?? FACTORY_WORKFLOW}`,
+    `version: 2\nrepository:\n  git_host: ${data.host}\n${data.factory ?? FACTORY_WORKFLOW}`,
   );
-  const repositoryLine = data.host === 'github' ? 'Repository' : 'Project';
-  await writeFile(
-    join(agents, 'git-host.md'),
-    `# Git host\n\n- CLI: \`${cli}\`\n- ${repositoryLine}: \`${data.repository}\`\n`,
-  );
-  return cli;
 }

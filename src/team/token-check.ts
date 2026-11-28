@@ -35,32 +35,58 @@ export type TokenCheck =
   | { status: 'cli-missing'; error: string }
   | { status: 'refused'; error: string };
 
-interface Endpoints {
+export interface Endpoints {
   repository: string;
   factoryFile: (branch: string) => string;
+  rawFactoryFile: (branch: string) => string[];
 }
 
-function endpoints({ gitHost, path }: TokenTarget): Endpoints | undefined {
+export function endpoints({
+  gitHost,
+  path,
+}: TokenTarget): Endpoints | undefined {
   if (gitHost === 'gitlab') {
     const project = `projects/${encodeURIComponent(path)}`;
+    const file = `${project}/repository/files/${encodeURIComponent(FACTORY_FILE)}`;
     return {
       repository: project,
-      factoryFile: (branch) =>
-        `${project}/repository/files/${encodeURIComponent(FACTORY_FILE)}?ref=${encodeURIComponent(branch)}`,
+      factoryFile: (branch) => `${file}?ref=${encodeURIComponent(branch)}`,
+      rawFactoryFile: (branch) => [
+        `${file}/raw?ref=${encodeURIComponent(branch)}`,
+      ],
     };
   }
   const segments = path.split('/');
   if (segments.length !== 2) return undefined;
   const repository = `repos/${segments.join('/')}`;
+  const file = `${repository}/contents/${FACTORY_FILE}`;
   return {
     repository,
-    factoryFile: (branch) =>
-      `${repository}/contents/${FACTORY_FILE}?ref=${encodeURIComponent(branch)}`,
+    factoryFile: (branch) => `${file}?ref=${encodeURIComponent(branch)}`,
+    rawFactoryFile: (branch) => [
+      '-H',
+      'Accept: application/vnd.github.raw',
+      `${file}?ref=${encodeURIComponent(branch)}`,
+    ],
   };
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+export function failureText(
+  target: TokenTarget,
+  failure: HostCliFailure,
+  notFound: string,
+): string {
+  return {
+    missing: cliMissing(CLI_OF[target.gitHost]),
+    unauthorized: BAD_TOKEN,
+    forbidden: CANNOT_READ,
+    'not-found': notFound,
+    unreachable: unreachableHost(target.host),
+  }[failure];
 }
 
 function refusal(
@@ -68,16 +94,10 @@ function refusal(
   failure: HostCliFailure,
   notFound: string,
 ): TokenCheck {
-  if (failure === 'missing') {
-    return { status: 'cli-missing', error: cliMissing(CLI_OF[target.gitHost]) };
-  }
-  const error = {
-    unauthorized: BAD_TOKEN,
-    forbidden: CANNOT_READ,
-    'not-found': notFound,
-    unreachable: unreachableHost(target.host),
-  }[failure];
-  return { status: 'refused', error };
+  const error = failureText(target, failure, notFound);
+  return failure === 'missing'
+    ? { status: 'cli-missing', error }
+    : { status: 'refused', error };
 }
 
 function isFactoryFile(target: TokenTarget, value: unknown): boolean {
@@ -85,6 +105,21 @@ function isFactoryFile(target: TokenTarget, value: unknown): boolean {
   return target.gitHost === 'github'
     ? value['type'] === 'file'
     : typeof value['file_name'] === 'string';
+}
+
+export function defaultBranchOf(
+  target: TokenTarget,
+  repository: unknown,
+): { branch: string } | { error: string } {
+  const branch = isRecord(repository)
+    ? repository['default_branch']
+    : undefined;
+  if (typeof branch === 'string' && branch !== '') return { branch };
+  return {
+    error: isRecord(repository)
+      ? REPOSITORY_EMPTY
+      : unreachableHost(target.host),
+  };
 }
 
 export async function checkToken(
@@ -107,14 +142,9 @@ export async function checkToken(
   if (!repository.ok) {
     return refusal(target, repository.failure, REPOSITORY_NOT_FOUND);
   }
-  const branch = isRecord(repository.value)
-    ? repository.value['default_branch']
-    : undefined;
-  if (typeof branch !== 'string' || branch === '') {
-    return isRecord(repository.value)
-      ? { status: 'refused', error: REPOSITORY_EMPTY }
-      : { status: 'refused', error: unreachableHost(target.host) };
-  }
+  const found = defaultBranchOf(target, repository.value);
+  if ('error' in found) return { status: 'refused', error: found.error };
+  const { branch } = found;
   const file = await call(urls.factoryFile(branch));
   if (!file.ok) return refusal(target, file.failure, noFactoryFile(branch));
   if (!isFactoryFile(target, file.value)) {

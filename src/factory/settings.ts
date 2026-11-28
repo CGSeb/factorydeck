@@ -54,6 +54,10 @@ export async function readFactorySettings(
   } catch {
     throw new FactorySettingsError(`${FACTORY_FILE} not found`);
   }
+  return parseFactorySettings(source);
+}
+
+export function parseFactorySettings(source: string): FactorySettings {
   const document = parseDocument(source);
   if (document.errors.length > 0) {
     throw new FactorySettingsError(`${FACTORY_FILE} is not valid YAML`);

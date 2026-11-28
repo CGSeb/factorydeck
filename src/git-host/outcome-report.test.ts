@@ -17,6 +17,7 @@ import {
   outcomeContext,
   serenity,
 } from '../test/outcome.ts';
+import { fakeCollection } from '../demo/fake-git-host-token.ts';
 import { collect } from './collect.ts';
 
 const ctx = outcomeContext();
@@ -155,7 +156,11 @@ describe('serenity report and merge', () => {
         [open(20, [1], [comment(serenity(72), T2)], T2)],
       ),
     );
-    await collect(ctx.db(), { hasFactory, now: () => new Date(T2) });
+    await collect(ctx.db(), {
+      ...(await fakeCollection()),
+      hasFactory,
+      now: () => new Date(T2),
+    });
     expect(await outcomeOf(root, 1)).toMatchObject({
       stage: 'in-review',
       report: { score: 72 },

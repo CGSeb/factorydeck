@@ -15,6 +15,7 @@ import {
   outcomeContext,
   serenity,
 } from '../test/outcome.ts';
+import { fakeCollection } from '../demo/fake-git-host-token.ts';
 import { collect, collectSummary } from './collect.ts';
 
 const ctx = outcomeContext();
@@ -73,7 +74,10 @@ describe('issue stage', () => {
     const file = join(root, 'docs', 'agents', 'factory.yml');
     const config = await readFile(file, 'utf8');
     await writeFile(file, config.replace('    review: agent:review\n', ''));
-    const result = await collect(ctx.db(), { hasFactory });
+    const result = await collect(ctx.db(), {
+      ...(await fakeCollection()),
+      hasFactory,
+    });
     expect(collectSummary(result)).toEqual([
       'Collected 0 projects: 0 issues and 0 pull or merge requests updated.',
       'Could not read GitHub for app: docs/agents/factory.yml has no issues.labels.review.',
@@ -119,7 +123,7 @@ describe('upgrade', () => {
         repository: 'example-org/example-app',
         syncedFrom: new Date(T2),
       });
-    await collect(ctx.db(), { hasFactory });
+    await collect(ctx.db(), { ...(await fakeCollection()), hasFactory });
     const [first] = await calls(root);
     expect(first?.args.join(' ')).not.toContain('updated:');
     expect(await outcomeOf(root, 1)).toMatchObject({

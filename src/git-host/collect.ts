@@ -1,17 +1,27 @@
+import { eq, isNotNull } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
-import { UNASSIGNED_PROJECT, projectSession } from '../db/schema.ts';
+import { UNASSIGNED_PROJECT, project, projectSession } from '../db/schema.ts';
 import type { FactoryCheck } from '../ingest/factory.ts';
 import { folderName } from '../projects/label.ts';
-import { CLI_TIMEOUT_MS, cliRunner, firstLine } from './command.ts';
 import {
-  type GitHostConfig,
-  GitHostConfigError,
-  readGitHostConfig,
-} from './config.ts';
+  NO_SECRET_KEY,
+  gitHostOf,
+  hostOf,
+  repositoryPathOf,
+} from '../team/git-host-token.ts';
+import {
+  CLI_OF,
+  type GitHostKind,
+  type HostCliOptions,
+  type RunHostCli,
+  hostCliRunner,
+} from '../team/host-cli.ts';
+import { type SecretKey, decryptToken } from '../team/token-cipher.ts';
+import { CLI_TIMEOUT_MS, cliRunner, firstLine } from './command.ts';
 import { githubReader } from './github.ts';
 import { gitlabReader } from './gitlab.ts';
-import { readOutcomeSettings } from './outcome-settings.ts';
 import type { Changes, GitHostReader } from './parse.ts';
+import { type RemoteFactory, readRemoteFactory } from './remote-factory.ts';
 import {
   type ProjectState,
   pendingRequests,
@@ -20,14 +30,14 @@ import {
   saveRunFinished,
   saveSuccess,
 } from './store.ts';
-import {
-  type CollectionFailure,
-  type GitHostName,
-  failureMessage,
-} from './types.ts';
+import { type CollectionFailure, failureMessage } from './types.ts';
+
+export const TOKEN_UNREADABLE = 'Token cannot be decrypted: set it again';
 
 export interface CollectOptions {
   hasFactory: FactoryCheck;
+  secretKey: SecretKey;
+  hostCli?: HostCliOptions;
   timeoutMs?: number;
   now?: () => Date;
 }
@@ -39,43 +49,53 @@ export interface CollectResult {
   failures: CollectionFailure[];
 }
 
-function readerFor(
-  config: GitHostConfig,
-  root: string,
-  timeoutMs: number,
-): GitHostReader {
-  const run = cliRunner(config.cli, root, timeoutMs);
-  return config.gitHost === 'github'
-    ? githubReader(run, config.repository)
-    : gitlabReader(run, config.repository);
+interface TokenProject {
+  id: number;
+  remote: string;
+  gitHost: GitHostKind;
+  ciphertext: string;
 }
 
-async function factoryProjects(
+interface CollectedRoot {
+  root: string;
+  project: TokenProject;
+}
+
+async function tokenRoots(
   db: Database,
   hasFactory: FactoryCheck,
-): Promise<string[]> {
+): Promise<CollectedRoot[]> {
   const rows = await db
-    .selectDistinct({ project: projectSession.root })
-    .from(projectSession);
-  const projects: string[] = [];
-  for (const { project } of rows) {
-    if (project !== UNASSIGNED_PROJECT && (await hasFactory(project))) {
-      projects.push(project);
-    }
+    .selectDistinct({
+      root: projectSession.root,
+      id: project.id,
+      remote: project.remote,
+      storedGitHost: project.gitHost,
+      ciphertext: project.tokenCiphertext,
+    })
+    .from(projectSession)
+    .innerJoin(project, eq(project.slug, projectSession.project))
+    .where(isNotNull(project.tokenCiphertext));
+  const roots: CollectedRoot[] = [];
+  for (const { root, id, remote, storedGitHost, ciphertext } of rows) {
+    const gitHost = gitHostOf(remote, storedGitHost);
+    if (ciphertext === null || gitHost === null) continue;
+    if (root === UNASSIGNED_PROJECT || !(await hasFactory(root))) continue;
+    roots.push({ root, project: { id, remote, gitHost, ciphertext } });
   }
-  return projects.sort();
+  return roots.sort((a, b) => (a.root < b.root ? -1 : a.root > b.root ? 1 : 0));
 }
 
 async function changesOf(
   db: Database,
-  project: string,
+  root: string,
   reader: GitHostReader,
   since: Date | null,
 ): Promise<Changes> {
   const changes = await reader.changes(since);
   if (since === null) return changes;
   const updated = new Set(changes.requests.map((request) => request.number));
-  const pending = (await pendingRequests(db, project)).filter(
+  const pending = (await pendingRequests(db, root)).filter(
     (number) => !updated.has(number),
   );
   return {
@@ -95,11 +115,12 @@ function reasonOf(error: unknown): string {
 
 function readsInFull(
   state: ProjectState | undefined,
-  config: GitHostConfig,
+  gitHost: GitHostKind,
+  repository: string,
 ): boolean {
   return (
-    state?.gitHost !== config.gitHost ||
-    state.repository !== config.repository ||
+    state?.gitHost !== gitHost ||
+    state.repository !== repository ||
     !state.outcomeSettings ||
     !state.historyRead ||
     !state.fixRead ||
@@ -108,37 +129,81 @@ function readsInFull(
   );
 }
 
-async function collectProject(
-  db: Database,
-  project: string,
-  timeoutMs: number,
+interface Run {
+  db: Database;
+  secretKey: SecretKey;
+  runHostCli: RunHostCli;
+  hostCli: HostCliOptions;
+  timeoutMs: number;
+  factories: Map<number, Promise<RemoteFactory>>;
+}
+
+function remoteFactory(
+  run: Run,
+  { id, remote, gitHost, ciphertext }: TokenProject,
+): Promise<RemoteFactory> {
+  const known = run.factories.get(id);
+  if (known !== undefined) return known;
+  const read = (async (): Promise<RemoteFactory> => {
+    if (run.secretKey.status !== 'ok') {
+      return { ok: false, reason: NO_SECRET_KEY };
+    }
+    const token = decryptToken(run.secretKey.key, id, ciphertext);
+    if (token === undefined) return { ok: false, reason: TOKEN_UNREADABLE };
+    const target = {
+      gitHost,
+      host: hostOf(remote),
+      path: repositoryPathOf(remote),
+    };
+    return readRemoteFactory(run.runHostCli, target, token);
+  })();
+  run.factories.set(id, read);
+  return read;
+}
+
+function readerFor(
+  run: Run,
+  { gitHost, remote }: TokenProject,
+  root: string,
+): GitHostReader {
+  const cli = run.hostCli.commands?.[gitHost] ?? CLI_OF[gitHost];
+  const runCli = cliRunner(cli, root, run.timeoutMs);
+  const repository = repositoryPathOf(remote);
+  return gitHost === 'github'
+    ? githubReader(runCli, repository)
+    : gitlabReader(runCli, repository);
+}
+
+async function collectRoot(
+  run: Run,
+  { root, project: target }: CollectedRoot,
   startedAt: Date,
 ): Promise<Outcome> {
-  const state = await projectState(db, project);
-  let gitHost: GitHostName | null = state?.gitHost ?? null;
+  const { db } = run;
+  const { gitHost } = target;
   try {
-    const config = await readGitHostConfig(project);
-    gitHost = config.gitHost;
-    const settings = await readOutcomeSettings(project, config.gitHost);
-    const replace = readsInFull(state, config);
+    const factory = await remoteFactory(run, target);
+    if (!factory.ok) throw new Error(factory.reason);
+    const repository = target.remote.toLowerCase();
+    const state = await projectState(db, root);
+    const replace = readsInFull(state, gitHost, repository);
     const since = replace || state === undefined ? null : state.syncedFrom;
-    const reader = readerFor(config, project, timeoutMs);
-    const changes = await changesOf(db, project, reader, since);
-    await saveSuccess(db, project, {
-      gitHost: config.gitHost,
-      repository: config.repository,
+    const reader = readerFor(run, target, root);
+    const changes = await changesOf(db, root, reader, since);
+    await saveSuccess(db, root, {
+      gitHost,
+      repository,
       startedAt,
       replace,
       changes,
-      settings,
+      settings: factory.settings,
     });
     return { changes };
   } catch (error) {
-    if (error instanceof GitHostConfigError) gitHost = error.gitHost ?? gitHost;
     const reason = reasonOf(error);
-    await saveFailure(db, project, gitHost, reason);
-    const name = folderName(project);
-    return { failure: { project, name, gitHost, reason } };
+    await saveFailure(db, root, gitHost, reason);
+    const name = folderName(root);
+    return { failure: { project: root, name, gitHost, reason } };
   }
 }
 
@@ -146,6 +211,8 @@ export async function collect(
   db: Database,
   {
     hasFactory,
+    secretKey,
+    hostCli = {},
     timeoutMs = CLI_TIMEOUT_MS,
     now = () => new Date(),
   }: CollectOptions,
@@ -156,8 +223,16 @@ export async function collect(
     requests: 0,
     failures: [],
   };
-  for (const project of await factoryProjects(db, hasFactory)) {
-    const outcome = await collectProject(db, project, timeoutMs, now());
+  const run: Run = {
+    db,
+    secretKey,
+    runHostCli: hostCliRunner(hostCli),
+    hostCli,
+    timeoutMs,
+    factories: new Map(),
+  };
+  for (const root of await tokenRoots(db, hasFactory)) {
+    const outcome = await collectRoot(run, root, now());
     if ('failure' in outcome) {
       result.failures.push(outcome.failure);
       continue;

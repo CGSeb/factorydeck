@@ -11,6 +11,7 @@ import {
 import { hasFactory } from '../ingest/factory.ts';
 import { addProject, calls, github, T0, T1 } from '../test/git-host.ts';
 import { createTestDatabase } from '../test/postgres.ts';
+import { fakeCollection, giveFakeToken } from '../demo/fake-git-host-token.ts';
 import { collect } from './collect.ts';
 import { collectionStatus, issueDetail } from './query.ts';
 
@@ -95,7 +96,10 @@ describe('collect from GitLab', () => {
         '13': [{ iid: 7, project_id: 1 }],
       },
     });
-    const result = await collect(db, { hasFactory });
+    const result = await collect(db, {
+      ...(await fakeCollection()),
+      hasFactory,
+    });
     expect(result).toMatchObject({
       projects: 1,
       issues: 1,
@@ -137,7 +141,7 @@ describe('collect from GitLab', () => {
 
   it('keeps the old host for stored data while a new host fails, then starts over', async () => {
     const root = await project('app', github());
-    await collect(db, { hasFactory });
+    await collect(db, { ...(await fakeCollection()), hasFactory });
     const mirror: FakeGitHostData = {
       host: 'gitlab',
       repository: 'example-org/example-app',
@@ -155,7 +159,11 @@ describe('collect from GitLab', () => {
       requests: [],
     };
     await installFakeGitHost(root, { ...mirror, fail: '401 Unauthorized' });
-    const failed = await collect(db, { hasFactory });
+    await giveFakeToken(db, root);
+    const failed = await collect(db, {
+      ...(await fakeCollection()),
+      hasFactory,
+    });
     expect(failed.failures).toMatchObject([{ gitHost: 'gitlab' }]);
     expect((await collectionStatus(db, hasFactory)).failures).toMatchObject([
       { gitHost: 'gitlab', reason: '401 Unauthorized' },
@@ -165,7 +173,7 @@ describe('collect from GitLab', () => {
       title: 'Issue 1',
     });
     await installFakeGitHost(root, mirror);
-    await collect(db, { hasFactory });
+    await collect(db, { ...(await fakeCollection()), hasFactory });
     expect(await issueDetail(db, root, 1)).toBeNull();
     expect(await issueDetail(db, root, 30)).toMatchObject({
       gitHost: 'gitlab',
@@ -193,7 +201,7 @@ describe('collect from GitLab', () => {
         '5': Array.from({ length: 130 }, (_, index) => ({ iid: index + 1 })),
       },
     });
-    await collect(db, { hasFactory });
+    await collect(db, { ...(await fakeCollection()), hasFactory });
     const [request] = await db.select().from(gitHostRequest);
     expect(request?.closes).toHaveLength(130);
   });

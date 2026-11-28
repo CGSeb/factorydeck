@@ -7,6 +7,7 @@ import {
   type FakeGitHostData,
   installFakeGitHost,
 } from '../demo/fake-git-host.ts';
+import { giveFakeToken } from '../demo/fake-git-host-token.ts';
 
 export async function addProject(
   db: Database,
@@ -18,12 +19,13 @@ export async function addProject(
   await mkdir(root, { recursive: true });
   await installFakeGitHost(root, { ...data, log: join(root, 'calls.log') });
   await db.insert(session).values({ id: `session-${name}`, project: root });
+  await giveFakeToken(db, root);
   return root;
 }
 
 const CallSchema = z.object({ args: z.array(z.string()), cwd: z.string() });
 
-export async function calls(
+async function loggedCalls(
   root: string,
 ): Promise<{ args: string[]; cwd: string }[]> {
   const text = await readFile(join(root, 'calls.log'), 'utf8').catch(() => '');
@@ -31,6 +33,22 @@ export async function calls(
     .split('\n')
     .filter((line) => line !== '')
     .map((line) => CallSchema.parse(JSON.parse(line)));
+}
+
+export async function calls(
+  root: string,
+): Promise<{ args: string[]; cwd: string }[]> {
+  return (await loggedCalls(root)).filter(
+    (call) => !call.args.includes('--hostname'),
+  );
+}
+
+export async function hostCalls(
+  root: string,
+): Promise<{ args: string[]; cwd: string }[]> {
+  return (await loggedCalls(root)).filter((call) =>
+    call.args.includes('--hostname'),
+  );
 }
 
 export const T0 = '2026-03-01T10:00:00Z';

@@ -47,7 +47,7 @@ import { invitations } from '../team/invitations.ts';
 import { gitHostTokenStore } from '../team/git-host-token.ts';
 import { hostCliRunner } from '../team/host-cli.ts';
 import { projectStore } from '../team/projects.ts';
-import { secretKey } from '../team/token-cipher.ts';
+import { type SecretKey, secretKey } from '../team/token-cipher.ts';
 import { resetLinks } from '../team/reset-links.ts';
 import { type AppOptions, createApp } from './app.ts';
 import type { TeamSource } from './team-routes.ts';
@@ -61,12 +61,13 @@ import { UI_DIST_DIR } from './paths.ts';
 function lazyCollection(
   db: Database,
   intervalMinutes: number,
+  key: SecretKey,
 ): () => CollectLoop {
   let collection: CollectLoop | undefined;
   return () => {
     collection ??= startCollectLoop({
       run: async () => {
-        await collect(db, { hasFactory });
+        await collect(db, { hasFactory, secretKey: key });
       },
       intervalMs: intervalMinutes * 60_000,
       onError: (error) => {
@@ -197,6 +198,7 @@ async function main(): Promise<void> {
   const collectionLoop = lazyCollection(
     db,
     env.FACTORYDECK_COLLECT_INTERVAL_MINUTES,
+    secretKey(env.FACTORYDECK_SECRET_KEY),
   );
   const ingestion = startIngestion(db, folder, env, () => collectionLoop());
   const setup = firstManagerSetup(db, { log: (line) => console.log(line) });

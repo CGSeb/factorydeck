@@ -2,6 +2,8 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { listBugs } from '../bugs/query.ts';
 import type { Database } from '../db/client.ts';
+import { giveDemoTokens } from './projects.ts';
+import { fakeCollection } from './fake-git-host-token.ts';
 import { collect } from '../git-host/collect.ts';
 import { hasFactory } from '../ingest/factory.ts';
 import { ingest } from '../ingest/ingest.ts';
@@ -27,6 +29,7 @@ beforeEach(async () => {
   projects = await sessionsFolder();
   await writeDemoSessions(folder, NOW, projects);
   await ingest(db, folder, { codexFolder: await sessionsFolder(), wsl: false });
+  await giveDemoTokens(db, projects);
 });
 
 afterEach(async () => {
@@ -35,7 +38,7 @@ afterEach(async () => {
 
 describe('demo sessions on the bugs page', () => {
   it('cover the three groups of the bugs page and each kind of fix', async () => {
-    await collect(db, { hasFactory });
+    await collect(db, { ...(await fakeCollection()), hasFactory });
     const path = join(await sessionsFolder(), 'factorydeck.yml');
     await writeDemoConfig(path, projects);
     const config = loadWorkflowConfig(path);
@@ -71,7 +74,7 @@ describe('demo sessions on the bugs page', () => {
   });
 
   it('has a bug in its second version and one in its third', async () => {
-    await collect(db, { hasFactory });
+    await collect(db, { ...(await fakeCollection()), hasFactory });
     const path = join(await sessionsFolder(), 'factorydeck.yml');
     await writeDemoConfig(path, projects);
     const config = loadWorkflowConfig(path);

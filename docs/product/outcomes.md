@@ -11,7 +11,7 @@ Each collected issue has one stage, the first that applies:
    - else `Merged after a person` when [a person helped](#help-from-a-person);
    - else `Merged`.
 2. The issue is closed: `Closed without merge`.
-3. It carries a label of `issues.labels` in `docs/agents/factory.yml`, in this order: `blocked` → `Blocked`, `needs_spec` → `Needs spec`, `review` → `In review`, `working` → `Working`, `ready` → `Ready`.
+3. It carries a label of `issues.labels` in `docs/agents/factory.yml` on the repository's default branch ([Data](data.md#factory-settings)), in this order: `blocked` → `Blocked`, `needs_spec` → `Needs spec`, `review` → `In review`, `working` → `Working`, `ready` → `Ready`.
 4. Otherwise `Open`.
 
 A missing label key is a collection error of that project. An issue not found among the collected ones shows `#<n> (not found)` and has no stage; before a project's first collection, `#<n>` alone.

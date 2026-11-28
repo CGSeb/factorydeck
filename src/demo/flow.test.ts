@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Database } from '../db/client.ts';
 import { featureDetail } from '../features/query.ts';
+import { giveDemoTokens } from './projects.ts';
+import { fakeCollection } from './fake-git-host-token.ts';
 import { collect } from '../git-host/collect.ts';
 import { hasFactory } from '../ingest/factory.ts';
 import { ingest } from '../ingest/ingest.ts';
@@ -28,7 +30,8 @@ beforeEach(async () => {
   projects = await sessionsFolder();
   await writeDemoSessions(folder, NOW, projects);
   await ingest(db, folder);
-  await collect(db, { hasFactory });
+  await giveDemoTokens(db, projects);
+  await collect(db, { ...(await fakeCollection()), hasFactory });
 });
 
 afterEach(async () => {

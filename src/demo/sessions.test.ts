@@ -10,6 +10,7 @@ import {
 } from 'vitest';
 import type { Database } from '../db/client.ts';
 import { featureDetail, listFeatures } from '../features/query.ts';
+import { fakeCollection } from './fake-git-host-token.ts';
 import { collect } from '../git-host/collect.ts';
 import { hasFactory } from '../ingest/factory.ts';
 import { ingest } from '../ingest/ingest.ts';
@@ -58,7 +59,7 @@ async function openDemo(): Promise<void> {
     demoProjectRoot(projects, EXAMPLE_APP),
   );
   await recordDemoRemotes(db, projects);
-  await addDemoProjects(db, NOW);
+  await addDemoProjects(db, NOW, projects);
   await ingest(db, folder, { codexFolder, wsl: false });
 }
 
@@ -192,7 +193,7 @@ describe('demo sessions with the git host collected', () => {
 
   beforeAll(async () => {
     await openDemo();
-    collected = await collect(db, { hasFactory });
+    collected = await collect(db, { ...(await fakeCollection()), hasFactory });
   });
 
   afterAll(closeDemo);

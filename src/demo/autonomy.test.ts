@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Database } from '../db/client.ts';
+import { giveDemoTokens } from './projects.ts';
+import { fakeCollection } from './fake-git-host-token.ts';
 import { collect } from '../git-host/collect.ts';
 import { hasFactory } from '../ingest/factory.ts';
 import { ingest } from '../ingest/ingest.ts';
@@ -19,9 +21,11 @@ let close: () => Promise<void>;
 beforeEach(async () => {
   ({ db, close } = await createTestDatabase());
   const folder = await sessionsFolder();
-  await writeDemoSessions(folder, NOW, await sessionsFolder());
+  const projects = await sessionsFolder();
+  await writeDemoSessions(folder, NOW, projects);
   await ingest(db, folder);
-  await collect(db, { hasFactory });
+  await giveDemoTokens(db, projects);
+  await collect(db, { ...(await fakeCollection()), hasFactory });
 });
 
 afterEach(async () => {

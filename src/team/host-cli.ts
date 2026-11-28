@@ -18,6 +18,7 @@ export interface HostCliCall {
   host: string;
   token: string;
   args: string[];
+  raw?: boolean;
 }
 
 export type RunHostCli = (call: HostCliCall) => Promise<HostCliResult>;
@@ -108,6 +109,7 @@ interface Execution {
   env: Record<string, string>;
   cwd: string;
   timeoutMs: number;
+  raw: boolean;
 }
 
 function run({
@@ -116,6 +118,7 @@ function run({
   env,
   cwd,
   timeoutMs,
+  raw,
 }: Execution): Promise<HostCliResult> {
   return new Promise((resolve) => {
     execFile(
@@ -125,6 +128,10 @@ function run({
       (error, stdout, stderr) => {
         if (error !== null) {
           resolve({ ok: false, failure: failureOf(error, String(stderr)) });
+          return;
+        }
+        if (raw) {
+          resolve({ ok: true, value: String(stdout) });
           return;
         }
         try {
@@ -182,6 +189,7 @@ export function hostCliRunner({
         env,
         cwd: workDir,
         timeoutMs,
+        raw: call.raw === true,
       });
     } finally {
       await rm(folder, { recursive: true, force: true });

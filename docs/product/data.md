@@ -4,7 +4,7 @@ FactoryDeck builds everything it shows from two sources on the person's machine:
 
 ## Factory projects only
 
-A project has the factory installed when `docs/agents/factory.yml` exists at its root. Only the presence of the file counts; FactoryDeck reads two things from it (the git host and the outcome settings) and validates nothing else. A folder that cannot be read counts as no factory.
+A project has the factory installed when `docs/agents/factory.yml` exists at its root. Only the presence of the file counts here; the [git host collection](#factory-settings) reads the git host and the outcome settings from the copy on the repository's default branch, and nothing else is validated. A folder that cannot be read counts as no factory.
 
 - **Root of a session**: the main git repository of its working directory, resolved with git (`git rev-parse --path-format=absolute --git-common-dir`, its parent), so a worktree counts for its main checkout. When the folder no longer exists, a session inside a known root belongs to it; otherwise the working directory itself is the root. The factory rules below apply to roots.
 - When a session's main log has no working directory, it takes the one of its earliest sub-agent that has one (ties: smallest agent id), with that sub-agent's branch; a working directory found later in the main log replaces it.
@@ -80,18 +80,37 @@ Every `rollout-*.jsonl`, at any depth, under `CODEX_SESSIONS_DIR` (default `~/.c
 
 ## Git host
 
-FactoryDeck collects the roots with sessions whose remote belongs to a project of [Projects](projects.md); a root whose remote no project has is not collected, so changing a project's remote stops the collection of the old one. For each factory project, FactoryDeck reads `repository.git_host` (`github` or `gitlab`) and `repository.git_host_commands` from its `docs/agents/factory.yml`, then in that file the CLI (`- CLI: \`<command>\``, default `gh`or`glab`) and the repository (`- Repository: \`<owner>/<name>\``or`- Project: \`<group>/<project>\``). It also reads `issues.labels`and`build.auto_merge` for the [outcomes](outcomes.md). These are read at every run, so a change applies at the next one.
+FactoryDeck collects the roots with sessions whose remote belongs to a project of [Projects](projects.md) that has a [git host token](projects.md#git-host-token); a root whose remote no project has, or whose project has no token, is not collected, and its stored data stays. Changing a project's remote stops the collection of the old one.
 
-The collection also reads the optional `bugs.label` of `docs/agents/factory.yml` at every run, with the outcome settings, for the [kind of each issue](outcomes.md#kinds). A missing, empty or reserved bug label is not a collection error.
+### Factory settings
 
-Collection runs at server start, then every `FACTORYDECK_COLLECT_INTERVAL_MINUTES` (default 5); `pnpm collect` runs one and prints `Collected <p> projects: <i> issues and <r> pull or merge requests updated.` (exit code 1 when a project failed). The first run of a project reads everything; later runs only what was updated since the start of the last successful run. A change in what is collected reads each project again in full once, keeping its data on screen meanwhile.
+The factory settings of a project come from its repository, not from a file on the server. At each run, once per project, the server reads the project's `docs/agents/factory.yml` on the repository's default branch, with the project's token, decrypted from the database for these calls only:
+
+- GitHub: `gh api --hostname <host> repos/<owner>/<repo>` reads `default_branch`, then `gh api --hostname <host> -H 'Accept: application/vnd.github.raw' "repos/<owner>/<repo>/contents/docs/agents/factory.yml?ref=<branch>"`.
+- GitLab: `glab api --hostname <host> projects/<url-encoded path>`, then `glab api --hostname <host> "projects/<url-encoded path>/repository/files/docs%2Fagents%2Ffactory.yml/raw?ref=<branch>"`.
+
+Each call runs as the [token check](projects.md#the-check) does: the token in `GH_TOKEN` and `GH_ENTERPRISE_TOKEN`, or `GITLAB_TOKEN` and `GITLAB_HOST`, an allow-list of the server's environment only, an empty configuration folder, a neutral working folder and 30 seconds.
+
+From that file the collection takes:
+
+- `repository.git_host` (required): `github` or `gitlab`, in any letter case. It must be the git host of the project's remote, else the project fails with `factory.yml says <value as written>, the remote is on <github|gitlab>`.
+- `issues.labels.ready`, `working`, `needs_spec`, `review` and `blocked` (required), for the [outcomes](outcomes.md).
+- `build.auto_merge` and `bugs.label` (optional).
+
+The repository is the project's normalised remote, and the CLI is `gh` or `glab` from the server's `PATH`. A change of the file on the default branch applies at the next run. The other readers of `factory.yml` (which sessions are read, the `Factory configuration not found` banner, the filters of the statistics) still read it on the disk of each root.
+
+A failed read fails the whole project for the run: no issue is collected, and its stored data and settings stay, so labels that may be stale are never applied. The reason is one of `No secret key: set FACTORYDECK_SECRET_KEY`, `Token cannot be decrypted: set it again`, `Bad token`, `Token cannot read this repository`, `Repository not found or not visible with this token`, `Repository is empty`, `No docs/agents/factory.yml on <branch>`, `Could not reach <host>`, `<gh|glab> not found on the server`, `docs/agents/factory.yml is larger than 1 MB`, `docs/agents/factory.yml is not valid YAML`, `docs/agents/factory.yml has no <key>`, `repository.git_host is <value>, not github or gitlab`, or the git host mismatch above.
+
+### Collection
+
+Collection runs at server start, then every `FACTORYDECK_COLLECT_INTERVAL_MINUTES` (default 5); `pnpm collect` runs one and prints `Collected <p> projects: <i> issues and <r> pull or merge requests updated.` (exit code 1 when a project failed). The first run of a project reads everything; later runs only what was updated since the start of the last successful run. A change in what is collected, or of the stored repository (the normalised remote, in lower case), reads each project again in full once, keeping its data on screen meanwhile.
 
 - **Issue**: number, title, state, labels with their colour, URL, creation and close times, its close and reopen events with their time (the `ClosedEvent` and `ReopenedEvent` items of the GitHub timeline, the `closed` and `reopened` state events of GitLab), whether it was reopened (at least one reopen event stored), and the times its needs-spec label was added and removed.
 - Close and reopen events: the first 100 of each issue, oldest first (one page of the git host's API); the events after them are ignored, so the [versions](outcomes.md#versions-of-a-bug) of a bug closed and reopened more than 50 times stop at the 100th event.
 - **Pull or merge request**: number, title, state (`open`, `merged`, `closed`), draft, head branch, URL, creation, merge and close times, the issues the git host says it closes, else, whatever branch it targets, the issues its body names with a closing keyword (`close`, `closes`, `closed`, `fix`, `fixes`, `fixed`, `resolve`, `resolves` or `resolved`, in any letter case, with an optional colon, followed on the same line by `#<n>`; the git host reports none for a request into a branch other than the default one) (nothing is guessed from branch names), a checks summary of its head commit, and every serenity report among its comments, with its `Root cause:` and `Reproduced:` lines when `fix-bug` wrote them ([Serenity reports](outcomes.md#serenity-reports)). No other comment text is stored; GitLab system notes are ignored.
 - **Checks**: `Failing` if any check failed, was cancelled or timed out; else `Pending` if any is queued or running; else `Passing` with at least one check; else `No checks` (GitHub's status check rollup, GitLab's head pipeline).
-- The CLI runs from the project root with the repository passed explicitly. Each call has 60 seconds; a call that times out fails that project for this run.
-- A project whose collection fails (a missing key or line, CLI missing or not logged in, network, CLI error) shows in the [warning banner](navigation.md#banners) as `Could not read <GitHub|GitLab> for <project name>: <first line of the error>.` Its earlier data stays; the other projects are still collected; the line goes at its next successful run.
+- The issues and pull or merge requests are still read with the server's own `gh` or `glab` login: the CLI runs from the project root with the repository path of the remote passed explicitly. Each call has 60 seconds; a call that times out fails that project for this run.
+- A project whose collection fails (its factory settings, CLI missing or not logged in, network, CLI error) shows in the [warning banner](navigation.md#banners) as `Could not read <GitHub|GitLab> for <project name>: <first line of the error>.` Its earlier data stays; the other projects are still collected; the line goes at its next successful run.
 
 ## What is stored
 
