@@ -109,21 +109,29 @@ export const List: Story = {
       within(table)
         .getAllByRole('columnheader')
         .map((cell) => cell.textContent),
-    ).toEqual(['Name', 'Remote', 'Slug', 'Added']);
+    ).toEqual(['Name', 'Remote', 'Git host', 'Slug', 'Added']);
     await expect(rowTexts(canvasElement)).toEqual([
       [
         'atlas',
         'gitlab.example.test/platform/tools/atlas',
+        '—',
         'atlas',
         '3 Feb 2026',
       ],
       [
         'Billing',
         'github.com/example-org/billing-service',
+        'GitHub · token',
         'billing-service',
         '15 Jan 2026',
       ],
-      ['Website', 'github.com/example-org/website', 'website', '10 Mar 2026'],
+      [
+        'Website',
+        'github.com/example-org/website',
+        'GitHub · no token',
+        'website',
+        '10 Mar 2026',
+      ],
     ]);
     await expect(
       within(table).getByRole('link', { name: 'Billing' }),

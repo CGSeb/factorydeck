@@ -1,9 +1,11 @@
-import { type ReactElement, useId, useRef, useState } from 'react';
+import { type ReactElement, useCallback, useId, useRef, useState } from 'react';
 import { useParams } from 'react-router';
 import { Field } from './AddProjectDialog.tsx';
 import { PageHeader } from './components/PageHeader.tsx';
 import { Panel } from './components/Panel.tsx';
 import { StatusLine } from './components/StatusLine.tsx';
+import { GitHostSection } from './GitHostSection.tsx';
+import type { RemoveToken, SaveToken } from './git-host-token-api.ts';
 import { renderRouterLink } from './Layout.tsx';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { useProject, withProject } from './project-param.ts';
@@ -27,6 +29,11 @@ import {
 } from './projects-view.ts';
 import type { LoadRoleRules, SaveRoleRules } from './role-rules-api.ts';
 import { RoleRulesSection } from './RoleRulesSection.tsx';
+import {
+  SettingsLeavePrompt,
+  type Unsaved,
+  type UnsavedSection,
+} from './SettingsLeavePrompt.tsx';
 import { useRefreshing } from './skills-api.ts';
 import './invitations.css';
 import './projects.css';
@@ -36,6 +43,8 @@ export interface ProjectSettingsPageProps {
   saveProject: SaveProject;
   loadRoleRules?: LoadRoleRules | undefined;
   saveRoleRules?: SaveRoleRules | undefined;
+  saveToken?: SaveToken | undefined;
+  removeToken?: RemoveToken | undefined;
 }
 
 const LOADING = 'Loading…';
@@ -169,15 +178,85 @@ function useSettings(loadProjects: LoadProjects, slug: string) {
   return { view, project, onSaved };
 }
 
+function useUnsaved(): {
+  unsaved: Unsaved;
+  onRulesChanged: (changed: boolean) => void;
+  onGitHostChanged: (changed: boolean) => void;
+} {
+  const [unsaved, setUnsaved] = useState<Unsaved>({});
+  const report = useCallback((section: UnsavedSection, changed: boolean) => {
+    setUnsaved((previous) =>
+      previous[section] === changed
+        ? previous
+        : { ...previous, [section]: changed },
+    );
+  }, []);
+  const onRulesChanged = useCallback(
+    (changed: boolean) => {
+      report('rules', changed);
+    },
+    [report],
+  );
+  const onGitHostChanged = useCallback(
+    (changed: boolean) => {
+      report('gitHost', changed);
+    },
+    [report],
+  );
+  return { unsaved, onRulesChanged, onGitHostChanged };
+}
+
+function LaterSections({
+  project,
+  secretKey,
+  sources: { loadRoleRules, saveRoleRules, saveToken, removeToken },
+  onSaved,
+  onRulesChanged,
+  onGitHostChanged,
+}: {
+  project: ListedProject;
+  secretKey: boolean;
+  sources: Omit<ProjectSettingsPageProps, 'loadProjects' | 'saveProject'>;
+  onSaved: (project: ListedProject) => void;
+  onRulesChanged: (changed: boolean) => void;
+  onGitHostChanged: (changed: boolean) => void;
+}): ReactElement {
+  return (
+    <>
+      {loadRoleRules !== undefined && saveRoleRules !== undefined && (
+        <RoleRulesSection
+          key={`rules-${String(project.id)}`}
+          project={project}
+          loadRoleRules={loadRoleRules}
+          saveRoleRules={saveRoleRules}
+          onChanged={onRulesChanged}
+        />
+      )}
+      {saveToken !== undefined && removeToken !== undefined && (
+        <GitHostSection
+          key={`git-host-${String(project.id)}`}
+          project={project}
+          secretKey={secretKey}
+          saveToken={saveToken}
+          removeToken={removeToken}
+          onSaved={onSaved}
+          onChanged={onGitHostChanged}
+        />
+      )}
+    </>
+  );
+}
+
 export function ProjectSettingsPage({
   loadProjects,
   saveProject,
-  loadRoleRules,
-  saveRoleRules,
+  ...sources
 }: ProjectSettingsPageProps): ReactElement {
   const { slug = '' } = useParams();
   const selected = useProject();
   const { view, project, onSaved } = useSettings(loadProjects, slug);
+  const secretKey = view?.status === 'ok' && view.secretKey;
+  const { unsaved, ...changes } = useUnsaved();
   return (
     <div className="fd-projects-page">
       <PageHeader
@@ -199,17 +278,18 @@ export function ProjectSettingsPage({
               saveProject={saveProject}
               onSaved={onSaved}
             />
-            {loadRoleRules !== undefined && saveRoleRules !== undefined && (
-              <RoleRulesSection
-                key={`rules-${String(shown.id)}`}
-                project={shown}
-                loadRoleRules={loadRoleRules}
-                saveRoleRules={saveRoleRules}
-              />
-            )}
+            <LaterSections
+              key={`later-${String(shown.id)}`}
+              project={shown}
+              secretKey={secretKey}
+              sources={sources}
+              onSaved={onSaved}
+              {...changes}
+            />
           </>
         )}
       />
+      <SettingsLeavePrompt unsaved={unsaved} />
     </div>
   );
 }

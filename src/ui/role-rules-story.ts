@@ -1,5 +1,5 @@
 import type { Decorator } from '@storybook/react-vite';
-import { createElement } from 'react';
+import { Fragment, type ReactElement, createElement, useState } from 'react';
 import { Link } from 'react-router';
 import { userEvent, within } from 'storybook/test';
 import type { ListedProject } from './projects-api.ts';
@@ -8,6 +8,11 @@ import type {
   SaveRoleRulesOutcome,
   StoredRoleRule,
 } from './role-rules-api.ts';
+import {
+  RoleRulesSection,
+  type RoleRulesSectionProps,
+} from './RoleRulesSection.tsx';
+import { SettingsLeavePrompt } from './SettingsLeavePrompt.tsx';
 import { memoryDataRouter } from './story-router.ts';
 
 export const storyProject: ListedProject = {
@@ -82,4 +87,14 @@ export async function renameFirst(
   );
   await userEvent.clear(field);
   await userEvent.type(field, name);
+}
+
+export function RulesWithPrompt(props: RoleRulesSectionProps): ReactElement {
+  const [changed, setChanged] = useState(false);
+  return createElement(
+    Fragment,
+    null,
+    createElement(RoleRulesSection, { ...props, onChanged: setChanged }),
+    createElement(SettingsLeavePrompt, { unsaved: { rules: changed } }),
+  );
 }

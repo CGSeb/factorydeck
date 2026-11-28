@@ -99,7 +99,7 @@ export const RemoveButtons: Story = {
       within(table)
         .getAllByRole('columnheader')
         .map((cell) => cell.textContent),
-    ).toEqual(['Name', 'Remote', 'Slug', 'Added', 'Actions']);
+    ).toEqual(['Name', 'Remote', 'Git host', 'Slug', 'Added', 'Actions']);
     await expect(
       within(table)
         .getAllByRole('button')

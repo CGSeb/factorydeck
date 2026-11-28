@@ -63,7 +63,7 @@ A manager edits a project's role rules in the `Role rules` section of its [setti
 - **Refusals** keep the edits. A `400` shows its message under the field it names (`name`, `description` or `agentType`) of the rule at its `rule` index, and the focus moves to that field; a `400` on `rules` shows under the section. If the project was removed meanwhile, `<name> is no longer in FactoryDeck.` shows under the section; a `503` shows `Database unreachable. Start it with pnpm db:up.` there, and any other failure the API's message or `Could not reach the server`.
 - **Loading**: `Loading…` until the rules are read; `Database unreachable. Start it with pnpm db:up.` while the database is unreachable.
 - **Refresh**: the section reloads the rules every `refreshSeconds`. Without unsaved changes it shows the new rules; with unsaved changes it keeps them.
-- **Leaving with unsaved changes**: an in-app link to another page asks `Leave without saving the rules?` in a dialog, with `Stay` (focused; also `Escape` or a click outside) and `Leave`. Closing or reloading the tab shows the browser's own prompt.
+- **Leaving with unsaved changes**: an in-app link to another page asks `Leave without saving the rules?` in a dialog, with `Stay` (focused; also `Escape` or a click outside) and `Leave`. Closing or reloading the tab shows the browser's own prompt. This question also covers a token typed in the [Git host section](projects.md#the-git-host-section) of the same page; with only a token typed, the page asks `Leave without saving the token?`.
 
 **Default role rules**, each on the sub-agent's description; they match the descriptions `build-feature` and `fix-bug` give their agents:
 

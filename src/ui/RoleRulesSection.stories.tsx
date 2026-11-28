@@ -1,3 +1,4 @@
+import { createElement } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { DATABASE_UNREACHABLE } from './auth-api.ts';
@@ -19,6 +20,7 @@ import {
   recordingPendingSave,
   rowAt,
   ruleNames,
+  RulesWithPrompt,
   rulesFrame,
   renameFirst,
   storyProject,
@@ -33,6 +35,7 @@ const meta = {
     saveRoleRules: pendingRulesSave(),
   },
   decorators: [rulesFrame],
+  render: (args) => createElement(RulesWithPrompt, args),
 } satisfies Meta<typeof RoleRulesSection>;
 
 export default meta;

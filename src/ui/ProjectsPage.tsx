@@ -5,6 +5,8 @@ import { DataTable } from './components/DataTable.tsx';
 import { PageHeader } from './components/PageHeader.tsx';
 import { StatusLine } from './components/StatusLine.tsx';
 import { formatDateTime } from './format.ts';
+import type { RemoveToken, SaveToken } from './git-host-token-api.ts';
+import { GIT_HOST, gitHostCell } from './git-host-view.ts';
 import { useProject, withProject } from './project-param.ts';
 import { UNREACHABLE_MESSAGE } from './overview-api.ts';
 import { useProjectRemoved } from './layout-outlet.ts';
@@ -80,6 +82,7 @@ function ProjectsTable({
           <tr>
             <th scope="col">Name</th>
             <th scope="col">Remote</th>
+            <th scope="col">{GIT_HOST}</th>
             <th scope="col">Slug</th>
             <th scope="col">Added</th>
             {onRemove !== undefined && (
@@ -101,6 +104,7 @@ function ProjectsTable({
                 </Link>
               </th>
               <td className="fd-projects-remote">{project.remote}</td>
+              <td>{gitHostCell(project)}</td>
               <td>{project.slug}</td>
               <td>
                 <time
@@ -264,6 +268,8 @@ export interface ProjectsSources {
   removeProject?: RemoveProject | undefined;
   loadRoleRules?: LoadRoleRules | undefined;
   saveRoleRules?: SaveRoleRules | undefined;
+  saveToken?: SaveToken | undefined;
+  removeToken?: RemoveToken | undefined;
 }
 
 export function projectsRoute({
@@ -271,8 +277,7 @@ export function projectsRoute({
   addProject,
   saveProject,
   removeProject,
-  loadRoleRules,
-  saveRoleRules,
+  ...sections
 }: ProjectsSources): ReactElement | undefined {
   if (loadProjects === undefined) return undefined;
   return (
@@ -294,8 +299,7 @@ export function projectsRoute({
             <ProjectSettingsPage
               loadProjects={loadProjects}
               saveProject={saveProject}
-              loadRoleRules={loadRoleRules}
-              saveRoleRules={saveRoleRules}
+              {...sections}
             />
           }
         />
