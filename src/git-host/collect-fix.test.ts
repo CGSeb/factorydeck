@@ -10,6 +10,7 @@ import {
   outcomeContext,
   serenity,
 } from '../test/outcome.ts';
+import { fakeCollection } from '../demo/fake-git-host-token.ts';
 import { collect } from './collect.ts';
 
 const ctx = outcomeContext();
@@ -42,7 +43,11 @@ describe('reading the fix lines of reports already stored', () => {
         autoMerge: true,
         historyRead: true,
       });
-    await collect(ctx.db(), { hasFactory, now: () => new Date(T2) });
+    await collect(ctx.db(), {
+      ...(await fakeCollection()),
+      hasFactory,
+      now: () => new Date(T2),
+    });
     const [first] = await calls(root);
     expect(first?.args.join(' ')).not.toContain('updated:');
     const [request] = await ctx.db().select().from(gitHostRequest);
@@ -56,7 +61,11 @@ describe('reading the fix lines of reports already stored', () => {
       .from(gitHostProject);
     expect(state?.fixRead).toBe(true);
 
-    await collect(ctx.db(), { hasFactory, now: () => new Date(T2) });
+    await collect(ctx.db(), {
+      ...(await fakeCollection()),
+      hasFactory,
+      now: () => new Date(T2),
+    });
     const later = await calls(root);
     expect(later.at(-1)?.args.join(' ')).toContain('updated:');
   });

@@ -10,6 +10,7 @@ import {
 
 export type FakeAnswer =
   | { status: 200; body: unknown }
+  | { status: 200; text: string }
   | { status: number }
   | { hang: true }
   | { stderr: string };
@@ -43,6 +44,7 @@ const answer = answers[args.at(-1)] ?? { status: 404 };
 const reasons = { 401: 'Bad credentials', 403: 'Forbidden', 404: 'Not Found', 429: 'Too Many Requests', 500: 'Server Error', 502: 'Bad Gateway' };
 if (answer.hang) setTimeout(() => undefined, 60000);
 else if (answer.stderr !== undefined) { process.stderr.write(answer.stderr + '\\n'); process.exit(1); }
+else if (answer.status === 200 && answer.text !== undefined) process.stdout.write(answer.text);
 else if (answer.status === 200) process.stdout.write(JSON.stringify(answer.body));
 else {
   const reason = reasons[answer.status] ?? 'Error';

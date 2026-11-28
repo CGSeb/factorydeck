@@ -30,6 +30,23 @@ const SERVER_ENV = {
 };
 
 describe('hostCliRunner', () => {
+  it('gives the raw output of a raw call', async () => {
+    await fake.answer('repos/o/r/contents/f?ref=main', {
+      status: 200,
+      text: 'version: 2\n',
+    });
+    const run = fakeRunner(fake, SERVER_ENV);
+    await expect(
+      run({
+        gitHost: 'github',
+        host: 'github.com',
+        token: 'project-token',
+        args: ['api', 'repos/o/r/contents/f?ref=main'],
+        raw: true,
+      }),
+    ).resolves.toEqual({ ok: true, value: 'version: 2\n' });
+  });
+
   it('gives gh the project token and an allow-list of the server environment only', async () => {
     await fake.answer('repos/o/r', { status: 200, body: { id: 1 } });
     const run = fakeRunner(fake, SERVER_ENV);

@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, expect } from 'vitest';
 import type { Database } from '../db/client.ts';
 import type { FakeGitHostData } from '../demo/fake-git-host.ts';
+import { fakeCollection } from '../demo/fake-git-host-token.ts';
 import { collect } from '../git-host/collect.ts';
 import { issueDetail } from '../git-host/query.ts';
 import type { IssueOutcome } from '../git-host/types.ts';
@@ -106,7 +107,11 @@ export function outcomeContext(): OutcomeContext {
     work: () => work,
     collected: async (data, now = new Date(T2)) => {
       const root = await addProject(database(), work, 'app', data);
-      const result = await collect(database(), { hasFactory, now: () => now });
+      const result = await collect(database(), {
+        ...(await fakeCollection()),
+        hasFactory,
+        now: () => now,
+      });
       expect(result.failures).toEqual([]);
       return root;
     },

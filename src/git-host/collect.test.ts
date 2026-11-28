@@ -1,4 +1,4 @@
-import { mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { eq } from 'drizzle-orm';
@@ -29,7 +29,14 @@ import {
   T2,
 } from '../test/git-host.ts';
 import { createTestDatabase } from '../test/postgres.ts';
-import { collect, collectSummary } from './collect.ts';
+import { fakeCollection, giveFakeToken } from '../demo/fake-git-host-token.ts';
+import {
+  type CollectOptions,
+  type CollectResult,
+  collect,
+  collectSummary,
+} from './collect.ts';
+import { hostCliRunner } from '../team/host-cli.ts';
 import { collectionStatus, issueDetail } from './query.ts';
 import { lookupIssues } from './work-items.ts';
 
@@ -51,10 +58,16 @@ function project(name: string, data: FakeGitHostData): Promise<string> {
   return addProject(db, work, name, data);
 }
 
+async function collectAll(
+  options: Partial<CollectOptions> = {},
+): Promise<CollectResult> {
+  return collect(db, { ...(await fakeCollection()), hasFactory, ...options });
+}
+
 describe('collect', () => {
   it('reads every issue and request of a GitHub repository on the first run', async () => {
     const root = await project('app', github());
-    const result = await collect(db, { hasFactory });
+    const result = await collectAll();
     expect(collectSummary(result)).toEqual([
       'Collected 1 projects: 2 issues and 3 pull or merge requests updated.',
     ]);
@@ -126,10 +139,7 @@ describe('collect', () => {
 
   it('then reads only what changed since the start of the last successful run', async () => {
     const root = await project('app', github());
-    await collect(db, {
-      hasFactory,
-      now: clock('2026-03-03T08:00:00.500Z', T2),
-    });
+    await collectAll({ now: clock('2026-03-03T08:00:00.500Z', T2) });
     await writeFakeGitHostData(root, {
       ...github(),
       issues: [
@@ -140,7 +150,7 @@ describe('collect', () => {
       log: join(root, 'calls.log'),
     });
     await rm(join(root, 'calls.log'));
-    const result = await collect(db, { hasFactory });
+    const result = await collectAll();
     expect(result).toMatchObject({ projects: 1, issues: 1, requests: 1 });
     const log = await calls(root);
     expect(log[0]?.args).toContain(
@@ -168,7 +178,7 @@ describe('collect', () => {
       ),
     );
     const root = await project('big', github({ issues, requests: [] }));
-    const result = await collect(db, { hasFactory });
+    const result = await collectAll();
     expect(result.issues).toBe(230);
     expect(
       (await calls(root)).filter((call) => call.args[0] === 'issue').length,
@@ -178,13 +188,13 @@ describe('collect', () => {
 
   it('keeps a failed project and its data while the others are collected', async () => {
     const app = await project('app', github());
-    await collect(db, { hasFactory });
+    await collectAll();
     await writeFakeGitHostData(app, {
       ...github(),
       fail: 'HTTP 401: Bad credentials (https://api.github.com/graphql)',
     });
     const api = await project('api', github());
-    const result = await collect(db, { hasFactory });
+    const result = await collectAll();
     expect(collectSummary(result)).toEqual([
       'Collected 1 projects: 2 issues and 3 pull or merge requests updated.',
       'Could not read GitHub for app: HTTP 401: Bad credentials (https://api.github.com/graphql).',
@@ -202,47 +212,44 @@ describe('collect', () => {
     expect((await issueDetail(db, app, 1))?.title).toBe('Issue 1');
     expect((await issueDetail(db, api, 1))?.title).toBe('Issue 1');
     await writeFakeGitHostData(app, github());
-    await collect(db, { hasFactory });
+    await collectAll();
     expect((await collectionStatus(db, hasFactory)).failures).toEqual([]);
   });
 
   it('retries a failed run in full from the previous successful start', async () => {
     const app = await project('app', github());
-    await collect(db, { hasFactory, now: clock('2026-03-03T08:00:00Z', T2) });
+    await collectAll({ now: clock('2026-03-03T08:00:00Z', T2) });
     await writeFakeGitHostData(app, {
       ...github(),
       fail: 'network is unreachable',
     });
-    await collect(db, { hasFactory, now: clock('2026-03-04T08:00:00Z', T2) });
+    await collectAll({ now: clock('2026-03-04T08:00:00Z', T2) });
     await writeFakeGitHostData(app, {
       ...github(),
       log: join(app, 'calls.log'),
     });
     await rm(join(app, 'calls.log'));
-    await collect(db, { hasFactory });
+    await collectAll();
     expect((await calls(app))[0]?.args).toContain(
       'sort:updated-asc updated:>=2026-03-03T08:00:00+00:00',
     );
   });
 
-  it('reports a missing CLI, a missing configuration line and a CLI that does not answer', async () => {
-    const missing = await project('missing-cli', github());
-    await writeFile(
-      join(missing, 'docs', 'agents', 'git-host.md'),
-      '- CLI: `factorydeck-no-such-cli`\n- Repository: `example-org/example-app`\n',
-    );
-    const noLine = await project('no-line', github());
-    await writeFile(
-      join(noLine, 'docs', 'agents', 'git-host.md'),
-      '- CLI: `gh`\n',
-    );
+  it('reports a missing CLI and a CLI that does not answer', async () => {
+    await project('app', github());
+    const commands = { github: join(work, 'no-such-gh') };
+    const missing = await collectAll({
+      hostCli: { commands },
+      runHostCli: hostCliRunner({ commands }),
+    });
+    expect(collectSummary(missing).slice(1)).toEqual([
+      'Could not read GitHub for app: gh not found on the server.',
+    ]);
     await project('slow', { ...github(), hang: true });
-    const result = await collect(db, { hasFactory, timeoutMs: 1500 });
+    const result = await collectAll({ timeoutMs: 1500 });
     expect(collectSummary(result).slice(1)).toEqual([
-      'Could not read GitHub for missing-cli: factorydeck-no-such-cli not found.',
-      'Could not read GitHub for no-line: docs/agents/git-host.md has no "- Repository: `<owner>/<name>`" line.',
       expect.stringMatching(
-        /^Could not read GitHub for slow: .*cli did not answer within 2 seconds\.$/,
+        /^Could not read GitHub for slow: .*gh did not answer within 2 seconds\.$/,
       ),
     ]);
   });
@@ -251,7 +258,7 @@ describe('collect', () => {
     await db
       .insert(session)
       .values([{ id: 'plain', project: join(work, 'plain') }, { id: 'none' }]);
-    expect(await collect(db, { hasFactory })).toEqual({
+    expect(await collectAll()).toEqual({
       projects: 0,
       issues: 0,
       requests: 0,
@@ -266,20 +273,21 @@ describe('collect', () => {
       .update(projectTable)
       .set({ remote: 'github.com/example-org/elsewhere' });
 
-    expect(await collect(db, { hasFactory })).toMatchObject({ projects: 0 });
+    expect(await collectAll()).toMatchObject({ projects: 0 });
     expect(await db.select().from(gitHostIssue)).toEqual([]);
   });
 
   it('starts over when the repository changes', async () => {
     const root = await project('app', github());
-    await collect(db, { hasFactory });
+    await collectAll();
     await installFakeGitHost(root, {
       ...github(),
       repository: 'example-org/renamed',
       issues: [ghIssue(10, T1)],
       requests: [],
     });
-    await collect(db, { hasFactory });
+    await giveFakeToken(db, root);
+    await collectAll();
     const lookup = await lookupIssues(db, [
       { project: root, number: 1 },
       { project: root, number: 10 },

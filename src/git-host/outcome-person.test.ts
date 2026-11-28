@@ -14,6 +14,7 @@ import {
   outcomeContext,
   serenity,
 } from '../test/outcome.ts';
+import { fakeCollection } from '../demo/fake-git-host-token.ts';
 import { collect } from './collect.ts';
 
 const ctx = outcomeContext();
@@ -199,7 +200,11 @@ describe('merged after a person', () => {
         },
         autoMerge: true,
       });
-    await collect(ctx.db(), { hasFactory, now: () => new Date(T2) });
+    await collect(ctx.db(), {
+      ...(await fakeCollection()),
+      hasFactory,
+      now: () => new Date(T2),
+    });
     const [first] = await calls(root);
     expect(first?.args.join(' ')).not.toContain('updated:');
     expect(await outcomeOf(root, 1)).toMatchObject({

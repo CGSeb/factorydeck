@@ -13,6 +13,7 @@ import {
 import { hasFactory, factoryFile } from '../ingest/factory.ts';
 import { addProject, calls, clock, ghIssue, T1, T2 } from '../test/git-host.ts';
 import { createTestDatabase } from '../test/postgres.ts';
+import { fakeCollection } from '../demo/fake-git-host-token.ts';
 import { collect } from './collect.ts';
 import { collectionStatus, lookupOutcomes } from './query.ts';
 
@@ -79,7 +80,11 @@ async function storedBugLabel(root: string): Promise<string | null> {
 
 async function collectedProject(factory: string): Promise<string> {
   const root = await addProject(db, work, 'app', data(ISSUES, factory));
-  const result = await collect(db, { hasFactory, now: () => new Date(T2) });
+  const result = await collect(db, {
+    ...(await fakeCollection()),
+    hasFactory,
+    now: () => new Date(T2),
+  });
   expect(result.failures).toEqual([]);
   expect((await collectionStatus(db, hasFactory)).failures).toEqual([]);
   return root;
@@ -139,6 +144,7 @@ describe('kind of each collected issue', () => {
       data(ISSUES, withBugs('bugs:\n  label: bug\n')),
     );
     await collect(db, {
+      ...(await fakeCollection()),
       hasFactory,
       now: clock('2026-03-03T08:00:00.500Z', T2),
     });
@@ -152,7 +158,11 @@ describe('kind of each collected issue', () => {
       log: join(root, 'calls.log'),
     });
     await rm(join(root, 'calls.log'));
-    await collect(db, { hasFactory, now: () => new Date(T2) });
+    await collect(db, {
+      ...(await fakeCollection()),
+      hasFactory,
+      now: () => new Date(T2),
+    });
     expect((await calls(root))[0]?.args).toContain(
       'sort:updated-asc updated:>=2026-03-03T08:00:00+00:00',
     );
@@ -169,7 +179,11 @@ describe('kind of each collected issue', () => {
       factory.replace('label: bug', 'label: Defect'),
     );
     await rm(join(root, 'calls.log'));
-    await collect(db, { hasFactory, now: () => new Date(T2) });
+    await collect(db, {
+      ...(await fakeCollection()),
+      hasFactory,
+      now: () => new Date(T2),
+    });
     expect((await calls(root))[0]?.args).toContain(
       'sort:updated-asc updated:>=2026-03-05T10:00:00+00:00',
     );

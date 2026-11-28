@@ -1,20 +1,49 @@
 import { appendFileSync, readFileSync } from 'node:fs';
-import { FakeGitHostSchema } from './fake-git-host.ts';
+import { dirname } from 'node:path';
+import {
+  FakeGitHostSchema,
+  fakeFactoryAnswer,
+  fakeGitHostToken,
+} from './fake-git-host.ts';
 
 type Row = Record<string, unknown>;
-
-const [dataPath = '', ...args] = process.argv.slice(2);
-const data = FakeGitHostSchema.parse(
-  JSON.parse(readFileSync(dataPath, 'utf8')),
-);
-
-if (data.log !== undefined) {
-  appendFileSync(data.log, `${JSON.stringify({ args, cwd: process.cwd() })}\n`);
-}
 
 function fail(message: string): never {
   process.stderr.write(`${message}\nmore detail on a second line\n`);
   process.exit(1);
+}
+
+function httpFail(status: number, reason: string): never {
+  process.stderr.write(`${reason} (HTTP ${String(status)})\n`);
+  process.exit(1);
+}
+
+const given = process.argv.slice(2);
+const hostname = given.indexOf('--hostname');
+const tokenMode = hostname !== -1;
+const args = tokenMode
+  ? given.filter((_, index) => index !== hostname && index !== hostname + 1)
+  : given;
+const token = process.env['GH_TOKEN'] ?? process.env['GITLAB_TOKEN'] ?? '';
+const dataPath = tokenMode ? token : fakeGitHostToken(process.cwd());
+
+function readData(): string {
+  try {
+    return readFileSync(dataPath, 'utf8');
+  } catch {
+    if (tokenMode) httpFail(401, 'Bad credentials');
+    return fail(`no fake git host data in ${process.cwd()}`);
+  }
+}
+
+const data = FakeGitHostSchema.parse(JSON.parse(readData()));
+const root = dirname(dirname(dataPath));
+
+if (data.log !== undefined) {
+  appendFileSync(
+    data.log,
+    `${JSON.stringify({ args: given, cwd: process.cwd() })}\n`,
+  );
 }
 
 function option(name: string): string | undefined {
@@ -214,11 +243,24 @@ function gitlab(): void {
   );
 }
 
-if (data.fail !== undefined) fail(data.fail);
-if (data.hang === true) {
-  setTimeout(() => undefined, 600_000);
-} else if (data.host === 'github') {
-  github();
-} else {
-  gitlab();
+function factoryEndpoint(): boolean {
+  const answer = fakeFactoryAnswer(data, root, args);
+  if (answer === undefined) return false;
+  if (answer.status !== 200) httpFail(answer.status, 'Not Found');
+  process.stdout.write(answer.text);
+  return true;
 }
+
+function answer(): void {
+  if (tokenMode && factoryEndpoint()) return;
+  if (!tokenMode && data.fail !== undefined) fail(data.fail);
+  if (!tokenMode && data.hang === true) {
+    setTimeout(() => undefined, 600_000);
+  } else if (data.host === 'github') {
+    github();
+  } else {
+    gitlab();
+  }
+}
+
+answer();

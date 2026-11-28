@@ -1,12 +1,6 @@
-import {
-  type FactorySettings,
-  FactorySettingsError,
-  readFactorySettings,
-} from '../factory/settings.ts';
-import { GitHostConfigError } from './config.ts';
+import type { FactorySettings } from '../factory/settings.ts';
 import { bugLabelOf } from './kind.ts';
 import type { StageLabels } from './outcome.ts';
-import type { GitHostName } from './types.ts';
 
 export interface ProjectOutcomeSettings {
   labels: StageLabels;
@@ -26,25 +20,16 @@ function stageLabels(settings: FactorySettings): StageLabels {
   };
 }
 
-export async function readOutcomeSettings(
-  root: string,
-  gitHost: GitHostName,
-): Promise<ProjectOutcomeSettings> {
-  try {
-    const settings = await readFactorySettings(root);
-    const labels = stageLabels(settings);
-    return {
-      labels,
-      autoMerge: settings.flag('build.auto_merge') ?? null,
-      bugLabel: bugLabelOf(settings.text('bugs.label'), [
-        settings.text('issues.labels.spec'),
-        ...Object.values(labels),
-      ]),
-    };
-  } catch (error) {
-    if (error instanceof FactorySettingsError) {
-      throw new GitHostConfigError(error.message, gitHost);
-    }
-    throw error;
-  }
+export function outcomeSettingsOf(
+  settings: FactorySettings,
+): ProjectOutcomeSettings {
+  const labels = stageLabels(settings);
+  return {
+    labels,
+    autoMerge: settings.flag('build.auto_merge') ?? null,
+    bugLabel: bugLabelOf(settings.text('bugs.label'), [
+      settings.text('issues.labels.spec'),
+      ...Object.values(labels),
+    ]),
+  };
 }

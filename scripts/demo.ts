@@ -1,13 +1,17 @@
 import { spawn } from 'node:child_process';
 import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { delimiter, dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import pg from 'pg';
 import { loadRootEnvFile, validateEnv } from '../src/config/env.ts';
 import { createDatabase } from '../src/db/client.ts';
 import { createDemoManager, demoSignInLine } from '../src/demo/account.ts';
+import {
+  FAKE_SECRET_KEY,
+  fakeCollection as fakeGitHostCollection,
+} from '../src/demo/fake-git-host-token.ts';
 import { addDemoProjects, recordDemoRemotes } from '../src/demo/projects.ts';
 import { writeDemoCodexSessions } from '../src/demo/codex-sessions.ts';
 import {
@@ -69,15 +73,20 @@ await writeDemoCodexSessions(
 const config = join(folder, 'factorydeck.yml');
 await writeDemoConfig(config, projects);
 
+const fakeCollection = await fakeGitHostCollection();
 const { db, close } = createDatabase(demoUrl);
 try {
   await migrate(db, { migrationsFolder: join(ROOT, 'drizzle') });
   await createDemoManager(db, now);
   console.log(demoSignInLine());
   await recordDemoRemotes(db, projects);
-  if (!values['no-projects']) await addDemoProjects(db, now);
+  if (!values['no-projects']) await addDemoProjects(db, now, projects);
   console.log(summaryLine(await ingest(db, folder, { codexFolder })));
-  console.log(collectSummary(await collect(db, { hasFactory })).join('\n'));
+  console.log(
+    collectSummary(await collect(db, { ...fakeCollection, hasFactory })).join(
+      '\n',
+    ),
+  );
   if (values['lost-factory']) {
     await rm(factoryFile(demoProjectRoot(projects, EXAMPLE_API)));
   }
@@ -97,6 +106,11 @@ const server = spawn(
       CODEX_SESSIONS_DIR: codexFolder,
       FACTORYDECK_CONFIG: config,
       FACTORYDECK_PORT: String(port),
+      FACTORYDECK_SECRET_KEY: FAKE_SECRET_KEY,
+      PATH: [
+        dirname(fakeCollection.hostCli.commands.github),
+        process.env['PATH'] ?? '',
+      ].join(delimiter),
     },
   },
 );
