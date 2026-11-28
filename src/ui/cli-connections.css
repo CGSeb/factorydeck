@@ -19,3 +19,7 @@
   font-family: var(--fd-font-mono);
   overflow-wrap: anywhere;
 }
+
+.fd-table-scroll .fd-cli-connections-table td.fd-invitation-actions {
+  text-align: right;
+}
