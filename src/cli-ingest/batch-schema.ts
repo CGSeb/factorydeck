@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CLOSING_LINE_MAX_LENGTH } from '../ingest/records.ts';
 
 export const AGENTS = ['claude-code', 'codex'] as const;
 export type Agent = (typeof AGENTS)[number];
@@ -42,6 +43,38 @@ const apiCallSchema = z.object({
   outputTokens: whole,
 });
 
+const recordId = z
+  .string()
+  .min(1, 'Record id is empty')
+  .max(MAX_ID_LENGTH, `Record id is over ${MAX_ID_LENGTH} characters`);
+
+const skillLaunchSchema = z.object({
+  recordId,
+  at: time,
+  skill: z.string().min(1, 'Skill is empty'),
+  subAgentId: id.nullable().optional(),
+});
+
+const promptSchema = z.object({
+  recordId,
+  at: time,
+  promptId: z.string().nullable().default(null),
+  command: z.string().min(1, 'Command is empty').nullable().default(null),
+});
+
+const closingLineSchema = z.object({
+  recordId,
+  at: time,
+  position: whole,
+  line: z
+    .string()
+    .min(1, 'Line is empty')
+    .max(
+      CLOSING_LINE_MAX_LENGTH,
+      `Line is over ${CLOSING_LINE_MAX_LENGTH} characters`,
+    ),
+});
+
 const sessionFieldsSchema = z.object({
   cwd: z.string().nullable().default(null),
   gitBranch: z.string().default(''),
@@ -75,6 +108,9 @@ const threadSchema = z
     session: sessionFieldsSchema.optional(),
     subAgent: subAgentFieldsSchema.optional(),
     apiCalls: z.array(apiCallSchema).default([]),
+    skillLaunches: z.array(skillLaunchSchema).default([]),
+    prompts: z.array(promptSchema).default([]),
+    closingLines: z.array(closingLineSchema).default([]),
   })
   .superRefine((thread, context) => {
     const expected = fileKeyOf(
@@ -110,6 +146,29 @@ const threadSchema = z
         message: 'A sub-agent log needs its sub-agent fields',
       });
     }
+    if (thread.subAgentId !== null) {
+      for (const field of ['prompts', 'closingLines'] as const) {
+        if (thread[field].length > 0) {
+          context.addIssue({
+            code: 'custom',
+            path: [field],
+            message: `A sub-agent log has no ${field === 'prompts' ? 'prompts' : 'closing lines'}`,
+          });
+        }
+      }
+    }
+    thread.skillLaunches.forEach((launch, index) => {
+      if (
+        launch.subAgentId !== undefined &&
+        launch.subAgentId !== thread.subAgentId
+      ) {
+        context.addIssue({
+          code: 'custom',
+          path: ['skillLaunches', index, 'subAgentId'],
+          message: 'Expected the subAgentId of the thread',
+        });
+      }
+    });
   });
 
 export const batchSchema = z
@@ -135,6 +194,15 @@ export type Batch = z.infer<typeof batchSchema>;
 export type BatchInput = z.input<typeof batchSchema>;
 export type BatchThread = Batch['threads'][number];
 export type BatchApiCall = BatchThread['apiCalls'][number];
+
+function recordsOf(thread: BatchThread): number {
+  return (
+    thread.apiCalls.length +
+    thread.skillLaunches.length +
+    thread.prompts.length +
+    thread.closingLines.length
+  );
+}
 
 export interface BatchCounts {
   sessions: number;
@@ -164,7 +232,7 @@ export function checkBatch(value: unknown): BatchCheck {
     return { status: 'too-large', limit: 'threads' };
   }
   const records = threads.reduce(
-    (total, thread) => total + thread.apiCalls.length,
+    (total, thread) => total + recordsOf(thread),
     0,
   );
   if (records > MAX_RECORDS) return { status: 'too-large', limit: 'records' };
