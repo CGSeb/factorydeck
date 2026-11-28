@@ -1,8 +1,7 @@
 import { useCallback, useState } from 'react';
 import type { TeamAccountRow } from '../team/types.ts';
 import type { CreateResetLink, CreatedResetLink } from './reset-api.ts';
-import type { AccountChangeOutcome } from './role-change-api.ts';
-import type { RunChange } from './team-status-actions.ts';
+import type { TeamChangeOutcome, TeamChanges } from './team-changes.ts';
 
 export interface ResetLinks {
   links: ReadonlyMap<number, CreatedResetLink>;
@@ -30,7 +29,7 @@ export function deactivatedLinks(
 
 export function useResetLinks(
   createResetLink: CreateResetLink | undefined,
-  run: RunChange,
+  run: TeamChanges['run'],
   accounts: readonly TeamAccountRow[] | undefined,
 ): ResetLinks {
   const [links, setLinks] = useState<ReadonlyMap<number, CreatedResetLink>>(
@@ -41,11 +40,11 @@ export function useResetLinks(
   const create = useCallback(
     (account: TeamAccountRow) => {
       if (createResetLink === undefined) return;
-      run(account.id, async (): Promise<AccountChangeOutcome> => {
+      run(account.id, async (): Promise<TeamChangeOutcome> => {
         const outcome = await createResetLink(account.id);
         if (outcome.status !== 'created') return outcome;
         setLinks((current) => new Map(current).set(account.id, outcome.link));
-        return { status: 'changed', account };
+        return { status: 'done' };
       });
     },
     [createResetLink, run],

@@ -19,7 +19,7 @@ import {
   useCopyState,
 } from './invite-dialog-state.ts';
 import { useResetLinks } from './reset-links.ts';
-import type { RunChange } from './team-status-actions.ts';
+import type { TeamChanges } from './team-changes.ts';
 import type { TeamAction, TeamTableProps } from './TeamTable.tsx';
 import './team.css';
 
@@ -154,7 +154,7 @@ export function useTeamResetRows({
   createResetLink: CreateResetLink | undefined;
   origin: string;
   copy: WriteClipboard;
-  run: RunChange;
+  run: TeamChanges['run'];
   accounts: readonly TeamAccountRow[] | undefined;
 }): TeamResetRows {
   const { links, create, close } = useResetLinks(

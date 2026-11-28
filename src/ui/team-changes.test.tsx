@@ -121,4 +121,69 @@ describe('useTeamChanges', () => {
     await answerList(withBruno('dev'));
     expect(hook.result.current.view?.status).toBe('ok');
   });
+
+  it.each([
+    ['the first one started answers first', ['first', 'second']],
+    ['the last one started answers first', ['second', 'first']],
+  ] as const)(
+    'with two actions running, shows the failure of the last one started when %s',
+    async (_, order) => {
+      const { answerList, hook } = setUp();
+      await answerList(withBruno('dev'));
+      const answer: Record<string, (outcome: AccountChangeOutcome) => void> =
+        {};
+      act(() => {
+        hook.result.current.run(
+          4,
+          () =>
+            new Promise((resolve) => {
+              answer['first'] = resolve;
+            }),
+        );
+        hook.result.current.run(
+          2,
+          () =>
+            new Promise((resolve) => {
+              answer['second'] = resolve;
+            }),
+        );
+      });
+      for (const which of order) {
+        await act(async () => {
+          answer[which]?.({ status: 'failed', message: `${which} failed` });
+          await Promise.resolve();
+        });
+      }
+      expect(hook.result.current.message).toEqual({
+        accountId: 2,
+        text: 'second failed',
+      });
+      expect(hook.result.current.busy.size).toBe(0);
+    },
+  );
+
+  it('counts a done action as no row change: a list loaded meanwhile stays shown', async () => {
+    const { answerList, hook, bruno } = setUp();
+    await answerList(withBruno('dev'));
+    let finish: (() => void) | undefined;
+    act(() => {
+      hook.result.current.run(
+        4,
+        () =>
+          new Promise((resolve) => {
+            finish = () => {
+              resolve({ status: 'done' });
+            };
+          }),
+      );
+    });
+    await answerList(withBruno('manager'));
+    await act(async () => {
+      finish?.();
+      await Promise.resolve();
+    });
+    expect(bruno()?.role).toBe('manager');
+    expect(hook.result.current.busy.size).toBe(0);
+    expect(hook.result.current.message).toBeUndefined();
+  });
 });
