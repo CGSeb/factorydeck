@@ -29,6 +29,7 @@ import {
 } from './frictions-api.ts';
 import { occurrencesLoader, outputLoader } from './occurrences-api.ts';
 import { collectionLoader, collectionRefresher } from './git-host-api.ts';
+import { tokenRemover, tokenSaver } from './git-host-token-api.ts';
 import { overviewLoader } from './overview-api.ts';
 import { rolesLoader } from './roles-api.ts';
 import { sessionLoader, sessionsLoader } from './sessions-api.ts';
@@ -111,6 +112,8 @@ const saveProject = projectSaver(gate.fetch);
 const removeProject = projectRemover(gate.fetch);
 const loadRoleRules = roleRulesLoader(gate.fetch);
 const saveRoleRules = roleRulesSaver(gate.fetch);
+const saveToken = tokenSaver(gate.fetch);
+const removeToken = tokenRemover(gate.fetch);
 const loadCliConnections = cliConnectionsLoader(gate.fetch);
 const disconnectCliConnection = cliConnectionDisconnecter(gate.fetch);
 const root = document.querySelector('#root');
@@ -161,6 +164,8 @@ if (root) {
       removeProject={removeProject}
       loadRoleRules={loadRoleRules}
       saveRoleRules={saveRoleRules}
+      saveToken={saveToken}
+      removeToken={removeToken}
       loadCliConnections={loadCliConnections}
       disconnectCliConnection={disconnectCliConnection}
       signIn={signIn}

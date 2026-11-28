@@ -2,29 +2,26 @@ import { eq, sql } from 'drizzle-orm';
 import type { FieldError } from '../auth/types.ts';
 import type { Database } from '../db/client.ts';
 import { account, project } from '../db/schema.ts';
+import {
+  CHOOSE_GIT_HOST,
+  NO_SECRET_KEY,
+  hostOf,
+  knownGitHost,
+} from './git-host-kind.ts';
 import type { GitHostKind } from './host-cli.ts';
 import { PROJECT_LOCK } from './remove-project.ts';
+
+export { CHOOSE_GIT_HOST, NO_SECRET_KEY, hostOf, knownGitHost };
 
 export const MAX_TOKEN_LENGTH = 1000;
 export const TOKEN_REQUIRED = 'Token is required';
 export const TOKEN_LENGTH_ERROR = 'At most 1000 characters';
-export const CHOOSE_GIT_HOST = 'Choose GitHub or GitLab';
-export const NO_SECRET_KEY = 'No secret key: set FACTORYDECK_SECRET_KEY';
 export const REMOTE_CHANGED = 'The remote changed during the check: try again';
-
-const KNOWN_HOSTS: Record<string, GitHostKind> = {
-  'github.com': 'github',
-  'gitlab.com': 'gitlab',
-};
 
 const ALWAYS: Record<GitHostKind, string> = {
   github: 'GitHub.com is always GitHub',
   gitlab: 'GitLab.com is always GitLab',
 };
-
-export function hostOf(remote: string): string {
-  return remote.split('/')[0] ?? '';
-}
 
 export function repositoryPathOf(remote: string): string {
   return remote.split('/').slice(1).join('/');
@@ -32,10 +29,6 @@ export function repositoryPathOf(remote: string): string {
 
 export function isGitHostKind(value: unknown): value is GitHostKind {
   return value === 'github' || value === 'gitlab';
-}
-
-export function knownGitHost(remote: string): GitHostKind | undefined {
-  return KNOWN_HOSTS[hostOf(remote)];
 }
 
 export function gitHostOf(

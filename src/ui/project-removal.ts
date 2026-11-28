@@ -4,9 +4,14 @@ import type {
   RemoveProject,
   TeamProject,
 } from './projects-api.ts';
+import type { GitHostKind } from './git-host-token-api.ts';
 import type { RemoveDialogState } from './RemoveProjectDialog.tsx';
 
-export type ProjectRow = TeamProject & { sessions?: number };
+export type ProjectRow = TeamProject & {
+  sessions?: number;
+  gitHost?: GitHostKind | null;
+  tokenSet?: boolean;
+};
 
 export interface Removal {
   project: TeamProject;
