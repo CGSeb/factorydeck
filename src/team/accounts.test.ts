@@ -3,7 +3,15 @@ import { byTeamOrder } from './accounts.ts';
 import type { TeamAccount } from './types.ts';
 
 function row(name: string, email: string, active = true): TeamAccount {
-  return { id: 0, name, email, role: 'dev', active, lastSignInAt: null };
+  return {
+    id: 0,
+    name,
+    email,
+    role: 'dev',
+    active,
+    lastSignInAt: null,
+    cliConnections: 0,
+  };
 }
 
 describe('byTeamOrder', () => {

@@ -16,6 +16,7 @@ import {
   createApp,
 } from '../server/app.ts';
 import { teamAccounts } from '../team/accounts.ts';
+import { teamCliConnections } from '../team/cli-connections.ts';
 import { changeStatus } from '../team/account-status.ts';
 import { changeRole } from '../team/change-role.ts';
 import { invitations } from '../team/invitations.ts';
@@ -74,11 +75,13 @@ function accountSources(
       signInLimit: harness.signInLimit,
     },
     team: {
-      accounts: () => teamAccounts(db),
-      changeRole: (request) => changeRole(db, request),
+      accounts: () => teamAccounts(db, harness.clock),
+      changeRole: (request) =>
+        changeRole(db, { ...request, now: harness.clock }),
       invitations: invitations(db, { now: () => harness.clock }),
       changeStatus: (request) => changeStatus(db, request),
       resetLink: resetLinks(db, () => harness.clock).create,
+      cliConnections: teamCliConnections(db, () => harness.clock),
     },
     resets: resetLinks(db, () => harness.clock),
     admin: { projects: projectStore(db, () => harness.clock) },

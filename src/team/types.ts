@@ -7,6 +7,7 @@ export interface TeamAccount {
   role: Role;
   active: boolean;
   lastSignInAt: string | null;
+  cliConnections: number;
 }
 
 export interface TeamAccountRow extends TeamAccount {
@@ -15,6 +16,17 @@ export interface TeamAccountRow extends TeamAccount {
 
 export type TeamResponse =
   | { status: 'ok'; refreshSeconds: number; accounts: TeamAccountRow[] }
+  | { status: 'unreachable'; refreshSeconds: number };
+
+export interface TeamCliConnection {
+  id: number;
+  machine: string;
+  createdAt: string;
+  lastUsedAt: string;
+}
+
+export type TeamCliConnectionsResponse =
+  | { status: 'ok'; refreshSeconds: number; connections: TeamCliConnection[] }
   | { status: 'unreachable'; refreshSeconds: number };
 
 export const MANAGERS_ONLY = 'Managers only';

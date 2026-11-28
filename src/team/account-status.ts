@@ -12,6 +12,7 @@ import {
   leavesAnActiveManager,
   lockActiveManagers,
 } from './change-role.ts';
+import { teamAccountRow } from './team-columns.ts';
 import type { TeamAccount } from './types.ts';
 
 export const ACTIVE_INVALID = 'Active must be true or false';
@@ -32,15 +33,6 @@ export interface StatusChangeRequest {
   now: Date;
 }
 
-const teamColumns = {
-  id: account.id,
-  name: account.name,
-  email: account.email,
-  role: account.role,
-  active: account.active,
-  lastSignInAt: account.lastSignInAt,
-};
-
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 
 export function activeChangeOf(
@@ -49,18 +41,6 @@ export function activeChangeOf(
   return typeof active === 'boolean'
     ? { active }
     : { refusal: { error: ACTIVE_INVALID, field: 'active' } };
-}
-
-async function accountRow(
-  tx: Transaction,
-  id: number,
-): Promise<TeamAccount | undefined> {
-  const [row] = await tx
-    .select(teamColumns)
-    .from(account)
-    .where(eq(account.id, id));
-  if (row === undefined) return undefined;
-  return { ...row, lastSignInAt: row.lastSignInAt?.toISOString() ?? null };
 }
 
 async function deactivate(
@@ -109,12 +89,12 @@ export function changeStatus(
 ): Promise<StatusChangeOutcome> {
   return db.transaction(async (tx): Promise<StatusChangeOutcome> => {
     const activeManagers = await lockActiveManagers(tx);
-    const requester = await accountRow(tx, requesterId);
+    const requester = await teamAccountRow(tx, requesterId, now);
     if (requester === undefined || !requester.active) {
       return { status: 'signed-out' };
     }
     if (requester.role !== 'manager') return { status: 'managers-only' };
-    const target = await accountRow(tx, accountId);
+    const target = await teamAccountRow(tx, accountId, now);
     if (target === undefined) return { status: 'not-found' };
     if ('refusal' in change) {
       return { status: 'invalid', refusal: change.refusal };
@@ -136,6 +116,13 @@ export function changeStatus(
     } else {
       await deactivate(tx, accountId, now);
     }
-    return { status: 'changed', account: { ...target, active } };
+    return {
+      status: 'changed',
+      account: {
+        ...target,
+        active,
+        cliConnections: active ? target.cliConnections : 0,
+      },
+    };
   });
 }

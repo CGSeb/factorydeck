@@ -143,9 +143,10 @@ A request with no body passes both. Only then does a missing session answer `401
 A manager sees a `Team` link in the sidebar, after `Roles` and followed only by [`Projects`](projects.md); it opens `/team`, the list of every account of the instance. A dev sees no such link.
 
 - **Header**: `Team`, with the summary `<n> accounts · <m> managers`. `<n>` counts every account and `<m>` every account with role `manager`, deactivated ones included; one reads `1 account` and `1 manager`. The page has no period pills; the project select stays in the sidebar and changes nothing here.
-- **Table**: the columns `Name`, `Email`, `Role` (`Manager` or `Dev`), `Status` (`Active` or `Deactivated`) and `Last sign-in`. Every account is listed, with no paging: active accounts first, then by name without letter case, then by email. The email shows as stored. The manager's own row carries a small muted `You` tag after the name. Deactivated rows are in muted text. Long names and emails wrap; a table wider than the page scrolls inside its box.
+- **Table**: the columns `Name`, `Email`, `Role` (`Manager` or `Dev`), `Status` (`Active` or `Deactivated`), `Last sign-in` and `CLI`. Every account is listed, with no paging: active accounts first, then by name without letter case, then by email. The email shows as stored. The manager's own row carries a small muted `You` tag after the name. Deactivated rows are in muted text. Long names and emails wrap; a table wider than the page scrolls inside its box.
 - **Last sign-in** reads as elsewhere (`just now`, `3 min ago`, `2 h ago`, `5 d ago`), with the exact date (`22 Nov, 17:33`) in a tooltip; an account that never signed in reads `Never`.
-- **Actions**: each row of another account gets an actions menu (the `⋯` button at the end of the row); the manager's own row has none. An active dev's menu offers `Make manager`, an active manager's `Make dev` (see [Changing a role](#changing-a-role)), then `Reset password link` (see [Reset links](#reset-links)), and the menu of an active account ends with `Deactivate`, in the danger colour. A deactivated account's menu offers only `Reactivate` (see [Deactivating an account](#deactivating-an-account)).
+- **CLI** is the number of the account's active [CLI connections](cli.md#cli-connections), right-aligned, or `—` for none; expired connections are not counted, and a deactivated account has none. See [CLI connections of the team](#cli-connections-of-the-team).
+- **Actions**: every row gets an actions menu (the `⋯` button at the end of the row). An active dev's menu offers `Make manager`, an active manager's `Make dev` (see [Changing a role](#changing-a-role)), then `Reset password link` (see [Reset links](#reset-links)), then `CLI connections` (see [CLI connections of the team](#cli-connections-of-the-team)), and the menu of an active account ends with `Deactivate`, in the danger colour. A deactivated account's menu offers `Reactivate` (see [Deactivating an account](#deactivating-an-account)), then `CLI connections`. The manager's own row offers only `CLI connections`.
 - **Invite**: a button in the header, shown once the list has loaded (not while it loads, on the refusal or while the database is unreachable), opens the [invite dialog](#inviting-someone).
 - **Pending invitations**: under the accounts, a section with the columns `Email`, `Role`, `Invited by` and `Expires`, then `New link` and `Revoke` on each row. It is hidden when no invitation is pending. See [Invitations](#invitations).
 
@@ -162,7 +163,7 @@ The refusal also replaces a table already shown: a manager made dev meanwhile se
 
 ### Team routes
 
-`GET /api/team/accounts` answers `200` with `{ "status": "ok", "refreshSeconds": <n>, "accounts": [...] }`, in the order of the table. Each account has `id`, `name`, `email`, `role`, `active`, `lastSignInAt` (ISO 8601, or `null`) and `you` (`true` on the requester's own account only). While the database is unreachable, it answers `503` with `{ "status": "unreachable", "refreshSeconds": <n> }`.
+`GET /api/team/accounts` answers `200` with `{ "status": "ok", "refreshSeconds": <n>, "accounts": [...] }`, in the order of the table. Each account has `id`, `name`, `email`, `role`, `active`, `lastSignInAt` (ISO 8601, or `null`), `cliConnections` (the number of its CLI connections that have not expired) and `you` (`true` on the requester's own account only). While the database is unreachable, it answers `503` with `{ "status": "unreachable", "refreshSeconds": <n> }`.
 
 The role is read from the session's account at each request, so a change of role counts from the next request. When several answers apply to a path under `/api/team/`, the first wins: `413`, then `415`, then `401` (or `503`), as for every route; then `403` with `{ "error": "Managers only" }` for a dev, on any path under `/api/team/`, unknown ones included; then `404` with `{ "error": "Not found" }` for a manager on an unknown one.
 
@@ -184,6 +185,24 @@ The new role counts from the person's next request (the role is read at each one
 | `200`  | The account; a role it already has answers it unchanged and writes nothing.                                                                                                                                                                                          |
 
 When several answers apply, the first wins: the chain of the [team routes](#team-routes), then `404`, then `400`, then `409` yourself, then `409` deactivated, then `409` last active manager. The change runs in one transaction that locks the active managers and reads the requester again: one deactivated meanwhile gets `401` `{ "error": "Not signed in" }`, one made dev meanwhile `403` `{ "error": "Managers only" }`. So two changes at the same time never leave the team without an active manager; since changing one's own role is refused and the requester must be an active manager, the last-manager answer only comes from such a race.
+
+## CLI connections of the team
+
+A manager sees and disconnects the [CLI connections](cli.md#cli-connections) of anyone on the team, their own included, so a machine is cut off when someone leaves or a laptop is lost. Disconnecting every machine of the team at once is not offered.
+
+- **The dialog**: `CLI connections` in a row's actions menu opens the dialog `<name>'s CLI connections` (a long name wraps in the title), with the line `The machines where this account's CLI is logged in.`, a table of the account's connections and `Close`. The table has the columns `Machine`, `Connected` (the date, `12 Mar`, with the exact time in a tooltip) and `Last used` (`just now`, `3 min ago`, `2 h ago`, `5 d ago`, with the exact time in a tooltip), then `Disconnect` on each row; the most recently used connection comes first. Long machine names wrap.
+- With no connection, the dialog reads `No machine connected.` While the list loads, it reads `Loading…`. A failure shows its message in place of the table: `Database unreachable. Start it with pnpm db:up.` on a `503`, `Could not reach the server` on a network error or any other answer; a `403` shows `Only managers can manage the team.`
+- **Disconnect** asks `Disconnect <machine>?` with the text `Its CLI stops sending until you log in again.` and the buttons `Cancel` and `Disconnect`, in place of the list. `Cancel` (or Escape) comes back to the list. While the request runs, the button reads `Disconnecting…` and is disabled, and Escape and `Cancel` do nothing. Once it is done, the list comes back without that machine; its token is refused from its next request. A failure keeps the question and shows its message under it, so `Disconnect` can be tried again. A connection already gone (disconnected elsewhere, or expired) counts as done.
+- **Closing**: `Close`, Escape or a click outside closes the dialog and gives the focus back to the row's actions button. When a machine was disconnected, the Team page reloads, so the `CLI` column shows the new count.
+
+### Team CLI connection routes
+
+| Route                                                         | Answer                                                                                                                                                                                                                      |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/team/accounts/<id>/cli-connections`                 | `200` with `{ "status": "ok", "refreshSeconds": <n>, "connections": [...] }`: each connection has `id`, `machine`, `createdAt` and `lastUsedAt` (ISO 8601), the most recently used first. Expired connections are left out. |
+| `DELETE /api/team/accounts/<id>/cli-connections/<connection>` | `204`: the connection is deleted, and its token is refused from the next request. `404` with `{ "error": "Not found" }` when `<connection>` is not a connection of that account that has not expired.                       |
+
+Both answer `404` with `{ "error": "Not found" }` when `<id>` is not a positive whole number without leading zeros or no account has it, and `503` with `{ "status": "unreachable", "refreshSeconds": <n> }` while the database is unreachable. They follow the chain of the [team routes](#team-routes): a dev gets `403` `{ "error": "Managers only" }`.
 
 ## Invitations
 
@@ -257,7 +276,7 @@ curl -i -b cookies -X PATCH http://127.0.0.1:4317/api/team/accounts/4 \
   -H 'content-type: application/json' -d '{"active":false}'
 ```
 
-`PATCH /api/team/accounts/<id>` with `{ "active": false }` or `{ "active": true }` answers `200` with the account in the shape of one row of `GET /api/team/accounts` (`id`, `name`, `email`, `role`, `active`, `lastSignInAt`, `you`), with no envelope. A change that changes nothing (deactivating a deactivated account, reactivating an active one) answers `200` with the account unchanged, and deletes no session.
+`PATCH /api/team/accounts/<id>` with `{ "active": false }` or `{ "active": true }` answers `200` with the account in the shape of one row of `GET /api/team/accounts` (`id`, `name`, `email`, `role`, `active`, `lastSignInAt`, `cliConnections`, `you`), with no envelope. A change that changes nothing (deactivating a deactivated account, reactivating an active one) answers `200` with the account unchanged, and deletes no session.
 
 | Answer | When                                                                                                                                                                                                                                                                                 |
 | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |

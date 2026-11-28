@@ -3,6 +3,7 @@ import type { Role } from '../auth/types.ts';
 import type { Database } from '../db/client.ts';
 import { account } from '../db/schema.ts';
 import type { ChangeRefusal } from './account-change.ts';
+import { teamAccountRow } from './team-columns.ts';
 import type { TeamAccount } from './types.ts';
 
 export const LAST_MANAGER = 'The team needs at least one active manager';
@@ -13,6 +14,7 @@ export interface RoleChangeRequest {
   requesterId: number;
   accountId: number;
   change: { role: Role } | { refusal: ChangeRefusal };
+  now?: Date;
 }
 
 export type RoleChangeOutcome =
@@ -22,15 +24,6 @@ export type RoleChangeOutcome =
   | { status: 'not-found' }
   | { status: 'invalid'; refusal: ChangeRefusal }
   | { status: 'conflict'; error: string };
-
-const teamColumns = {
-  id: account.id,
-  name: account.name,
-  email: account.email,
-  role: account.role,
-  active: account.active,
-  lastSignInAt: account.lastSignInAt,
-};
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 
@@ -50,30 +43,18 @@ export function leavesAnActiveManager(
   return activeManagerIds.some((id) => id !== demotedId);
 }
 
-async function accountRow(
-  tx: Transaction,
-  id: number,
-): Promise<TeamAccount | undefined> {
-  const [row] = await tx
-    .select(teamColumns)
-    .from(account)
-    .where(eq(account.id, id));
-  if (row === undefined) return undefined;
-  return { ...row, lastSignInAt: row.lastSignInAt?.toISOString() ?? null };
-}
-
 export function changeRole(
   db: Database,
-  { requesterId, accountId, change }: RoleChangeRequest,
+  { requesterId, accountId, change, now = new Date() }: RoleChangeRequest,
 ): Promise<RoleChangeOutcome> {
   return db.transaction(async (tx): Promise<RoleChangeOutcome> => {
     const activeManagers = await lockActiveManagers(tx);
-    const requester = await accountRow(tx, requesterId);
+    const requester = await teamAccountRow(tx, requesterId, now);
     if (requester === undefined || !requester.active) {
       return { status: 'signed-out' };
     }
     if (requester.role !== 'manager') return { status: 'managers-only' };
-    const target = await accountRow(tx, accountId);
+    const target = await teamAccountRow(tx, accountId, now);
     if (target === undefined) return { status: 'not-found' };
     if ('refusal' in change) {
       return { status: 'invalid', refusal: change.refusal };

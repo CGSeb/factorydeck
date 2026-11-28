@@ -8,6 +8,7 @@ const row = {
   role: 'manager',
   active: true,
   lastSignInAt: null,
+  cliConnections: 0,
   you: false,
 };
 

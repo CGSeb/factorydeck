@@ -58,6 +58,7 @@ Each approved login creates a **CLI connection**: the account, the machine name,
 
 - A connection expires 30 days after its last use: at 30 days or more without use, its token is refused and the connection is deleted when it is seen.
 - Each request with the token moves its last use, written at most once a minute.
+- A manager sees the connections of every account on the [Team page](accounts.md#cli-connections-of-the-team), and can disconnect any of them there.
 - [Deactivating an account](accounts.md#deactivating-an-account) deletes all its CLI connections, as it deletes its sign-in sessions. Their tokens stay refused after a reactivation: the developer runs `factorydeck login` again.
 
 ## The CLI connections page

@@ -78,7 +78,7 @@ async function showsUnderTheRow(
   const line = canvasElement.querySelector('.fd-team-message-row');
   await expect(line?.textContent).toBe(message);
   await expect(line?.previousElementSibling?.textContent).toContain('Bruno');
-  await expect(line?.querySelector('td')?.colSpan).toBe(6);
+  await expect(line?.querySelector('td')?.colSpan).toBe(7);
   await expect(rowOf(canvasElement, 'Bruno').textContent).toContain('Dev');
   await waitFor(() => expect(actions).toHaveFocus());
 }

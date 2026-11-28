@@ -1,5 +1,5 @@
 import type { Database } from '../db/client.ts';
-import { account } from '../db/schema.ts';
+import { teamRows } from './team-columns.ts';
 import type { TeamAccount } from './types.ts';
 
 function compareText(left: string, right: string): number {
@@ -15,21 +15,9 @@ export function byTeamOrder(left: TeamAccount, right: TeamAccount): number {
   );
 }
 
-export async function teamAccounts(db: Database): Promise<TeamAccount[]> {
-  const rows = await db
-    .select({
-      id: account.id,
-      name: account.name,
-      email: account.email,
-      role: account.role,
-      active: account.active,
-      lastSignInAt: account.lastSignInAt,
-    })
-    .from(account);
-  return rows
-    .map((row) => ({
-      ...row,
-      lastSignInAt: row.lastSignInAt?.toISOString() ?? null,
-    }))
-    .sort(byTeamOrder);
+export async function teamAccounts(
+  db: Database,
+  now: Date = new Date(),
+): Promise<TeamAccount[]> {
+  return (await teamRows(db, now)).sort(byTeamOrder);
 }

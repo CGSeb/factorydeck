@@ -15,6 +15,7 @@ export const aloneManager: TeamAccountRow[] = [
     role: 'manager',
     active: true,
     lastSignInAt: minutesAgo(0),
+    cliConnections: 1,
     you: true,
   },
 ];
@@ -29,6 +30,7 @@ export const someTeam: TeamAccountRow[] = [
     role: 'dev',
     active: true,
     lastSignInAt: minutesAgo(3),
+    cliConnections: 2,
     you: false,
   },
   {
@@ -38,6 +40,7 @@ export const someTeam: TeamAccountRow[] = [
     role: 'manager',
     active: true,
     lastSignInAt: minutesAgo(5 * 24 * 60),
+    cliConnections: 0,
     you: false,
   },
   {
@@ -47,6 +50,7 @@ export const someTeam: TeamAccountRow[] = [
     role: 'dev',
     active: true,
     lastSignInAt: null,
+    cliConnections: 0,
     you: false,
   },
   {
@@ -56,6 +60,7 @@ export const someTeam: TeamAccountRow[] = [
     role: 'dev',
     active: false,
     lastSignInAt: minutesAgo(2 * 60),
+    cliConnections: 0,
     you: false,
   },
 ];

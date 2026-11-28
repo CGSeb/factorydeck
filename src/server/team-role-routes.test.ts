@@ -78,6 +78,7 @@ describe('PATCH /api/team/accounts/<id> with a role', () => {
       role: 'manager',
       active: true,
       lastSignInAt: lastSignInAt.toISOString(),
+      cliConnections: 0,
       you: false,
     });
     const list = (await (

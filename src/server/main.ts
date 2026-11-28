@@ -38,6 +38,7 @@ import { waitingIssues } from '../stats/waiting.ts';
 import { flowStats } from '../stats/flow.ts';
 import { qualityStats } from '../stats/quality.ts';
 import { teamAccounts } from '../team/accounts.ts';
+import { teamCliConnections } from '../team/cli-connections.ts';
 import { changeStatus } from '../team/account-status.ts';
 import { changeRole } from '../team/change-role.ts';
 import { invitations } from '../team/invitations.ts';
@@ -103,6 +104,7 @@ function teamSource(db: Database): TeamSource {
     invitations: invitations(db),
     changeStatus: (request) => changeStatus(db, request),
     resetLink: resetLinks(db).create,
+    cliConnections: teamCliConnections(db),
   };
 }
 

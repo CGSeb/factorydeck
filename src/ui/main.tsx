@@ -50,6 +50,7 @@ import {
 } from './invitations-api.ts';
 import { resetLinkCreator, resetReader, resetSaver } from './reset-api.ts';
 import { teamLoader, withInvitations } from './team-api.ts';
+import { teamCliActions } from './team-cli-api.ts';
 import { projectAdder, projectsLoader } from './projects-api.ts';
 import { activeChanger } from './account-status-api.ts';
 
@@ -91,6 +92,7 @@ const readInvitation = invitationReader();
 const acceptInvitation = invitationAccepter();
 const changeActive = activeChanger(gate.fetch);
 const createResetLink = resetLinkCreator(gate.fetch);
+const cliActions = teamCliActions(gate.fetch);
 const readReset = resetReader();
 const saveReset = resetSaver();
 const signIn = signInSender();
@@ -141,6 +143,7 @@ if (root) {
         acceptInvitation={acceptInvitation}
         changeActive={changeActive}
         createResetLink={createResetLink}
+        cliActions={cliActions}
         readReset={readReset}
         saveReset={saveReset}
         loadReport={loadReport}
