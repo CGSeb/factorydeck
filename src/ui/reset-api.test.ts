@@ -43,7 +43,10 @@ describe('resetLinkCreator', () => {
     });
     expect(
       await resetLinkCreator(answering(404, { error: 'Not found' }))(4),
-    ).toEqual({ status: 'failed', message: 'Not found' });
+    ).toEqual({ status: 'failed', message: SERVER_UNREACHABLE });
+    expect(
+      await resetLinkCreator(answering(403, { error: 'Managers only' }))(4),
+    ).toEqual({ status: 'refused' });
     expect(await resetLinkCreator(answering(503, {}))(4)).toEqual({
       status: 'failed',
       message: DATABASE_UNREACHABLE,

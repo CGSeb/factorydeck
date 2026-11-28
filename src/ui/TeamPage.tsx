@@ -166,14 +166,15 @@ export function TeamPage({
     createResetLink,
     origin,
     copy,
-    team: { busy, message, run },
+    run,
+    accounts: view?.status === 'ok' ? view.accounts : undefined,
   });
-  const status = useStatusActions(changeActive, resets.run);
+  const status = useStatusActions(changeActive, run);
   const now = useNow(fixedNow);
   const invites = useInvitations(invitationActions, reload);
   function rowActions(account: TeamAccountRow): readonly TeamAction[] {
     return status.actionsFor(account, [
-      ...roleActions(account, changeRole, resets.run),
+      ...roleActions(account, changeRole, run),
       ...resets.actionsOf(account),
       ...(actionsFor?.(account) ?? []),
     ]);
@@ -192,8 +193,8 @@ export function TeamPage({
         view={view}
         now={now}
         actionsFor={rowActions}
-        busy={resets.busy}
-        message={resets.message}
+        busy={busy}
+        message={message}
         below={resets.below}
       />
       {invitationActions !== undefined && (

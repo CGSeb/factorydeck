@@ -1,56 +1,57 @@
 import { useCallback, useState } from 'react';
+import type { TeamAccountRow } from '../team/types.ts';
 import type { CreateResetLink, CreatedResetLink } from './reset-api.ts';
-import type { RowMessage } from './team-changes.ts';
+import type { AccountChangeOutcome } from './role-change-api.ts';
+import type { RunChange } from './team-status-actions.ts';
 
 export interface ResetLinks {
   links: ReadonlyMap<number, CreatedResetLink>;
-  busy: ReadonlySet<number>;
-  message: RowMessage | undefined;
-  create: (accountId: number) => void;
+  create: (account: TeamAccountRow) => void;
   close: (accountId: number) => void;
 }
 
-function withoutKey<T>(
+function withoutKeys<T>(
   map: ReadonlyMap<number, T>,
-  key: number,
+  keys: readonly number[],
 ): Map<number, T> {
   const next = new Map(map);
-  next.delete(key);
+  for (const key of keys) next.delete(key);
   return next;
 }
 
-function withoutId(set: ReadonlySet<number>, id: number): Set<number> {
-  const next = new Set(set);
-  next.delete(id);
-  return next;
+export function deactivatedLinks(
+  links: ReadonlyMap<number, unknown>,
+  accounts: readonly TeamAccountRow[] | undefined,
+): number[] {
+  return (accounts ?? [])
+    .filter(({ id, active }) => !active && links.has(id))
+    .map(({ id }) => id);
 }
 
 export function useResetLinks(
   createResetLink: CreateResetLink | undefined,
+  run: RunChange,
+  accounts: readonly TeamAccountRow[] | undefined,
 ): ResetLinks {
   const [links, setLinks] = useState<ReadonlyMap<number, CreatedResetLink>>(
     () => new Map(),
   );
-  const [busy, setBusy] = useState<ReadonlySet<number>>(() => new Set());
-  const [message, setMessage] = useState<RowMessage | undefined>();
+  const closed = deactivatedLinks(links, accounts);
+  if (closed.length > 0) setLinks(withoutKeys(links, closed));
   const create = useCallback(
-    (accountId: number) => {
+    (account: TeamAccountRow) => {
       if (createResetLink === undefined) return;
-      setBusy((current) => new Set(current).add(accountId));
-      setMessage(undefined);
-      void createResetLink(accountId).then((outcome) => {
-        setBusy((current) => withoutId(current, accountId));
-        if (outcome.status === 'created') {
-          setLinks((current) => new Map(current).set(accountId, outcome.link));
-          return;
-        }
-        setMessage({ accountId, text: outcome.message });
+      run(account.id, async (): Promise<AccountChangeOutcome> => {
+        const outcome = await createResetLink(account.id);
+        if (outcome.status !== 'created') return outcome;
+        setLinks((current) => new Map(current).set(account.id, outcome.link));
+        return { status: 'changed', account };
       });
     },
-    [createResetLink],
+    [createResetLink, run],
   );
   const close = useCallback((accountId: number) => {
-    setLinks((current) => withoutKey(current, accountId));
+    setLinks((current) => withoutKeys(current, [accountId]));
   }, []);
-  return { links, busy, message, create, close };
+  return { links, create, close };
 }

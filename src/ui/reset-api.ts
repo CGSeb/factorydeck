@@ -4,6 +4,7 @@ import {
   SERVER_UNREACHABLE,
   isAccount,
 } from './auth-api.ts';
+import { accountChangeOutcome } from './role-change-api.ts';
 
 export const LINK_GONE =
   'This link no longer works. Ask a manager for a new one.';
@@ -17,6 +18,7 @@ export interface CreatedResetLink {
 
 export type ResetLinkOutcome =
   | { status: 'created'; link: CreatedResetLink }
+  | { status: 'refused' }
   | { status: 'failed'; message: string };
 
 export type CreateResetLink = (accountId: number) => Promise<ResetLinkOutcome>;
@@ -104,14 +106,16 @@ export function resetLinkCreator(
     } catch {
       return { status: 'failed', message: SERVER_UNREACHABLE };
     }
-    if (response.status === 503) {
-      return { status: 'failed', message: DATABASE_UNREACHABLE };
+    if (response.status === 201) {
+      const link = createdOf(await bodyOf(response));
+      return link === undefined
+        ? { status: 'failed', message: SERVER_UNREACHABLE }
+        : { status: 'created', link };
     }
-    const body = await bodyOf(response);
-    const link = response.status === 201 ? createdOf(body) : undefined;
-    if (link !== undefined) return { status: 'created', link };
-    const message = response.status === 201 ? undefined : errorOf(body);
-    return { status: 'failed', message: message ?? SERVER_UNREACHABLE };
+    const outcome = await accountChangeOutcome(response);
+    return outcome.status === 'changed'
+      ? { status: 'failed', message: SERVER_UNREACHABLE }
+      : outcome;
   };
 }
 

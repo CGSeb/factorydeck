@@ -4,7 +4,6 @@ import {
   type RefObject,
   useEffect,
   useRef,
-  useState,
 } from 'react';
 import type { TeamAccountRow } from '../team/types.ts';
 import { Icon } from './components/Icon.tsx';
@@ -20,7 +19,6 @@ import {
   useCopyState,
 } from './invite-dialog-state.ts';
 import { useResetLinks } from './reset-links.ts';
-import type { RowMessage } from './team-changes.ts';
 import type { RunChange } from './team-status-actions.ts';
 import type { TeamAction, TeamTableProps } from './TeamTable.tsx';
 import './team.css';
@@ -144,46 +142,34 @@ export function ResetLinkPanel({
 export interface TeamResetRows {
   actionsOf: (account: TeamAccountRow) => TeamAction[];
   below: NonNullable<TeamTableProps['below']>;
-  busy: ReadonlySet<number>;
-  message: RowMessage | undefined;
-  teamStarted: () => void;
-  run: RunChange;
 }
 
 export function useTeamResetRows({
   createResetLink,
   origin,
   copy,
-  team,
+  run,
+  accounts,
 }: {
   createResetLink: CreateResetLink | undefined;
   origin: string;
   copy: WriteClipboard;
-  team: {
-    busy: ReadonlySet<number>;
-    message: RowMessage | undefined;
-    run: RunChange;
-  };
+  run: RunChange;
+  accounts: readonly TeamAccountRow[] | undefined;
 }): TeamResetRows {
-  const { links, busy, message, create, close } =
-    useResetLinks(createResetLink);
-  const [last, setLast] = useState<'team' | 'reset'>('team');
+  const { links, create, close } = useResetLinks(
+    createResetLink,
+    run,
+    accounts,
+  );
   return {
     actionsOf: (account) =>
       createResetLink === undefined || !account.active
         ? []
-        : [
-            {
-              label: RESET_ACTION,
-              onSelect: ({ id }) => {
-                setLast('reset');
-                create(id);
-              },
-            },
-          ],
+        : [{ label: RESET_ACTION, onSelect: create }],
     below: (account): ReactElement | undefined => {
       const link = links.get(account.id);
-      if (link === undefined) return undefined;
+      if (link === undefined || !account.active) return undefined;
       return (
         <ResetLinkPanel
           account={account}
@@ -195,15 +181,6 @@ export function useTeamResetRows({
           }}
         />
       );
-    },
-    busy: busy.size === 0 ? team.busy : new Set([...team.busy, ...busy]),
-    message: last === 'reset' ? message : team.message,
-    teamStarted: () => {
-      setLast('team');
-    },
-    run: (id, send) => {
-      setLast('team');
-      team.run(id, send);
     },
   };
 }

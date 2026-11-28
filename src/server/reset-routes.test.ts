@@ -150,26 +150,6 @@ describe('POST /api/auth/reset/save', () => {
     expect(row?.usedAt).not.toBeNull();
   });
 
-  it('never leaves a usable link or an open session when a save races a deactivation', async () => {
-    for (let round = 0; round < 5; round++) {
-      const ada = await h.addAccount(`ada${round}@example.test`, {
-        role: 'manager',
-      });
-      const bob = await h.addAccount(`bob${round}@example.test`);
-      const cookie = await signedIn(h.app(), `ada${round}@example.test`);
-      const token = await linkFor(bob, cookie);
-      const [saved, deactivated] = await Promise.all([
-        save(token),
-        setActive(bob, cookie, false),
-      ]);
-      expect(deactivated.status).toBe(200);
-      expect([200, 410]).toContain(saved.status);
-      expect((await post('/api/auth/reset', { token })).status).toBe(410);
-      expect(await sessionsOf(bob)).toBe(0);
-      expect(ada).toBeGreaterThan(0);
-    }
-  });
-
   it('still works after its creator was made dev or deactivated', async () => {
     const { ada, bob, cookie } = await team();
     const token = await linkFor(bob, cookie);

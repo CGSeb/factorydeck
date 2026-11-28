@@ -13,6 +13,7 @@ import {
   teamSequence,
 } from './team-fixtures.ts';
 import { TeamPage } from './TeamPage.tsx';
+import { REFUSED_MESSAGE } from './team-view.ts';
 
 const ORIGIN = 'https://deck.example.test';
 const FIRST = 'f'.repeat(43);
@@ -207,8 +208,8 @@ export const Deactivated: Story = {
 };
 
 export const NotFound: Story = {
-  name: 'Failure: unknown account (404)',
-  ...failing('Not found'),
+  name: 'Failure: unknown account (404) reads as unreachable',
+  ...failing(SERVER_UNREACHABLE),
 };
 
 export const DatabaseDown: Story = {
@@ -249,5 +250,73 @@ export const OneMessageLine: Story = {
     await expect(canvas.getByRole('status')).toHaveTextContent('Role refused');
     await chooseReset(canvasElement);
     await waitFor(() => expect(lines()).toEqual(['Not found']));
+  },
+};
+
+export const Refused: Story = {
+  name: 'Failure: made dev meanwhile (403) replaces the table',
+  args: { createResetLink: answering({ status: 'refused' }) },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await chooseReset(canvasElement);
+    await canvas.findByText(REFUSED_MESSAGE);
+    await expect(canvas.queryByRole('table')).toBeNull();
+  },
+};
+
+const bruno = someTeam.find(({ id }) => id === 4);
+if (bruno === undefined) throw new Error('No Bruno');
+const brunoDeactivated = someTeam.map((row) =>
+  row.id === 4 ? { ...row, active: false } : row,
+);
+
+const refreshShows = { deactivated: false };
+
+export const ClosesWhenSeenDeactivated: Story = {
+  name: 'The link line closes when a refresh shows the row deactivated',
+  args: {
+    loadTeam: () =>
+      Promise.resolve({
+        ...teamResponse(refreshShows.deactivated ? brunoDeactivated : someTeam),
+        refreshSeconds: 0.05,
+      }),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    refreshShows.deactivated = false;
+    await chooseReset(canvasElement);
+    await canvas.findByRole('group', { name: PANEL });
+    refreshShows.deactivated = true;
+    await waitFor(() =>
+      expect(canvas.queryByRole('group', { name: PANEL })).toBeNull(),
+    );
+    refreshShows.deactivated = false;
+    await waitFor(() =>
+      expect(canvas.getByRole('button', { name: BRUNO })).toBeEnabled(),
+    );
+    await expect(canvas.queryByRole('group', { name: PANEL })).toBeNull();
+  },
+};
+
+export const ClosesOnDeactivation: Story = {
+  name: 'The link line closes when this manager deactivates the row',
+  args: {
+    changeActive: fn(() =>
+      Promise.resolve<AccountChangeOutcome>({
+        status: 'changed',
+        account: { ...bruno, active: false },
+      }),
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await chooseReset(canvasElement);
+    await canvas.findByRole('group', { name: PANEL });
+    await userEvent.click(canvas.getByRole('button', { name: BRUNO }));
+    await userEvent.click(canvas.getByRole('menuitem', { name: 'Deactivate' }));
+    await userEvent.click(canvas.getByRole('button', { name: 'Deactivate' }));
+    await waitFor(() =>
+      expect(canvas.queryByRole('group', { name: PANEL })).toBeNull(),
+    );
   },
 };
