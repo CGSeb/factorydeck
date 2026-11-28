@@ -33,6 +33,7 @@ export interface AddProjectDialogProps {
   addProject: AddProject;
   onAdded: (project: TeamProject) => void;
   onClose: () => void;
+  initialRemote?: string | undefined;
 }
 
 type Errors = Partial<Record<ProjectField | 'form', string>>;
@@ -85,6 +86,7 @@ function useAddProjectForm(
   addProject: AddProject,
   onAdded: (project: TeamProject) => void,
   inputs: Record<ProjectField, RefObject<HTMLInputElement | null>>,
+  initialRemote: string,
 ): {
   values: ProjectInput;
   change: (next: Partial<ProjectInput>) => void;
@@ -92,7 +94,10 @@ function useAddProjectForm(
   sending: boolean;
   submit: (event: FormEvent<HTMLFormElement>) => Promise<void>;
 } {
-  const [values, setValues] = useState<ProjectInput>({ remote: '', name: '' });
+  const [values, setValues] = useState<ProjectInput>({
+    remote: initialRemote,
+    name: '',
+  });
   const [errors, setErrors] = useState<Errors>({});
   const [sending, setSending] = useState(false);
   const busy = useRef(false);
@@ -238,6 +243,7 @@ export function AddProjectDialog({
   addProject,
   onAdded,
   onClose,
+  initialRemote = '',
 }: AddProjectDialogProps): ReactElement {
   const id = useId();
   const ids = { title: `${id}-title`, text: `${id}-text` };
@@ -250,7 +256,12 @@ export function AddProjectDialog({
   );
   const remote = useRef<HTMLInputElement | null>(null);
   const name = useRef<HTMLInputElement | null>(null);
-  const form = useAddProjectForm(addProject, onAdded, { remote, name });
+  const form = useAddProjectForm(
+    addProject,
+    onAdded,
+    { remote, name },
+    initialRemote,
+  );
   return (
     <DialogFrame dialog={dialog} ids={ids} onClose={onClose}>
       <form

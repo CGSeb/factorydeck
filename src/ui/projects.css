@@ -58,3 +58,8 @@
 .fd-table-scroll .fd-projects-table td.fd-projects-actions {
   text-align: right;
 }
+
+.fd-projects-folders {
+  font-weight: 400;
+  color: var(--fd-muted);
+}

@@ -61,7 +61,13 @@ function slowServer(): {
   return {
     loadProjects: () =>
       later(
-        { status: 'ok', refreshSeconds: 0.02, projects: [stored] } as const,
+        {
+          status: 'ok',
+          refreshSeconds: 0.02,
+          projects: [stored],
+          pendingRemotes: [],
+          noRemote: null,
+        } as const,
         150,
       ),
     saveProject: (_id, changes) => {
@@ -102,6 +108,8 @@ function changingLoader(): LoadProjects {
       status: 'ok',
       refreshSeconds: 0.05,
       projects: [project],
+      pendingRemotes: [],
+      noRemote: null,
     });
   };
 }

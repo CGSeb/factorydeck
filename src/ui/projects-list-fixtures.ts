@@ -3,6 +3,8 @@ import type {
   AddProjectOutcome,
   ListedProject,
   LoadProjects,
+  NoRemote,
+  PendingRemote,
   ProjectsView,
   SaveProject,
   SaveProjectOutcome,
@@ -10,6 +12,8 @@ import type {
   RemoveProjectOutcome,
   TeamProject,
 } from './projects-api.ts';
+
+export const PROJECTS_NOW = new Date('2026-03-12T12:00:00Z');
 
 export const someProjects: ListedProject[] = [
   {
@@ -46,8 +50,35 @@ export const addedProject: TeamProject = {
   createdAt: '2026-03-12T10:00:00Z',
 };
 
-export function projectsResponse(projects: ListedProject[]): ProjectsView {
-  return { status: 'ok', refreshSeconds: 3600, projects };
+export const somePendingRemotes: PendingRemote[] = [
+  {
+    remote: 'github.com/example-org/factorydeck',
+    sessions: 12,
+    firstAt: '2026-03-02T08:00:00Z',
+    lastAt: '2026-03-12T11:40:00Z',
+  },
+  {
+    remote: 'gitlab.example.test/platform/tools/ledger',
+    sessions: 1,
+    firstAt: '2026-03-09T09:15:00Z',
+    lastAt: '2026-03-09T10:30:00Z',
+  },
+];
+
+export const someNoRemote: NoRemote = { sessions: 4, folders: 2 };
+
+export function projectsResponse(
+  projects: ListedProject[],
+  pendingRemotes: PendingRemote[] = [],
+  noRemote: NoRemote | null = null,
+): ProjectsView {
+  return {
+    status: 'ok',
+    refreshSeconds: 3600,
+    projects,
+    pendingRemotes,
+    noRemote,
+  };
 }
 
 export function projectsLoaderOf(view: ProjectsView | undefined): LoadProjects {

@@ -12,8 +12,29 @@ export interface ListedProject extends TeamProject {
   sessions: number;
 }
 
+export interface PendingRemote {
+  remote: string;
+  sessions: number;
+  firstAt: string | null;
+  lastAt: string | null;
+}
+
+export interface NoRemote {
+  sessions: number;
+  folders: number;
+}
+
+export interface RemotesNotAdded {
+  pendingRemotes: PendingRemote[];
+  noRemote: NoRemote | null;
+}
+
 export type ProjectsResponse =
-  | { status: 'ok'; refreshSeconds: number; projects: ListedProject[] }
+  | ({
+      status: 'ok';
+      refreshSeconds: number;
+      projects: ListedProject[];
+    } & RemotesNotAdded)
   | { status: 'unreachable'; refreshSeconds: number };
 
 export interface NewProject {

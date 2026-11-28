@@ -6,7 +6,12 @@ import {
   projectSaver,
   projectsLoader,
 } from './projects-api.ts';
-import { addedProject, someProjects } from './projects-list-fixtures.ts';
+import {
+  addedProject,
+  someNoRemote,
+  somePendingRemotes,
+  someProjects,
+} from './projects-list-fixtures.ts';
 
 function answering(status: number, body: unknown): typeof fetch {
   return () =>
@@ -19,9 +24,17 @@ function answering(status: number, body: unknown): typeof fetch {
 }
 
 describe('projectsLoader', () => {
-  it('reads the projects', async () => {
-    const body = { status: 'ok', refreshSeconds: 10, projects: someProjects };
+  it('reads the projects, the remotes not added and the sessions with no remote', async () => {
+    const body = {
+      status: 'ok',
+      refreshSeconds: 10,
+      projects: someProjects,
+      pendingRemotes: somePendingRemotes,
+      noRemote: someNoRemote,
+    };
     await expect(projectsLoader(answering(200, body))()).resolves.toEqual(body);
+    const none = { ...body, pendingRemotes: [], noRemote: null };
+    await expect(projectsLoader(answering(200, none))()).resolves.toEqual(none);
   });
 
   it('turns a 403 into refused and a 503 into unreachable', async () => {
@@ -36,6 +49,23 @@ describe('projectsLoader', () => {
   });
 
   it('answers nothing for a body it cannot read', async () => {
+    const ok = {
+      status: 'ok',
+      refreshSeconds: 10,
+      projects: [],
+      pendingRemotes: [],
+      noRemote: null,
+    };
+    for (const body of [
+      { ...ok, pendingRemotes: undefined },
+      { ...ok, pendingRemotes: [{ remote: 'a.test/b/c', sessions: '1' }] },
+      { ...ok, noRemote: undefined },
+      { ...ok, noRemote: { sessions: 1 } },
+    ]) {
+      await expect(
+        projectsLoader(answering(200, body))(),
+      ).resolves.toBeUndefined();
+    }
     await expect(
       projectsLoader(
         answering(200, { status: 'ok', refreshSeconds: 10, projects: [{}] }),

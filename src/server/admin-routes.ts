@@ -52,6 +52,7 @@ function projectRoutes(
       status: 'ok',
       refreshSeconds,
       projects: await store.list(),
+      ...(await store.remotesNotAdded()),
     }));
     return c.json(body, body.status === 'ok' ? 200 : 503);
   });

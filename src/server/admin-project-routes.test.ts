@@ -249,6 +249,8 @@ describe('GET /api/admin/projects', () => {
           sessions: 0,
         },
       ],
+      pendingRemotes: [],
+      noRemote: null,
     });
   });
 
@@ -261,6 +263,8 @@ describe('GET /api/admin/projects', () => {
       status: 'ok',
       refreshSeconds: 10,
       projects: [],
+      pendingRemotes: [],
+      noRemote: null,
     });
   });
 
