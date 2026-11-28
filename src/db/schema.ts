@@ -322,5 +322,10 @@ export const markedReport = pgTable(
   (table) => [index().on(table.project, table.reportedAt)],
 );
 
-export { account, accountToken, signInSession } from './auth-schema.ts';
+export {
+  account,
+  accountToken,
+  cliConnection,
+  signInSession,
+} from './auth-schema.ts';
 export { project } from './project-schema.ts';

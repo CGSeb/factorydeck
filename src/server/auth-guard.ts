@@ -7,6 +7,7 @@ import {
   sessionToken,
   setSessionCookie,
 } from './auth-routes.ts';
+import { CLI_PATH_PREFIX } from './cli-routes.ts';
 
 const OPEN_ROUTES = new Set([
   'GET /api/health',
@@ -23,6 +24,7 @@ const WRITE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 export const MAX_BODY_BYTES = 1024 * 1024;
 
 function isOpen(c: Context): boolean {
+  if (c.req.path.startsWith(CLI_PATH_PREFIX)) return true;
   const method = c.req.method === 'HEAD' ? 'GET' : c.req.method;
   return OPEN_ROUTES.has(`${method} ${c.req.path}`);
 }

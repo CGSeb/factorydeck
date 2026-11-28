@@ -8,6 +8,8 @@ import {
 } from '../config/env.ts';
 import { signInSessions } from '../auth/sessions.ts';
 import { signInLimit } from '../auth/sign-in-limit.ts';
+import { cliConnections } from '../cli-login/connections.ts';
+import { pendingLogins } from '../cli-login/pending.ts';
 import { type Setup, firstManagerSetup } from '../auth/setup.ts';
 import { type Database, createDatabase } from '../db/client.ts';
 import { listBugs } from '../bugs/query.ts';
@@ -106,11 +108,12 @@ function teamSource(db: Database): TeamSource {
 
 function accountSources(
   db: Database,
-): Pick<AppOptions, 'team' | 'resets' | 'admin'> {
+): Pick<AppOptions, 'team' | 'resets' | 'admin' | 'cli'> {
   return {
     team: teamSource(db),
     resets: resetLinks(db),
     admin: { projects: projectStore(db) },
+    cli: { logins: pendingLogins(), connections: cliConnections(db) },
   };
 }
 

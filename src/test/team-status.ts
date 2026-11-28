@@ -30,6 +30,9 @@ export const h: AuthHarness = {
   get signInLimit() {
     return harness().signInLimit;
   },
+  get cliLogins() {
+    return harness().cliLogins;
+  },
   app: (up) => harness().app(up),
   addAccount: (email, options) => harness().addAccount(email, options),
   close: () => harness().close(),

@@ -72,3 +72,18 @@ export const accountToken = pgTable(
     ),
   ],
 );
+
+export const cliConnection = pgTable(
+  'cli_connection',
+  {
+    id: bigserial({ mode: 'number' }).primaryKey(),
+    accountId: bigint('account_id', { mode: 'number' })
+      .notNull()
+      .references(() => account.id, { onDelete: 'cascade' }),
+    machine: text().notNull(),
+    tokenHash: text('token_hash').notNull().unique(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }).notNull(),
+  },
+  (table) => [index().on(table.accountId)],
+);

@@ -17,7 +17,7 @@ export interface AuthEnv {
 export const SESSION_COOKIE = 'factorydeck_session';
 const SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 
-function overHttps(c: Context): boolean {
+export function overHttps(c: Context): boolean {
   const forwarded = c.req.header('x-forwarded-proto') ?? '';
   return (
     new URL(c.req.url).protocol === 'https:' ||
