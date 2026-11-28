@@ -25,6 +25,10 @@ export const LOGIN_GONE =
 export const TOO_MANY_LOGINS = 'Too many pending logins, try again later';
 const MAX_MACHINE = 80;
 const BEARER = /^Bearer\s+(?<token>\S+)\s*$/i;
+const OPEN_CLI_ROUTES = new Set([
+  'POST /api/cli/login',
+  'POST /api/cli/login/poll',
+]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -60,6 +64,7 @@ function bearerGuard(
   { fromDatabase }: ApiContext,
 ): MiddlewareHandler<CliEnv> {
   return async (c, next) => {
+    if (OPEN_CLI_ROUTES.has(`${c.req.method} ${c.req.path}`)) return next();
     const signedIn = await fromDatabase(async () => ({
       cli: await connections.authenticate(bearerToken(c)),
     }));
@@ -132,13 +137,13 @@ export function cliRoutes(
   context: ApiContext,
 ): Hono<CliEnv> {
   const routes = new Hono<CliEnv>();
+  routes.use('*', bearerGuard(source.connections, context));
   loginRoutes(routes, source, context);
-  const guard = bearerGuard(source.connections, context);
-  routes.get('/me', guard, (c) => {
+  routes.get('/me', (c) => {
     const { account, machine } = c.get('cli');
     return c.json({ account, machine });
   });
-  routes.post('/logout', guard, async (c) => {
+  routes.post('/logout', async (c) => {
     const { connectionId } = c.get('cli');
     const result = await context.fromDatabase(() =>
       source.connections.disconnect(connectionId),

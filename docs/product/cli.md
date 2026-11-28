@@ -23,6 +23,7 @@ The FactoryDeck CLI runs on a developer's machine and sends their sessions to th
 ### The login request
 
 - `machine` is trimmed, then 1 to 80 characters; otherwise `400` with `{ "error": "Machine is required" }` or `{ "error": "Machine must be at most 80 characters" }` and `"field": "machine"`. Unknown fields are ignored.
+- Like every JSON route, a body that is not `application/json` answers `415` with `{ "error": "JSON body expected" }`, and a body over 1 MB answers `413` (see [Without a session](accounts.md#without-a-session)).
 - `userCode` is 8 characters from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (no `0`, `O`, `1` or `I`), shown `XXXX-XXXX`. The instance reads a code without letter case, dashes and spaces, so `wdjb mjht` is the same code.
 - `verificationUrl` is `<origin>/cli?code=<userCode>`, from the origin of the CLI's request: its `Host`, and `https` when the request came over HTTPS directly or with `X-Forwarded-Proto: https`.
 - A login request lives 10 minutes: at 10 minutes or more it is expired. Pending requests live in the server's memory, so a restart cancels them. At most 1000 are pending at once; beyond, `POST /api/cli/login` answers `503` with `{ "error": "Too many pending logins, try again later" }`.
@@ -57,15 +58,15 @@ Each approved login creates a **CLI connection**: the account, the machine name,
 
 - A connection expires 30 days after its last use: at 30 days or more without use, its token is refused and the connection is deleted when it is seen.
 - Each request with the token moves its last use, written at most once a minute.
-- The token of a deactivated account is refused; its connections stay, and work again if the account is reactivated within their 30 days.
+- [Deactivating an account](accounts.md#deactivating-an-account) deletes all its CLI connections, as it deletes its sign-in sessions. Their tokens stay refused after a reactivation: the developer runs `factorydeck login` again.
 
 ## Routes with a token
 
-A request with `Authorization: Bearer <token>` of an active connection is signed in as its account on the routes under `/api/cli/`, and nowhere else: on every other route, the token counts for nothing and the session cookie is needed. On the routes under `/api/cli/`, the cookie counts for nothing. A missing, wrong, disconnected or expired token, or the token of a deactivated account, answers `401` with `{ "error": "Run factorydeck login" }`.
+The token is checked on the whole `/api/cli/` prefix, before any route, except `POST /api/cli/login` and `POST /api/cli/login/poll`. A request with `Authorization: Bearer <token>` of an active connection is signed in as its account on the routes under `/api/cli/`, and nowhere else: on every other route, the token counts for nothing and the session cookie is needed. On the routes under `/api/cli/`, the cookie counts for nothing. A missing, wrong, disconnected or expired token, or the token of a deactivated account, answers `401` with `{ "error": "Run factorydeck login" }`.
 
 | Route                  | Answer                                                                                  |
 | ---------------------- | --------------------------------------------------------------------------------------- |
 | `GET /api/cli/me`      | `200` `{ "account": { "id", "email", "name", "role" }, "machine": "<machine name>" }`.  |
 | `POST /api/cli/logout` | Deletes the connection of the token and answers `204`; the token is refused afterwards. |
 
-`POST /api/cli/login` and `POST /api/cli/login/poll` need no token, and an unknown route under `/api/cli/` answers `404`. While the database is unreachable, a route that reads the connections answers `503` with the usual unreachable body.
+`POST /api/cli/login` and `POST /api/cli/login/poll` need no token. An unknown route under `/api/cli/` answers `401` with `{ "error": "Run factorydeck login" }` without a valid token, and `404` with one. While the database is unreachable, a route that reads the connections answers `503` with the usual unreachable body.

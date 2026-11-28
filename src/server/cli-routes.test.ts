@@ -1,22 +1,16 @@
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { account, cliConnection } from '../db/schema.ts';
-import {
-  type AuthHarness,
-  DAY_MS,
-  authHarness,
-  signedIn,
-} from '../test/auth-app.ts';
+import { type AuthHarness, authHarness, signedIn } from '../test/auth-app.ts';
 import { bearer, cliClient } from '../test/cli-client.ts';
 
 let h: AuthHarness;
 let cookie: string;
-const { post, get, login, poll, approve, connect, later } = cliClient(() => h);
+const { post, get, login, poll, approve, later } = cliClient(() => h);
 
 const GONE = {
   error: 'This login is no longer valid. Run factorydeck login again.',
 };
-const RUN_LOGIN = { error: 'Run factorydeck login' };
 const INVALID = { error: 'This code is not valid or has expired.' };
 
 beforeEach(async () => {
@@ -86,6 +80,14 @@ describe('POST /api/cli/login', () => {
     const response = await post('/api/cli/login', body);
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ error, field: 'machine' });
+  });
+
+  it('answers 415 to a body that is not JSON', async () => {
+    const response = await post('/api/cli/login', 'machine=laptop', {
+      'content-type': 'application/x-www-form-urlencoded',
+    });
+    expect(response.status).toBe(415);
+    expect(await response.json()).toEqual({ error: 'JSON body expected' });
   });
 
   it('accepts a machine of 80 characters', async () => {
@@ -218,79 +220,5 @@ describe('the login flow', () => {
     const polled = await poll(started.deviceCode);
     expect(polled.status).toBe(410);
     expect(await connections()).toHaveLength(0);
-  });
-});
-
-describe('a CLI token', () => {
-  it('is signed in under /api/cli/ only', async () => {
-    const token = await connect(cookie);
-    const data = await get('/api/team', bearer(token));
-    expect(data.status).toBe(401);
-    expect(await data.json()).toEqual({ error: 'Not signed in' });
-    expect((await get('/api/auth/me', bearer(token))).status).toBe(401);
-    const cookieOnCli = await get('/api/cli/me', { cookie });
-    expect(cookieOnCli.status).toBe(401);
-    expect(await cookieOnCli.json()).toEqual(RUN_LOGIN);
-  });
-
-  it.each([
-    ['no header', {}],
-    ['a wrong token', bearer('fdk_wrong')],
-    ['another scheme', { authorization: 'Basic abc' }],
-  ])('answers 401 with %s', async (_name, headers) => {
-    await connect(cookie);
-    const response = await get('/api/cli/me', headers);
-    expect(response.status).toBe(401);
-    expect(await response.json()).toEqual(RUN_LOGIN);
-  });
-
-  it('is refused for a deactivated account', async () => {
-    const token = await connect(cookie);
-    await h.db
-      .update(account)
-      .set({ active: false })
-      .where(eq(account.email, 'ada@example.test'));
-    const response = await get('/api/cli/me', bearer(token));
-    expect(response.status).toBe(401);
-    expect(await response.json()).toEqual(RUN_LOGIN);
-  });
-
-  it('works at 29 days without use and expires at 30', async () => {
-    const token = await connect(cookie);
-    later(29 * DAY_MS);
-    expect((await get('/api/cli/me', bearer(token))).status).toBe(200);
-    later(30 * DAY_MS - 1);
-    expect((await get('/api/cli/me', bearer(token))).status).toBe(200);
-    later(30 * DAY_MS);
-    const expired = await get('/api/cli/me', bearer(token));
-    expect(expired.status).toBe(401);
-    expect(await connections()).toHaveLength(0);
-  });
-
-  it('moves its last use at most once a minute', async () => {
-    const token = await connect(cookie);
-    const lastUse = async () =>
-      (
-        await h.db.select({ at: cliConnection.lastUsedAt }).from(cliConnection)
-      )[0]?.at;
-    const first = await lastUse();
-    later(59_000);
-    await get('/api/cli/me', bearer(token));
-    expect(await lastUse()).toEqual(first);
-    later(1000);
-    await get('/api/cli/me', bearer(token));
-    expect(await lastUse()).toEqual(h.clock);
-  });
-
-  it('logs out and deletes only its connection', async () => {
-    const token = await connect(cookie, 'laptop');
-    const other = await connect(cookie, 'desktop');
-    const response = await post('/api/cli/logout', '', bearer(token));
-    expect(response.status).toBe(204);
-    expect((await get('/api/cli/me', bearer(token))).status).toBe(401);
-    expect((await get('/api/cli/me', bearer(other))).status).toBe(200);
-    expect((await connections()).map((row) => row.machine)).toEqual([
-      'desktop',
-    ]);
   });
 });

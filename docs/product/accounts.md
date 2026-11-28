@@ -245,6 +245,7 @@ Deactivating an account, in one transaction:
 
 - sets it inactive, so it cannot sign in (`POST /api/auth/sign-in` answers `401` `Wrong email or password`, as for a wrong password);
 - deletes all its sessions, so its next request is not signed in;
+- deletes all its [CLI connections](cli.md#cli-connections), so its CLI tokens are refused, even after a reactivation;
 - marks its unused password reset links as used, so they never work again, even after a reactivation.
 
 It deletes nothing else. If any step fails, the answer is `503` and nothing changes. Reactivating opens no session: the person signs in again with their password. Inviting the email of a deactivated account is refused as for any existing account: a person who comes back is reactivated.

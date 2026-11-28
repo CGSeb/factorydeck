@@ -1,6 +1,11 @@
 import { and, eq, isNull } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
-import { account, accountToken, signInSession } from '../db/schema.ts';
+import {
+  account,
+  accountToken,
+  cliConnection,
+  signInSession,
+} from '../db/schema.ts';
 import type { ChangeRefusal } from './account-change.ts';
 import {
   LAST_MANAGER,
@@ -68,6 +73,7 @@ async function deactivate(
     .set({ active: false })
     .where(eq(account.id, accountId));
   await tx.delete(signInSession).where(eq(signInSession.accountId, accountId));
+  await tx.delete(cliConnection).where(eq(cliConnection.accountId, accountId));
   await tx
     .update(accountToken)
     .set({ usedAt: now })
