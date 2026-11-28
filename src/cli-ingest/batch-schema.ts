@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CLOSING_LINE_MAX_LENGTH } from '../ingest/records.ts';
+import { frictionSchema } from './friction-schema.ts';
 
 export const AGENTS = ['claude-code', 'codex'] as const;
 export type Agent = (typeof AGENTS)[number];
@@ -111,6 +112,7 @@ const threadSchema = z
     skillLaunches: z.array(skillLaunchSchema).default([]),
     prompts: z.array(promptSchema).default([]),
     closingLines: z.array(closingLineSchema).default([]),
+    frictions: z.array(frictionSchema).default([]),
   })
   .superRefine((thread, context) => {
     const expected = fileKeyOf(
@@ -200,7 +202,8 @@ function recordsOf(thread: BatchThread): number {
     thread.apiCalls.length +
     thread.skillLaunches.length +
     thread.prompts.length +
-    thread.closingLines.length
+    thread.closingLines.length +
+    thread.frictions.length
   );
 }
 

@@ -20,6 +20,7 @@ export const toolOccurrences: FrictionOccurrence[] = [
     sessionTitle: 'Build the frictions page',
     exitCode: 1,
     hasMore: false,
+    details: 'local',
     texts: {
       kind: 'tool-error',
       input: 'cd ~/work/app && git push origin feat/41-frictions',
@@ -38,6 +39,7 @@ export const toolOccurrences: FrictionOccurrence[] = [
     sessionTitle: 'Build the frictions page',
     exitCode: 128,
     hasMore: false,
+    details: 'local',
     texts: {
       kind: 'tool-error',
       input: `git commit -m "${'a long commit subject '.repeat(6)}"`,
@@ -55,6 +57,7 @@ export const toolOccurrences: FrictionOccurrence[] = [
     sessionTitle: '',
     exitCode: 1,
     hasMore: false,
+    details: 'gone',
     texts: null,
   },
 ];
@@ -70,6 +73,7 @@ export const hookOccurrences: FrictionOccurrence[] = [
     sessionTitle: 'Build the frictions page',
     exitCode: null,
     hasMore: false,
+    details: 'local',
     texts: {
       kind: 'stop-blocked',
       message: 'pnpm check failed: 2 type errors\nRun pnpm typecheck',
@@ -99,6 +103,7 @@ export const errorOccurrences: FrictionOccurrence[] = [
     sessionTitle: 'Build the frictions page',
     exitCode: 2,
     hasMore: true,
+    details: 'local',
     texts: {
       kind: 'tool-error',
       input: 'pnpm format; pnpm lint && pnpm typecheck',
@@ -116,6 +121,7 @@ export const errorOccurrences: FrictionOccurrence[] = [
     sessionTitle: 'Build the frictions page',
     exitCode: 1,
     hasMore: false,
+    details: 'local',
     texts: {
       kind: 'tool-error',
       input: 'test -f dist/index.html',
@@ -133,6 +139,7 @@ export const errorOccurrences: FrictionOccurrence[] = [
     sessionTitle: 'Build the frictions page',
     exitCode: null,
     hasMore: true,
+    details: 'local',
     texts: {
       kind: 'tool-error',
       input: '{"file_path":"~/work/app/src/ui/App.tsx"}',
@@ -190,3 +197,6 @@ export const unreachableOccurrences: LoadOccurrences = () =>
 
 export const offlineOccurrences: LoadOccurrences = () =>
   Promise.resolve(undefined);
+
+export const remoteOutput: LoadOutput = () =>
+  Promise.resolve({ status: 'ok', gone: true, remote: true });

@@ -66,6 +66,7 @@ const occurrences: FrictionOccurrence[] = [
     sessionTitle: 'Fix login',
     exitCode: 1,
     hasMore: true,
+    details: 'local',
     texts: { kind: 'tool-error', input: 'git', error: 'no', shell: true },
   },
 ];

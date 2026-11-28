@@ -23,6 +23,7 @@ import {
   type FullOutput,
   type LogTexts,
   MAX_OCCURRENCES,
+  type OccurrenceDetails,
   type OccurrenceRow,
   type OccurrenceTexts,
 } from './occurrence-types.ts';
@@ -176,6 +177,41 @@ export async function readLogTexts(
   return found;
 }
 
+export async function sentFileKeys(
+  db: Database,
+  paths: readonly string[],
+): Promise<Set<string>> {
+  const keys = [...new Set(paths)].filter((path) => path !== '');
+  if (keys.length === 0) return new Set();
+  const rows = await select(
+    db,
+    sql`select file_key from ingest_file where file_key in (${sql.join(
+      keys.map((key) => sql`${key}`),
+      sql`, `,
+    )})`,
+  );
+  return new Set(rows.map((row) => text(row['file_key'])));
+}
+
+export async function detailsOf(
+  db: Database,
+  located: readonly LogLocation[],
+  found: ReadonlyMap<string, LogTexts | null>,
+): Promise<Map<string, OccurrenceDetails>> {
+  const read = (item: LogLocation): boolean =>
+    (found.get(item.target.key) ?? null) !== null;
+  const sent = await sentFileKeys(
+    db,
+    located.filter((item) => !read(item)).map((item) => item.path),
+  );
+  return new Map(
+    located.map((item): [string, OccurrenceDetails] => {
+      if (read(item)) return [item.target.key, 'local'];
+      return [item.target.key, sent.has(item.path) ? 'remote' : 'gone'];
+    }),
+  );
+}
+
 export async function frictionOccurrences(
   db: Database,
   query: OccurrenceQuery,
@@ -186,6 +222,7 @@ export async function frictionOccurrences(
   const rows = roleFrictionsOf(loaded, query.role).filter(inPeriodOf(loaded));
   const located = latestOccurrences(rowFrictions(rows, query)).map(locate);
   const found = await readLogTexts(located, home);
+  const details = await detailsOf(db, located, found);
   return located.map(({ row, agent, target }) => {
     const texts = found.get(target.key) ?? null;
     const excerpt =
@@ -200,6 +237,7 @@ export async function frictionOccurrences(
       sessionTitle: row.sessionTitle,
       exitCode: row.exitCode,
       hasMore: excerpt?.hasMore ?? false,
+      details: details.get(target.key) ?? 'gone',
       texts: excerpt?.texts ?? null,
     };
   });
@@ -221,9 +259,15 @@ export async function frictionOutput(
       )})`,
   );
   if (source === undefined) return undefined;
-  const found = await readLogTexts([locationOf(source, OUTPUT_KEY)], home);
+  const location = locationOf(source, OUTPUT_KEY);
+  const found = await readLogTexts([location], home);
   const texts = found.get(OUTPUT_KEY) ?? null;
-  if (texts === null) return { gone: true };
+  if (texts === null) {
+    const details = await detailsOf(db, [location], found);
+    return details.get(OUTPUT_KEY) === 'remote'
+      ? { gone: true, remote: true }
+      : { gone: true };
+  }
   return {
     gone: false,
     text: fullOutput(

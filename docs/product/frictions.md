@@ -76,6 +76,8 @@ Texts are cleaned (colour codes, the `<tool_use_error>` tag, the `Exit code` lin
 
 Texts are read from the session log at each request, line by line up to the record, and never written to the database, a cache, a file or the server's output. When the log or the record is gone: `The session log is no longer on this computer.`
 
+A friction [sent by a CLI](cli.md#frictions) holds no text. The instance first looks for its record in a log on this computer; when it is not there and the friction's file key is one a CLI sent, the occurrence shows `Exit code <n>` when known, then `Details stay on the developer's machine.` in place of its command and message, and never `Show full output`. Otherwise, `The session log is no longer on this computer.`
+
 ## Report
 
 A Markdown report of every friction of the selection, for one project, to paste into an agent for a retrospective. It holds data only, no instructions, and counts exactly what the page counts for the same parameters.
@@ -88,7 +90,7 @@ A Markdown report of every friction of the selection, for one project, to paste 
   - another tool: its input as compact JSON in a `json` fence (up to 2000 characters; an input recorded as plain text is written as a JSON string) and the first 20 non-empty lines of its result in a `text` fence (up to 2000 characters);
   - a stop block: the hook's message, first 20 non-empty lines, in a `text` fence.
 
-  Texts are cleaned as the [occurrences](#occurrences) are. A fence is one backtick longer than the longest run of backticks in its text, and at least three. When the log or the record is gone: `The session log is no longer on this computer.`
+  Texts are cleaned as the [occurrences](#occurrences) are. A fence is one backtick longer than the longest run of backticks in its text, and at least three. When the log or the record is gone: `The session log is no longer on this computer.` For a friction sent by a CLI: `Details stay on the developer's machine.`, then `Exit code <n>` for a shell error when known. Groups and their keys are built from recorded fields, so frictions read on this computer and sent by a CLI share groups and tags.
 
 - Past 20 groups: `<k> more groups are listed without occurrences.`
 - `## Reported before, not seen since`: the reported groups with no friction since, which leave `## Groups` and have no section; one line each, ``- `<key>` · reported on <date time> · <frictions> before``, sorted by frictions then key. Left out when empty. When every group of the selection is there, the report has no `## Groups`.
@@ -110,7 +112,7 @@ Every earlier report of the project counts, whatever its filters and period. Tag
 ## API
 
 - `GET /api/frictions` with `period`, `tz`, `project`, `kind`, `role`, `session`, `issue`: the header figures, the kind and role counts, the trend as `unit` and `buckets`, every table, the context peaks, and `lastReportAt`, the time of the latest report marked for `project` (`null` when none was, or without `project`).
-- `GET /api/frictions/occurrences`: the same parameters plus the table and the row (`<session>/<sub-agent>/<command hash>` for a repeated failure); at most 5 occurrences, each with its `id`, `exitCode`, texts and `hasMore`. A row that cannot exist answers 400; a row with no friction, an empty list.
+- `GET /api/frictions/occurrences`: the same parameters plus the table and the row (`<session>/<sub-agent>/<command hash>` for a repeated failure); at most 5 occurrences, each with its `id`, `exitCode`, texts, `hasMore` and `details`: `local` (texts read from a log on this computer), `remote` (sent by a CLI: no texts, `hasMore` `false`) or `gone`. A row that cannot exist answers 400; a row with no friction, an empty list.
 - `GET /api/frictions/report` with the parameters of `GET /api/frictions`: the [report](#report) as `text/markdown; charset=utf-8`. Without `project`, or with an empty one, it answers 400; with the database unreachable, as `GET /api/frictions` does. It writes nothing anywhere.
 - `POST /api/frictions/reports` with the same parameters: records a [report](#reported-frictions) and answers the same Markdown as `GET /api/frictions/report`, with the tags of the reports recorded before it. Without `project`, or with an empty one, it answers 400 and records nothing; with the database unreachable, as `GET /api/frictions` does.
-- `GET /api/frictions/<id>/output`: the full cleaned text of one tool error or stop block. A non-positive `id` answers 400, an unknown one or a compaction 404. No file path is ever taken from the request.
+- `GET /api/frictions/<id>/output`: the full cleaned text of one tool error or stop block, `{ "status": "ok", "gone": true }` when its log is gone, or `{ "status": "ok", "gone": true, "remote": true }` for one sent by a CLI. A non-positive `id` answers 400, an unknown one or a compaction 404. No file path is ever taken from the request.
