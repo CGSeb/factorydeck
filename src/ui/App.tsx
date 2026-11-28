@@ -67,7 +67,7 @@ import type {
 } from './stats-api.ts';
 import { StatsPage } from './StatsPage.tsx';
 import { type TeamSources, teamRoute } from './TeamPage.tsx';
-import type { AddProject, LoadProjects } from './projects-api.ts';
+import type { AddProject, LoadProjects, SaveProject } from './projects-api.ts';
 import { projectsRoute } from './ProjectsPage.tsx';
 
 export interface AppProps
@@ -111,6 +111,7 @@ export interface AppProps
   saveReset?: SaveReset | undefined;
   loadProjects?: LoadProjects | undefined;
   addProject?: AddProject | undefined;
+  saveProject?: SaveProject | undefined;
 }
 
 function isManager(view: AccountView): boolean {

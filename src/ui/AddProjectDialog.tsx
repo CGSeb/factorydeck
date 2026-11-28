@@ -37,7 +37,7 @@ export interface AddProjectDialogProps {
 
 type Errors = Partial<Record<ProjectField | 'form', string>>;
 
-function Field({
+export function Field({
   id,
   field,
   label,

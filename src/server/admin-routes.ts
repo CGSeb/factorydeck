@@ -1,6 +1,10 @@
 import { type Context, Hono } from 'hono';
 import { type ProjectsResponse, remoteTaken } from '../team/project-types.ts';
-import { type ProjectStore, projectFields } from '../team/projects.ts';
+import {
+  type ProjectStore,
+  projectChanges,
+  projectFields,
+} from '../team/projects.ts';
 import { MANAGERS_ONLY } from '../team/types.ts';
 import type { ApiContext } from './api-context.ts';
 import type { AuthEnv } from './auth-routes.ts';
@@ -11,6 +15,14 @@ export interface AdminSource {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+const NOT_FOUND = { error: 'Not found' };
+
+function projectId(value: string): number | undefined {
+  if (!/^[1-9][0-9]*$/.test(value)) return undefined;
+  const id = Number(value);
+  return Number.isSafeInteger(id) ? id : undefined;
 }
 
 async function jsonObject(c: Context): Promise<Record<string, unknown>> {
@@ -43,6 +55,23 @@ function projectRoutes(
       return c.json({ error: remoteTaken(result.name) }, 409);
     }
     return c.json(result.project, 201);
+  });
+  routes.patch('/:id', async (c) => {
+    const id = projectId(c.req.param('id'));
+    if (id === undefined) return c.json(NOT_FOUND, 404);
+    const fields = projectChanges(await jsonObject(c));
+    const result = await fromDatabase(() =>
+      store.update(id, fields.ok ? fields.value : {}),
+    );
+    if (result.status === 'unreachable') return c.json(result, 503);
+    if (result.status === 'missing') return c.json(NOT_FOUND, 404);
+    if (!fields.ok) {
+      return c.json({ error: fields.error, field: fields.field }, 400);
+    }
+    if (result.status === 'exists') {
+      return c.json({ error: remoteTaken(result.name) }, 409);
+    }
+    return c.json(result.project, 200);
   });
   return routes;
 }

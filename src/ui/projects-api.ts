@@ -1,8 +1,12 @@
-import type { ProjectsResponse, TeamProject } from '../team/project-types.ts';
+import type {
+  ListedProject,
+  ProjectsResponse,
+  TeamProject,
+} from '../team/project-types.ts';
 import { DATABASE_UNREACHABLE, SERVER_UNREACHABLE } from './auth-api.ts';
 import { REFUSED_RETRY_SECONDS } from './team-api.ts';
 
-export type { TeamProject };
+export type { ListedProject, TeamProject };
 
 export const PROJECTS_URL = '/api/admin/projects';
 
@@ -25,6 +29,17 @@ export type AddProjectOutcome =
 
 export type AddProject = (input: ProjectInput) => Promise<AddProjectOutcome>;
 
+export type SaveProjectOutcome =
+  | { status: 'saved'; project: ListedProject }
+  | { status: 'invalid'; field: ProjectField; message: string }
+  | { status: 'missing' }
+  | { status: 'failed'; message: string };
+
+export type SaveProject = (
+  id: number,
+  changes: Partial<ProjectInput>,
+) => Promise<SaveProjectOutcome>;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -40,6 +55,12 @@ function isProject(value: unknown): value is TeamProject {
   );
 }
 
+function isListed(value: unknown): value is ListedProject {
+  return (
+    isProject(value) && isRecord(value) && typeof value['sessions'] === 'number'
+  );
+}
+
 function errorOf(body: unknown): string | undefined {
   if (!isRecord(body)) return undefined;
   const error = body['error'];
@@ -49,6 +70,22 @@ function errorOf(body: unknown): string | undefined {
 function fieldOf(body: unknown): ProjectField | undefined {
   const field = isRecord(body) ? body['field'] : undefined;
   return field === 'remote' || field === 'name' ? field : undefined;
+}
+
+type Refusal =
+  | { status: 'invalid'; field: ProjectField; message: string }
+  | { status: 'failed'; message: string };
+
+function refusalOf(status: number, body: unknown): Refusal {
+  const message = errorOf(body);
+  if (message !== undefined && status === 409) {
+    return { status: 'invalid', field: 'remote', message };
+  }
+  const field = fieldOf(body);
+  if (message !== undefined && status === 400 && field !== undefined) {
+    return { status: 'invalid', field, message };
+  }
+  return { status: 'failed', message: message ?? SERVER_UNREACHABLE };
 }
 
 export function projectsLoader(
@@ -73,7 +110,7 @@ export function projectsLoader(
       if (
         body['status'] !== 'ok' ||
         !Array.isArray(projects) ||
-        !projects.every(isProject)
+        !projects.every(isListed)
       ) {
         return undefined;
       }
@@ -102,21 +139,35 @@ export function projectAdder(
     if (response.status === 201 && isProject(body)) {
       return { status: 'added', project: body };
     }
-    const message = errorOf(body);
     if (response.status === 503) {
       return { status: 'failed', message: DATABASE_UNREACHABLE };
     }
-    if (message !== undefined && response.status === 409) {
-      return { status: 'invalid', field: 'remote', message };
+    return refusalOf(response.status, body);
+  };
+}
+
+export function projectSaver(
+  fetchImpl: typeof fetch = (...args) => fetch(...args),
+): SaveProject {
+  return async (id, changes) => {
+    let response: Response;
+    try {
+      response = await fetchImpl(`${PROJECTS_URL}/${String(id)}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(changes),
+      });
+    } catch {
+      return { status: 'failed', message: SERVER_UNREACHABLE };
     }
-    const field = fieldOf(body);
-    if (
-      message !== undefined &&
-      response.status === 400 &&
-      field !== undefined
-    ) {
-      return { status: 'invalid', field, message };
+    const body: unknown = await response.json().catch(() => undefined);
+    if (response.status === 200 && isListed(body)) {
+      return { status: 'saved', project: body };
     }
-    return { status: 'failed', message: message ?? SERVER_UNREACHABLE };
+    if (response.status === 404) return { status: 'missing' };
+    if (response.status === 503) {
+      return { status: 'failed', message: DATABASE_UNREACHABLE };
+    }
+    return refusalOf(response.status, body);
   };
 }

@@ -67,7 +67,9 @@ export const Empty: Story = {
 
 export const OneProject: Story = {
   args: {
-    loadProjects: projectsLoaderOf(projectsResponse([addedProject])),
+    loadProjects: projectsLoaderOf(
+      projectsResponse([{ ...addedProject, sessions: 0 }]),
+    ),
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -101,6 +103,9 @@ export const List: Story = {
       ],
       ['Website', 'github.com/example-org/website', 'website', '10 Mar 2026'],
     ]);
+    await expect(
+      within(table).getByRole('link', { name: 'Billing' }),
+    ).toHaveAttribute('href', '/projects/billing-service');
   },
 };
 
