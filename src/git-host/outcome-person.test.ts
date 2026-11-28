@@ -3,15 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { gitHostIssue, gitHostProject, gitHostRequest } from '../db/schema.ts';
 import type { FakeGitHostData } from '../demo/fake-git-host.ts';
 import { hasFactory } from '../ingest/factory.ts';
-import {
-  T0,
-  T1,
-  T2,
-  addProject,
-  calls,
-  ghRequest,
-  remoteOfRoot,
-} from '../test/git-host.ts';
+import { T0, T1, T2, addProject, calls, ghRequest } from '../test/git-host.ts';
 import {
   type Row,
   closed,
@@ -20,9 +12,11 @@ import {
   merged,
   open,
   outcomeContext,
+  remoteOfRoot,
   serenity,
 } from '../test/outcome.ts';
 import { fakeCollection } from '../demo/fake-git-host-token.ts';
+import { LABELS } from '../test/kind-seed.ts';
 import { collect } from './collect.ts';
 
 const ctx = outcomeContext();
@@ -199,13 +193,7 @@ describe('merged after a person', () => {
         gitHost: 'github',
         repository: 'example-org/example-app',
         syncedFrom: new Date(T2),
-        stageLabels: {
-          ready: 'agent:ready',
-          working: 'agent:working',
-          needs_spec: 'agent:needs-spec',
-          review: 'agent:review',
-          blocked: 'agent:blocked',
-        },
+        stageLabels: LABELS,
         autoMerge: true,
       });
     await collect(ctx.db(), {
