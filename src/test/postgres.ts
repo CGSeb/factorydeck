@@ -57,7 +57,6 @@ create trigger link_git_host_root after insert on git_host_project
   for each row execute function link_test_remote();
 `;
 
-/** The remote the test trigger gives a root: git host rows seeded under it belong to that root's project. */
 export function testRemote(root: string): string {
   return `test.invalid/${root}`;
 }
