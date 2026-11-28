@@ -44,6 +44,7 @@ The token is given once, to the first poll after the approval; the next poll ans
 - With a code that is waiting for approval, it shows the line `<machine> asks to send sessions as <name> (<email>).`, with the name and email of the signed-in account, the code, and the buttons `Connect` and `Cancel`. Both are disabled while the choice is sent.
 - `Connect` approves the login for the signed-in account and shows `Connected. You can go back to your terminal.` The CLI's next poll gets the token.
 - `Cancel` cancels the login and shows `Cancelled.` The CLI's next poll answers `410`.
+- While the code of the URL is read, the page shows nothing, so the card appears whole; while a typed code is read, the form stays in place with `Continue` disabled.
 - Without a code, the page asks for it: a field `Code from your terminal` and a button `Continue`.
 - An unknown or expired code, or one approved or cancelled already, shows `This code is not valid or has expired.` under the field, so another code can be typed.
 - When the choice cannot be sent (the database or the server does not answer), the message shows under the buttons and both stay.
