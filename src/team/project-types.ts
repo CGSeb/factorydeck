@@ -41,6 +41,9 @@ export type UpdateProjectResult =
   | { status: 'updated'; project: ListedProject }
   | { status: 'missing' }
   | { status: 'exists'; name: string };
+export type RemoveProjectResult = 'removed' | 'not-found' | 'busy';
+
+export const BUSY = 'Busy, try again';
 
 export const NOT_A_REMOTE = 'Not a git remote';
 export const NAME_TYPE_ERROR = 'Name must be text';

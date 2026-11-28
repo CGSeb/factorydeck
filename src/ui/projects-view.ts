@@ -31,10 +31,10 @@ export function formatAddedDate(at: string): string {
   return `${formatDay(at)} ${String(new Date(at).getFullYear())}`;
 }
 
-export function withAdded(
-  projects: readonly TeamProject[],
-  added: readonly TeamProject[],
-): TeamProject[] {
+export function withAdded<T extends TeamProject>(
+  projects: readonly T[],
+  added: readonly T[],
+): T[] {
   const ids = new Set(projects.map(({ id }) => id));
   return [...projects, ...added.filter(({ id }) => !ids.has(id))].sort(
     byProjectOrder,

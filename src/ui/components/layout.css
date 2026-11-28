@@ -417,6 +417,13 @@
   margin-top: var(--fd-space-3);
 }
 
+.fd-dialog-message {
+  margin: 0;
+  font-family: var(--fd-font-body);
+  font-size: var(--fd-text-md);
+  color: var(--fd-danger);
+}
+
 .fd-dialog-actions {
   display: flex;
   flex-wrap: wrap;

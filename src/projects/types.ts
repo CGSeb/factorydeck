@@ -14,11 +14,6 @@ export interface FactoryStatus {
   bugTickets: string[];
 }
 
-export type DeleteResult = 'deleted' | 'has-factory' | 'not-found';
-
 export type FactoryResponse =
   | ({ status: 'ok'; refreshSeconds: number } & FactoryStatus)
   | { status: 'unreachable'; refreshSeconds: number };
-
-export type DeleteProjectResponse =
-  { status: DeleteResult } | { status: 'unreachable'; refreshSeconds: number };

@@ -10,7 +10,7 @@ A project has the factory installed when `docs/agents/factory.yml` exists at its
 - When a session's main log has no working directory, it takes the one of its earliest sub-agent that has one (ties: smallest agent id), with that sub-agent's branch; a working directory found later in the main log replaces it.
 - Sessions of a project without the factory, of no working directory, or of a folder gone and inside no known project, are **not stored**. Their logs are skipped, and not read again while the file has not grown and the project still has no factory.
 - When a project gains `docs/agents/factory.yml`, its skipped logs are read in full at the next ingestion: nothing from before the installation is lost.
-- When a root already ingested loses the file (removed, or folder gone), its data stays in every view and its new sessions are no longer read. Every page then shows a [warning banner](navigation.md#banners) with a `Delete project` button.
+- When a root already ingested loses the file (removed, or folder gone), its data stays in every view and its new sessions are no longer read. Every page then shows a [warning banner](navigation.md#banners), as information only.
 
 ### Project of a session
 
@@ -23,15 +23,15 @@ A session belongs to the [project](projects.md) whose remote is the remote of it
 - The [git host data](#git-host) and the [friction reports](frictions.md) of a project are its roots' as its sessions are. When two roots of a project are both collected, the project reads the issues, requests and settings of the one whose last successful collection started last.
 - The per-project overrides of [work items](roles-and-work-items.md) stay keyed by root: a session uses the override of its own root. Its [role rules](roles-and-work-items.md#role-rules) are those of the project the session belongs to.
 
-### Deleting a project
+### Removing a project
 
-Only a root whose factory configuration is no longer found can be deleted, from its banner line. It deletes that root's stored data, not the project of [Projects](projects.md), which stays in the project select. The confirmation dialog `Delete <project name>?` says how many sessions go (counted when the dialog opens) and that the logs on disk are not touched. `Cancel` has the focus; `Escape`, `Cancel` or a click outside closes it.
+A manager [removes a project](projects.md#removing-a-project) from `/projects`. A session is the project's as [above](#project-of-a-session): by the recorded remote of its root, else by the remote a CLI sent with it.
 
-Confirming deletes, in one transaction and under the ingestion lock, every stored row of the root (sessions, sub-agents, API calls, skill launches, prompts, frictions, closing lines, issues, pull requests, reports, label history) and the read offsets of its logs; its recorded remote stays. If the factory is installed again later, its logs are read again from their first line.
+Removing deletes, in one transaction, the project and every stored row of its remote: its sessions with their sub-agents, API calls, skill launches, prompts, frictions, closing lines and CLI read offsets; its [role rules](roles-and-work-items.md#role-rules); the issues and pull requests collected for its roots, with their reports and label history, and their collection state; the friction reports of the project; and the recorded remote of every root with that remote, which the next ingestion reads again from `origin`. The skipped logs (`skipped_file`) and the read offsets of the logs stay, so ingestion does not read the old logs again.
 
-- While it runs, the button reads `Deleting…`. On success the banner line goes and every page refreshes; with no session left, the welcome screen shows.
-- On failure, nothing is deleted and the dialog shows `Could not delete <project name>. Try again.`
-- If the file is found again at the time of the request, the API answers 409 and the dialog shows `<project name> has its factory configuration again, so it was not deleted.` An unknown project answers 404: `<project name> is no longer in FactoryDeck.`
+- Each deleted session is listed in `removed_session` (session id, project name, removal time). Ingestion, local or [sent by a CLI](cli.md#sending-sessions), skips every thread of a listed session, main log and sub-agents, even when its logs grow. A later session of the repository is stored as any other: its remote is no project's, so it is one of the [sessions of no project](#project-of-a-session) until a manager adds the remote again.
+- The removal takes the project lock, then the ingestion lock, waiting at most 30 seconds in all. A local ingestion run that starts while the removal holds the ingestion lock does not wait: it skips that run, and the next run reads what is new. The git host collection stops with the project, since its roots have no session left, and a collection already running writes nothing for it.
+- The per-project overrides of [work items](roles-and-work-items.md), keyed by root, are not deleted.
 
 ### Project names
 

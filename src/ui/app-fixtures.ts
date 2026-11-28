@@ -5,11 +5,7 @@ import {
   refresherOf,
 } from './git-host-fixtures.ts';
 import { bugsLoaderOf } from './bug-fixtures.ts';
-import {
-  deleterOf,
-  factoryLoaderOf,
-  factoryResponse,
-} from './factory-fixtures.ts';
+import { factoryLoaderOf, factoryResponse } from './factory-fixtures.ts';
 import { featureLoaderOf } from './feature-detail-fixtures.ts';
 import { featuresLoaderOf, someFeatures } from './feature-fixtures.ts';
 import { fixedLoader, okResponse, weekOverview } from './fixtures.ts';
@@ -44,7 +40,6 @@ export const loaders = {
   loadFeature: featureLoaderOf(),
   loadBugs: bugsLoaderOf(),
   loadFactory: factoryLoaderOf(factoryResponse()),
-  deleteProject: deleterOf('deleted'),
   loadCollection: collectionLoaderOf(collectionResponse()),
   refreshCollection: refresherOf(collectionResponse()),
   loadAutonomy: autonomyLoaderOf(),

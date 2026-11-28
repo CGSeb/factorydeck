@@ -1,13 +1,13 @@
 # Projects
 
-A manager adds each project of the team by its git remote, so FactoryDeck knows which repositories it follows. Every session whose root has that remote belongs to the project, whatever folder it was cloned in ([Data](data.md#project-of-a-session)), and the project select lists the projects of this page under their names. A manager changes a project's name or remote on its [settings page](#project-settings); removing a project comes in a later story.
+A manager adds each project of the team by its git remote, so FactoryDeck knows which repositories it follows. Every session whose root has that remote belongs to the project, whatever folder it was cloned in ([Data](data.md#project-of-a-session)), and the project select lists the projects of this page under their names. A manager changes a project's name or remote on its [settings page](#project-settings), and can [remove a project](#removing-a-project) and its data.
 
 ## The Projects page
 
 A manager sees a `Projects` link in the sidebar, right after `Team`; it opens `/projects`. It shows and hides with `Team`, from the same read of the account (see [The Team page](accounts.md#the-team-page)). A dev sees no such link, and `/projects` shows them `Only managers can manage projects.`
 
 - **Header**: `Projects`, with the summary `<n> projects` (`1 project`). The page has no period pills; the project select stays in the sidebar and changes nothing here.
-- **Table**: the columns `Name`, `Remote`, `Slug` and `Added`. Every project is listed, with no paging, sorted by name without letter case. Each name is a link to the project's [settings page](#project-settings). The remote shows in its normalised form (`github.com/owner/repo`), and `Added` is the date the project was added (`3 Feb 2026`), with the exact date and time in a tooltip. Long names and remotes wrap; a table wider than the page scrolls inside its box.
+- **Table**: the columns `Name`, `Remote`, `Slug` and `Added`. Every project is listed, with no paging, sorted by name without letter case. Each name is a link to the project's [settings page](#project-settings). A last column holds a `Remove` button on each row (its accessible name is `Remove <name>`), separate from the link, which opens the [removal dialog](#removing-a-project). The remote shows in its normalised form (`github.com/owner/repo`), and `Added` is the date the project was added (`3 Feb 2026`), with the exact date and time in a tooltip. Long names and remotes wrap; a table wider than the page scrolls inside its box.
 - **No project**: in place of the table, `No project yet. Add the first one with its git remote.`
 - **Add project**: a button in the header, shown once the list has loaded (not while it loads, on the refusal or while the database is unreachable), opens the [add dialog](#adding-a-project).
 
@@ -57,6 +57,16 @@ The page reloads the list every `refreshSeconds`: the header follows it, a field
 
 The slug never changes. Sessions are linked to a project by their remote when they are read ([Data](data.md#project-of-a-session)), so no stored session changes: once the remote is saved, the sessions of the new remote belong to the project, and those of the old one leave it at once and wait under remotes not added yet. Git host data and friction reports follow the remote, so they stay with the old remote, whose [git host collection](data.md#git-host) stops. Rules stay with the project.
 
+## Removing a project
+
+`Remove` opens a confirmation `Remove <name>?` that says `Its <n> sessions and every figure from them are deleted. A developer who works in this repository again makes it reappear under Remotes not added yet.` (`Its 1 session…`), or, for a project with no session, `It has no sessions.` then the same sentence on reappearing. `<n>` is every stored session of the project, whatever the period: the dialog shows the count of the list at once, and replaces it with the count of `GET /api/admin/projects` read again when it opens. The buttons are `Cancel`, which has the focus, and `Remove`, in the danger colour; `Escape`, `Cancel` or a click outside closes the dialog without removing anything.
+
+- While the request runs, the button reads `Removing…` and is disabled.
+- On success the dialog closes, the row goes and the summary follows, the project leaves the [project select](navigation.md#project-select) (which falls back to `All projects` if it was selected), and the sidebar reloads its data. Removing the last project leaves the pages on their empty states, or the welcome screen when no session is left.
+- On a `404`, the dialog shows `<name> is no longer in FactoryDeck.`, and the row goes at the next refresh of the list. On any other failure it shows `Could not remove <name>. Try again.`; nothing is removed.
+
+Removing frees the slug and the remote: adding the remote again makes a new project, with a new id and the slug made again from the remote, and with only the sessions that come after the removal. What is deleted and what stays is described in [Data](data.md#removing-a-project).
+
 ## Admin routes
 
 Every route under `/api/admin/` checks, in order: a session (`401`, or `503` while the database is unreachable), the role (`403` with `{ "error": "Managers only" }` for a dev, on any path under `/api/admin/`, unknown ones included), the body (`400`), then conflicts (`409`). A manager gets `404` with `{ "error": "Not found" }` on an unknown path. The role is read from the session's account at each request.
@@ -84,6 +94,13 @@ Every route under `/api/admin/` checks, in order: a session (`401`, or `503` whi
 
 The role rules of a project have their own routes, `GET` and `PUT /api/admin/projects/<id>/rules/role`: see [Roles and work items](roles-and-work-items.md#role-rules).
 
+`DELETE /api/admin/projects/<id>` removes the project and every stored row of its remote ([Data](data.md#removing-a-project)) and answers `204` with no body. After the shared checks and `403`:
+
+| Answer | When                                                                                                                                                                                 |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `404`  | `{ "error": "Not found" }`: `<id>` is not a positive integer written without a leading zero, or no project has it.                                                                   |
+| `503`  | `{ "status": "unreachable", "refreshSeconds": <n> }` while the database is unreachable, or `{ "error": "Busy, try again" }` after 30 s of waiting for the locks. Nothing is removed. |
+
 ## How a project is stored
 
-The table `project` holds, for each project, its `id`, `name`, `slug` (unique), normalised `remote` (unique), `created_at` and `created_by`, the account of the manager who added it (emptied if that account is ever deleted).
+The table `project` holds, for each project, its `id`, `name`, `slug` (unique), normalised `remote` (unique), `created_at` and `created_by`, the account of the manager who added it (emptied if that account is ever deleted). The table `removed_session` lists every session deleted with a project: its session id, the project's name and the time of the removal.

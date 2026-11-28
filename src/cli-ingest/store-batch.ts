@@ -1,6 +1,12 @@
 import { and, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
-import { apiCall, ingestFile, session, subAgent } from '../db/schema.ts';
+import {
+  apiCall,
+  ingestFile,
+  removedSession,
+  session,
+  subAgent,
+} from '../db/schema.ts';
 import { TOKEN_COUNT_KEY } from '../ingest/codex-usage.ts';
 import { LOCK_KEY } from '../ingest/lock.ts';
 import { type Transaction, insertChunks } from '../ingest/store.ts';
@@ -248,6 +254,19 @@ async function useSubAgentCwds(
     where s.id = f.id`);
 }
 
+async function removedOf(
+  tx: Transaction,
+  threads: readonly BatchThread[],
+): Promise<Set<string>> {
+  const ids = [...new Set(threads.map((thread) => thread.sessionId))];
+  if (ids.length === 0) return new Set();
+  const rows = await tx
+    .select({ id: removedSession.sessionId })
+    .from(removedSession)
+    .where(inArray(removedSession.sessionId, ids));
+  return new Set(rows.map((row) => row.id));
+}
+
 export async function storeBatch(
   db: Database,
   batch: Batch,
@@ -260,7 +279,11 @@ export async function storeBatch(
       const sessionIds = new Set<string>();
       let apiCalls = 0;
       const at = now();
-      for (const thread of batch.threads) {
+      const removed = await removedOf(tx, batch.threads);
+      const threads = batch.threads.filter(
+        (thread) => !removed.has(thread.sessionId),
+      );
+      for (const thread of threads) {
         sessionIds.add(thread.sessionId);
         await storeSession(tx, thread, sender);
         await storeSubAgent(tx, thread);
@@ -271,7 +294,7 @@ export async function storeBatch(
       return {
         status: 'stored',
         sessions: sessionIds.size,
-        threads: batch.threads.length,
+        threads: threads.length,
         apiCalls,
       };
     });

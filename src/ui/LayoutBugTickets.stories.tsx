@@ -5,24 +5,19 @@ import { expect, userEvent, waitFor, within } from 'storybook/test';
 import type { FactoryResponse } from '../projects/types.ts';
 import { BUG_TICKETS_KEY, storeBugTickets } from './bug-tickets-state.ts';
 import type { LoadFactory } from './factory-api.ts';
-import {
-  deleterOf,
-  factoryLoaderOf,
-  factoryResponse,
-  oldApp,
-} from './factory-fixtures.ts';
+import { factoryLoaderOf, factoryResponse } from './factory-fixtures.ts';
 import {
   collectionLoaderOf,
   collectionResponse,
   refresherOf,
 } from './git-host-fixtures.ts';
 import { Layout } from './Layout.tsx';
+import { useProjectRemoved } from './layout-outlet.ts';
 
 const meta = {
   component: Layout,
   args: {
     loadFactory: factoryLoaderOf(factoryResponse()),
-    deleteProject: deleterOf('deleted'),
     loadCollection: collectionLoaderOf(collectionResponse(null)),
     refreshCollection: refresherOf(collectionResponse()),
   },
@@ -32,15 +27,13 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-async function deleteFirstProject(canvasElement: HTMLElement): Promise<void> {
-  const canvas = within(canvasElement);
-  const [line] = await canvas.findAllByRole('button', {
-    name: 'Delete project',
-  });
-  if (line === undefined) throw new Error('No banner line');
-  await userEvent.click(line);
-  const dialog = within(canvas.getByRole('dialog'));
-  await userEvent.click(dialog.getByRole('button', { name: 'Delete project' }));
+function RemovingPage(): ReactElement {
+  const projectRemoved = useProjectRemoved();
+  return (
+    <button type="button" onClick={() => projectRemoved?.('old-app')}>
+      Remove Old App
+    </button>
+  );
 }
 
 function thenWithout(
@@ -54,15 +47,14 @@ function thenWithout(
   };
 }
 
-function BugTicketsDeletion(): ReactElement {
+function BugTicketsRemoval(): ReactElement {
   const [store] = useState(() => {
     storeBugTickets([]);
     return {
       loadFactory: thenWithout(
-        factoryResponse([oldApp], true, [], ['old-app']),
+        factoryResponse([], true, [], ['old-app']),
         factoryResponse([], true, [], []),
       ),
-      deleteProject: deleterOf('deleted'),
       loadCollection: collectionLoaderOf(collectionResponse(null)),
       refreshCollection: refresherOf(collectionResponse()),
     };
@@ -71,15 +63,15 @@ function BugTicketsDeletion(): ReactElement {
     <MemoryRouter initialEntries={['/']}>
       <Routes>
         <Route element={<Layout {...store} />}>
-          <Route index element={<p>Section content</p>} />
+          <Route index element={<RemovingPage />} />
         </Route>
       </Routes>
     </MemoryRouter>
   );
 }
 
-export const DeletingAProjectWithBugTickets: Story = {
-  render: () => <BugTicketsDeletion />,
+export const RemovingAProjectWithBugTickets: Story = {
+  render: () => <BugTicketsRemoval />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByRole('link', { name: 'Bugs' });
@@ -88,7 +80,9 @@ export const DeletingAProjectWithBugTickets: Story = {
         JSON.stringify(['old-app']),
       ),
     );
-    await deleteFirstProject(canvasElement);
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Remove Old App' }),
+    );
     await waitFor(() =>
       expect(canvas.queryByRole('link', { name: 'Bugs' })).toBeNull(),
     );

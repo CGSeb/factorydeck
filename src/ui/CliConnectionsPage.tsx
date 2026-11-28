@@ -28,7 +28,6 @@ import {
   useRowFocus,
 } from './cli-connections-state.ts';
 import { useNow } from './use-now.ts';
-import './DeleteProjectDialog.css';
 import './invitations.css';
 import './cli-connections.css';
 

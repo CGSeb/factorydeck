@@ -76,7 +76,6 @@ function gatedLoaders(gate: AuthGate): Loaders {
     loadFeature: gated(gate, '/api/loadFeature', loaders.loadFeature),
     loadBugs: gated(gate, '/api/loadBugs', loaders.loadBugs),
     loadFactory: gated(gate, '/api/loadFactory', loaders.loadFactory),
-    deleteProject: gated(gate, '/api/deleteProject', loaders.deleteProject),
     loadCollection: gated(gate, '/api/loadCollection', loaders.loadCollection),
     refreshCollection: gated(
       gate,

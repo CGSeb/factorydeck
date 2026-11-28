@@ -54,3 +54,7 @@
 .fd-project-settings-form > .fd-project-settings-missing {
   margin-top: var(--fd-space-2);
 }
+
+.fd-table-scroll .fd-projects-table td.fd-projects-actions {
+  text-align: right;
+}

@@ -2,7 +2,11 @@ import { type Context, Hono } from 'hono';
 import type { StoredRoleRule } from '../roles/default-roles.ts';
 import type { RoleRuleStore } from '../roles/project-rules.ts';
 import { roleRuleFields } from '../roles/rule-fields.ts';
-import { type ProjectsResponse, remoteTaken } from '../team/project-types.ts';
+import {
+  BUSY,
+  type ProjectsResponse,
+  remoteTaken,
+} from '../team/project-types.ts';
 import {
   type ProjectStore,
   projectChanges,
@@ -80,6 +84,15 @@ function projectRoutes(
       return c.json({ error: remoteTaken(result.name) }, 409);
     }
     return c.json(result.project, 200);
+  });
+  routes.delete('/:id', async (c) => {
+    const id = projectId(c.req.param('id'));
+    if (id === undefined) return c.json(NOT_FOUND, 404);
+    const result = await fromDatabase(() => store.remove(id));
+    if (result === 'removed') return c.body(null, 204);
+    if (result === 'not-found') return c.json(NOT_FOUND, 404);
+    if (result === 'busy') return c.json({ error: BUSY }, 503);
+    return c.json(result, 503);
   });
   return routes;
 }

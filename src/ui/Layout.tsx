@@ -24,11 +24,12 @@ import {
   type SidebarProject,
   type SidebarRefresh,
 } from './components/Sidebar.tsx';
-import { useBugTickets } from './bug-tickets-state.ts';
-import type { DeleteProject, LoadFactory } from './factory-api.ts';
+import { forgetBugTickets, useBugTickets } from './bug-tickets-state.ts';
+import type { LoadFactory } from './factory-api.ts';
 import { FactoryBanner } from './FactoryBanner.tsx';
 import type { LoadCollection, RefreshCollection } from './git-host-api.ts';
 import { projectOf, projectTarget } from './project-param.ts';
+import type { LayoutOutletContext } from './layout-outlet.ts';
 import { hasBugTickets, managerLinks, sectionLinks } from './section-links.ts';
 import { projectLabel } from './ProjectSelect.tsx';
 import { type LoadSidebar, useReadyCounts } from './sidebar-api.ts';
@@ -40,7 +41,6 @@ const RETRY_SECONDS = 10;
 
 export interface LayoutProps {
   loadFactory: LoadFactory;
-  deleteProject: DeleteProject;
   loadCollection: LoadCollection;
   refreshCollection: RefreshCollection;
   loadSidebar?: LoadSidebar | undefined;
@@ -50,12 +50,14 @@ export interface LayoutProps {
 
 function useFactoryStatus(loadFactory: LoadFactory): {
   status: FactoryResponse | undefined;
-  forget: (project: string) => void;
+  forget: (slug: string) => void;
   reload: () => void;
   version: number;
+  loads: number;
 } {
   const [status, setStatus] = useState<FactoryResponse>();
   const [version, setVersion] = useState(0);
+  const [loads, setLoads] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -74,25 +76,27 @@ function useFactoryStatus(loadFactory: LoadFactory): {
       active = false;
       clearTimeout(timer);
     };
-  }, [loadFactory, version]);
+  }, [loadFactory, version, loads]);
 
   function reload(): void {
     setVersion((current) => current + 1);
   }
 
-  function forget(project: string): void {
+  function forget(slug: string): void {
+    forgetBugTickets(slug);
     setStatus((current) =>
       current?.status === 'ok'
         ? {
             ...current,
-            missing: current.missing.filter((row) => row.project !== project),
+            projects: current.projects.filter((row) => row.project !== slug),
+            bugTickets: current.bugTickets.filter((row) => row !== slug),
           }
         : current,
     );
-    setVersion((current) => current + 1);
+    setLoads((current) => current + 1);
   }
 
-  return { status, forget, reload, version };
+  return { status, forget, reload, version, loads };
 }
 
 function useCollection(
@@ -168,10 +172,10 @@ function viewOf(
   };
 }
 
-function useProjectChoice(forget: (project: string) => void): {
+function useProjectChoice(forget: (slug: string) => void): {
   project: string | undefined;
   choose: (next: string | undefined) => void;
-  onDeleted: (deleted: string) => void;
+  outlet: LayoutOutletContext;
 } {
   const [searchParams] = useSearchParams();
   const location = useLocation();
@@ -180,7 +184,14 @@ function useProjectChoice(forget: (project: string) => void): {
   return {
     project,
     choose: (next) => void navigate(projectTarget(location, next)),
-    onDeleted: forget,
+    outlet: {
+      projectRemoved: (slug) => {
+        if (project === slug) {
+          void navigate(projectTarget(location, undefined), { replace: true });
+        }
+        forget(slug);
+      },
+    },
   };
 }
 
@@ -223,21 +234,21 @@ function refreshSlot(
 
 export function Layout({
   loadFactory,
-  deleteProject,
   loadCollection,
   refreshCollection,
   loadSidebar,
   account,
   team = false,
 }: LayoutProps): ReactElement {
-  const { status, forget, reload, version } = useFactoryStatus(loadFactory);
-  const { project, choose, onDeleted } = useProjectChoice(forget);
+  const { status, forget, reload, version, loads } =
+    useFactoryStatus(loadFactory);
+  const { project, choose, outlet } = useProjectChoice(forget);
   const collection = useCollection(loadCollection, refreshCollection, reload);
   const ready = useReadyCounts(
     loadSidebar,
     project,
     status?.refreshSeconds ?? RETRY_SECONDS,
-    version,
+    version + loads,
   );
   const bugTickets = useBugTickets(status);
   const { collectedAt, missing, failures, projects, welcome } = viewOf(
@@ -264,17 +275,16 @@ export function Layout({
       />
       <div className="fd-shell-content">
         {missing.length + failures.length > 0 && (
-          <FactoryBanner
-            missing={missing}
-            failures={failures}
-            deleteProject={deleteProject}
-            onDeleted={onDeleted}
-          />
+          <FactoryBanner missing={missing} failures={failures} />
         )}
         <main
           className={`fd-column fd-main${welcome ? ' fd-main-welcome' : ''}`}
         >
-          {welcome ? <WelcomePanel /> : <Outlet key={version} />}
+          {welcome ? (
+            <WelcomePanel />
+          ) : (
+            <Outlet key={version} context={outlet} />
+          )}
         </main>
       </div>
     </div>

@@ -28,7 +28,7 @@ import { hasFactory } from '../ingest/factory.ts';
 import { ingest } from '../ingest/ingest.ts';
 import { overviewData } from '../overview/kinds.ts';
 import { type WorkflowConfig, loadWorkflowConfig } from '../roles/config.ts';
-import { deleteProject, factoryStatus } from '../projects/remove.ts';
+import { factoryStatus } from '../projects/remove.ts';
 import { roleRuleStore, withProjectRoles } from '../roles/project-rules.ts';
 import { listRoles } from '../roles/query.ts';
 import { listSessions, sessionDetail } from '../sessions/query.ts';
@@ -204,7 +204,6 @@ async function main(): Promise<void> {
     },
     projects: {
       factoryStatus: () => factoryStatus(db, hasFactory),
-      remove: (project) => deleteProject(db, project, hasFactory),
     },
     gitHost: {
       status: () => collectionStatus(db, hasFactory),

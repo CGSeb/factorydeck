@@ -31,6 +31,10 @@ export function storeBugTickets(bugTickets: readonly string[]): void {
   }
 }
 
+export function forgetBugTickets(slug: string): void {
+  storeBugTickets(storedBugTickets().filter((item) => item !== slug));
+}
+
 export function useBugTickets(status: FactoryResponse | undefined): string[] {
   const [bugTickets, setBugTickets] = useState(storedBugTickets);
   const loaded = status?.status === 'ok' ? status.bugTickets : undefined;

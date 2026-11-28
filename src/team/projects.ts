@@ -10,6 +10,7 @@ import {
   type ProjectChangeFields,
   type ProjectChanges,
   type ProjectFields,
+  type RemoveProjectResult,
   type TeamProject,
   type UpdateProjectResult,
   NAME_LENGTH_ERROR,
@@ -20,14 +21,19 @@ import {
 import { insertDefaultRoleRules } from '../roles/project-rules.ts';
 import { byProjectOrder } from './project-order.ts';
 import { freeSlug, parseRemote, slugBase } from './remote.ts';
+import { PROJECT_LOCK, removeProject } from './remove-project.ts';
 
 export const MAX_NAME_LENGTH = 80;
-const PROJECT_LOCK = 1_990_002;
 
 export interface ProjectStore {
   list: () => Promise<ListedProject[]>;
   add: (fields: NewProject, by: number) => Promise<AddProjectResult>;
   update: (id: number, changes: ProjectChanges) => Promise<UpdateProjectResult>;
+  remove: (id: number) => Promise<RemoveProjectResult>;
+}
+
+export interface ProjectStoreOptions {
+  removeLockTimeoutMs?: number;
 }
 
 type NameField = { ok: true; name: string } | ({ ok: false } & FieldError);
@@ -156,6 +162,7 @@ async function updateProject(
 export function projectStore(
   db: Database,
   now: () => Date = () => new Date(),
+  { removeLockTimeoutMs }: ProjectStoreOptions = {},
 ): ProjectStore {
   return {
     list: async () => {
@@ -167,6 +174,7 @@ export function projectStore(
     },
     update: (id, changes) =>
       db.transaction((tx) => updateProject(tx, id, changes)),
+    remove: (id) => removeProject(db, id, now(), removeLockTimeoutMs),
     add: (fields, by) =>
       db.transaction(async (tx) => {
         await tx.execute(sql`select pg_advisory_xact_lock(${PROJECT_LOCK})`);

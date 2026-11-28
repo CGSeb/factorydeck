@@ -8,20 +8,15 @@ import {
   optionTexts,
   waitForOption,
 } from './components/select-test.ts';
-import type { DeleteProject, LoadFactory } from './factory-api.ts';
-import {
-  archivedLib,
-  deleterOf,
-  factoryLoaderOf,
-  factoryResponse,
-  oldApp,
-} from './factory-fixtures.ts';
+import { factoryLoaderOf, factoryResponse } from './factory-fixtures.ts';
 import {
   collectionLoaderOf,
   collectionResponse,
   refresherOf,
 } from './git-host-fixtures.ts';
+import type { LoadFactory } from './factory-api.ts';
 import { Layout } from './Layout.tsx';
+import { useProjectRemoved } from './layout-outlet.ts';
 import { optionsOf } from './project-fixtures.ts';
 import { SECTION_PATHS } from './components/sidebar-stories.ts';
 
@@ -58,7 +53,6 @@ const meta = {
   component: Layout,
   args: {
     loadFactory: factoryLoaderOf(factoryResponse([], true, twoProjects)),
-    deleteProject: deleterOf('deleted'),
     loadCollection: collectionLoaderOf(collectionResponse(null)),
     refreshCollection: refresherOf(collectionResponse()),
   },
@@ -68,38 +62,49 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-function deletingStore(): {
-  loadFactory: LoadFactory;
-  deleteProject: DeleteProject;
-} {
-  let missing = [archivedLib, oldApp];
+function removingFactory(): { loadFactory: LoadFactory; remove: () => void } {
+  let projects = optionsOf(['old-app', 'archived-lib']);
   return {
-    loadFactory: () =>
-      Promise.resolve(
-        factoryResponse(missing, true, optionsOf(['old-app', 'archived-lib'])),
-      ),
-    deleteProject: (project) => {
-      missing = missing.filter((row) => row.project !== project);
-      return Promise.resolve('deleted');
+    loadFactory: () => Promise.resolve(factoryResponse([], true, projects)),
+    remove: () => {
+      projects = projects.filter((option) => option.project !== 'old-app');
     },
   };
 }
 
-function DeletionHarness(): ReactElement {
-  const [store] = useState(deletingStore);
+function RemovingPage({ remove }: { remove: () => void }): ReactElement {
+  const projectRemoved = useProjectRemoved();
   return (
-    <MemoryRouter initialEntries={['/?project=old-app']}>
+    <button
+      type="button"
+      onClick={() => {
+        remove();
+        projectRemoved?.('old-app');
+      }}
+    >
+      Remove Old App
+    </button>
+  );
+}
+
+function RemovalHarness(): ReactElement {
+  const [store] = useState(removingFactory);
+  return (
+    <MemoryRouter initialEntries={['/projects?project=old-app']}>
       <Routes>
         <Route
           element={
             <Layout
-              {...store}
+              loadFactory={store.loadFactory}
               loadCollection={collectionLoaderOf(collectionResponse(null))}
               refreshCollection={refresherOf(collectionResponse())}
             />
           }
         >
-          <Route index element={<p>Section content</p>} />
+          <Route
+            path="projects"
+            element={<RemovingPage remove={store.remove} />}
+          />
         </Route>
       </Routes>
       <Location />
@@ -273,32 +278,22 @@ export const ProjectSelectOnIssuePage: Story = {
   },
 };
 
-export const DeletingARootKeepsTheProject: Story = {
-  render: () => <DeletionHarness />,
+export const RemovingTheSelectedProject: Story = {
+  render: () => <RemovalHarness />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await waitForOption(() => projectSelect(canvasElement), 'Old App');
     await expectValue(projectSelect(canvasElement), 'old-app');
-    const [, oldAppLine] = await canvas.findAllByRole('button', {
-      name: 'Delete project',
-    });
-    if (oldAppLine === undefined) throw new Error('No banner line');
-    await userEvent.click(oldAppLine);
-    const dialog = within(canvas.getByRole('dialog'));
     await userEvent.click(
-      dialog.getByRole('button', { name: 'Delete project' }),
+      canvas.getByRole('button', { name: 'Remove Old App' }),
     );
     await waitFor(() =>
-      expect(
-        canvas.getAllByRole('button', { name: 'Delete project' }),
-      ).toHaveLength(1),
+      expect(address(canvasElement)).toHaveTextContent(/^\/projects$/),
     );
-    await expectValue(projectSelect(canvasElement), 'old-app');
-    await expect(address(canvasElement)).toHaveTextContent('/?project=old-app');
+    await expectValue(projectSelect(canvasElement), '');
     await expect(await optionTexts(projectSelect(canvasElement))).toEqual([
       'All projects',
       'archived-lib',
-      'Old App',
     ]);
   },
 };
